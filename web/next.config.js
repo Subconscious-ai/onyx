@@ -10,7 +10,10 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const nextConfig = {
   productionBrowserSourceMaps: false,
   poweredByHeader: false,
-  output: "standalone",
+  // Next 16.3 adapters omit the trace required by standalone packaging.
+  // Docker still needs standalone; Vercel produces a function bundle instead.
+  // https://github.com/vercel/next.js/issues/96646
+  output: process.env.VERCEL === "1" ? undefined : "standalone",
   typescript: {
     ignoreBuildErrors: process.env.SKIP_TYPE_CHECK === "1",
   },

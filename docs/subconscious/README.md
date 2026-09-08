@@ -32,6 +32,8 @@ INTERNAL_URL=https://<authenticated-preview-backend>
 OVERRIDE_API_PRODUCTION=true
 ```
 
+Automatic Git deployments are disabled in `web/vercel.json`; preview publication uses an explicit Vercel deployment with the pushed Git SHA and the API's `staging` target. The initial automatic Git deployment selected production and was canceled. Docker standalone output remains enabled outside Vercel; Vercel builds omit standalone packaging to avoid Next.js issue #96646.
+
 `preview-nginx.conf` provides a temporary transport on the existing `onyx_default` Docker network. Native Onyx authenticates every private request. Public account registration and alternate enrollment routes are disabled on the gateway. Bind the container port to loopback before attaching a dedicated HTTPS preview tunnel. Preserve existing Tailscale serve rules.
 
 Current preview transport uses container `onyx-executive-preview-gateway`, loopback port 3176, and a dedicated Tailscale Funnel HTTPS listener on port 10000. The local Onyx stack and workstation must remain online. The gateway carries no model-provider or MCP credentials. Stop the dedicated listener with `tailscale funnel --https=10000 off`; stop the dedicated container separately. No production backend migration is included.
