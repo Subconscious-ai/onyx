@@ -45,6 +45,7 @@ Current preview transport uses container `onyx-executive-preview-gateway`, loopb
 - Full TypeScript checks pass. Focused lint has no errors; two pre-existing assertion warnings remain in native AppPage and AgentMessage.
 - Real AWS Bedrock responses were exercised against synthetic hospital-software interviews. Observed first-output times across three probes were 2.5–6.7 seconds; the range is a small local sample, not a latency SLA.
 - Browser checks verified immediate brief updates, identical state after reload, a mobile evidence view without horizontal overflow, and a reachable native composer after returning to the conversation.
+- Four running-gateway checks cover login bootstrap, JSON access denials, blocked public enrollment and authenticated session refresh. Run `PREVIEW_COOKIE_JAR=/private/path/to/cookies.txt python3 scripts/subconscious/test_preview_gateway.py`. Set `PREVIEW_GATEWAY_URL` for a different authorized gateway.
 - Model quote fidelity is imperfect. Altered or invented quotes remain assumptions rather than attributed executive evidence. A valid later quote restores attribution. Recruiting cases are synthetic evaluation material, not client evidence.
 
 ## Remaining unified-plan work
