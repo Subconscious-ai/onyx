@@ -62,7 +62,7 @@ Current preview transport uses container `onyx-executive-preview-gateway`, loopb
 
 Vercel logs exposed repeated `ENOTFOUND` failures during saved-chat reload. For Vercel connections to the configured Tailscale backend, an Undici dispatcher resolves the public hostname through Google Public DNS over HTTPS. Concurrent DNS lookups share a request. Addresses expire with the record TTL, capped at five minutes. TLS still verifies the original hostname. The DNS request contains no session cookies or provider credentials.
 
-The proxy sends every application request once and preserves native streaming. Other backend hosts retain the normal resolver. Ten focused tests cover DNS lookup sharing, expiry, failure recovery, host restriction, request preservation, authentication, and unbuffered streams with cookies. A real connection through the public resolver passed original-host TLS verification and returned health 200.
+The API proxy and server-side login, identity, and saved-page loaders use the same backend connection. Every application request is sent once. Native streaming remains unchanged. Other backend hosts retain the normal resolver. Thirteen focused tests cover DNS lookup sharing, expiry, failure recovery, host restriction, request preservation, server-side sign-in, authentication, and unbuffered streams with cookies. The three server-rendering regressions failed before integration. A real connection through the public resolver passed original-host TLS verification and returned health 200.
 
 ## Evidence and limitations
 

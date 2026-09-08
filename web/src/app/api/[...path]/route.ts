@@ -3,14 +3,7 @@ import {
   SERVER_SIDE_ONLY__AUTH_COOKIE_NAME,
 } from "@/lib/constants";
 import { NextRequest, NextResponse } from "next/server";
-import { Agent } from "undici";
-import { createPreviewLookup } from "@/lib/previewDns";
-
-const backendHost = new URL(INTERNAL_URL).hostname;
-const previewDispatcher =
-  process.env.VERCEL === "1" && backendHost.endsWith(".ts.net")
-    ? new Agent({ connect: { lookup: createPreviewLookup(backendHost) } })
-    : undefined;
+import { fetchBackend } from "@/lib/backendFetch";
 
 // Preserve native tool/answer streaming when the frontend runs on Vercel.
 export const maxDuration = 180;
@@ -117,16 +110,15 @@ async function handleRequest(request: NextRequest, path: string[]) {
       );
     }
 
-    const options: RequestInit & { duplex: "half"; dispatcher?: Agent } = {
+    const options: RequestInit & { duplex: "half" } = {
       method: request.method,
       headers,
       body: request.body,
       signal: request.signal,
       redirect: "manual",
       duplex: "half",
-      dispatcher: previewDispatcher,
     };
-    const response = await fetch(backendUrl, options);
+    const response = await fetchBackend(backendUrl, options);
 
     const setCookies =
       // @ts-ignore - undici provides getSetCookie in Node.
