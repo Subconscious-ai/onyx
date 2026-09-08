@@ -10,29 +10,38 @@ export function createPreviewLookup(hostname: string): LookupFunction {
   let pending: Promise<string[]> | null = null;
   let expires = 0;
 
+  async function recordsFrom(resolver: string) {
+    const url = new URL(resolver);
+    url.searchParams.set("name", hostname);
+    url.searchParams.set("type", "A");
+    const response = await fetch(url, {
+      headers: { Accept: "application/dns-json" },
+      credentials: "omit",
+      signal: AbortSignal.timeout(2500),
+      cache: "no-store",
+    });
+    if (!response.ok) throw new Error("Preview public DNS unavailable");
+    const reply: DnsReply = await response.json();
+    const records = (reply.Answer ?? []).filter(
+      (record) =>
+        record.type === 1 &&
+        record.name.replace(/\.$/, "") === hostname &&
+        isIP(record.data) === 4
+    );
+    if (reply.Status !== 0 || records.length === 0) {
+      throw new Error("Preview public DNS has no backend address");
+    }
+    return records;
+  }
+
   function addresses(): Promise<string[]> {
     if (pending && Date.now() < expires) return pending;
     expires = Infinity;
     pending = (async () => {
-      const url = new URL("https://dns.google/resolve");
-      url.searchParams.set("name", hostname);
-      url.searchParams.set("type", "A");
-      const response = await fetch(url, {
-        credentials: "omit",
-        signal: AbortSignal.timeout(2500),
-        cache: "no-store",
-      });
-      if (!response.ok) throw new Error("Preview public DNS unavailable");
-      const reply: DnsReply = await response.json();
-      const records = (reply.Answer ?? []).filter(
-        (record) =>
-          record.type === 1 &&
-          record.name.replace(/\.$/, "") === hostname &&
-          isIP(record.data) === 4
+      // Resolve before submitting the application request; never replay a turn.
+      const records = await recordsFrom("https://dns.google/resolve").catch(() =>
+        recordsFrom("https://cloudflare-dns.com/dns-query")
       );
-      if (reply.Status !== 0 || records.length === 0) {
-        throw new Error("Preview public DNS has no backend address");
-      }
       const ttl = Math.max(
         0,
         Math.min(300, ...records.map((record) => record.TTL))

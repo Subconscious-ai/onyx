@@ -21,9 +21,15 @@ python3 scripts/subconscious/configure_executive.py \
   --source-agent 1 --apply
 ```
 
-The command returns the saved agent ID and verifies the prompts, tool attachments and model configuration through a fresh read. Subsequent updates require `--update-agent <saved-id>`. A different agent name is rejected. The model configuration ID is instance-specific. The installer rejects non-Bedrock configurations. The current preview uses Amazon Nova Pro on AWS.
+The command returns the saved agent ID and verifies the prompts, tool attachments and model configuration through a fresh read. Subsequent updates require `--update-agent <saved-id>`. The saved name must match `--name`, which defaults to `Executive interview`. Use a separate name for private QA. Attach existing native tools with repeatable `--tool-id` arguments. The model configuration ID is instance-specific. The installer rejects non-Bedrock configurations. The current preview uses Amazon Nova Pro on AWS.
 
-The rubric uses native Onyx's `replace_base_system_prompt` setting. Without replacement, Onyx inserts agent instructions as a user message. A short native `task_prompt` reinforces answer retention and the brief contract. Both prompts come from versioned Markdown. Ordinary interview turns still use one model response.
+The rubric uses native Onyx's `replace_base_system_prompt` setting. Without replacement, Onyx inserts agent instructions as a user message. A short native `task_prompt` reinforces answer retention and the brief contract after tool cycles. Both prompts come from versioned Markdown. Ordinary interview turns still use one model response.
+
+## Research and model acceptance
+
+The current research-enabled candidate remains under evaluation. See [the research-to-model QA report](research-model-qa.md) before interpreting earlier tool-disabled checks. The native executive agent retains the earlier Nova Pro configuration until candidate quality passes. The candidate uses a separate private agent.
+
+[GPT Researcher setup](research-preview.md) reuses the upstream MCP server, AWS Bedrock and Exa. Research runs on demand through native Onyx tools. No second chat interface or research implementation is added.
 
 ## Conversation regression check
 
@@ -37,9 +43,9 @@ python3 scripts/subconscious/eval_interview.py \
   --output /private/path/to/interview-results.json
 ```
 
-The runner soft-deletes only runner-created sessions. Results contain synthetic spoken responses and briefs. Native reasoning packets are excluded. Review saved answers alongside the targeted checks; regex checks cannot establish general consulting quality.
+The runner soft-deletes only runner-created sessions. Results contain synthetic spoken responses and briefs. Native reasoning packets are excluded. Some providers can still put reasoning tags inside message content; raw reports remain private. Review saved answers alongside the targeted checks; regex checks cannot establish general consulting quality.
 
-The regression covers commercial framing, unknown answers, frustration, previously supplied flavors, isolated complaints, software renewal context, and conversation recovery. The original configuration failed four of five initial replay turns. The final Nova Pro configuration passed eight turns across four cases. First visible output ranged from 0.5 to 0.8 seconds locally. The sample establishes neither a latency SLA nor a general accuracy score.
+The regression covers commercial framing, unknown answers, frustration, previously supplied flavors, isolated complaints, software renewal context, and conversation recovery. The original configuration failed four of five initial replay turns. The final Nova Pro configuration passed eight turns across four cases. First content packets ranged from 0.5 to 0.8 seconds locally. The sample establishes neither a latency SLA nor a general accuracy score.
 
 The repair keeps unknown topics parked, retains supplied answers, and offers provisional journeys after repeated uncertainty. A single complaint remains an observation in the transcript. A complaint cannot establish a normal journey step, a lost sale, or the main business bottleneck.
 
@@ -60,19 +66,19 @@ Automatic Git deployments are disabled in `web/vercel.json`; preview publication
 
 Current preview transport uses container `onyx-executive-preview-gateway`, loopback port 3176, and a dedicated Tailscale Funnel HTTPS listener on port 10000. The local Onyx stack and workstation must remain online. The gateway carries no model-provider or MCP credentials. Stop the dedicated listener with `tailscale funnel --https=10000 off`; stop the dedicated container separately. No production backend migration is included.
 
-Vercel logs exposed repeated `ENOTFOUND` failures during saved-chat reload. For Vercel connections to the configured Tailscale backend, an Undici dispatcher resolves the public hostname through Google Public DNS over HTTPS. Concurrent DNS lookups share a request. Addresses expire with the record TTL, capped at five minutes. TLS still verifies the original hostname. The DNS request contains no session cookies or provider credentials.
+Vercel logs exposed repeated `ENOTFOUND` failures during saved-chat reload. For Vercel connections to the configured Tailscale backend, an Undici dispatcher resolves the public hostname through Google Public DNS over HTTPS. An unsuccessful lookup falls back once to Cloudflare DNS over HTTPS before any application request is sent. Concurrent DNS lookups share a request. Addresses expire with the record TTL, capped at five minutes. TLS still verifies the original hostname. The DNS request contains no session cookies or provider credentials.
 
 The API proxy and server-side login, identity, and saved-page loaders use the same backend connection. Every application request is sent once. Native streaming remains unchanged. Other backend hosts retain the normal resolver. Thirteen focused tests cover DNS lookup sharing, expiry, failure recovery, host restriction, request preservation, server-side sign-in, authentication, and unbuffered streams with cookies. The three server-rendering regressions failed before integration. A real connection through the public resolver passed original-host TLS verification and returned health 200.
 
 ## Evidence and limitations
 
-- Twelve regression cases cover restored objectives and journey stages, live packet updates, incomplete updates, native stream termination, attributable quotes, safe source URLs, grounded contradictions, intervention references and preservation of newer executive corrections.
+- Fifteen regression cases cover restored objectives and journey stages, live packet updates, incomplete updates, native stream termination, attributable quotes, safe source URLs, grounded contradictions, intervention references and preservation of newer executive corrections.
 - The existing nine catalog checks pass. Executive pilot copy remains English in every locale catalog; no translated pilot experience is claimed.
 - Full TypeScript checks pass. Focused lint has no errors; two pre-existing assertion warnings remain in native AppPage and AgentMessage.
 - Real AWS Bedrock responses were exercised against synthetic hospital-software interviews. Observed first-output times across three probes were 2.5–6.7 seconds; the range is a small local sample, not a latency SLA.
 - Browser checks verified immediate brief updates, identical state after reload, a mobile evidence view without horizontal overflow, and a reachable native composer after returning to the conversation.
-- Four running-gateway checks cover login bootstrap, JSON access denials, blocked public enrollment and authenticated session refresh. Run `PREVIEW_COOKIE_JAR=/private/path/to/cookies.txt python3 scripts/subconscious/test_preview_gateway.py`. Set `PREVIEW_GATEWAY_URL` for a different authorized gateway.
-- Model quote fidelity is imperfect. Altered or invented quotes remain assumptions rather than attributed executive evidence. A valid later quote restores attribution. Recruiting cases are synthetic evaluation material, not client evidence.
+- Five running-gateway checks cover login bootstrap, JSON access denials, blocked public enrollment authenticated session refresh and research bearer authentication. Run `PREVIEW_COOKIE_JAR=/private/path/to/cookies.txt python3 scripts/subconscious/test_preview_gateway.py`. Set `PREVIEW_GATEWAY_URL` for a different authorized gateway.
+- Model quote fidelity is imperfect. Altered or invented quotes remain assumptions rather than attributed executive evidence. A valid later quote restores attribution. Explicit scenario, hypothesis and public-case context also prevents executive attribution. The conservative check examines the complete executive message; mixed factual and hypothetical messages can require later confirmation. Exact quote checks do not establish semantic entailment. Recruiting cases are synthetic evaluation material, not client evidence.
 
 ## Remaining unified-plan work
 

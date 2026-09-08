@@ -6,15 +6,20 @@ import os
 import unittest
 from email.message import Message
 from urllib.error import HTTPError
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 
 class PreviewGatewayTest(unittest.TestCase):
     origin = os.environ.get("PREVIEW_GATEWAY_URL", "http://127.0.0.1:3176")
 
+    def setUp(self) -> None:
+        if urlsplit(self.origin).scheme not in ("http", "https"):
+            self.fail("Preview gateway origin must use HTTP or HTTPS")
+
     def request(self, path: str) -> tuple[int, Message, bytes]:
         try:
-            response = urlopen(self.origin + path, timeout=10)
+            response = urlopen(self.origin + path, timeout=10)  # noqa: S310 - HTTP(S) origin checked in setUp
         except HTTPError as error:
             response = error
         with response:
@@ -42,6 +47,11 @@ class PreviewGatewayTest(unittest.TestCase):
                 status, _, _ = self.request(path)
                 self.assertEqual(status, 403)
 
+    def test_research_service_requires_separate_bearer_auth(self) -> None:
+        status, headers, _ = self.request("/research-mcp/mcp")
+        self.assertEqual(status, 401)
+        self.assertIn("Bearer", headers.get("WWW-Authenticate", ""))
+
     def test_existing_session_can_refresh_without_new_login(self) -> None:
         cookie_path = os.environ.get("PREVIEW_COOKIE_JAR")
         if not cookie_path:
@@ -49,13 +59,13 @@ class PreviewGatewayTest(unittest.TestCase):
         jar = http.cookiejar.MozillaCookieJar(cookie_path)
         jar.load(ignore_discard=True)
         cookie_header = "; ".join(f"{cookie.name}={cookie.value}" for cookie in jar)
-        request = Request(
+        request = Request(  # noqa: S310 - HTTP(S) origin checked in setUp
             self.origin + "/auth/refresh",
             method="POST",
             headers={"Cookie": cookie_header},
         )
         try:
-            response = urlopen(request, timeout=10)
+            response = urlopen(request, timeout=10)  # noqa: S310 - HTTP(S) origin checked in setUp
         except HTTPError as error:
             response = error
         with response:

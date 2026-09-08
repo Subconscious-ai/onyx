@@ -110,8 +110,17 @@ export function projectBrief(
       ? statements.findLastIndex((text) => text.includes(normalized(quote)))
       : -1;
   const quoted = (quote?: string) => quoteTurn(quote) >= 0;
+  const observedQuote = (quote?: string) => {
+    const turn = quoteTurn(quote);
+    if (turn < 0) return false;
+    // Exact text alone cannot promote explicitly hypothetical or external-case input.
+    const context = statements[turn]!;
+    return !/\b(?:scenario|hypothetical|hypothesis|assume|suppose|public case|case study|benchmark)\b/.test(
+      context
+    );
+  };
   const ground = <T extends BriefNote>(note: T): T => {
-    if (note.status === "executive" && quoted(note.quote)) return note;
+    if (note.status === "executive" && observedQuote(note.quote)) return note;
     const url = safeSourceUrl(note.url);
     if (
       note.status === "research" &&

@@ -223,3 +223,48 @@ describe("executive brief provenance and reload", () => {
     );
   });
 });
+
+describe("hypothesis attribution", () => {
+  const quote = "Operations managers publish schedules every Monday.";
+  const proposed = {
+    ...draft,
+    journey: [
+      {
+        id: "schedule",
+        actor: "Operations manager",
+        text: quote,
+        status: "executive",
+        quote,
+      },
+    ],
+  };
+  test("a quoted scenario cannot become observed customer behavior", () => {
+    const result = projectBrief([
+      { type: "user", message: `For a scenario only: ${quote}` },
+      answer(proposed),
+    ]);
+    expect(result.brief?.journey[0]?.status).toBe("assumption");
+  });
+  test("a public case repeated by an executive cannot become company evidence", () => {
+    const result = projectBrief([
+      {
+        type: "user",
+        message: `A public case describes the following: ${quote}`,
+      },
+      answer(proposed),
+    ]);
+    expect(result.brief?.journey[0]?.status).toBe("assumption");
+  });
+  test("later observed evidence can replace the earlier scenario", () => {
+    const result = projectBrief([
+      { type: "user", message: `Scenario only: ${quote}` },
+      answer(proposed),
+      {
+        type: "user",
+        message: `The actual usage log confirms the behavior. ${quote}`,
+      },
+      answer(proposed),
+    ]);
+    expect(result.brief?.journey[0]?.status).toBe("executive");
+  });
+});

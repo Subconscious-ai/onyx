@@ -25,6 +25,11 @@ class Turn:
     questions_allowed: bool = True
     spoken_requires: str = ""
     isolated_complaint: bool = False
+    max_words: int = 100
+    tools_required: tuple[str, ...] = ()
+    expected_numbers: tuple[float, ...] = ()
+    model_ready: bool = False
+    scenario_guard: bool = False
 
 
 CASES = {
@@ -105,20 +110,32 @@ TOPICS = {
 }
 
 
+def questions(text: str) -> list[str]:
+    prose = re.sub(r"https?://[^\s)]+", "", text)
+    prose = re.sub(r"(?<=\|)\s*\?\s*(?=\|)", " unknown ", prose)
+    return [
+        part.strip().lower()
+        for part in re.findall(r"([^.!?\n]+\?)", prose)
+        if re.search(r"[a-zA-Z]", part)
+    ]
+
+
 def question(text: str) -> str:
-    parts = re.findall(r"([^.!?\n]+\?)", text)
-    return parts[-1].lower() if parts else ""
+    parts = questions(text)
+    return parts[-1] if parts else ""
 
 
 def assess(turn: Turn, text: str, previous: str) -> list[str]:
     failures = []
     spoken = text.split("<interview-brief>", 1)[0]
     asked = question(spoken)
-    if not spoken.strip() or len(spoken.split()) > 100:
+    if not spoken.strip() or len(spoken.split()) > turn.max_words:
         failures.append("Missing or overlong spoken turn")
-    if spoken.count("?") > 1:
+    if asked and asked == question(previous.split("<interview-brief>", 1)[0]):
+        failures.append("Question repeated verbatim from the previous turn")
+    if len(questions(spoken)) > 1:
         failures.append("Multiple questions create interview homework")
-    if not turn.questions_allowed and "?" in spoken:
+    if not turn.questions_allowed and questions(spoken):
         failures.append(
             "Repeated uncertainty needs a useful synthesis before more questions"
         )
@@ -174,6 +191,61 @@ def assess(turn: Turn, text: str, previous: str) -> list[str]:
                 )
         except (ValueError, AttributeError):
             failures.append("Working brief is not complete JSON")
+    if turn.model_ready and not re.search(
+        r"scenario|hypothes|provisional|conditional", spoken, re.I
+    ):
+        failures.append("Model output hides provisional assumptions")
+    if turn.scenario_guard and not re.search(
+        r"unknown|unmeasured|not (?:observed|measured)|scenario|hypothetical",
+        spoken,
+        re.I,
+    ):
+        failures.append("Scenario pressure lost the unknown-input boundary")
+    return failures
+
+
+def assess_tools(turn: Turn, tool_packets: list[dict[str, Any]]) -> list[str]:
+    failures = []
+    tool_names = {packet.get("tool_name", "") for packet in tool_packets}
+    python_results = [
+        packet for packet in tool_packets if packet["type"] == "python_tool_delta"
+    ]
+    if any(packet["type"] == "python_tool_start" for packet in tool_packets):
+        tool_names.add("run_python")
+    failures.extend(
+        "Required live tool did not run: " + required
+        for required in turn.tools_required
+        if not any(required in actual for actual in tool_names)
+    )
+    for packet in tool_packets:
+        if (
+            packet["type"] == "custom_tool_delta"
+            and packet.get("tool_name") == "deep_research"
+        ):
+            payload = packet.get("data", {})
+            try:
+                receipt = json.loads(payload["tool_result"])
+                if receipt.get("status") != "success" or not receipt.get("source_urls"):
+                    failures.append(
+                        "GPT Researcher returned no successful source receipt"
+                    )
+            except (KeyError, TypeError, ValueError):
+                failures.append("GPT Researcher receipt is not readable")
+        if packet.get("error") or (
+            packet["type"] == "python_tool_delta" and packet.get("stderr")
+        ):
+            failures.append("Tool error requires review")
+    if turn.expected_numbers:
+        output = " ".join(packet.get("stdout", "") for packet in python_results)
+        numbers = [
+            float(value.replace(",", ""))
+            for value in re.findall(r"(?<![\w.])\d[\d,]*(?:\.\d+)?", output)
+        ]
+        failures.extend(
+            f"Python result missing expected calculation: {expected}"
+            for expected in turn.expected_numbers
+            if not any(abs(expected - actual) < 0.00001 for actual in numbers)
+        )
     return failures
 
 
@@ -188,8 +260,24 @@ def main() -> None:
         help="Optional existing Bedrock model for a comparison",
     )
     parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--case", choices=list(CASES), action="append")
+    parser.add_argument("--case", action="append")
+    parser.add_argument(
+        "--scenario-file", type=Path, help="Synthetic tool-enabled interview cases"
+    )
+    parser.add_argument(
+        "--keep-sessions",
+        action="store_true",
+        help="Retain synthetic sessions for browser QA",
+    )
     args = parser.parse_args()
+    cases = CASES
+    if args.scenario_file:
+        cases = {
+            name: [Turn(**turn) for turn in turns]
+            for name, turns in json.loads(args.scenario_file.read_text()).items()
+        }
+    if args.case and any(name not in cases for name in args.case):
+        parser.error("Unknown selected case")
     if urllib.parse.urlsplit(args.origin).scheme not in ("http", "https"):
         parser.error("Origin must use HTTP or HTTPS")
     jar = http.cookiejar.MozillaCookieJar(args.cookies)
@@ -204,7 +292,7 @@ def main() -> None:
                 headers={"Content-Type": "application/json"},
                 method=method,
             ),
-            timeout=120,
+            timeout=180,
         )
 
     results: list[dict[str, Any]] = []
@@ -221,24 +309,44 @@ def main() -> None:
             raise ValueError(
                 "Model comparison requires an existing AWS Bedrock configuration"
             )
-    for name in args.case or CASES:
+    allowed_tools = []
+    if args.scenario_file:
+        with api(f"/persona/{args.agent}") as response:
+            agent = json.load(response)
+        allowed_tools = [
+            tool["id"]
+            for tool in agent["tools"]
+            if tool["name"]
+            in {
+                "run_python",
+                "web_search",
+                "internal_search",
+                "deep_research",
+                "get_research_context",
+                "get_research_sources",
+            }
+        ]
+    for name in args.case or cases:
         with api(
             "/chat/create-chat-session",
             {"persona_id": args.agent, "description": "Executive regression: " + name},
         ) as response:
             sid = json.load(response)["chat_session_id"]
         previous = ""
+        scenario_start = time.monotonic()
+        simulated_minutes = 0.0
         try:
-            for index, turn in enumerate(CASES[name]):
+            for index, turn in enumerate(cases[name]):
                 start = time.monotonic()
                 first = None
                 fragments: list[str] = []
                 errors: list[str] = []
+                tool_packets: list[dict[str, Any]] = []
                 request_body = {
                     "message": turn.message,
                     "chat_session_id": sid,
                     "parent_message_id": -1,
-                    "allowed_tool_ids": [],
+                    "allowed_tool_ids": allowed_tools,
                     "origin": "webapp",
                 }
                 if args.model_configuration is not None:
@@ -257,10 +365,27 @@ def main() -> None:
                         ) and obj.get("content"):
                             first = first or round((time.monotonic() - start) * 1000)
                             fragments.append(obj["content"])
+                        if obj.get("type") in (
+                            "custom_tool_start",
+                            "custom_tool_args",
+                            "custom_tool_delta",
+                            "python_tool_start",
+                            "python_tool_delta",
+                            "search_tool_start",
+                            "search_tool_queries_delta",
+                            "search_tool_documents_delta",
+                        ):
+                            tool_packets.append(obj)
                         if packet.get("error"):
                             errors.append(str(packet["error"]))
                 answer = "".join(fragments)
                 failures = errors + assess(turn, answer, previous)
+                simulated_minutes += (
+                    len(turn.message.split()) / 40
+                    + len(answer.split("<interview-brief>")[0].split()) / 200
+                    + 0.25
+                )
+                failures.extend(assess_tools(turn, tool_packets))
                 results.append(
                     {
                         "case": name,
@@ -268,7 +393,19 @@ def main() -> None:
                         "input": turn.message,
                         "answer": answer,
                         "failures": failures,
-                        "first_output_ms": first,
+                        "first_content_packet_ms": first,
+                        "elapsed_seconds": round(time.monotonic() - start, 2),
+                        "session_elapsed_seconds": round(
+                            time.monotonic() - scenario_start, 2
+                        ),
+                        "scripted_read_answer_minutes_proxy": round(
+                            simulated_minutes, 2
+                        ),
+                        "model_checkpoint_requested": turn.model_ready,
+                        "usable_model_pass": None,  # Manual review remains required.
+                        "expected_numbers": turn.expected_numbers,
+                        "tool_packets": tool_packets,
+                        "session_id": sid,
                     }
                 )
                 print(
@@ -277,18 +414,19 @@ def main() -> None:
                             "case": name,
                             "turn": index + 1,
                             "failures": failures,
-                            "first_output_ms": first,
+                            "first_content_packet_ms": first,
                         }
                     ),
                     flush=True,
                 )
                 previous = answer
         finally:
-            with api(
-                "/chat/delete-chat-session/" + sid + "?hard_delete=false",
-                method="DELETE",
-            ):
-                pass
+            if not args.keep_sessions:
+                with api(
+                    "/chat/delete-chat-session/" + sid + "?hard_delete=false",
+                    method="DELETE",
+                ):
+                    pass
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(json.dumps(results, indent=2))
             args.output.chmod(0o600)

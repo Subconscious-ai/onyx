@@ -10,6 +10,7 @@ import json
 import urllib.parse
 import urllib.request
 from pathlib import Path
+from urllib.error import HTTPError
 
 
 def main() -> None:
@@ -17,6 +18,7 @@ def main() -> None:
     parser.add_argument("--origin", default="http://localhost:3011")
     parser.add_argument("--cookies", required=True)
     parser.add_argument("--source-agent", type=int, default=1)
+    parser.add_argument("--name", default="Executive interview")
     parser.add_argument(
         "--model-configuration",
         required=True,
@@ -25,6 +27,13 @@ def main() -> None:
     )
     parser.add_argument("--update-agent", type=int)
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument(
+        "--tool-id",
+        type=int,
+        action="append",
+        default=[],
+        help="Existing additional native tool ID",
+    )
     args = parser.parse_args()
     if urllib.parse.urlsplit(args.origin).scheme not in ("http", "https"):
         parser.error("Origin must use HTTP or HTTPS")
@@ -39,8 +48,12 @@ def main() -> None:
             headers={"Content-Type": "application/json"},
             method=method,
         )
-        with opener.open(request, timeout=30) as response:
-            return json.load(response)
+        try:
+            with opener.open(request, timeout=30) as response:
+                return json.load(response)
+        except HTTPError as error:
+            detail = json.loads(error.read()).get("detail", "Native API request failed")
+            raise RuntimeError(f"Native API HTTP {error.code}: {detail}") from None
 
     source = api(f"/persona/{args.source_agent}")
     providers = api("/llm/provider")["providers"]
@@ -54,18 +67,23 @@ def main() -> None:
         raise ValueError("Executive interviews require an existing AWS Bedrock model")
     if args.update_agent is not None:
         existing = api(f"/persona/{args.update_agent}")
-        if existing["name"] != "Executive interview":
+        if existing["name"] != args.name:
             raise ValueError("Refusing to replace an unrelated agent")
     rubric = (
         Path(__file__).resolve().parents[2] / "docs/subconscious/executive-rubric.md"
     )
     reminder = rubric.with_name("executive-turn-reminder.md")
     body = {
-        "name": "Executive interview",
+        "name": args.name,
         "description": "A focused working session with Sarah, Frankie, Mei and Jerry. A business objective, a customer journey, and the next useful experiment.",
         "document_set_ids": [item["id"] for item in source.get("document_sets", [])],
         "tool_ids": [
             item["id"] for item in source["tools"] if item.get("enabled", True)
+        ]
+        + [
+            tool_id
+            for tool_id in args.tool_id
+            if tool_id not in {item["id"] for item in source["tools"]}
         ],
         "default_model_configuration_id": args.model_configuration,
         "system_prompt": rubric.read_text(),

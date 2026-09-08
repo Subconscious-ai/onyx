@@ -37,7 +37,7 @@ describe("preview public DNS", () => {
     expect(String(url)).toBe(
       "https://dns.google/resolve?name=preview.example.ts.net&type=A"
     );
-    expect(options?.headers).toBeUndefined();
+    expect(options?.headers).toEqual({ Accept: "application/dns-json" });
     expect(options?.credentials).toBe("omit");
     await resolve(lookup);
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -47,13 +47,14 @@ describe("preview public DNS", () => {
     const fetchMock = jest
       .spyOn(global, "fetch")
       .mockResolvedValueOnce(Response.json({ Status: 3 }))
+      .mockResolvedValueOnce(Response.json({ Status: 3 }))
       .mockImplementation(async () => answer());
     const lookup = createPreviewLookup(hostname);
     await expect(resolve(lookup)).rejects.toThrow("public DNS");
     await expect(resolve(lookup)).resolves.toEqual([
       { address: "209.177.145.137", family: 4 },
     ]);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   test("cached addresses expire with the public record TTL", async () => {
@@ -75,4 +76,26 @@ describe("preview public DNS", () => {
     ).rejects.toThrow("host");
     expect(fetchMock).not.toHaveBeenCalled();
   });
+});
+
+// A resolver failure must not force the executive to resubmit an answer.
+test("a transient negative DNS answer uses an independent public resolver", async () => {
+  const fetchMock = jest
+    .spyOn(global, "fetch")
+    .mockResolvedValueOnce(Response.json({ Status: 3 }))
+    .mockResolvedValueOnce(answer());
+  try {
+    const lookup = createPreviewLookup(hostname);
+    await expect(resolve(lookup)).resolves.toEqual([
+      { address: "209.177.145.137", family: 4 },
+    ]);
+    expect(String(fetchMock.mock.calls[1]![0])).toBe(
+      "https://cloudflare-dns.com/dns-query?name=preview.example.ts.net&type=A"
+    );
+    expect(fetchMock.mock.calls[1]![1]?.credentials).toBe("omit");
+    await resolve(lookup);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  } finally {
+    fetchMock.mockRestore();
+  }
 });
