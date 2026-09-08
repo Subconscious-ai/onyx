@@ -1,3 +1,4 @@
+import { isExecutiveAgent, visibleInterviewText } from "@/lib/executive/brief";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import ReactMarkdown, { Components } from "react-markdown";
@@ -130,7 +131,7 @@ export const MessageTextRenderer: MessageRenderer<
     isAwaitingAutoPlaybackStart,
   } = useVoiceMode();
 
-  const fullContent = packets
+  const rawContent = packets
     .map((packet) => {
       if (
         packet.obj.type === PacketType.MESSAGE_DELTA ||
@@ -141,6 +142,9 @@ export const MessageTextRenderer: MessageRenderer<
       return "";
     })
     .join("");
+  const fullContent = isExecutiveAgent(state.agent)
+    ? visibleInterviewText(rawContent)
+    : rawContent;
 
   const shouldUseAutoPlaybackSync =
     autoPlayback &&

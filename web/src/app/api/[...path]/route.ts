@@ -4,6 +4,9 @@ import {
 } from "@/lib/constants";
 import { NextRequest, NextResponse } from "next/server";
 
+// Preserve native tool/answer streaming when the frontend runs on Vercel.
+export const maxDuration = 180;
+
 /* NextJS is annoying and makes use use a separate function for
 each request type >:( */
 
