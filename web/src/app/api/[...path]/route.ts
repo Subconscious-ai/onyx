@@ -3,6 +3,14 @@ import {
   SERVER_SIDE_ONLY__AUTH_COOKIE_NAME,
 } from "@/lib/constants";
 import { NextRequest, NextResponse } from "next/server";
+import { Agent } from "undici";
+import { createPreviewLookup } from "@/lib/previewDns";
+
+const backendHost = new URL(INTERNAL_URL).hostname;
+const previewDispatcher =
+  process.env.VERCEL === "1" && backendHost.endsWith(".ts.net")
+    ? new Agent({ connect: { lookup: createPreviewLookup(backendHost) } })
+    : undefined;
 
 // Preserve native tool/answer streaming when the frontend runs on Vercel.
 export const maxDuration = 180;
@@ -109,40 +117,16 @@ async function handleRequest(request: NextRequest, path: string[]) {
       );
     }
 
-    let response: Response;
-    for (let attempt = 0; ; attempt++) {
-      try {
-        response = await fetch(backendUrl, {
-          method: request.method,
-          headers: headers,
-          body: request.body,
-          signal: request.signal,
-          redirect: "manual",
-          // @ts-ignore
-          duplex: "half",
-        });
-        break;
-      } catch (error) {
-        const cause = error instanceof Error ? error.cause : null;
-        const dnsFailure =
-          cause !== null &&
-          typeof cause === "object" &&
-          "code" in cause &&
-          (cause.code === "ENOTFOUND" || cause.code === "EAI_AGAIN");
-        // DNS failure occurs before dispatch. Retry reads only; never replay an answer.
-        if (
-          !dnsFailure ||
-          !["GET", "HEAD"].includes(request.method) ||
-          request.signal.aborted ||
-          attempt >= 2
-        ) {
-          throw error;
-        }
-        await new Promise((resolve) =>
-          setTimeout(resolve, 100 * (attempt + 1))
-        );
-      }
-    }
+    const options: RequestInit & { duplex: "half"; dispatcher?: Agent } = {
+      method: request.method,
+      headers,
+      body: request.body,
+      signal: request.signal,
+      redirect: "manual",
+      duplex: "half",
+      dispatcher: previewDispatcher,
+    };
+    const response = await fetch(backendUrl, options);
 
     const setCookies =
       // @ts-ignore - undici provides getSetCookie in Node.

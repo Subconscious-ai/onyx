@@ -23,10 +23,9 @@ describe("preview proxy DNS recovery", () => {
     jest.restoreAllMocks();
   });
 
-  test("a transient DNS failure cannot discard a saved conversation on reload", async () => {
+  test("ordinary backends retain native fetch without preview DNS overrides", async () => {
     const fetchMock = jest
       .spyOn(global, "fetch")
-      .mockRejectedValueOnce(dnsError())
       .mockResolvedValueOnce(Response.json({ messages: ["saved answer"] }));
     const response = await GET(
       new NextRequest("http://localhost/api/chat/saved"),
@@ -34,17 +33,20 @@ describe("preview proxy DNS recovery", () => {
     );
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ messages: ["saved answer"] });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({ dispatcher: undefined })
+    );
   });
 
-  test("persistent DNS failure stops after three attempts", async () => {
+  test("DNS failure surfaces without replaying a request", async () => {
     const fetchMock = jest.spyOn(global, "fetch").mockRejectedValue(dnsError());
     const response = await GET(
       new NextRequest("http://localhost/api/chat/saved"),
       params
     );
     expect(response.status).toBe(500);
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   test("a submitted interview answer is never replayed by the proxy", async () => {

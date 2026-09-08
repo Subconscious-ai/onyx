@@ -60,7 +60,9 @@ Automatic Git deployments are disabled in `web/vercel.json`; preview publication
 
 Current preview transport uses container `onyx-executive-preview-gateway`, loopback port 3176, and a dedicated Tailscale Funnel HTTPS listener on port 10000. The local Onyx stack and workstation must remain online. The gateway carries no model-provider or MCP credentials. Stop the dedicated listener with `tailscale funnel --https=10000 off`; stop the dedicated container separately. No production backend migration is included.
 
-Vercel logs exposed intermittent `ENOTFOUND` failures during saved-chat reload. The API proxy retries GET/HEAD DNS failures twice, with 100 ms and 200 ms delays. POST requests, authentication denials, and connection errors are never retried. Six focused tests cover recovery, bounded failure, submitted-answer protection, authentication, and unbuffered streams with session cookies. The recovery tests failed before the proxy change.
+Vercel logs exposed repeated `ENOTFOUND` failures during saved-chat reload. For Vercel connections to the configured Tailscale backend, an Undici dispatcher resolves the public hostname through Google Public DNS over HTTPS. Concurrent DNS lookups share a request. Addresses expire with the record TTL, capped at five minutes. TLS still verifies the original hostname. The DNS request contains no session cookies or provider credentials.
+
+The proxy sends every application request once and preserves native streaming. Other backend hosts retain the normal resolver. Ten focused tests cover DNS lookup sharing, expiry, failure recovery, host restriction, request preservation, authentication, and unbuffered streams with cookies. A real connection through the public resolver passed original-host TLS verification and returned health 200.
 
 ## Evidence and limitations
 
