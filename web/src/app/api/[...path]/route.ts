@@ -109,15 +109,40 @@ async function handleRequest(request: NextRequest, path: string[]) {
       );
     }
 
-    const response = await fetch(backendUrl, {
-      method: request.method,
-      headers: headers,
-      body: request.body,
-      signal: request.signal,
-      redirect: "manual",
-      // @ts-ignore
-      duplex: "half",
-    });
+    let response: Response;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        response = await fetch(backendUrl, {
+          method: request.method,
+          headers: headers,
+          body: request.body,
+          signal: request.signal,
+          redirect: "manual",
+          // @ts-ignore
+          duplex: "half",
+        });
+        break;
+      } catch (error) {
+        const cause = error instanceof Error ? error.cause : null;
+        const dnsFailure =
+          cause !== null &&
+          typeof cause === "object" &&
+          "code" in cause &&
+          (cause.code === "ENOTFOUND" || cause.code === "EAI_AGAIN");
+        // DNS failure occurs before dispatch. Retry reads only; never replay an answer.
+        if (
+          !dnsFailure ||
+          !["GET", "HEAD"].includes(request.method) ||
+          request.signal.aborted ||
+          attempt >= 2
+        ) {
+          throw error;
+        }
+        await new Promise((resolve) =>
+          setTimeout(resolve, 100 * (attempt + 1))
+        );
+      }
+    }
 
     const setCookies =
       // @ts-ignore - undici provides getSetCookie in Node.

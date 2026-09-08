@@ -17,11 +17,33 @@ Use the existing administrator session and an existing AWS Bedrock model configu
 python3 scripts/subconscious/configure_executive.py \
   --origin http://localhost:3011 \
   --cookies /private/path/to/administrator-cookies.txt \
-  --model-configuration 8 \
+  --model-configuration 15 \
   --source-agent 1 --apply
 ```
 
-The command returns the saved agent ID and verifies the prompt, tool attachments and model configuration through a fresh read. Subsequent updates require `--update-agent <saved-id>`. A different agent name is rejected. The model configuration ID is instance-specific and must identify an existing Bedrock model.
+The command returns the saved agent ID and verifies the prompts, tool attachments and model configuration through a fresh read. Subsequent updates require `--update-agent <saved-id>`. A different agent name is rejected. The model configuration ID is instance-specific. The installer rejects non-Bedrock configurations. The current preview uses Amazon Nova Pro on AWS.
+
+The rubric uses native Onyx's `replace_base_system_prompt` setting. Without replacement, Onyx inserts agent instructions as a user message. A short native `task_prompt` reinforces answer retention and the brief contract. Both prompts come from versioned Markdown. Ordinary interview turns still use one model response.
+
+## Conversation regression check
+
+Run synthetic conversations against a private validation agent before updating the live agent:
+
+```bash
+python3 scripts/subconscious/eval_interview.py \
+  --cookies /private/path/to/administrator-cookies.txt \
+  --agent <validation-agent-id> \
+  --model-configuration <bedrock-model-id> \
+  --output /private/path/to/interview-results.json
+```
+
+The runner soft-deletes only runner-created sessions. Results contain synthetic spoken responses and briefs. Native reasoning packets are excluded. Review saved answers alongside the targeted checks; regex checks cannot establish general consulting quality.
+
+The regression covers commercial framing, unknown answers, frustration, previously supplied flavors, isolated complaints, software renewal context, and conversation recovery. The original configuration failed four of five initial replay turns. The final Nova Pro configuration passed eight turns across four cases. First visible output ranged from 0.5 to 0.8 seconds locally. The sample establishes neither a latency SLA nor a general accuracy score.
+
+The repair keeps unknown topics parked, retains supplied answers, and offers provisional journeys after repeated uncertainty. A single complaint remains an observation in the transcript. A complaint cannot establish a normal journey step, a lost sale, or the main business bottleneck.
+
+The existing workspace projector accepted all eight responses and attributed all eight objectives to executive evidence. Deployed Vercel browser validation covered three further turns, saved history, and brief preservation after reload. Native request records confirmed AWS Bedrock Nova Pro. The reported conversation's messages remain unchanged; the saved model selection now uses Nova Pro.
 
 ## Vercel frontend and local preview transport
 
@@ -37,6 +59,8 @@ Automatic Git deployments are disabled in `web/vercel.json`; preview publication
 `preview-nginx.conf` provides a temporary transport on the existing `onyx_default` Docker network. Native Onyx authenticates every private request. Public account registration and alternate enrollment routes are disabled on the gateway. Bind the container port to loopback before attaching a dedicated HTTPS preview tunnel. Preserve existing Tailscale serve rules.
 
 Current preview transport uses container `onyx-executive-preview-gateway`, loopback port 3176, and a dedicated Tailscale Funnel HTTPS listener on port 10000. The local Onyx stack and workstation must remain online. The gateway carries no model-provider or MCP credentials. Stop the dedicated listener with `tailscale funnel --https=10000 off`; stop the dedicated container separately. No production backend migration is included.
+
+Vercel logs exposed intermittent `ENOTFOUND` failures during saved-chat reload. The API proxy retries GET/HEAD DNS failures twice, with 100 ms and 200 ms delays. POST requests, authentication denials, and connection errors are never retried. Six focused tests cover recovery, bounded failure, submitted-answer protection, authentication, and unbuffered streams with session cookies. The recovery tests failed before the proxy change.
 
 ## Evidence and limitations
 
