@@ -28,8 +28,26 @@ def optional_evidence(item: Any) -> Any:
     return item
 
 
+def attach_source(item: Any, statements: list[str]) -> None:
+    if isinstance(item, dict):
+        if "sourceMessageIndex" in item:
+            index = item.pop("sourceMessageIndex")
+            if index is not None:
+                if type(index) is not int or not 0 <= index < len(statements):
+                    raise ValueError("Unknown executive source index")
+                if len(statements[index]) <= 1200:
+                    item["quote"] = statements[index]
+        for child in item.values():
+            attach_source(child, statements)
+    elif isinstance(item, list):
+        for child in item:
+            attach_source(child, statements)
+
+
 def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
     value = optional_evidence(value)
+
+    attach_source(value, statements)
     errors = list(_VALIDATOR.iter_errors(value))
     if not isinstance(value, dict) or errors:
         # Schema paths contain field names and indices, never source content.

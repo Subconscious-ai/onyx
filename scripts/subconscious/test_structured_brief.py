@@ -59,6 +59,21 @@ class StructuredBriefTest(unittest.TestCase):
         scenario = validate_brief(brief, ["Hypothetical scenario: " + source])
         self.assertEqual(scenario["keyResults"][0]["target"]["status"], "assumption")
 
+    def test_source_indices_copy_original_evidence_instead_of_generated_quotes(self):
+        brief = self.brief()
+        brief["objective"] = {
+            "text": "Improve renewal",
+            "status": "executive",
+            "sourceMessageIndex": 0,
+        }
+        source = "The objective is increasing annual renewal to 95 percent."
+        result = validate_brief(brief, [source])
+        self.assertEqual(result["objective"]["quote"], source)
+        self.assertEqual(result["objective"]["status"], "executive")
+        brief["objective"]["sourceMessageIndex"] = 99
+        with self.assertRaises(ValueError):
+            validate_brief(brief, [source])
+
     def test_hypothesis_never_becomes_an_observation(self):
         value = self.brief()
         result = validate_brief(
