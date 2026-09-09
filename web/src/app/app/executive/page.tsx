@@ -9,7 +9,9 @@ import { isExecutiveAgent } from "@/lib/executive/brief";
 export default function Page() {
   const { agents, isLoading, error } = useAgents();
   const router = useRouter();
-  const agent = agents.find(isExecutiveAgent);
+  const agent =
+    agents.find((candidate) => candidate.name === "Burn 2.0") ??
+    agents.find(isExecutiveAgent);
   useEffect(() => {
     if (agent) router.replace(`/app?agentId=${agent.id}`);
   }, [agent, router]);

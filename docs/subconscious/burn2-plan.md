@@ -17,4 +17,8 @@ Native Onyx supplies conversation persistence, AWS models, tools and streaming. 
 Focused failing regressions at contract and authorization boundaries before runtime changes. Real PostgreSQL for tenant isolation. Native AWS conversations for consulting behavior; native Guesstimate for calculations. Browser tests use synthetic conversations only. Existing executive conversations remain untouched.
 
 ## Recovery
-Onyx starts at 9bda570; causl-kb isolated worktree starts at 7498e17 on codex/507-burn2-handoff. No runtime changes yet. Next: define the smallest brief extension and reviewed handoff tests, then implement.
+Implementation is present in Onyx branch codex/1-executive-interviewer and causl-kb branch codex/507-burn2-handoff. Native saved-brief preparation, reviewed import, tenant-safe model/evidence save, and native model preview are implemented. Ordinary chat remains on the native hot path. Model preparation uses one bounded repair attempt after a concrete compiler error; no extra interview turn is required.
+
+The core AWS replay passed 9/9 turns. Onyx source/persistence regressions and real native owner/CAS checks pass. causl-kb full unit/Chromium suite passed 646 tests; real PostgreSQL RLS checks passed separately. Browser preparation returned 200 and the authenticated model save/reopen returned 200. General research/calculation stress tests still show provider-dependent failures; no universal reliability or production readiness claim is authorized.
+
+Next: finish the exact-source compiler/browser checks, publish paired draft candidates and Vercel previews, then retain unmerged for executive QA. Existing executive conversations and unrelated peer edits remain untouched. Runtime deployment details and production boundaries live in burn2-operations.md.

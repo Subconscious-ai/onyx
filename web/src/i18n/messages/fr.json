@@ -13850,7 +13850,7 @@
     "theCustomerJourneyStartsWithAnActual": "The customer journey starts with an actual customer decision.",
     "thePanelIdentifiesTheBuyerTheFirst": "The panel identifies the buyer, the first meaningful action, and the behavior separating progress from a stalled journey.",
     "businessModelConnection": "Business model connection",
-    "journeyStructureIsAWorkingDraftMarket": "Journey structure is a working draft. Market library and business model connections are pending.",
+    "journeyStructureIsAWorkingDraftMarket": "Journey structure remains a draft until review. Prepare the saved model brief to continue in Guesstimate.",
     "evidenceBeforeConfidence": "Evidence before confidence.",
     "aTensionToResolve": "A tension to resolve",
     "fromFrictionToAUsefulTest": "From friction to a useful test.",
@@ -13864,6 +13864,23 @@
     "aFocusedPanelADevelopingBusinessPicture": "A focused panel. A developing business picture. A conversation that earns the next five minutes.",
     "sarahJourneySynthesis": "SARAH / JOURNEY & SYNTHESIS",
     "openLiveOnyxInterview": "Open live Onyx interview",
-    "interactiveDesignPreviewMeridianIsFictionalSample": "Interactive design preview. Meridian is fictional; sample dialogue illustrates the workflow. Live interviews use native Onyx chat and require a connected backend."
+    "interactiveDesignPreviewMeridianIsFictionalSample": "Interactive design preview. Meridian is fictional; sample dialogue illustrates the workflow. Live interviews use native Onyx chat and require a connected backend.",
+    "behaviorToOutcomes": "Du comportement client aux résultats",
+    "targetsGuideModel": "Les objectifs guident le modèle. Les valeurs opérationnelles manquantes restent inconnues.",
+    "proposedDriverEquation": "Équation proposée",
+    "noMeasuredEffect": "Relation proposée · aucun effet causal mesuré",
+    "parkedNoRepeat": "En attente · aucune question répétée",
+    "reviewModelExplanation": "Vérifier le résumé, puis générer et enregistrer un modèle Guesstimate privé. Les valeurs initiales inconnues ne bloquent pas un modèle symbolique.",
+    "reviewInGuesstimate": "Vérifier dans Guesstimate",
+    "startSavedBrief": "Start a saved interview before preparing the model brief.",
+    "preparingSavedBrief": "Preparing a structured model brief from the saved executive answers…",
+    "briefPreparationFailed": "Model brief preparation failed. The saved conversation remains unchanged.",
+    "briefPreparationIncomplete": "Model brief preparation did not complete.",
+    "preparingBrief": "Preparing model brief…",
+    "prepareSavedBrief": "Prepare saved model brief",
+    "saveBeforeHandoff": "Save a conversation before the model handoff.",
+    "fileHandoffReady": "Model handoff downloaded. Import the file in the Burn model review workspace.",
+    "briefTransferred": "Brief transferred for review. No model or market evidence has been saved yet.",
+    "handoffSignIn": "Sign in to the model workspace and review the imported brief. The downloaded file supplies a fallback."
   }
 }

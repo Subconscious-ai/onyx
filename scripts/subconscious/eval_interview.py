@@ -30,6 +30,7 @@ class Turn:
     expected_numbers: tuple[float, ...] = ()
     model_ready: bool = False
     scenario_guard: bool = False
+    brief_required: bool = True
 
 
 CASES = {
@@ -143,7 +144,7 @@ def assess(turn: Turn, text: str, previous: str) -> list[str]:
         failures.append("Supplied answer missing from conversational repair")
     if "DSML" in spoken or "function_calls" in spoken or "<thinking>" in spoken:
         failures.append("Internal tool syntax leaked into the conversation")
-    if text.count("<interview-brief>") != 1:
+    if turn.brief_required and text.count("<interview-brief>") != 1:
         failures.append("Response must contain exactly one working brief")
     if re.search(r"legal entity|legal name", asked, re.I):
         failures.append("Legal identity homework displaces the business interview")
@@ -171,14 +172,14 @@ def assess(turn: Turn, text: str, previous: str) -> list[str]:
             failures.append(
                 "Unknown answer re-asked on the same topic: " + ", ".join(repeated)
             )
-    if "<interview-brief>" not in text:
+    if turn.brief_required and "<interview-brief>" not in text:
         failures.append("Working brief missing")
-    else:
+    elif "<interview-brief>" in text:
         try:
             brief, _ = json.JSONDecoder().raw_decode(
                 text.split("<interview-brief>", 1)[1].lstrip()
             )
-            if brief.get("version") != 1 or not brief.get("objective", {}).get("text"):
+            if brief.get("version") not in (1, 2) or not brief.get("objective", {}).get("text"):
                 failures.append("Working brief missing objective")
             if not isinstance(brief.get("horizon"), str):
                 failures.append("Horizon violates the workspace string contract")
@@ -192,11 +193,11 @@ def assess(turn: Turn, text: str, previous: str) -> list[str]:
         except (ValueError, AttributeError):
             failures.append("Working brief is not complete JSON")
     if turn.model_ready and not re.search(
-        r"scenario|hypothes|provisional|conditional", spoken, re.I
+        r"scenario|hypothes|provisional|conditional|propos|draft", spoken, re.I
     ):
         failures.append("Model output hides provisional assumptions")
     if turn.scenario_guard and not re.search(
-        r"unknown|unmeasured|not (?:observed|measured)|scenario|hypothetical",
+        r"unknown|unmeasured|not (?:observed|measured)|scenario|hypothetical|illustrative",
         spoken,
         re.I,
     ):

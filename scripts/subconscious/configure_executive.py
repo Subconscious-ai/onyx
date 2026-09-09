@@ -28,6 +28,11 @@ def main() -> None:
     parser.add_argument("--update-agent", type=int)
     parser.add_argument("--apply", action="store_true")
     parser.add_argument(
+        "--replace-tools",
+        action="store_true",
+        help="Use only explicitly supplied tool IDs",
+    )
+    parser.add_argument(
         "--tool-id",
         type=int,
         action="append",
@@ -102,6 +107,8 @@ def main() -> None:
             },
         ],
     }
+    if args.replace_tools:
+        body["tool_ids"] = sorted(set(args.tool_id))
     if args.update_agent is None:
         body["is_public"] = False
     if not args.apply:

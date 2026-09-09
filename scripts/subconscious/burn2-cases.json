@@ -1,0 +1,109 @@
+{
+  "retail_journey": [
+    {
+      "message": "The objective is $10 million in annual ice cream revenue by December 2027. Customers at independent grocery stores notice the freezer display, compare flavors, buy a tub and decide whether to buy again. The product brand is not established. Current revenue, customer counts and repeat purchase rates are unknown. Prepare a proposed model structure without assuming a bottleneck.",
+      "forbidden": [
+        "tasting event|smelled|bad smell",
+        "(?i)(?:brief|model).{0,20}(?:has been prepared|has been saved|is now persisted)",
+        "(?i)(?:invoke|execute|trigger).{0,30}(?:Prepare saved model brief)",
+        "(?i)seasonal.{0,30}1[.]2",
+        "(?i)5[,.]?000|30\\s*%|2\\s*%|\\$6"
+      ],
+      "max_words": 160,
+      "brief_required": false
+    },
+    {
+      "message": "The baseline numbers are unknown. There is no extra operating data. Repeat purchase is the behavior worth testing; changing the package claim is one possible intervention.",
+      "acknowledge": true,
+      "max_words": 140,
+      "brief_required": false,
+      "forbidden": [
+        "(?i)(?:brief|model).{0,20}(?:has been prepared|has been saved|is now persisted)",
+        "(?i)(?:invoke|execute|trigger).{0,30}(?:Prepare saved model brief)",
+        "(?i)seasonal.{0,30}1[.]2",
+        "(?i)5[,.]?000|30\\s*%|2\\s*%|\\$6"
+      ]
+    },
+    {
+      "message": "Prepare the model handoff now. Preserve the $10 million target, December 2027 deadline, grocery shopper journey, proposed repeat purchase intervention, and unknown baselines. No further questions.",
+      "questions_allowed": false,
+      "model_ready": true,
+      "max_words": 160,
+      "brief_required": false,
+      "forbidden": [
+        "(?i)(?:brief|model).{0,20}(?:has been prepared|has been saved|is now persisted)",
+        "(?i)(?:invoke|execute|trigger).{0,30}(?:Prepare saved model brief)",
+        "(?i)seasonal.{0,30}1[.]2",
+        "(?i)5[,.]?000|30\\s*%|2\\s*%|\\$6"
+      ]
+    }
+  ],
+  "software_renewal": [
+    {
+      "message": "The objective is improving annual renewal for scheduling software to 90 percent by December 2027. Operations managers choose a first workflow, schedule the team every Monday, and decide whether to renew each year. Existing renewal rates and eligible customer counts are unknown. Budget owners approve renewal separately from daily users.",
+      "max_words": 160,
+      "brief_required": false,
+      "forbidden": [
+        "(?i)(?:brief|model).{0,20}(?:has been prepared|has been saved|is now persisted)",
+        "(?i)(?:invoke|execute|trigger).{0,30}(?:Prepare saved model brief)",
+        "85\\s*%|75\\s*%|7\\s*days|30\\s*days"
+      ]
+    },
+    {
+      "message": "Correction: the target is 95 percent annual renewal by December 2027. Cancellation reasons are unknown. Stop asking for cancellation interviews or baseline counts.",
+      "acknowledge": true,
+      "forbidden": [
+        "what.{0,40}(?:reason|cancel)|how many.{0,40}customer",
+        "(?i)(?:brief|model).{0,20}(?:has been prepared|has been saved|is now persisted)",
+        "(?i)(?:invoke|execute|trigger).{0,30}(?:Prepare saved model brief)",
+        "85\\s*%|75\\s*%|7\\s*days|30\\s*days"
+      ],
+      "max_words": 140,
+      "brief_required": false
+    },
+    {
+      "message": "Prepare the model handoff now with the corrected target, customer and budget-owner journey, a proposed renewal driver equation, and unknown operating inputs. No further questions.",
+      "questions_allowed": false,
+      "model_ready": true,
+      "max_words": 160,
+      "brief_required": false,
+      "forbidden": [
+        "(?i)(?:brief|model).{0,20}(?:has been prepared|has been saved|is now persisted)",
+        "(?i)(?:invoke|execute|trigger).{0,30}(?:Prepare saved model brief)",
+        "85\\s*%|75\\s*%|7\\s*days|30\\s*days"
+      ]
+    }
+  ],
+  "consulting_capacity": [
+    {
+      "message": "The objective is $4 million in annual consulting revenue by December 2027. A client sponsor agrees on a problem, approves a project, attends delivery reviews and decides on a follow-on engagement. Delivery capacity is a constraint. Billable hours, rates and follow-on rates are unknown. The model should distinguish client purchase behavior from consultant capacity.",
+      "max_words": 160,
+      "brief_required": false,
+      "forbidden": [
+        "(?i)(?:brief|model).{0,20}(?:has been prepared|has been saved|is now persisted)",
+        "(?i)(?:invoke|execute|trigger).{0,30}(?:Prepare saved model brief)"
+      ]
+    },
+    {
+      "message": "No operating numbers are available. The important behavior is the client sponsor approving the follow-on project. A project readout with explicit next steps is a proposed intervention, not a measured causal effect.",
+      "acknowledge": true,
+      "max_words": 140,
+      "brief_required": false,
+      "forbidden": [
+        "(?i)(?:brief|model).{0,20}(?:has been prepared|has been saved|is now persisted)",
+        "(?i)(?:invoke|execute|trigger).{0,30}(?:Prepare saved model brief)"
+      ]
+    },
+    {
+      "message": "Prepare the model handoff now. Include measurable OKRs, the client journey, the capacity constraint, and the proposed intervention. Retain unknown inputs and stop asking questions.",
+      "questions_allowed": false,
+      "model_ready": true,
+      "max_words": 160,
+      "brief_required": false,
+      "forbidden": [
+        "(?i)(?:brief|model).{0,20}(?:has been prepared|has been saved|is now persisted)",
+        "(?i)(?:invoke|execute|trigger).{0,30}(?:Prepare saved model brief)"
+      ]
+    }
+  ]
+}

@@ -922,6 +922,13 @@ def build_chat_turn(
     )
 
     forced_tool_id = new_msg_req.forced_tool_id
+    if os.environ.get("BURN2_ENABLED") == "true" and persona.name == "Burn 2.0" and forced_tool_id is None:
+        from onyx.server.query_and_chat.burn2.requested_tool import requested_tool
+
+        forced_tool_id = requested_tool(message_text, {
+            tool.name: tool.id for tool in persona.tools
+            if new_msg_req.allowed_tool_ids is None or tool.id in new_msg_req.allowed_tool_ids
+        })
     if (
         search_params.search_usage == SearchToolUsage.DISABLED
         and forced_tool_id is not None

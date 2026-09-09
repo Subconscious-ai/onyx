@@ -11,6 +11,7 @@ import { SvgArrowUpRight, SvgCheck, SvgDownload } from "@opal/icons";
 import {
   briefMarkdown,
   projectBrief,
+  modelReadiness,
   type BriefNote,
   type InterviewBrief,
   type InterviewMessage,
@@ -138,9 +139,12 @@ export default function ExecutiveWorkspace({
   const t = useTranslations("executive");
   const projection = useMemo(() => projectBrief(messages), [messages]);
   const brief = projection.brief;
-  const [view, setView] = useState<"journey" | "evidence" | "decisions">(
-    "journey"
-  );
+  const readiness = modelReadiness(projection.stale ? null : brief);
+  const [handoffStatus, setHandoffStatus] = useState("");
+  const [preparing, setPreparing] = useState(false);
+  const [view, setView] = useState<
+    "journey" | "evidence" | "decisions" | "model"
+  >("journey");
   const [selectedStep, setSelectedStep] = useState<string | null>(null);
   const [selectedSpecialist, setSelectedSpecialist] = useState(0);
   const [mobileBrief, setMobileBrief] = useState(false);
@@ -265,21 +269,25 @@ export default function ExecutiveWorkspace({
             {brief && <Evidence note={brief.objective} />}
           </div>
           <div className="executive-view-switch" aria-label={t("briefViews")}>
-            {(["journey", "evidence", "decisions"] as const).map((tab) => (
-              <Button
-                key={tab}
-                size="sm"
-                prominence={view === tab ? "primary" : "tertiary"}
-                aria-pressed={view === tab}
-                onClick={() => setView(tab)}
-              >
-                {tab === "journey"
-                  ? "Journey"
-                  : tab === "evidence"
-                    ? "Evidence"
-                    : "Next moves"}
-              </Button>
-            ))}
+            {(["journey", "model", "evidence", "decisions"] as const).map(
+              (tab) => (
+                <Button
+                  key={tab}
+                  size="sm"
+                  prominence={view === tab ? "primary" : "tertiary"}
+                  aria-pressed={view === tab}
+                  onClick={() => setView(tab)}
+                >
+                  {tab === "journey"
+                    ? "Journey"
+                    : tab === "model"
+                      ? "OKRs & model"
+                      : tab === "evidence"
+                        ? "Evidence"
+                        : "Next moves"}
+                </Button>
+              )
+            )}
           </div>
           <div className="executive-brief-scroll">
             {view === "journey" && (
@@ -375,6 +383,220 @@ export default function ExecutiveWorkspace({
                 </div>
               </>
             )}
+            {view === "model" && (
+              <>
+                <Content
+                  title={t("behaviorToOutcomes")}
+                  description={t("targetsGuideModel")}
+                  sizePreset="main-ui"
+                  variant="section"
+                />
+                {(brief?.keyResults ?? []).map((kr) => (
+                  <div key={kr.id} className="executive-evidence-row">
+                    <Text as="h3" font="main-ui-action">
+                      {kr.metric}
+                    </Text>
+                    <Text
+                      as="p"
+                      font="secondary-body"
+                    >{`${kr.direction} · ${kr.unit}`}</Text>
+                    <Text
+                      as="p"
+                      font="main-ui-body"
+                    >{`Baseline: ${kr.baseline.text}`}</Text>
+                    <Evidence note={kr.baseline} />
+                    <Text
+                      as="p"
+                      font="main-ui-body"
+                    >{`Target: ${kr.target.text}`}</Text>
+                    <Evidence note={kr.target} />
+                    <Text
+                      as="p"
+                      font="secondary-body"
+                    >{`Deadline: ${kr.deadline.text}`}</Text>
+                  </div>
+                ))}
+                {brief?.model && (
+                  <div className="executive-model-note">
+                    <Text as="h3" font="main-ui-action">
+                      {t("proposedDriverEquation")}
+                    </Text>
+                    <Text as="p" font="main-ui-body">
+                      {brief.model.equation.text}
+                    </Text>
+                    <Text as="p" font="secondary-body">
+                      {t("noMeasuredEffect")}
+                    </Text>
+                    {brief.model.inputs.map((input) => (
+                      <div key={input.id} className="executive-evidence-row">
+                        <Text
+                          as="p"
+                          font="main-ui-action"
+                        >{`${input.name} (${input.unit})`}</Text>
+                        <Text as="p" font="secondary-body">
+                          {input.value.text}
+                        </Text>
+                        <Evidence note={input.value} />
+                      </div>
+                    ))}
+                    {brief.model.gaps.map((gap) => (
+                      <div key={gap.text} className="executive-evidence-row">
+                        <Text as="p" font="main-ui-action">
+                          {gap.text}
+                        </Text>
+                        <Text as="p" font="secondary-body">
+                          {gap.impact}
+                        </Text>
+                        {gap.parked && (
+                          <Text font="secondary-action">
+                            {t("parkedNoRepeat")}
+                          </Text>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="executive-step-detail">
+                  <Text as="h3" font="main-ui-action">
+                    {readiness.ready
+                      ? "Ready for model review"
+                      : "Before the model handoff"}
+                  </Text>
+                  {readiness.missing.map((gap) => (
+                    <Text key={gap} as="p" font="secondary-body">
+                      {gap}
+                    </Text>
+                  ))}
+                  <Text as="p" font="secondary-body">
+                    {t("reviewModelExplanation")}
+                  </Text>
+                  {!preview && (
+                    <Button
+                      size="sm"
+                      prominence="secondary"
+                      disabled={preparing}
+                      onClick={async () => {
+                        const chatId = new URL(
+                          window.location.href
+                        ).searchParams.get("chatId");
+                        if (!chatId) {
+                          setHandoffStatus(t("startSavedBrief"));
+                          return;
+                        }
+                        setPreparing(true);
+                        setHandoffStatus(t("preparingSavedBrief"));
+                        try {
+                          const response = await fetch(
+                            "/api/chat/executive-brief",
+                            {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ chat_id: chatId }),
+                            }
+                          );
+                          const result = await response.json();
+                          if (!response.ok || !result.saved)
+                            throw new Error(
+                              result.detail ?? t("briefPreparationFailed")
+                            );
+                          window.location.reload();
+                        } catch (error) {
+                          setHandoffStatus(
+                            error instanceof Error
+                              ? error.message
+                              : t("briefPreparationIncomplete")
+                          );
+                        } finally {
+                          setPreparing(false);
+                        }
+                      }}
+                    >
+                      {preparing ? t("preparingBrief") : t("prepareSavedBrief")}
+                    </Button>
+                  )}
+                  {brief && readiness.ready && !preview && (
+                    <Button
+                      size="sm"
+                      prominence="primary"
+                      icon={SvgArrowUpRight}
+                      onClick={() => {
+                        const chatId = new URL(
+                          window.location.href
+                        ).searchParams.get("chatId");
+                        if (!chatId) {
+                          setHandoffStatus(t("saveBeforeHandoff"));
+                          return;
+                        }
+                        const payload = {
+                          format: "burn/onyx-interview",
+                          version: 1,
+                          chatId,
+                          messages: messages
+                            .filter((message) =>
+                              ["user", "assistant"].includes(message.type)
+                            )
+                            .map((message) => ({
+                              type: message.type,
+                              message: message.message,
+                            })),
+                        };
+                        const href = URL.createObjectURL(
+                          new Blob([JSON.stringify(payload)], {
+                            type: "application/json",
+                          })
+                        );
+                        const anchor = document.createElement("a");
+                        anchor.href = href;
+                        anchor.download = "burn-model-handoff.json";
+                        anchor.click();
+                        setTimeout(() => URL.revokeObjectURL(href), 1000);
+                        const destination =
+                          process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE;
+                        if (!destination) {
+                          setHandoffStatus(t("fileHandoffReady"));
+                          return;
+                        }
+                        const target = new URL(destination);
+                        const nonce = crypto.randomUUID();
+                        target.searchParams.set("handoff", nonce);
+                        const child = window.open(
+                          target.href,
+                          "burn-model-review"
+                        );
+                        const receive = (event: MessageEvent) => {
+                          if (
+                            event.origin !== target.origin ||
+                            event.source !== child ||
+                            event.data?.type !== "burn-ready" ||
+                            event.data?.nonce !== nonce
+                          )
+                            return;
+                          child?.postMessage(
+                            { type: "burn-handoff", nonce, payload },
+                            target.origin
+                          );
+                          window.removeEventListener("message", receive);
+                          setHandoffStatus(t("briefTransferred"));
+                        };
+                        window.addEventListener("message", receive);
+                        setTimeout(
+                          () => window.removeEventListener("message", receive),
+                          600000
+                        );
+                        setHandoffStatus(t("handoffSignIn"));
+                      }}
+                    >
+                      {t("reviewInGuesstimate")}
+                    </Button>
+                  )}
+                  {handoffStatus && (
+                    <Text as="p" font="secondary-body" role="status">
+                      {handoffStatus}
+                    </Text>
+                  )}
+                </div>
+              </>
+            )}
             {view === "evidence" && (
               <>
                 <Content
@@ -466,15 +688,17 @@ export default function ExecutiveWorkspace({
           <footer className="executive-brief-footer">
             <div role="status">
               <Text font="secondary-body">
-                {projection.updateFailed
-                  ? "Brief update invalid · previous draft retained"
-                  : projection.updating
-                    ? "Brief updating · previous draft shown"
-                    : preview
-                      ? "Illustrative case · no customer records"
-                      : brief
-                        ? "Reconstructed from saved conversation"
-                        : "Awaiting the first interview insight"}
+                {projection.stale
+                  ? "New answers available · prepare the updated model brief"
+                  : projection.updateFailed
+                    ? "Brief update invalid · previous draft retained"
+                    : projection.updating
+                      ? "Brief updating · previous draft shown"
+                      : preview
+                        ? "Illustrative case · no customer records"
+                        : brief
+                          ? "Reconstructed from saved conversation"
+                          : "Awaiting the first interview insight"}
               </Text>
             </div>
             {brief && (

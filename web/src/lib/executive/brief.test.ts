@@ -268,3 +268,145 @@ describe("hypothesis attribution", () => {
     expect(result.brief?.journey[0]?.status).toBe("executive");
   });
 });
+
+describe("Burn 2.0 model handoff", () => {
+  const targetQuote =
+    "The annual renewal target is 90 percent by December 2027.";
+  const v2 = {
+    ...draft,
+    version: 2,
+    keyResults: [
+      {
+        id: "renewal",
+        metric: "Annual renewal",
+        unit: "percent",
+        direction: "increase",
+        baseline: { text: "Unknown", status: "unknown" },
+        target: { text: "90 percent", status: "executive", quote: targetQuote },
+        deadline: {
+          text: "December 2027",
+          status: "executive",
+          quote: targetQuote,
+        },
+        journeyIds: ["activate"],
+      },
+    ],
+    transitions: [],
+    model: {
+      equation: {
+        text: "Eligible customers × renewal rate",
+        status: "assumption",
+      },
+      inputs: [
+        {
+          id: "eligible",
+          name: "Eligible customers",
+          unit: "customers",
+          value: { text: "Unknown", status: "unknown" },
+        },
+      ],
+      gaps: [
+        {
+          text: "Eligible customer count",
+          impact: "Required for a numeric renewal forecast",
+          parked: true,
+        },
+      ],
+    },
+  };
+  test("retains a usable symbolic draft without inventing a numeric baseline", () => {
+    const result = projectBrief([
+      ...history,
+      { type: "user", message: targetQuote },
+      answer(v2),
+    ]);
+    expect(result.updateFailed).toBe(false);
+    expect(result.brief?.keyResults?.[0]?.baseline.status).toBe("unknown");
+    expect(result.brief?.keyResults?.[0]?.target.status).toBe("executive");
+    expect(result.brief?.model?.equation.status).toBe("assumption");
+  });
+  test("a quoted scenario cannot become a company baseline or target", () => {
+    const quote = "Assume a renewal baseline of 80 percent for a scenario.";
+    const result = projectBrief([
+      ...history,
+      { type: "user", message: quote },
+      answer({
+        ...v2,
+        keyResults: [
+          {
+            ...v2.keyResults[0],
+            baseline: { text: "80 percent", status: "executive", quote },
+          },
+        ],
+      }),
+    ]);
+    expect(result.brief?.keyResults?.[0]?.baseline.status).toBe("assumption");
+    expect(result.brief?.keyResults?.[0]?.target.status).toBe("assumption");
+  });
+  test("rejects dangling journey and key result links without replacing the previous brief", () => {
+    const result = projectBrief([
+      ...history,
+      answer({
+        ...v2,
+        transitions: [
+          {
+            id: "missing",
+            from: "activate",
+            to: "missing",
+            behavior: { text: "Renews", status: "assumption" },
+            metric: "Renewal rate",
+          },
+        ],
+      }),
+    ]);
+    expect(result.updateFailed).toBe(true);
+    expect(result.brief?.version).toBe(1);
+  });
+  test("retains a corrected target when a later model response cites an older answer", () => {
+    const corrected =
+      "The annual renewal target is 95 percent by December 2027.";
+    const updated = {
+      ...v2,
+      keyResults: [
+        {
+          ...v2.keyResults[0],
+          target: { text: "95 percent", status: "executive", quote: corrected },
+        },
+      ],
+    };
+    const result = projectBrief([
+      ...history,
+      { type: "user", message: targetQuote },
+      answer(v2),
+      { type: "user", message: corrected },
+      answer(updated),
+      answer(v2),
+    ]);
+    expect(result.brief?.keyResults?.[0]?.target.text).toBe("95 percent");
+  });
+});
+
+test("a new executive answer marks the saved model brief stale until preparation", () => {
+  expect(
+    projectBrief([
+      ...history,
+      { type: "user", message: "The target has changed." },
+    ]).stale
+  ).toBe(true);
+  expect(projectBrief(history).stale).toBe(false);
+});
+
+test("uses the prepared saved brief instead of older native answer packets", () => {
+  const saved = answer(draft);
+  saved.packets = [
+    {
+      obj: {
+        type: "message_start",
+        content: "The spoken answer before preparation.",
+      },
+    },
+    { obj: { type: "stop" } },
+  ];
+  const result = projectBrief([{ type: "user", message: statement }, saved]);
+  expect(result.brief?.objective.text).toBe("Reduce time to first value");
+});
