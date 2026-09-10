@@ -410,3 +410,10 @@ test("uses the prepared saved brief instead of older native answer packets", () 
   const result = projectBrief([{ type: "user", message: statement }, saved]);
   expect(result.brief?.objective.text).toBe("Reduce time to first value");
 });
+
+// Product typography must not rewrite saved evidence or executable examples.
+it("removes em dashes from spoken prose while retaining fenced code", () => {
+  expect(
+    visibleInterviewText("Baseline unknown—target retained.\n```\nx = '—'\n```")
+  ).toBe("Baseline unknown, target retained.\n```\nx = '—'\n```");
+});

@@ -179,7 +179,9 @@ def assess(turn: Turn, text: str, previous: str) -> list[str]:
             brief, _ = json.JSONDecoder().raw_decode(
                 text.split("<interview-brief>", 1)[1].lstrip()
             )
-            if brief.get("version") not in (1, 2) or not brief.get("objective", {}).get("text"):
+            if brief.get("version") not in (1, 2) or not brief.get("objective", {}).get(
+                "text"
+            ):
                 failures.append("Working brief missing objective")
             if not isinstance(brief.get("horizon"), str):
                 failures.append("Horizon violates the workspace string contract")
@@ -213,6 +215,12 @@ def assess_tools(turn: Turn, tool_packets: list[dict[str, Any]]) -> list[str]:
     ]
     if any(packet["type"] == "python_tool_start" for packet in tool_packets):
         tool_names.add("run_python")
+    if any(
+        packet["type"] == "search_tool_start"
+        and packet.get("is_internet_search") is False
+        for packet in tool_packets
+    ):
+        tool_names.add("internal_search")
     failures.extend(
         "Required live tool did not run: " + required
         for required in turn.tools_required

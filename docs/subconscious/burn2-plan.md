@@ -22,3 +22,20 @@ Implementation is present in Onyx branch codex/1-executive-interviewer and causl
 The core AWS replay passed 9/9 turns. Onyx source/persistence regressions and real native owner/CAS checks pass. causl-kb full unit/Chromium suite passed 646 tests; real PostgreSQL RLS checks passed separately. Browser preparation returned 200 and the authenticated model save/reopen returned 200. General research/calculation stress tests still show provider-dependent failures; no universal reliability or production readiness claim is authorized.
 
 Next: finish the exact-source compiler/browser checks, publish paired draft candidates and Vercel previews, then retain unmerged for executive QA. Existing executive conversations and unrelated peer edits remain untouched. Runtime deployment details and production boundaries live in burn2-operations.md.
+
+## Active executive QA corrections
+
+Outcome: automatic sourced working brief, a persistent bottom model action, quieter conversation, and verifiable preparation receipts.
+
+Findings: preparation currently hides under a tab and reloads the page. Native chat stores one structured brief in the reported session. PDL is not connected. Jerry is only a static roster entry. Internal search is enabled without explicit document sets. The two applications use separate authentication authorities. causl-kb policy assigns the identity cutover to Auth0 issue 450; do not create a credential bridge or infer organization membership from email.
+
+Milestones:
+1. Test automatic extraction scheduling, saved-response projection and stale request handling. Refresh the brief after completed executive turns without blocking streaming, duplicate requests or page reloads. Show extracted journey and OKR counts, a persistent model action and truthful draft/accepted boundaries.
+2. Remove the input focus rectangle while preserving keyboard focus at the composer boundary. Reduce boilerplate, hide repeated quotes behind disclosure, remove engine names from executive labels, and give the four specialist roles distinct objectives. Add one grounded fifth-turn Jerry contribution through the existing generation.
+3. Reuse native encrypted Postgres storage for minimal verified-user PDL context; enrich outside the chat hot path, cache outcomes, and expose actual status. Verify the existing MBB corpus and native retrieval path using analyst-agent conventions. Do not copy a second agent runtime.
+4. Verify real AWS interviews, automatic readback, PDL receipt, retrieval receipts, desktop/mobile and paired preview handoff. Publish updated draft candidates; retain the enterprise SSO dependency explicitly rather than bypassing authentication.
+
+Tests: focused source-grounding, single-flight/coalescing, authorization and profile minimization regressions; real browser checks for automatic preparation, visible progress and keyboard focus; real tool receipts for enrichment and retrieval. Existing customer transcript remains unchanged except source-validated brief metadata under the existing preparation contract.
+
+
+QA correction recovery: automatic native-packet extraction and saved readback passed browser verification, with a visible bottom action and no editor rectangle. Focused UI regressions passed 25 tests; profile/role, routing and source validation passed 14 Python tests. Revised live dialogue stopped repeated unknown-baseline questions and produced fifth-answer humor; native internal_search returned a real source. Raw style deviations are documented, with tested display normalization. Final steps: exact-source preview deployment, hosted automatic readback, updated draft PR evidence. PDL is implemented but live enrichment remains gated by the current account's unverified email. Shared authentication remains the existing Auth0 #450 dependency. No merge.

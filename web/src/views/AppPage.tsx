@@ -777,6 +777,8 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
       <ExecutiveWorkspace
         active={isExecutiveAgent(activeAgent)}
         messages={messageHistory}
+        chatId={currentChatSessionId}
+        busy={currentChatState !== "input"}
         onAsk={(message) =>
           onSubmit({ message, currentMessageFiles: [], deepResearch: false })
         }

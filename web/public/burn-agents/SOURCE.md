@@ -1,0 +1,1 @@
+Portrait assets reused from Subconscious-ai/market-burn, commit d2d4f06ef707355cee57cd0777d28cf39f22d422, priv/static/images/agents. The portraits identify fictional AI interview roles; no personal endorsement is implied.

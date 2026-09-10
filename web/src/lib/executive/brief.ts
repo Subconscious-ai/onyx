@@ -136,6 +136,12 @@ const normalized = (text: string) =>
   text.replace(/\s+/g, " ").trim().toLowerCase();
 
 export function visibleInterviewText(text: string): string {
+  text = text
+    .split(/(```[\s\S]*?```|`[^`]*`)/g)
+    .map((part) =>
+      part.startsWith("`") ? part : part.replace(/\s*—\s*/g, ", ")
+    )
+    .join("");
   const index = text.indexOf(OPEN);
   if (index >= 0) return text.slice(0, index).trimEnd();
   // A streaming packet can end anywhere inside the marker.
@@ -158,6 +164,18 @@ export function safeSourceUrl(value?: string | null): string | null {
   } catch {
     return null;
   }
+}
+
+export function interviewMessageText(message: InterviewMessage): string {
+  const streamed = message.packets
+    ?.filter((packet) =>
+      ["message_start", "message_delta"].includes(packet.obj.type)
+    )
+    .map((packet) => packet.obj.content ?? "")
+    .join("");
+  return message.message.includes(CLOSE)
+    ? message.message
+    : streamed || message.message;
 }
 
 export type BriefProjection = {
@@ -211,17 +229,7 @@ export function projectBrief(
       const url = safeSourceUrl(doc.link);
       if (url && doc.blurb) sources.set(url, normalized(doc.blurb));
     }
-    const streamed = message.packets
-      ?.filter((packet) =>
-        ["message_start", "message_delta"].includes(packet.obj.type)
-      )
-      .map((packet) => packet.obj.content ?? "")
-      .join("");
-    // Explicit preparation updates the saved assistant row after native streaming.
-    // Historical packets must not hide newer persisted model metadata.
-    const text = message.message.includes(CLOSE)
-      ? message.message
-      : streamed || message.message;
+    const text = interviewMessageText(message);
     const start = text.indexOf(OPEN);
     if (start < 0) continue;
     const markerEnd = text.indexOf(CLOSE, start + OPEN.length);

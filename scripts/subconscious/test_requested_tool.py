@@ -15,6 +15,18 @@ class RequestedToolTest(unittest.TestCase):
             requested_tool("Scenario only. Use Python to calculate revenue.", tools), 6
         )
 
+    def test_case_reference_requests_use_native_permission_filtered_search(self):
+        self.assertEqual(
+            requested_tool(
+                "Find a McKinsey case about customer journeys.", {"internal_search": 1}
+            ),
+            1,
+        )
+        self.assertIsNone(
+            requested_tool("Do not use MBB cases.", {"internal_search": 1})
+        )
+        self.assertIsNone(requested_tool("Find a McKinsey case.", {}))
+
     def test_preserves_denials_disabled_tools_and_ordinary_followups(self):
         tools = {"deep_research": 29, "run_python": 6}
         for message in [

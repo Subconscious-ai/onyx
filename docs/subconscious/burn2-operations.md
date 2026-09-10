@@ -5,8 +5,8 @@ Burn 2.0 interviews an executive for customer behavior transitions and measurabl
 ## Ownership and persistence
 
 - Native Onyx owns chat authentication, saved conversations, streaming, tools and AWS inference. Ordinary turns have no second extraction call.
-- **Prepare saved model brief** reads the owned native Postgres conversation, extracts a version-two brief, validates source quotes and identifiers, and saves the brief suffix in the latest assistant row. Original executive messages and spoken answers are preserved. A concurrent edit invalidates the save. A newer executive answer makes the brief stale.
-- **Review in Guesstimate** transfers a reviewed conversation through an origin/nonce-bound browser handoff, with a downloaded JSON fallback. Onyx does not hold a causl-kb administrator credential.
+- Automatic background preparation after a completed answer reads the owned native Postgres conversation, extracts a version-two brief, validates source quotes and identifiers, and saves the brief suffix in the latest assistant row. Original executive messages and spoken answers are preserved. A concurrent edit invalidates the save. A newer executive answer makes the brief stale.
+- **Open business model** transfers a reviewed conversation through an origin/nonce-bound browser handoff, with a downloaded JSON fallback. Onyx does not hold a causl-kb administrator credential.
 - causl-kb derives organization authority from the authenticated session. The private model and individually selected supported journey states/transitions commit through the existing tenant transaction and ontology safe door. Draft relationships and incomplete OKRs do not become accepted facts.
 - Native Guesstimate supplies editing, unit checks and calculation. Unknown values remain empty. An executable symbolic structure is not a validated forecast or a measured causal effect.
 
@@ -31,8 +31,8 @@ Set the Onyx frontend build variable `NEXT_PUBLIC_BURN_MODEL_WORKSPACE` to the p
 
 1. Open `/app/executive` and select Burn 2.0. State a product, business objective, target, deadline and known customer decisions. Mark unavailable operating values unknown.
 2. Correct a target or state an unknown answer. Verify that the interview incorporates the correction without repeating the same question or inventing a baseline.
-3. Select **OKRs & model → Prepare saved model brief**. Reload the conversation. Verify the source labels, goal, deadline, customer states, proposed transitions and material gaps.
-4. Select **Review in Guesstimate**. Sign into causl-kb, choose the organization market and review the imported brief. The downloaded file supports an explicit import if browser handoff is unavailable.
+3. Select **OKRs & model**. Reload the conversation. Verify the source labels, goal, deadline, customer states, proposed transitions and material gaps.
+4. Select **Open business model**. Sign into causl-kb, choose the organization market and review the imported brief. The downloaded file supports an explicit import if browser handoff is unavailable.
 5. Select only source-supported journey statements intended for accepted market memory. Prepare the model, review the native grid, and explicitly save. Reopen the model and verify persistence. Unknown inputs must remain unknown; unsupported coefficients and invalid units must never become a usable forecast.
 
 ## Evidence and release boundary
@@ -44,3 +44,16 @@ Research/calculation stress tests found provider-dependent failures even when to
 The preview is not a production readiness claim. The native backend still depends on the existing local host and tunnel. Production needs durable hosting, backups/restore proof, secure object-store credentials, organization access/SSO design and operational monitoring. Community Edition licensing does not establish shared-instance enterprise isolation. The native Guesstimate chat assistant remains unconnected in the pinned preview; causl-kb's existing model proposal service prepares the draft. Rehoboam execution and measured operating outcomes remain outside this preview.
 
 No merge before executive QA. Draft PRs: Onyx #2 and causl-kb #508; causl-kb issue #507 owns the model handoff.
+
+
+## Executive QA corrections, September 10
+
+The working brief now updates after completed answers while the interview remains open. Live packet text and saved messages use the same reader. A new answer supersedes an in-flight extraction; a distributed lock prevents duplicate preparation. Saved metadata returns directly to the UI, without a page reload. The bottom action remains visible. Failed preparation retains the previous draft and exposes one retry action. Background generation is bounded and resumes from saved conversation state when the interview reopens; no unattended infinite research loop exists.
+
+The roster reuses market-burn portraits. Sarah owns customer decisions, Frankie owns objectives and economic drivers, Mei owns alternatives and contradictions, and Jerry owns a short fifth-answer roast. The native system placeholder is excluded from turn counts. Explicit unknown answers remain in bounded active context. The live revised replay preserved unknown baselines, included fifth-answer humor, and retrieved an MBB source. Raw model prose still emitted em dashes; the display filter normalizes prose while preserving code and saved evidence. Humor remains generative, so broad style reliability is not guaranteed.
+
+PDL professional context uses the authenticated, verified email, one daily provider lookup, and user-bound native encrypted Postgres storage. Only name, professional role, company, industry and website are retained. Source matches remain fallible context. The current QA executive account is marked unverified, so enrichment correctly reports verification required; no successful dossier load is claimed. Contact lists, birth dates and sensitive profile fields are excluded.
+
+The existing indexed mbb-casebook corpus is reachable through native internal_search. A live query returned original McKinsey and BCG sources. analyst-agent contributes the existing Onyx retrieval/setup pattern, not another running agent. Search permissions remain native. Explicit internal-case requests use the enabled native search tool. The GitHub corpus connector reports completed-with-errors; the four existing file corpus connectors report success.
+
+Single sign-on remains blocked on the existing Auth0 organization cutover in causl-kb #450. Onyx and causl-kb authentication remain separate. No email-derived organization mapping, shared administrator bridge, or fabricated email verification was added. Market acceptance still requires an authenticated organization review. Journey/OKR drafts are saved in native Onyx Postgres; accepted market records remain causl-kb-owned.

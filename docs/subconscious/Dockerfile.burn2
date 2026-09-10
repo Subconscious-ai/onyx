@@ -1,5 +1,6 @@
 FROM onyxdotapp/onyx-backend@sha256:473fdffe4e67fb67dcdac154c57d595ba73d7bf64b5926d24807a86d7e888d6f
 COPY burn2 /app/onyx/server/query_and_chat/burn2
+COPY burn2_profile.py /app/onyx/db/burn2_profile.py
 COPY burn2_brief.py /app/onyx/db/burn2_brief.py
 RUN python -c "from pathlib import Path; p=Path('/app/onyx/server/query_and_chat/chat_backend.py'); s=p.read_text(); marker='router = APIRouter(prefix=\"/chat\")'; assert s.count(marker)==1; p.write_text(s.replace(marker, marker+'\nfrom onyx.server.query_and_chat.burn2.api import router as burn2_router\nrouter.include_router(burn2_router)'))"
 COPY patch_burn2_backend.py /tmp/patch_burn2_backend.py

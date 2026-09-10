@@ -38,10 +38,6 @@ logger = setup_logger()
 TOOL_SCHEMA = copy.deepcopy(SCHEMA)
 TOOL_SCHEMA["properties"].pop("version")
 TOOL_SCHEMA["required"].remove("version")
-TOOL_SCHEMA["properties"]["journey"]["minItems"] = 2
-TOOL_SCHEMA["properties"]["keyResults"]["minItems"] = 1
-TOOL_SCHEMA["properties"]["transitions"]["minItems"] = 1
-TOOL_SCHEMA["properties"]["model"]["properties"]["inputs"]["minItems"] = 1
 
 
 def source_indices(schema: dict) -> None:
@@ -75,10 +71,10 @@ class PrepareBrief(BaseModel):
 class PreparedBrief(BaseModel):
     message_id: int
     saved: bool
+    message: str
 
 
-@router.post("/executive-brief")
-def prepare_brief(
+def _prepare_brief(
     body: PrepareBrief,
     user: User = Depends(require_permission(Permission.WRITE_CHAT)),
     db: Session = Depends(get_session),
@@ -94,6 +90,10 @@ def prepare_brief(
     persona = get_persona_by_id(snapshot["persona_id"], user, db, is_for_edit=False)
     if persona.name not in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}:
         raise HTTPException(404, "Executive conversation required")
+    if "</interview-brief>" in snapshot["last_text"]:
+        return PreparedBrief(
+            message_id=snapshot["last_id"], saved=True, message=snapshot["last_text"]
+        )
     check_token_rate_limits(user)
     configured = os.environ.get("BURN2_BRIEF_MODEL_CONFIGURATION_ID")
     override = None
@@ -126,7 +126,9 @@ Unknown baselines and proposed algebra remain unknown/assumption, without a sour
 The status "executive" means explicitly STATED by the executive, including a desired TARGET or deadline.
 A target supported by an exact quote must use executive status; the separate baseline is unknown.
 Reuse the exact objective sentence as quote for target and deadline. Do not paraphrase quotes.
-Split the stated journey into at least two individual human behavior states, each with its own ID.
+Split an established journey into individual human behavior states, each with its own ID.
+An early conversation may have no established journey or key results. Return empty arrays for absent content, never filler.
+The objective may be unknown. Never invent a target or journey just to fill the display.
 For example, trying and buying are separate states, not one combined journey entry.
 Each transition's from and to are distinct IDs copied EXACTLY from the journey array.
 List the named inputs of the symbolic equation as model.inputs even when every value is unknown.
@@ -205,4 +207,82 @@ Use "Unknown" for an unidentified company. No unsupported quotes or invented ide
         raise HTTPException(
             409, "Conversation changed. Prepare the current model brief."
         ) from None
-    return PreparedBrief(message_id=message_id, saved=True)
+    message = (
+        snapshot["last_text"].split("<interview-brief>", 1)[0].rstrip()
+        + "\n\n<interview-brief>"
+        + json.dumps(brief, ensure_ascii=False)
+        + "</interview-brief>"
+    )
+    return PreparedBrief(message_id=message_id, saved=True, message=message)
+
+
+@router.post("/executive-profile")
+def prepare_profile(
+    user: User = Depends(require_permission(Permission.WRITE_CHAT)),
+) -> dict:
+    import time
+
+    import requests
+
+    from onyx.db.burn2_profile import read_profile, save_profile
+    from onyx.server.query_and_chat.burn2.profile import select_profile
+
+    if os.environ.get("BURN2_ENABLED") != "true":
+        raise HTTPException(404, "Not found")
+    if not user.is_verified:
+        return {"status": "verification_required"}
+    current = read_profile(user.id)
+    if current and time.time() - current.get("checked_at", 0) < 86400:
+        return current
+    key = os.environ.get("PDL_API_KEY")
+    if not key:
+        return {"status": "unavailable"}
+    lock = get_cache_backend().lock(f"burn2:profile:{user.id}", timeout=30)
+    if not lock.acquire(blocking=False):
+        return {"status": "updating"}
+    try:
+        current = read_profile(user.id)
+        if current and time.time() - current.get("checked_at", 0) < 86400:
+            return current
+        response = requests.get(
+            "https://api.peopledatalabs.com/v5/person/enrich",
+            params={"email": user.email, "min_likelihood": 6},
+            headers={"X-Api-Key": key},
+            timeout=12,
+        )
+        profile = (
+            select_profile(response.json()) if response.status_code == 200 else None
+        )
+        value = {
+            "status": "ready"
+            if profile
+            else "not_found"
+            if response.status_code in (200, 404)
+            else "unavailable",
+            "profile": profile,
+            "checked_at": time.time(),
+            "source": "People Data Labs",
+        }
+        save_profile(user.id, value)
+        return value
+    except requests.RequestException:
+        return {"status": "unavailable"}
+    finally:
+        if lock.owned():
+            lock.release()
+
+
+@router.post("/executive-brief")
+def prepare_brief(
+    body: PrepareBrief,
+    user: User = Depends(require_permission(Permission.WRITE_CHAT)),
+    db: Session = Depends(get_session),
+) -> PreparedBrief:
+    lock = get_cache_backend().lock(f"burn2:brief:{user.id}:{body.chat_id}", timeout=75)
+    if not lock.acquire(blocking=False):
+        raise HTTPException(409, "The business draft is already updating")
+    try:
+        return _prepare_brief(body, user, db)
+    finally:
+        if lock.owned():
+            lock.release()

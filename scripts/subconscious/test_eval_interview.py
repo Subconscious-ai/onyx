@@ -24,6 +24,21 @@ class EvaluationChecks(unittest.TestCase):
             assess(Turn("Draft a model"), "Which market? What target?", ""),
         )
 
+    def test_native_internal_search_receipt_is_not_a_missing_tool(self):
+        self.assertEqual(
+            assess_tools(
+                Turn("Find a case", tools_required=("internal_search",)),
+                [{"type": "search_tool_start", "is_internet_search": False}],
+            ),
+            [],
+        )
+        self.assertTrue(
+            assess_tools(
+                Turn("Find a case", tools_required=("internal_search",)),
+                [{"type": "search_tool_start", "is_internet_search": True}],
+            )
+        )
+
     def test_probability_output_remains_in_fraction_units(self):
         packets = [{"type": "python_tool_delta", "stdout": "required_rate: 0.8"}]
         self.assertEqual(

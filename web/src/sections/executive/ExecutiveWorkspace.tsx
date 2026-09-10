@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useAutomaticBrief } from "@/lib/executive/hooks";
 import { Button, Text } from "@opal/components";
 import { Interactive } from "@opal/core";
 import { richNodes } from "@opal/utils";
@@ -23,25 +25,25 @@ const specialists = [
     name: "Sarah",
     role: "Journey & synthesis",
     initial: "S",
-    job: "Customer decisions, behavioral transitions, and the question worth asking next.",
+    job: "Identify customer decisions and behavior changes.",
   },
   {
     name: "Frankie",
     role: "Business model",
     initial: "F",
-    job: "The business objective, economic drivers, constraints, and decision horizon.",
+    job: "Connect measurable objectives to economic drivers.",
   },
   {
     name: "Mei",
     role: "Market & challenge",
     initial: "M",
-    job: "Competitors, alternatives, and contradictions grounded in quoted evidence.",
+    job: "Check competitors, alternatives, and conflicting evidence.",
   },
   {
     name: "Jerry",
-    role: "A little perspective",
+    role: "Perspective & humor",
     initial: "J",
-    job: "Occasional levity. No extra questions, invented facts, or dossier jokes.",
+    job: "One brief, grounded roast after the fifth answer. Never after frustration or about personal data.",
   },
 ];
 
@@ -63,11 +65,14 @@ function Evidence({ note }: { note: BriefNote }) {
         {statusLabel[note.status]}
       </Text>
       {note.quote && (
-        <Text
-          as="p"
-          font="secondary-body"
-          data-executive="executive-quote"
-        >{`“${note.quote}”`}</Text>
+        <details>
+          <summary>{t("sourceDisclosure")}</summary>
+          <Text
+            as="p"
+            font="secondary-body"
+            data-executive="executive-quote"
+          >{`“${note.quote}”`}</Text>
+        </details>
       )}
       {note.url && (
         <Button
@@ -126,28 +131,87 @@ export function ExecutiveWelcome() {
 export default function ExecutiveWorkspace({
   active,
   messages,
+  chatId = null,
+  busy = false,
   onAsk,
   preview = false,
   children,
 }: {
   active: boolean;
   messages: readonly InterviewMessage[];
+  chatId?: string | null;
+  busy?: boolean;
   onAsk?: (message: string) => void;
   preview?: boolean;
   children: React.ReactNode;
 }) {
   const t = useTranslations("executive");
-  const projection = useMemo(() => projectBrief(messages), [messages]);
+  const preparation = useAutomaticBrief({
+    active: active && !preview,
+    chatId,
+    busy,
+    messages,
+  });
+  const savedMessages = useMemo(
+    () =>
+      preparation.savedMessage
+        ? messages.map((message, index) =>
+            index === messages.length - 1
+              ? { ...message, message: preparation.savedMessage! }
+              : message
+          )
+        : messages,
+    [messages, preparation.savedMessage]
+  );
+  const projection = useMemo(
+    () => projectBrief(savedMessages),
+    [savedMessages]
+  );
   const brief = projection.brief;
   const readiness = modelReadiness(projection.stale ? null : brief);
   const [handoffStatus, setHandoffStatus] = useState("");
-  const [preparing, setPreparing] = useState(false);
+  const [profileStatus, setProfileStatus] = useState(
+    "Checking professional context…"
+  );
+  useEffect(() => {
+    if (!active || preview) return;
+    let cancelled = false;
+    fetch("/api/chat/executive-profile", { method: "POST" })
+      .then((response) =>
+        response.ok ? response.json() : { status: "unavailable" }
+      )
+      .then((value) => {
+        if (!cancelled)
+          setProfileStatus(
+            value.status === "ready"
+              ? `PDL context loaded${value.profile?.company ? ` · ${value.profile.company}` : ""}`
+              : value.status === "not_found"
+                ? "PDL: no confident match"
+                : value.status === "verification_required"
+                  ? "PDL requires a verified email"
+                  : "PDL context unavailable"
+          );
+      })
+      .catch(() => {
+        if (!cancelled) setProfileStatus("PDL context unavailable");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [active, preview]);
+
   const [view, setView] = useState<
     "journey" | "evidence" | "decisions" | "model"
   >("journey");
   const [selectedStep, setSelectedStep] = useState<string | null>(null);
   const [selectedSpecialist, setSelectedSpecialist] = useState(0);
   const [mobileBrief, setMobileBrief] = useState(false);
+  const executiveTurns = messages.filter(
+    (message) => message.type === "user" && message.message.trim()
+  ).length;
+  useEffect(() => {
+    setSelectedSpecialist(executiveTurns === 5 ? 3 : 0);
+  }, [executiveTurns]);
   if (!active) return children;
   const step =
     brief?.journey.find((item) => item.id === selectedStep) ??
@@ -158,6 +222,62 @@ export default function ExecutiveWorkspace({
       ).length
     : 0;
   const selected = specialists[selectedSpecialist]!;
+
+  function openModel() {
+    const chatId = new URL(window.location.href).searchParams.get("chatId");
+    if (!chatId) {
+      setHandoffStatus(t("saveBeforeHandoff"));
+      return;
+    }
+    const payload = {
+      format: "burn/onyx-interview",
+      version: 1,
+      chatId,
+      messages: savedMessages
+        .filter((message) => ["user", "assistant"].includes(message.type))
+        .map((message) => ({
+          type: message.type,
+          message: message.message,
+        })),
+    };
+    const href = URL.createObjectURL(
+      new Blob([JSON.stringify(payload)], {
+        type: "application/json",
+      })
+    );
+    const anchor = document.createElement("a");
+    anchor.href = href;
+    anchor.download = "burn-model-handoff.json";
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(href), 1000);
+    const destination = process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE;
+    if (!destination) {
+      setHandoffStatus(t("fileHandoffReady"));
+      return;
+    }
+    const target = new URL(destination);
+    const nonce = crypto.randomUUID();
+    target.searchParams.set("handoff", nonce);
+    const child = window.open(target.href, "burn-model-review");
+    const receive = (event: MessageEvent) => {
+      if (
+        event.origin !== target.origin ||
+        event.source !== child ||
+        event.data?.type !== "burn-ready" ||
+        event.data?.nonce !== nonce
+      )
+        return;
+      child?.postMessage(
+        { type: "burn-handoff", nonce, payload },
+        target.origin
+      );
+      window.removeEventListener("message", receive);
+      setHandoffStatus(t("briefTransferred"));
+    };
+    window.addEventListener("message", receive);
+    setTimeout(() => window.removeEventListener("message", receive), 600000);
+    setHandoffStatus(t("handoffSignIn"));
+  }
 
   return (
     <section
@@ -211,9 +331,12 @@ export default function ExecutiveWorkspace({
                   rounding={1}
                 >
                   <span className="executive-avatar">
-                    <Text font="main-ui-action" color="inherit">
-                      {specialist.initial}
-                    </Text>
+                    <Image
+                      src={`/burn-agents/${specialist.name.toLowerCase()}.jpg`}
+                      width={40}
+                      height={40}
+                      alt={`${specialist.name}, AI interview specialist`}
+                    />
                   </span>
                   <span>
                     <Text font="main-ui-action">{specialist.name}</Text>
@@ -230,8 +353,49 @@ export default function ExecutiveWorkspace({
           </div>
           <div className="executive-specialist-note" aria-live="polite">
             <Text font="secondary-body">{selected.job}</Text>
+            {!preview && <Text font="secondary-body">{profileStatus}</Text>}
           </div>
           <div className="executive-native-chat">{children}</div>
+          {!preview && (
+            <div className="executive-model-action">
+              <div role="status" aria-live="polite">
+                <Text font="main-ui-action">
+                  {preparation.phase === "updating"
+                    ? "Updating the business draft…"
+                    : preparation.phase === "error"
+                      ? "Draft update needs another attempt"
+                      : `${brief?.journey.length ?? 0} journey states · ${brief?.keyResults?.length ?? 0} ${brief?.keyResults?.length === 1 ? "key result" : "key results"}`}
+                </Text>
+                <Text as="p" font="secondary-body">
+                  {handoffStatus ||
+                    (brief
+                      ? "Draft saved in the interview. Market acceptance requires review."
+                      : "The draft develops from the conversation.")}
+                </Text>
+              </div>
+              <Button
+                size="lg"
+                prominence="primary"
+                icon={SvgArrowUpRight}
+                onClick={
+                  preparation.phase === "error"
+                    ? preparation.retry
+                    : readiness.ready
+                      ? openModel
+                      : () => {
+                          setView("model");
+                          setMobileBrief(true);
+                        }
+                }
+              >
+                {preparation.phase === "error"
+                  ? "Retry draft update"
+                  : readiness.ready
+                    ? "Open business model"
+                    : "View business draft"}
+              </Button>
+            </div>
+          )}
         </div>
 
         <aside
@@ -244,7 +408,7 @@ export default function ExecutiveWorkspace({
                 {t("theWorkingPicture")}
               </Text>
               <Text as="h2" font="heading-h2">
-                {brief?.company ?? "A business, taking shape."}
+                {brief?.company ?? "Business draft"}
               </Text>
             </div>
             <Text font="secondary-body" data-executive="executive-draft-label">
@@ -260,12 +424,9 @@ export default function ExecutiveWorkspace({
               font="main-content-emphasis"
               data-executive="executive-objective-text"
             >
-              {brief?.objective.text ?? "The outcome worth changing."}
+              {brief?.objective.text ?? "Objective not established"}
             </Text>
-            <Text font="secondary-body">
-              {brief?.horizon ??
-                "Priority and decision horizon emerge from the conversation."}
-            </Text>
+            <Text font="secondary-body">{brief?.horizon ?? ""}</Text>
             {brief && <Evidence note={brief.objective} />}
           </div>
           <div className="executive-view-switch" aria-label={t("briefViews")}>
@@ -373,14 +534,6 @@ export default function ExecutiveWorkspace({
                     </Text>
                   </div>
                 )}
-                <div className="executive-model-note">
-                  <Text font="secondary-action">
-                    {t("businessModelConnection")}
-                  </Text>
-                  <Text as="p" font="secondary-body">
-                    {t("journeyStructureIsAWorkingDraftMarket")}
-                  </Text>
-                </div>
               </>
             )}
             {view === "model" && (
@@ -470,130 +623,9 @@ export default function ExecutiveWorkspace({
                   <Text as="p" font="secondary-body">
                     {t("reviewModelExplanation")}
                   </Text>
-                  {!preview && (
-                    <Button
-                      size="sm"
-                      prominence="secondary"
-                      disabled={preparing}
-                      onClick={async () => {
-                        const chatId = new URL(
-                          window.location.href
-                        ).searchParams.get("chatId");
-                        if (!chatId) {
-                          setHandoffStatus(t("startSavedBrief"));
-                          return;
-                        }
-                        setPreparing(true);
-                        setHandoffStatus(t("preparingSavedBrief"));
-                        try {
-                          const response = await fetch(
-                            "/api/chat/executive-brief",
-                            {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ chat_id: chatId }),
-                            }
-                          );
-                          const result = await response.json();
-                          if (!response.ok || !result.saved)
-                            throw new Error(
-                              result.detail ?? t("briefPreparationFailed")
-                            );
-                          window.location.reload();
-                        } catch (error) {
-                          setHandoffStatus(
-                            error instanceof Error
-                              ? error.message
-                              : t("briefPreparationIncomplete")
-                          );
-                        } finally {
-                          setPreparing(false);
-                        }
-                      }}
-                    >
-                      {preparing ? t("preparingBrief") : t("prepareSavedBrief")}
-                    </Button>
-                  )}
-                  {brief && readiness.ready && !preview && (
-                    <Button
-                      size="sm"
-                      prominence="primary"
-                      icon={SvgArrowUpRight}
-                      onClick={() => {
-                        const chatId = new URL(
-                          window.location.href
-                        ).searchParams.get("chatId");
-                        if (!chatId) {
-                          setHandoffStatus(t("saveBeforeHandoff"));
-                          return;
-                        }
-                        const payload = {
-                          format: "burn/onyx-interview",
-                          version: 1,
-                          chatId,
-                          messages: messages
-                            .filter((message) =>
-                              ["user", "assistant"].includes(message.type)
-                            )
-                            .map((message) => ({
-                              type: message.type,
-                              message: message.message,
-                            })),
-                        };
-                        const href = URL.createObjectURL(
-                          new Blob([JSON.stringify(payload)], {
-                            type: "application/json",
-                          })
-                        );
-                        const anchor = document.createElement("a");
-                        anchor.href = href;
-                        anchor.download = "burn-model-handoff.json";
-                        anchor.click();
-                        setTimeout(() => URL.revokeObjectURL(href), 1000);
-                        const destination =
-                          process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE;
-                        if (!destination) {
-                          setHandoffStatus(t("fileHandoffReady"));
-                          return;
-                        }
-                        const target = new URL(destination);
-                        const nonce = crypto.randomUUID();
-                        target.searchParams.set("handoff", nonce);
-                        const child = window.open(
-                          target.href,
-                          "burn-model-review"
-                        );
-                        const receive = (event: MessageEvent) => {
-                          if (
-                            event.origin !== target.origin ||
-                            event.source !== child ||
-                            event.data?.type !== "burn-ready" ||
-                            event.data?.nonce !== nonce
-                          )
-                            return;
-                          child?.postMessage(
-                            { type: "burn-handoff", nonce, payload },
-                            target.origin
-                          );
-                          window.removeEventListener("message", receive);
-                          setHandoffStatus(t("briefTransferred"));
-                        };
-                        window.addEventListener("message", receive);
-                        setTimeout(
-                          () => window.removeEventListener("message", receive),
-                          600000
-                        );
-                        setHandoffStatus(t("handoffSignIn"));
-                      }}
-                    >
-                      {t("reviewInGuesstimate")}
-                    </Button>
-                  )}
-                  {handoffStatus && (
-                    <Text as="p" font="secondary-body" role="status">
-                      {handoffStatus}
-                    </Text>
-                  )}
+                  <Text as="p" font="secondary-body">
+                    {t("automaticDraftBoundary")}
+                  </Text>
                 </div>
               </>
             )}
@@ -689,7 +721,7 @@ export default function ExecutiveWorkspace({
             <div role="status">
               <Text font="secondary-body">
                 {projection.stale
-                  ? "New answers available · prepare the updated model brief"
+                  ? "New answers received"
                   : projection.updateFailed
                     ? "Brief update invalid · previous draft retained"
                     : projection.updating
@@ -697,8 +729,8 @@ export default function ExecutiveWorkspace({
                       : preview
                         ? "Illustrative case · no customer records"
                         : brief
-                          ? "Reconstructed from saved conversation"
-                          : "Awaiting the first interview insight"}
+                          ? "Saved interview draft"
+                          : "Waiting for a business objective"}
               </Text>
             </div>
             {brief && (

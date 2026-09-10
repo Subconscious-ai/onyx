@@ -11,6 +11,14 @@ def requested_tool(message: str, enabled: dict[str, int]) -> int | None:
         re.I,
     ):
         return None
+    if re.search(
+        r"\b(find|search|retrieve|use|show)\b.*\b(mckinsey|bain|bcg|mbb|casebook)\b",
+        message,
+        re.I,
+    ):
+        if not re.search(r"\b(do not|don't|never|without)\b", message, re.I):
+            return enabled.get("internal_search")
+        return None
     requested = re.findall(r"\b(?:use|run)\s+(python|gpt researcher)\b", message, re.I)
     if len(requested) != 1:
         return None

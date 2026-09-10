@@ -13850,7 +13850,7 @@
     "theCustomerJourneyStartsWithAnActual": "The customer journey starts with an actual customer decision.",
     "thePanelIdentifiesTheBuyerTheFirst": "The panel identifies the buyer, the first meaningful action, and the behavior separating progress from a stalled journey.",
     "businessModelConnection": "Business model connection",
-    "journeyStructureIsAWorkingDraftMarket": "Journey structure remains a draft until review. Prepare the saved model brief to continue in Guesstimate.",
+    "journeyStructureIsAWorkingDraftMarket": "The journey updates from the conversation. Review separates proposals from accepted market facts.",
     "evidenceBeforeConfidence": "Evidence before confidence.",
     "aTensionToResolve": "A tension to resolve",
     "fromFrictionToAUsefulTest": "From friction to a useful test.",
@@ -13870,8 +13870,7 @@
     "proposedDriverEquation": "Équation proposée",
     "noMeasuredEffect": "Relation proposée · aucun effet causal mesuré",
     "parkedNoRepeat": "En attente · aucune question répétée",
-    "reviewModelExplanation": "Vérifier le résumé, puis générer et enregistrer un modèle Guesstimate privé. Les valeurs initiales inconnues ne bloquent pas un modèle symbolique.",
-    "reviewInGuesstimate": "Vérifier dans Guesstimate",
+    "reviewModelExplanation": "Review the business draft. Unknown operating values remain empty.",
     "startSavedBrief": "Start a saved interview before preparing the model brief.",
     "preparingSavedBrief": "Preparing a structured model brief from the saved executive answers…",
     "briefPreparationFailed": "Model brief preparation failed. The saved conversation remains unchanged.",
@@ -13881,6 +13880,9 @@
     "saveBeforeHandoff": "Save a conversation before the model handoff.",
     "fileHandoffReady": "Model handoff downloaded. Import the file in the Burn model review workspace.",
     "briefTransferred": "Brief transferred for review. No model or market evidence has been saved yet.",
-    "handoffSignIn": "Sign in to the model workspace and review the imported brief. The downloaded file supplies a fallback."
+    "handoffSignIn": "Business model opened in the connected workspace. Existing workspace authentication may be required.",
+    "sourceDisclosure": "Source",
+    "automaticDraftBoundary": "The draft updates after each answer. Market evidence changes only after review.",
+    "reviewInGuesstimate": "Vérifier dans business model"
   }
 }
