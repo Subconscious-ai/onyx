@@ -32,6 +32,12 @@ class StructuredBriefTest(unittest.TestCase):
             "conflicts": [],
         }
 
+    def test_blank_horizon_is_rejected_before_frontend_readback(self):
+        value = self.brief()
+        value["horizon"] = ""
+        with self.assertRaises(ValueError):
+            validate_brief(value, ["The objective is increasing renewals."])
+
     def test_literal_stated_targets_are_sourced_without_becoming_baselines(self):
         brief = self.brief()
         brief["keyResults"] = [
@@ -134,3 +140,18 @@ class StructuredBriefTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CompletionTest(unittest.TestCase):
+    def test_stated_numeric_objective_cannot_cache_missing_key_results(self):
+        from onyx.server.query_and_chat.burn2.validation import needs_completion
+
+        value = {
+            "objective": {"status": "executive", "text": "95 percent annual renewal"},
+            "keyResults": [],
+            "model": {"inputs": []},
+        }
+        self.assertTrue(needs_completion(value))
+        value["objective"]["text"] = "Objective unknown"
+        value["objective"]["status"] = "unknown"
+        self.assertFalse(needs_completion(value))

@@ -26,7 +26,11 @@ from onyx.llm.models import (
     UserMessage,
 )
 from onyx.llm.override_models import LLMOverride
-from onyx.server.query_and_chat.burn2.validation import SCHEMA, validate_brief
+from onyx.server.query_and_chat.burn2.validation import (
+    SCHEMA,
+    needs_completion,
+    validate_brief,
+)
 from onyx.server.query_and_chat.token_limit import check_token_rate_limits
 from onyx.server.usage_limits import check_llm_cost_limit_for_provider
 from onyx.utils.logger import setup_logger
@@ -91,9 +95,23 @@ def _prepare_brief(
     if persona.name not in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}:
         raise HTTPException(404, "Executive conversation required")
     if "</interview-brief>" in snapshot["last_text"]:
-        return PreparedBrief(
-            message_id=snapshot["last_id"], saved=True, message=snapshot["last_text"]
-        )
+        try:
+            cached = validate_brief(
+                json.loads(
+                    snapshot["last_text"]
+                    .split("<interview-brief>", 1)[1]
+                    .split("</interview-brief>", 1)[0]
+                ),
+                snapshot["statements"],
+            )
+        except (ValueError, IndexError):
+            cached = None
+        if cached and not needs_completion(cached):
+            return PreparedBrief(
+                message_id=snapshot["last_id"],
+                saved=True,
+                message=snapshot["last_text"],
+            )
     check_token_rate_limits(user)
     configured = os.environ.get("BURN2_BRIEF_MODEL_CONFIGURATION_ID")
     override = None
@@ -127,7 +145,10 @@ The status "executive" means explicitly STATED by the executive, including a des
 A target supported by an exact quote must use executive status; the separate baseline is unknown.
 Reuse the exact objective sentence as quote for target and deadline. Do not paraphrase quotes.
 Split an established journey into individual human behavior states, each with its own ID.
-An early conversation may have no established journey or key results. Return empty arrays for absent content, never filler.
+An early conversation may have no established journey or key results. Return empty journey arrays for absent customer behavior, never filler.
+A stated numeric objective MUST appear in keyResults, with the exact target and deadline.
+Every proposed equation MUST list the named model.inputs. Use unknown input values, not omitted inputs.
+Use meaningful cohort/count/rate relationships. Never divide satisfaction scores or multiply subjective ratings into a probability.
 The objective may be unknown. Never invent a target or journey just to fill the display.
 For example, trying and buying are separate states, not one combined journey entry.
 Each transition's from and to are distinct IDs copied EXACTLY from the journey array.
@@ -183,6 +204,10 @@ Use "Unknown" for an unidentified company. No unsupported quotes or invented ide
             raise ValueError("Invalid tool payload")
         value["version"] = 2
         brief = validate_brief(value, snapshot["statements"])
+        if needs_completion(brief):
+            raise ValueError(
+                "A stated numeric objective requires key results and named model inputs"
+            )
     except Exception as error:
         logger.warning(
             "Burn model brief preparation failed (%s): %s",

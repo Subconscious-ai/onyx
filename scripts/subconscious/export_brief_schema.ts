@@ -14,6 +14,7 @@ function schema(value: Description): Record<string, unknown> {
   if (value.innerType) result.items = schema(value.innerType);
   for (const test of value.tests ?? []) {
     const suffix = value.type === 'array' ? 'Items' : value.type === 'string' ? 'Length' : '';
+    if (test.name === 'required' && value.type === 'string') result.minLength = 1;
     if (test.name === 'min') result[suffix ? `min${suffix}` : 'minimum'] = test.params?.min;
     if (test.name === 'max') result[suffix ? `max${suffix}` : 'maximum'] = test.params?.max;
     if (test.name === 'length') { result[`min${suffix}`] = test.params?.length; result[`max${suffix}`] = test.params?.length; }

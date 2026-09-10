@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { interviewMessageText, type InterviewMessage } from "./brief";
+import {
+  interviewMessageText,
+  projectBrief,
+  modelReadiness,
+  type InterviewMessage,
+} from "./brief";
 
 /** Coalesce completed turns; never wait for extraction before accepting another answer. */
 export function useAutomaticBrief({
@@ -27,7 +32,9 @@ export function useAutomaticBrief({
     last?.type === "assistant" &&
     !!lastText.trim() &&
     messages.some((m) => m.type === "user");
-  const stored = lastText.includes("</interview-brief>");
+  const stored =
+    lastText.includes("</interview-brief>") &&
+    modelReadiness(projectBrief(messages).brief).ready;
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<{
     key: string;

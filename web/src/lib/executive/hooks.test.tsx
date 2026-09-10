@@ -102,3 +102,34 @@ describe("automatic saved evidence", () => {
     expect(result.current.savedMessage).toBeNull();
   });
 });
+
+it("refreshes an incomplete saved brief instead of trapping the customer", async () => {
+  jest.useFakeTimers();
+  global.fetch = jest
+    .fn()
+    .mockResolvedValue({
+      ok: true,
+      json: async () => ({ saved: true, message: "updated saved brief" }),
+    });
+  const messages = [
+    { type: "user", message: "The goal is 95 percent annual renewal." },
+    {
+      type: "assistant",
+      message:
+        'A draft. <interview-brief>{"version":2,"company":"Example","horizon":"Unknown","objective":{"text":"95 percent renewal","status":"executive","quote":"The goal is 95 percent annual renewal."},"journey":[],"keyResults":[],"transitions":[],"model":{"equation":{"text":"Renewals divided by accounts","status":"assumption"},"inputs":[],"gaps":[]},"interventions":[],"conflicts":[]}</interview-brief>',
+    },
+  ];
+  renderHook(() =>
+    useAutomaticBrief({
+      active: true,
+      chatId: "partial",
+      busy: false,
+      messages,
+    })
+  );
+  await act(async () => {
+    jest.advanceTimersByTime(2000);
+  });
+  expect(global.fetch).toHaveBeenCalledTimes(1);
+  jest.useRealTimers();
+});

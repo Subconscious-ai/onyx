@@ -157,3 +157,15 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
         )
     ]
     return result
+
+
+def needs_completion(value: dict) -> bool:
+    """A stated numeric objective must survive extraction into the model contract."""
+    objective = value.get("objective", {})
+    return bool(
+        objective.get("status") == "executive"
+        and re.search(r"\d", objective.get("text", ""))
+        and (
+            not value.get("keyResults") or not (value.get("model") or {}).get("inputs")
+        )
+    )
