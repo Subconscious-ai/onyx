@@ -229,8 +229,6 @@ def prepare_profile(
 
     if os.environ.get("BURN2_ENABLED") != "true":
         raise HTTPException(404, "Not found")
-    if not user.is_verified:
-        return {"status": "verification_required"}
     current = read_profile(user.id)
     if current and time.time() - current.get("checked_at", 0) < 86400:
         return current

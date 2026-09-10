@@ -184,11 +184,11 @@ export default function ExecutiveWorkspace({
         if (!cancelled)
           setProfileStatus(
             value.status === "ready"
-              ? `PDL context loaded${value.profile?.company ? ` · ${value.profile.company}` : ""}`
+              ? `PDL professional match loaded${value.profile?.company ? ` · ${value.profile.company}` : ""}`
               : value.status === "not_found"
                 ? "PDL: no confident match"
                 : value.status === "verification_required"
-                  ? "PDL requires a verified email"
+                  ? "PDL match not established"
                   : "PDL context unavailable"
           );
       })
