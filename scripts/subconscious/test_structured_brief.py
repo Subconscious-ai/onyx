@@ -155,3 +155,27 @@ class CompletionTest(unittest.TestCase):
         value["objective"]["text"] = "Objective unknown"
         value["objective"]["status"] = "unknown"
         self.assertFalse(needs_completion(value))
+
+
+class ExtractionSchemaTest(unittest.TestCase):
+    def test_only_existing_messages_can_be_cited(self):
+        from jsonschema import Draft7Validator
+
+        from onyx.server.query_and_chat.burn2.validation import extraction_schema
+
+        schema = extraction_schema(1)
+        reference = schema["properties"]["objective"]["properties"][
+            "sourceMessageIndex"
+        ]
+        validator = Draft7Validator(reference)
+        self.assertTrue(validator.is_valid(0))
+        self.assertFalse(validator.is_valid(1))
+        self.assertFalse(validator.is_valid(-1))
+        self.assertNotIn("version", schema["properties"])
+        self.assertEqual(
+            extraction_schema(3)["properties"]["objective"]["properties"][
+                "sourceMessageIndex"
+            ]["maximum"],
+            2,
+        )
+        self.assertEqual(reference["maximum"], 0)

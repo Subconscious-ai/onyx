@@ -169,3 +169,32 @@ def needs_completion(value: dict) -> bool:
             not value.get("keyResults") or not (value.get("model") or {}).get("inputs")
         )
     )
+
+
+def extraction_schema(source_count: int) -> dict:
+    """Expose only real transcript references to the extraction provider."""
+    if source_count < 1:
+        raise ValueError("Executive source messages required")
+    schema = copy.deepcopy(SCHEMA)
+    schema["properties"].pop("version")
+    schema["required"].remove("version")
+
+    def references(item: Any) -> None:
+        if isinstance(item, dict):
+            properties = item.get("properties", {})
+            if "text" in properties and "status" in properties:
+                properties["sourceMessageIndex"] = {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": source_count - 1,
+                    "enum": list(range(source_count)),
+                    "description": "Copy the supporting executive message index exactly. Omit for unknowns and hypotheses. The server supplies the original quote.",
+                }
+            for child in item.values():
+                references(child)
+        elif isinstance(item, list):
+            for child in item:
+                references(child)
+
+    references(schema)
+    return schema
