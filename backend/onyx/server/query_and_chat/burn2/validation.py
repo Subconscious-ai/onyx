@@ -208,12 +208,15 @@ def extraction_schema(source_count: int) -> dict:
         if isinstance(item, dict):
             properties = item.get("properties", {})
             if "text" in properties and "status" in properties:
+                properties.pop("quote", None)
+                properties.pop("url", None)
+                item.setdefault("required", []).append("sourceMessageIndex")
                 properties["sourceMessageIndex"] = {
-                    "type": "integer",
+                    "type": ["integer", "null"],
                     "minimum": 0,
                     "maximum": source_count - 1,
-                    "enum": list(range(source_count)),
-                    "description": "Copy the supporting executive message index exactly. Omit for unknowns and hypotheses. The server supplies the original quote.",
+                    "enum": [*range(source_count), None],
+                    "description": "Select the executive message supporting this statement. Use null only for unknowns and hypotheses. The server supplies the exact original quote; never retype evidence.",
                 }
             for child in item.values():
                 references(child)

@@ -212,6 +212,29 @@ class CompletionTest(unittest.TestCase):
 
 
 class ExtractionSchemaTest(unittest.TestCase):
+    def test_provider_selects_source_indices_instead_of_retyping_evidence(self):
+        from jsonschema import Draft7Validator
+
+        from onyx.server.query_and_chat.burn2.validation import extraction_schema
+
+        note = extraction_schema(2)["properties"]["objective"]
+        validator = Draft7Validator(note)
+        self.assertFalse(
+            validator.is_valid({"text": "Grow renewal", "status": "executive"})
+        )
+        self.assertTrue(
+            validator.is_valid(
+                {"text": "Grow renewal", "status": "executive", "sourceMessageIndex": 1}
+            )
+        )
+        self.assertTrue(
+            validator.is_valid(
+                {"text": "Unknown", "status": "unknown", "sourceMessageIndex": None}
+            )
+        )
+        self.assertNotIn("quote", note["properties"])
+        self.assertNotIn("url", note["properties"])
+
     def test_only_existing_messages_can_be_cited(self):
         from jsonschema import Draft7Validator
 
