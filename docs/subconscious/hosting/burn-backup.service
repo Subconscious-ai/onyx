@@ -1,0 +1,10 @@
+[Unit]
+Description=Encrypted Burn backup to private Vercel Blob
+After=burn2.service
+[Service]
+Type=oneshot
+ExecStart=/opt/burn/app/docs/subconscious/hosting/backup.sh
+TimeoutStartSec=15min
+ExecStopPost=/opt/burn/app/docs/subconscious/hosting/resume-writers.sh
+Nice=10
+MemoryMax=1G

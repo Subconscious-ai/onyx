@@ -3,6 +3,10 @@ import {
   SERVER_SIDE_ONLY__AUTH_COOKIE_NAME,
 } from "@/lib/constants";
 import { NextRequest, NextResponse } from "next/server";
+import { fetchBackend } from "@/lib/backendFetch";
+
+// Preserve native tool/answer streaming when the frontend runs on Vercel.
+export const maxDuration = 180;
 
 /* NextJS is annoying and makes use use a separate function for
 each request type >:( */
@@ -106,15 +110,15 @@ async function handleRequest(request: NextRequest, path: string[]) {
       );
     }
 
-    const response = await fetch(backendUrl, {
+    const options: RequestInit & { duplex: "half" } = {
       method: request.method,
-      headers: headers,
+      headers,
       body: request.body,
       signal: request.signal,
       redirect: "manual",
-      // @ts-ignore
       duplex: "half",
-    });
+    };
+    const response = await fetchBackend(backendUrl, options);
 
     const setCookies =
       // @ts-ignore - undici provides getSetCookie in Node.

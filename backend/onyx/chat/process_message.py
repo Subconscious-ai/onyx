@@ -922,6 +922,13 @@ def build_chat_turn(
     )
 
     forced_tool_id = new_msg_req.forced_tool_id
+    if os.environ.get("BURN2_ENABLED") == "true" and persona.name == "Burn 2.0" and forced_tool_id is None:
+        from onyx.server.query_and_chat.burn2.requested_tool import requested_tool
+
+        forced_tool_id = requested_tool(message_text, {
+            tool.name: tool.id for tool in persona.tools
+            if new_msg_req.allowed_tool_ids is None or tool.id in new_msg_req.allowed_tool_ids
+        })
     if (
         search_params.search_usage == SearchToolUsage.DISABLED
         and forced_tool_id is not None
@@ -978,6 +985,15 @@ def build_chat_turn(
     has_file_reader_tool = any(
         tool.in_code_tool_id == FILE_READER_TOOL_ID for tool in persona.tools
     )
+
+    if os.environ.get("BURN2_ENABLED") == "true" and persona.name == "Burn 2.0" and user is not None:
+        from onyx.db.burn2_profile import read_profile
+        from onyx.server.query_and_chat.burn2.profile import profile_context, turn_guidance, interview_context
+        statements = [row.message for row in chat_history if row.message_type == MessageType.USER and row.message.strip()]
+        turns = len(statements)
+        context = profile_context(read_profile(user.id))
+        guidance = turn_guidance(turns, message_text)
+        additional_context = "\n".join(filter(None, [additional_context or new_msg_req.additional_context, context, guidance, interview_context(statements)]))
 
     chat_history_result = convert_chat_history(
         chat_history=chat_history,

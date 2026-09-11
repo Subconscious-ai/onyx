@@ -1,0 +1,540 @@
+{
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "enum": [
+        2
+      ]
+    },
+    "company": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "objective": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "executive",
+            "research",
+            "assumption",
+            "unknown"
+          ]
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1200
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "text",
+        "status"
+      ],
+      "additionalProperties": false
+    },
+    "horizon": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "journey": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "executive",
+              "research",
+              "assumption",
+              "unknown"
+            ]
+          },
+          "quote": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1200
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9_-]{1,50}$"
+          },
+          "actor": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "text",
+          "status",
+          "id",
+          "actor"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 8
+    },
+    "keyResults": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9_-]{1,50}$"
+          },
+          "metric": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "increase",
+              "decrease",
+              "maintain"
+            ]
+          },
+          "baseline": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 600
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "executive",
+                  "research",
+                  "assumption",
+                  "unknown"
+                ]
+              },
+              "quote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1200
+              },
+              "url": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              }
+            },
+            "required": [
+              "text",
+              "status"
+            ],
+            "additionalProperties": false
+          },
+          "target": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 600
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "executive",
+                  "research",
+                  "assumption",
+                  "unknown"
+                ]
+              },
+              "quote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1200
+              },
+              "url": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              }
+            },
+            "required": [
+              "text",
+              "status"
+            ],
+            "additionalProperties": false
+          },
+          "deadline": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 600
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "executive",
+                  "research",
+                  "assumption",
+                  "unknown"
+                ]
+              },
+              "quote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1200
+              },
+              "url": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              }
+            },
+            "required": [
+              "text",
+              "status"
+            ],
+            "additionalProperties": false
+          },
+          "journeyIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50
+            },
+            "maxItems": 8
+          }
+        },
+        "required": [
+          "id",
+          "metric",
+          "unit",
+          "direction",
+          "baseline",
+          "target",
+          "deadline",
+          "journeyIds"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 4
+    },
+    "transitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9_-]{1,50}$"
+          },
+          "from": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "to": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "behavior": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 600
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "executive",
+                  "research",
+                  "assumption",
+                  "unknown"
+                ]
+              },
+              "quote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1200
+              },
+              "url": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              }
+            },
+            "required": [
+              "text",
+              "status"
+            ],
+            "additionalProperties": false
+          },
+          "metric": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "id",
+          "from",
+          "to",
+          "behavior",
+          "metric"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 12
+    },
+    "model": {
+      "type": "object",
+      "properties": {
+        "equation": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 600
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "executive",
+                "research",
+                "assumption",
+                "unknown"
+              ]
+            },
+            "quote": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1200
+            },
+            "url": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            }
+          },
+          "required": [
+            "text",
+            "status"
+          ],
+          "additionalProperties": false
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9_-]{1,50}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "unit": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "value": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 600
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "executive",
+                      "research",
+                      "assumption",
+                      "unknown"
+                    ]
+                  },
+                  "quote": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1200
+                  },
+                  "url": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "text",
+                  "status"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "unit",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 16
+        },
+        "gaps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "impact": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 400
+              },
+              "parked": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "text",
+              "impact",
+              "parked"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 8
+        }
+      },
+      "required": [
+        "equation",
+        "inputs",
+        "gaps"
+      ],
+      "additionalProperties": false
+    },
+    "interventions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "journeyId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "text",
+          "journeyId",
+          "rationale"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 4
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400
+          },
+          "quotes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1200
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "required": [
+          "text",
+          "quotes"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 4
+    }
+  },
+  "required": [
+    "version",
+    "company",
+    "objective",
+    "horizon",
+    "journey",
+    "keyResults",
+    "transitions",
+    "model",
+    "interventions",
+    "conflicts"
+  ],
+  "additionalProperties": false
+}

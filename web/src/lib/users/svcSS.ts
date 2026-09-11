@@ -3,12 +3,13 @@ import { User } from "@/lib/types";
 import { buildUrl } from "@/lib/utilsSS";
 import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 import { SERVER_SIDE_ONLY__AUTH_COOKIE_NAME } from "@/lib/constants";
+import { fetchBackend } from "@/lib/backendFetch";
 
 export async function getCurrentUserSS(): Promise<User | null> {
   try {
     const cookieString = processCookies(await cookies());
 
-    const response = await fetch(buildUrl("/me"), {
+    const response = await fetchBackend(buildUrl("/me"), {
       credentials: "include",
       next: { revalidate: 0 },
       headers: { cookie: cookieString },

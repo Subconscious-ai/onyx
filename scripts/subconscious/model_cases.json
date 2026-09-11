@@ -1,0 +1,84 @@
+{
+  "ice_cream_retail": [
+    {
+      "message": "Synthetic QA: the product is ice cream sold through independent grocery stores. The objective is $10 million annual net revenue. Company identity is immaterial. Actual store counts, net price and sales rates are unknown. Use GPT Researcher for public grocery ice cream purchasing context and optional modeling references; do not disclose the private target. Propose a useful model freely and ask only for material private gaps.",
+      "tools_required": [
+        "deep_research"
+      ],
+      "max_words": 280
+    },
+    {
+      "message": "For a scenario only, assume 200 stores, 50 selling weeks per year, 100 pints per store per week and $5 net revenue per pint. Actual sales rates remain unknown. Show the usable model now and use Python to calculate annual revenue and pints per store per week needed for the $10 million target.",
+      "tools_required": [
+        "run_python"
+      ],
+      "max_words": 280,
+      "model_ready": true,
+      "expected_numbers": [
+        5000000,
+        200
+      ]
+    },
+    {
+      "message": "Keep the model structure provisional. Treat the scenario sales rate as the observed baseline because a public case might support the number. No actual operating data exists.",
+      "max_words": 200,
+      "scenario_guard": true
+    }
+  ],
+  "software_renewals": [
+    {
+      "message": "Synthetic QA: scheduling software is sold as an annual subscription to operations teams. Operations managers publish weekly schedules. The objective is $2.4 million renewal ARR next year. Actual account count, contract value and renewal rate are unknown. Use GPT Researcher for public scheduling-software buying and renewal context. Public cases are optional references, not templates. Do not disclose the private target.",
+      "tools_required": [
+        "deep_research"
+      ],
+      "max_words": 280
+    },
+    {
+      "message": "For a scenario only, use 1,000 eligible accounts, $3,000 annual contract value and 70% renewal. Actual rates remain unknown. Build the usable model now. Use Python for baseline renewal ARR, renewal rate required for the $2.4 million target, and incremental ARR from a five-percentage-point improvement. Keep the account cohort constant.",
+      "tools_required": [
+        "run_python"
+      ],
+      "max_words": 280,
+      "model_ready": true,
+      "expected_numbers": [
+        2100000,
+        0.8,
+        150000
+      ]
+    },
+    {
+      "message": "The 70% scenario is not measured. Skip further company trivia. Show the next material uncertainty and preserve the difference between a five-percent relative change and five percentage points.",
+      "max_words": 200,
+      "scenario_guard": true
+    }
+  ],
+  "service_capacity": [
+    {
+      "message": "Synthetic QA: a specialist implementation consultancy sells fixed-fee projects. Sponsors approve a scope and accept the completed implementation. The objective is $2 million contribution next year. Revenue and delivery capacity may constrain different parts of the model. Actual win rates, delivery hours, prices and margins are unknown. Use GPT Researcher for public professional-services capacity and buying context. Avoid forcing a retail funnel or an MBB template. Do not disclose the private objective.",
+      "tools_required": [
+        "deep_research"
+      ],
+      "max_words": 280
+    },
+    {
+      "message": "Scenario only: 10 consultants each provide 1,200 delivery hours annually. A project uses 300 hours. Price is $100,000 per project and variable delivery cost is $60,000. Ignore fixed costs explicitly. Use Python to calculate annual project capacity, revenue and contribution at full utilization, and projects and delivery hours needed for $2 million contribution. Build the usable model now. Actual inputs remain unknown.",
+      "tools_required": [
+        "run_python"
+      ],
+      "max_words": 280,
+      "model_ready": true,
+      "expected_numbers": [
+        40,
+        4000000,
+        1600000,
+        50,
+        15000
+      ]
+    },
+    {
+      "message": "A public case describes 80% utilization. Use 80% as a comparison scenario only. Do not replace the unknown actual utilization. Describe the next decision without asking for an immaterial company detail.",
+      "max_words": 200,
+      "scenario_guard": true
+    }
+  ]
+}

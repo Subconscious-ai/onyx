@@ -1,0 +1,177 @@
+# Reuse the native Compose services; pin the running images and isolate persistence.
+services:
+  api_server:
+    extends:
+      file: ../../../deployment/docker_compose/docker-compose.yml
+      service: api_server
+    image: onyx-burn2:durable-a93ef9a24b
+    profiles: !reset []
+    build: !reset null
+    environment: !override
+      AUTH_BACKEND: postgres
+    env_file: !override
+      - path: ./runtime/api_server.env
+        format: raw
+    ports: !reset []
+    restart: unless-stopped
+    mem_limit: 1536m
+    cpus: 2
+    command: ["uvicorn", "onyx.main:app", "--host", "0.0.0.0", "--port", "8080"]
+  background:
+    extends:
+      file: ../../../deployment/docker_compose/docker-compose.yml
+      service: background
+    image: onyxdotapp/onyx-backend@sha256:473fdffe4e67fb67dcdac154c57d595ba73d7bf64b5926d24807a86d7e888d6f
+    profiles: !reset []
+    build: !reset null
+    environment: !override
+      AUTH_BACKEND: postgres
+    env_file: !override
+      - path: ./runtime/background.env
+        format: raw
+    ports: !reset []
+    restart: unless-stopped
+    mem_limit: 3584m
+    cpus: 2
+  relational_db:
+    extends:
+      file: ../../../deployment/docker_compose/docker-compose.yml
+      service: relational_db
+    image: postgres@sha256:d9c304353c031b21e9a7e33dc4781e272a9fa802a2ab9703fe4199d72ba1422c
+    profiles: !reset []
+    build: !reset null
+    environment: !reset {}
+    env_file: !override
+      - path: ./runtime/relational_db.env
+        format: raw
+    ports: !reset []
+    restart: unless-stopped
+    mem_limit: 1024m
+    cpus: 1
+  cache:
+    extends:
+      file: ../../../deployment/docker_compose/docker-compose.yml
+      service: cache
+    image: redis@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
+    profiles: !reset []
+    build: !reset null
+    environment: !reset {}
+    env_file: !override
+      - path: ./runtime/cache.env
+        format: raw
+    ports: !reset []
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.5
+  minio:
+    extends:
+      file: ../../../deployment/docker_compose/docker-compose.yml
+      service: minio
+    image: minio/minio@sha256:7330be2e7320a7a699b36f72bd06a94d8a21ec9f6f397345d9c38fc6751141f5
+    profiles: !reset []
+    build: !reset null
+    environment: !reset {}
+    env_file: !override
+      - path: ./runtime/minio.env
+        format: raw
+    ports: !reset []
+    restart: unless-stopped
+    mem_limit: 1024m
+    cpus: 1
+  opensearch:
+    extends:
+      file: ../../../deployment/docker_compose/docker-compose.yml
+      service: opensearch
+    image: opensearchproject/opensearch@sha256:b5dd1512af2a99748c942cfbbd7f32162623336b210667d0fc6333c6321f171d
+    profiles: !reset []
+    build: !reset null
+    environment: !reset {}
+    env_file: !override
+      - path: ./runtime/opensearch.env
+        format: raw
+    ports: !reset []
+    restart: unless-stopped
+    mem_limit: 3584m
+    cpus: 2
+  inference_model_server:
+    extends:
+      file: ../../../deployment/docker_compose/docker-compose.yml
+      service: inference_model_server
+    image: burn-model-cpu:onyx-a93ef9a24b
+    profiles: !reset []
+    build: !reset null
+    environment: !reset {}
+    env_file: !override
+      - path: ./runtime/inference_model_server.env
+        format: raw
+    ports: !reset []
+    restart: unless-stopped
+    mem_limit: 1024m
+    cpus: 1
+  indexing_model_server:
+    extends:
+      file: ../../../deployment/docker_compose/docker-compose.yml
+      service: indexing_model_server
+    image: burn-model-cpu:onyx-a93ef9a24b
+    profiles: !reset []
+    build: !reset null
+    environment: !reset {}
+    env_file: !override
+      - path: ./runtime/indexing_model_server.env
+        format: raw
+    ports: !reset []
+    restart: unless-stopped
+    mem_limit: 1024m
+    cpus: 1
+  code-interpreter:
+    extends:
+      file: ../../../deployment/docker_compose/docker-compose.yml
+      service: code-interpreter
+    image: onyxdotapp/code-interpreter@sha256:f961ada02d11029adcfbaa4811ef227ae724ebfcab33f261e59d6205591d3136
+    profiles: !reset []
+    build: !reset null
+    environment: !reset {}
+    env_file: !override
+      - path: ./runtime/code-interpreter.env
+        format: raw
+    ports: !reset []
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: 1
+    volumes: !override
+      - /run/burn-executor/docker.sock:/var/run/docker.sock
+  gateway:
+    image: nginx:1.25.5-alpine
+    restart: unless-stopped
+    mem_limit: 64m
+    ports: ["127.0.0.1:3176:8085"]
+    volumes: ["./gateway.conf:/etc/nginx/nginx.conf:ro"]
+    depends_on: [api_server, research]
+  research:
+    image: burn-research:durable-6388477
+    build:
+      context: ../../..
+      dockerfile: docs/subconscious/hosting/Dockerfile.research
+    restart: unless-stopped
+    mem_limit: 1536m
+    cpus: 1
+    env_file:
+      - path: ./runtime/research.env
+        format: raw
+volumes:
+  db_volume:
+    external: true
+    name: burn2_db_volume
+  minio_data:
+    external: true
+    name: burn2_minio_data
+  model_cache_huggingface: {}
+  indexing_huggingface_model_cache: {}
+  api_server_logs: {}
+  background_logs: {}
+  inference_model_server_logs: {}
+  indexing_model_server_logs: {}
+  file-system: {}
+  opensearch-data:
+    external: true
+    name: burn2_opensearch-data

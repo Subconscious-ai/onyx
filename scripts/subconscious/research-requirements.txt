@@ -1,0 +1,9 @@
+# Upstream MCP server: assafelovic/gptr-mcp@63884773685b1f12c7f0d9e283b3d71a5b9b5fda
+gpt-researcher==0.14.8
+fastmcp==2.14.7
+langchain-aws==1.7.5
+exa-py==1.16.2
+fastapi==0.141.1
+uvicorn==0.52.4
+python-dotenv==1.2.3
+loguru==0.7.3

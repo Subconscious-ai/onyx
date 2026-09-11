@@ -1,0 +1,7 @@
+services:
+  api_server:
+    image: onyx-burn2:preview
+    environment:
+      BURN2_ENABLED: 'true'
+      BURN2_BRIEF_MODEL_CONFIGURATION_ID: '${BURN2_BRIEF_MODEL_CONFIGURATION_ID:?Select an existing AWS structured-preparation model configuration}'
+      PDL_API_KEY: '${PDL_API_KEY:-}'

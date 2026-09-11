@@ -1,5 +1,6 @@
 "use client";
 
+import { isExecutiveAgent, visibleInterviewText } from "@/lib/executive/brief";
 import React, {
   useRef,
   RefObject,
@@ -238,7 +239,11 @@ const AgentMessage = React.memo(function AgentMessage({
       return;
     }
 
-    const textContent = removeThinkingTokens(getTextContent(rawPackets));
+    const rawTextContent = removeThinkingTokens(getTextContent(rawPackets));
+    const textContent =
+      isExecutiveAgent(chatState.agent) && typeof rawTextContent === "string"
+        ? visibleInterviewText(rawTextContent)
+        : rawTextContent;
     if (!(typeof textContent === "string" && textContent.length > 0)) return;
 
     // Only autoplay messages that were observed streaming in this lifecycle.

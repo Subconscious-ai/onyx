@@ -8,9 +8,10 @@ import { AuthTypeMetadata, type SSOProviderType } from "@/lib/auth/types";
 import { User } from "@/lib/types";
 import { hasAnyAdminPermission } from "@/lib/permissions";
 import { getCurrentUserSS } from "@/lib/users/svcSS";
+import { fetchBackend } from "@/lib/backendFetch";
 
 export async function getAuthTypeMetadataSS(): Promise<AuthTypeMetadata> {
-  const res = await fetch(buildUrl("/auth/type"));
+  const res = await fetchBackend(buildUrl("/auth/type"));
   if (!res.ok) {
     throw new Error("Failed to fetch data");
   }
@@ -77,7 +78,7 @@ export async function getAuthUrlSS(
 }
 
 async function logoutStandardSS(headers: Headers): Promise<Response> {
-  return fetch(buildUrl("/auth/logout"), { method: "POST", headers });
+  return fetchBackend(buildUrl("/auth/logout"), { method: "POST", headers });
 }
 
 export async function logoutSS(headers: Headers): Promise<Response | null> {
