@@ -14,5 +14,10 @@ export function fetchBackend(url: string | URL, options?: RequestInit) {
     dispatcher:
       new URL(url).origin === backend.origin ? previewDispatcher : undefined,
   };
+  if (new URL(url).origin === backend.origin && options?.headers) {
+    const headers = new Headers(options.headers);
+    headers.delete("host");
+    init.headers = headers;
+  }
   return fetch(url, init);
 }

@@ -1,0 +1,17 @@
+[Unit]
+Description=Burn native Onyx services
+Requires=docker.service burn-executor.service
+After=docker.service burn-executor.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/burn/app
+ExecStart=/usr/bin/docker compose -p burn2 -f docs/subconscious/hosting/compose.yml up -d --no-build
+ExecStop=/usr/bin/docker compose -p burn2 -f docs/subconscious/hosting/compose.yml stop
+TimeoutStartSec=300
+TimeoutStopSec=120
+
+[Install]
+WantedBy=multi-user.target

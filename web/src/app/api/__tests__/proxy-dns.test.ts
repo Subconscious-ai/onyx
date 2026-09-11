@@ -23,6 +23,21 @@ describe("preview proxy DNS recovery", () => {
     jest.restoreAllMocks();
   });
 
+  test("HTTPS backend routing uses the backend host while retaining native session cookies", async () => {
+    const fetchMock = jest
+      .spyOn(global, "fetch")
+      .mockResolvedValueOnce(Response.json({ saved: true }));
+    await GET(
+      new NextRequest("https://frontend.example/api/chat/saved", {
+        headers: { host: "frontend.example", cookie: "session=existing" },
+      }),
+      params
+    );
+    const headers = new Headers(fetchMock.mock.calls[0]?.[1]?.headers);
+    expect(headers.has("host")).toBe(false);
+    expect(headers.get("cookie")).toBe("session=existing");
+  });
+
   test("ordinary backends retain native fetch without preview DNS overrides", async () => {
     const fetchMock = jest
       .spyOn(global, "fetch")

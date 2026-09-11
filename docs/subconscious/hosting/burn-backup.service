@@ -1,0 +1,10 @@
+[Unit]
+Description=Encrypted Burn backup to private Vercel Blob
+After=burn2.service
+[Service]
+Type=oneshot
+ExecStart=/opt/burn/app/docs/subconscious/hosting/backup.sh
+TimeoutStartSec=15min
+ExecStopPost=-/usr/bin/docker unpause burn2-api_server-1 burn2-background-1
+Nice=10
+MemoryMax=1G

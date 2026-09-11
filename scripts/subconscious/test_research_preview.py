@@ -1,14 +1,33 @@
 """Protect bounded research without replacing the upstream collector."""
 
 import asyncio
+import os
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from fastmcp import Client, FastMCP
-from serve_research import ResearchDeadline
+from serve_research import ResearchDeadline, configure
 
 
 class ResearchDeadlineTests(unittest.IsolatedAsyncioTestCase):
+    async def test_bedrock_bearer_auth_does_not_require_an_unrelated_iam_key_pair(self):
+        environment = {
+            "AWS_BEARER_TOKEN_BEDROCK": "test-bearer",
+            "AWS_DEFAULT_REGION": "us-east-1",
+            "EXA_API_KEY": "test-search",
+            "GPTR_PREVIEW_TOKEN": "t" * 40,
+        }
+        upstream = FastMCP("Upstream research")
+        with (
+            patch.dict(os.environ, environment, clear=True),
+            patch("serve_research.runpy.run_path", return_value={"mcp": upstream}),
+        ):
+            server = await configure(Path("/unused"))
+            self.assertIs(server, upstream)
+            self.assertIsNotNone(server.auth)
+
     async def test_timeout_cancels_work_instead_of_reporting_completed_research(self):
         cancelled = asyncio.Event()
 
