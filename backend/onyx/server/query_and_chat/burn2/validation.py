@@ -35,7 +35,9 @@ def attach_source(item: Any, statements: list[str]) -> None:
             index = item.pop("sourceMessageIndex")
             if index is not None:
                 if type(index) is not int or not 0 <= index < len(statements):
-                    raise ValueError("Unknown executive source index")
+                    raise ValueError(
+                        f"sourceMessageIndex must be an integer from 0 to {len(statements) - 1}. Use the supplied zero-based executive message index, not a sentence number or an assistant message. Unknowns and hypotheses use null."
+                    )
                 if len(statements[index]) <= 1200:
                     item["quote"] = statements[index]
         for child in item.values():

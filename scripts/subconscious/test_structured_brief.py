@@ -159,6 +159,19 @@ class StructuredBriefTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_brief(brief, [source])
 
+    def test_source_repair_identifies_allowed_range_without_logging_evidence(self):
+        value = self.brief()
+        value["objective"] = {
+            "text": "Private objective",
+            "status": "executive",
+            "sourceMessageIndex": 7,
+        }
+        with self.assertRaisesRegex(
+            ValueError, r"sourceMessageIndex.*0 to 1"
+        ) as raised:
+            validate_brief(value, ["Private source one", "Private source two"])
+        self.assertNotIn("Private", str(raised.exception))
+
     def test_hypothesis_never_becomes_an_observation(self):
         value = self.brief()
         result = validate_brief(
