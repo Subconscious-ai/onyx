@@ -130,6 +130,7 @@ A target supported by an exact quote must use executive status; the separate bas
 Select the correct supporting source index separately for objective, target and deadline. An explicit correction is supported by the correction message, not the superseded statement.
 Split an established journey into individual human behavior states, each with its own ID.
 When the executive explicitly states an actor's behavior and sequence, preserve those stages and transitions as executive with the supporting sourceMessageIndex. Only inferred behavior or sequence is an assumption.
+Transition status describes the source of the stated sequence, not proof of a causal effect. An explicitly stated "after" or "then" sequence is executive-supported even when the effect size and mechanism are unknown.
 An early conversation may have no established journey or key results. Return empty journey arrays for absent customer behavior, never filler.
 A stated numeric objective MUST appear in keyResults, with the exact target and deadline.
 Every proposed equation MUST list the named model.inputs. Use unknown input values, not omitted inputs.
