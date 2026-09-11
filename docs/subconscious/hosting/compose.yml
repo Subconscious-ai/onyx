@@ -4,7 +4,7 @@ services:
     extends:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: api_server
-    image: onyx-burn2:executive-2e34a8f976
+    image: onyx-burn2:executive-f509b393b7
     profiles: !reset []
     build: !reset null
     environment: !override

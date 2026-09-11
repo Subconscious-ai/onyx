@@ -45,13 +45,13 @@ Run deterministic checks with the existing backend validator dependency installe
 PYTHONPATH=backend:scripts/subconscious python3 -m unittest test_profile_context test_eval_interview test_structured_brief test_requested_tool
 ```
 
-The scoped `Burn interview proof` workflow runs these checks on an AWS runner without model credentials. The suite detects missing fourth-answer humor, humor on other answers, fabricated unknowns, stale targets, unsuccessful preparation, transcript rewrites and optimistic save receipts. Generative joke quality still requires reviewing actual answers.
+The scoped `Burn interview proof` workflow requests an AWS runner without model credentials. The public fork currently cannot access the private-only runner group; queued jobs are not passing checks. Deterministic checks protect source validation and turn guidance. The hosted evaluator detects missing fourth-answer humor, fabricated unknowns, stale targets, unsuccessful preparation, transcript rewrites and optimistic save receipts. Generative joke quality still requires reviewing actual answers.
 
 For an authorized native Onyx test account, run from the repository root:
 
 ```bash
 python3 scripts/subconscious/eval_interview.py \
-  --origin https://onyx-executive-subconcious.vercel.app \
+  --origin https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app \
   --cookies /absolute/private/onyx.cookies --agent 5 \
   --scenario-file scripts/subconscious/executive-proof-cases.json \
   --output /absolute/private/run/interview.json \
@@ -64,7 +64,7 @@ Pass the final-turn handoff to `web/scripts/onyx-handoff-uat.ts` in causl-kb; fo
 
 ## Evidence and release boundary
 
-Local synthetic tests exercised three industries, short unknown/correction turns, the real AWS preparation action, saved conversation readback, native owner/CAS denial, PostgreSQL tenant isolation, and a real authenticated causl-kb save/reopen. Source grounding and formula checks have dedicated regression tests. The latest core conversation replay passed nine of nine turns; observed first-content latency was approximately 0.9–3.1 seconds, not an SLA.
+Earlier synthetic tests exercised three industries, short unknown/correction turns, the real AWS preparation action, saved conversation readback, native owner/CAS denial, PostgreSQL tenant isolation, and a real authenticated causl-kb save/reopen. The earlier core replay passed nine turns. Current ten-turn acceptance, failed replays and exact candidate revisions are recorded in [the active proof plan](executive-proof-plan.md). Earlier passing transport checks do not establish current model quality.
 
 Research/calculation stress tests found provider-dependent failures even when tool selection was requested: a GPT Researcher request was skipped in one GPT OSS replay; a Mistral comparison produced a Python execution error. Successful real GPT Researcher and Python receipts exist across multiple cases. The stress runs are not evidence of universal agent reliability. Explicit model preparation fails closed and leaves the saved conversation unchanged on validation/provider failure.
 
@@ -73,7 +73,9 @@ The preview is not a production readiness claim. The native backend now runs on 
 Merge authorized during the September 11 closeout. causl-kb #508 is merged and #507 is closed. Onyx #2 contains the interviewer; #5 contains durable hosting. Intermittent model-brief preparation remains tracked in Onyx #6.
 
 
-## Executive QA corrections, September 10
+## Historical executive QA corrections, September 10
+
+The fifth-answer schedule below is historical. The September 11 candidate uses answer four.
 
 The working brief now updates after completed answers while the interview remains open. Live packet text and saved messages use the same reader. A new answer supersedes an in-flight extraction; a distributed lock prevents duplicate preparation. Saved metadata returns directly to the UI, without a page reload. The bottom action remains visible. Failed preparation retains the previous draft and exposes one retry action. Background generation is bounded and resumes from saved conversation state when the interview reopens; no unattended infinite research loop exists.
 

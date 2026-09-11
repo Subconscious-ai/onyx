@@ -32,7 +32,7 @@ login both passed; lack of credentials was not the blocker.
 
 The AWS candidate `executive-5787c6f343` and fourth-answer native reminder are
 deployed. Model, system prompt, tools, document sets and sharing remain intact.
-Twenty-eight focused Python checks pass. Hosted candidate 1 passed all ten
+Twenty-eight focused Python checks passed at that revision. Hosted candidate 1 passed all ten
 conversational checks, including correction retention, no-question requests,
 fourth-answer Jerry and humor opt-out. Two intermediate preparation calls
 failed (invalid transition endpoint; missing structured tool response). The
@@ -48,3 +48,93 @@ demonstrated extraction failure, and run both hosted runners successfully.
 The public fork cannot currently access the private-only organization AWS
 runner group; do not widen runner access silently. DNS stays parked under #11.
 No merge or production-readiness claim before the complete hosted path passes.
+
+### September 11 replay findings
+
+Thirty-six focused Python checks now pass. Actual replay failures drove the
+following narrow repairs: one bounded schema-repair attempt within the existing
+time budget; mandatory source indices with server-copied original quotes;
+explicit distinction between a stated sequence and a proven causal effect;
+rejection of goal statements presented as observations; zero-question guidance;
+and useful, source-free feedback for invalid source indices. The existing
+preparation model remains Bedrock DeepSeek v3.2, now with reasoning enabled.
+Conversation remains Bedrock GPT OSS 120B. No Anthropic model was selected.
+
+Candidate 6 passed all ten turns and three saved-brief checkpoints. Candidate 7
+on the same runtime failed source/unknown preservation, and candidate 8 with
+reasoning enabled failed an invalid-source-index check. A single passing replay
+is therefore not evidence of reliable extraction. All failed receipts remain
+private, and final release proof remains pending. Current API candidate:
+`executive-ece5efebf0`, layered over the five Beca fixes without changing persona,
+tools, rootless execution or sharing.
+
+The paired causl-kb correction `eee6ef33` fixes target-purpose detection for
+CamelCase/snake_case model names. The real hosted save/reload retained POINT
+target 0.95, two empty unknown inputs, four selected stages and three transitions.
+The PostgreSQL-backed Library returned the three evidenced journey transitions.
+The direct local DATABASE_URL is a different database and is not hosted proof.
+The browser harness now additionally checks the native button handshake and
+canonical Library source readback; those new checks are not yet a passing receipt.
+
+### Private deployment artifacts
+
+Vercel CLI does not use nested Git ignore rules for deployment uploads. An
+initial CLI preview included private QA session artifacts. The unaliased preview
+was deleted, two exact Clerk sessions revoked, and the exposed native Onyx cookie
+denied after logout. An old recovery helper also printed an inline password;
+the native password was rotated and the old password rejected. Beca coordinated
+rotation of the two Vercel automation bypass keys without disabling protection.
+Previously issued protection-cookie invalidation is not assumed.
+
+The replacement frontend is built from an exact Git archive, not a working tree.
+`.vercelignore` excludes QA, environment and browser artifacts. Credentials are
+read privately at runtime, never embedded in generated helper source or logged.
+Vercel protection redirects are not application success: validate status,
+content type and authenticated identity separately. The clean frontend reopened
+the saved native interview, exposed the corrected model destination and returned
+404 for the private artifact path without browser errors.
+
+### Final hosted path, September 11
+
+The API image `executive-f509b393b7` preserves the existing saved brief during
+incremental extraction. No second memory store exists. The image retains the
+Beca runtime fixes and existing persona tools. Thirty-nine focused Python checks
+pass. A later source commit changes formatting only; another corrects evaluator
+handling of unknown derived rates.
+
+Candidate 10 passed ten turns and three checkpoints. Candidate 11 retained the
+briefs but exceeded the spoken-word budget once. Explicit attention guidance
+addresses that failure. Candidate 12 passed ten turns and three checkpoints.
+Candidate 13 retained an unknown renewal baseline in the OKR and computed the
+rate from unknown counts. The original evaluator incorrectly required a duplicate
+rate input. The corrected evaluator checks matching inputs and OKR baselines
+together; a fabricated value in either location still fails. The original
+failed receipt remains unchanged. Candidate 14 passed all ten turns and all
+three native saved-brief checkpoints on the unchanged hosted API.
+
+Paired causl-kb `c5d0a86` corrects an actual provider-input omission: the reviewed
+model brief was attached after generation but never sent to generation. The
+correction sends the reviewed equation before generation and keeps unproven
+drivers description-only. Thirty focused checks, TypeScript and ESLint pass.
+All four actual CI checks pass, including restricted-role PostgreSQL tests.
+
+The candidate 12 native-button browser run passed against the corrected hosted
+services: three stages, two transitions, five canonical Library source readbacks,
+six model cells, exact revision-one readback and duplicate-save HTTP 409.
+The 95% target remains POINT 0.95. Two unknown counts remain empty. Manual formula
+inspection confirms approved renewals / eligible customers, required renewals
+and the target gap. No weekly-use uplift or invented coefficient exists.
+The grid remains a symbolic draft, not a numeric forecast.
+
+Proof run: `701f983a-4d2b-472d-bd89-663968ccb309`.
+Frontend: `dpl_2GneUZToKgfxhfxkDiMh7Ao2a2gA`, source `f2ed7b14fe`.
+causl-kb: `dpl_1skSc2ChUjFsL3jZxaFMBjaQntJJ`, source `c5d0a86`.
+Both frontend archives exclude private working files. Native login, saved-chat
+reload and exact compiled destination checks pass before alias assignment.
+The live API owner/CAS check rejects foreign ownership and stale updates while
+preserving the original transcript. No production rollout or DNS change occurred.
+
+Publication remains blocked: the public Onyx fork cannot use the organization
+AWS runner group because `allows_public_repositories` is false. Do not expose
+the shared privileged runner to public pull requests or fabricate passing checks.
+Keep both PRs draft until the release boundary and required checks are satisfied.
