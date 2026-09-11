@@ -39,12 +39,10 @@ describe("conversation-first brief access", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (useAutomaticBrief as jest.Mock).mockReturnValue({ phase: "idle", retry });
-    global.fetch = jest
-      .fn()
-      .mockResolvedValue({
-        ok: true,
-        json: async () => ({ status: "not_found" }),
-      });
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ status: "not_found" }),
+    });
   });
   it("keeps the draft out of chat until requested and preserves composer text on return", async () => {
     render(
