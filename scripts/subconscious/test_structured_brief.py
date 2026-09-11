@@ -6,6 +6,31 @@ from onyx.server.query_and_chat.burn2.validation import validate_brief
 
 
 class StructuredBriefTest(unittest.TestCase):
+    def test_objective_cannot_be_saved_as_an_observed_operating_input(self):
+        brief = self.brief()
+        source = "The objective is 90 percent annual renewal by December 2027."
+        brief["model"]["inputs"] = [
+            {
+                "id": "renewal_rate",
+                "name": "Annual renewal rate",
+                "unit": "percent",
+                "value": {"text": source, "status": "executive", "quote": source},
+            }
+        ]
+        with self.assertRaisesRegex(ValueError, "target.*observed"):
+            validate_brief(brief, [source])
+        brief["model"]["inputs"][0]["name"] = "TargetRenewalRate"
+        self.assertEqual(
+            validate_brief(brief, [source])["model"]["inputs"][0]["value"]["status"],
+            "executive",
+        )
+        brief["model"]["inputs"][0]["name"] = "Annual renewal rate"
+        brief["model"]["inputs"][0]["value"] = {"text": "Unknown", "status": "unknown"}
+        self.assertEqual(
+            validate_brief(brief, [source])["model"]["inputs"][0]["value"]["status"],
+            "unknown",
+        )
+
     def test_invalid_generated_links_get_one_repair_before_persistence(self):
         from onyx.server.query_and_chat.burn2.validation import prepare_validated_brief
 

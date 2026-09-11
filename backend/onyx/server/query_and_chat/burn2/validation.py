@@ -45,6 +45,20 @@ def attach_source(item: Any, statements: list[str]) -> None:
             attach_source(child, statements)
 
 
+def validate_input_purpose(item: dict[str, Any]) -> None:
+    """Keep explicitly desired outcomes separate from operating observations."""
+    purpose = re.sub(r"([a-z])([A-Z])", r"\1 \2", item["name"])
+    purpose = re.sub(r"[_-]", " ", purpose)
+    if (
+        item["value"]["status"] == "executive"
+        and re.search(r"\b(?:target|goal|objective)\b", item["value"]["text"], re.I)
+        and not re.search(r"\b(?:target|goal|objective)\b", purpose, re.I)
+    ):
+        raise ValueError(
+            "A target cannot become an observed operating input. Keep baseline inputs unknown; label desired targets explicitly and use only the current corrected target."
+        )
+
+
 def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
     value = optional_evidence(value)
 
@@ -142,6 +156,7 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
         ground(edge["behavior"])
     for item in result["model"]["inputs"]:
         ground(item["value"])
+        validate_input_purpose(item)
     equation = result["model"]["equation"]
     equation["status"] = "assumption"
     equation.pop("quote", None)

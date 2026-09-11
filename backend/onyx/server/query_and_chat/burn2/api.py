@@ -125,6 +125,7 @@ The executive's stated objective, desired target and deadline use executive stat
 Unknown baselines and proposed algebra remain unknown/assumption, with a null source index.
 An explicitly unknown operating value always has status unknown, even when the executive stated that the value is unknown.
 Keep every explicitly unknown baseline rate and cohort size in model.inputs across later corrections and conclusions. Do not replace unknown baselines with the desired target or subjective scores.
+Desired targets belong in keyResults. If a target is also an equation input, name the input explicitly as a target and use only the latest corrected value. Never add a superseded goal as an observed rate or a second baseline input.
 The status "executive" means explicitly STATED by the executive, including a desired TARGET or deadline.
 A target supported by an exact quote must use executive status; the separate baseline is unknown.
 Select the correct supporting source index separately for objective, target and deadline. An explicit correction is supported by the correction message, not the superseded statement.
