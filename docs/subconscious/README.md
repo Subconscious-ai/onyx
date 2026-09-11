@@ -1,87 +1,33 @@
-# Executive interviewer preview
+# Burn 2.0 on native Onyx
 
-The executive workspace wraps native Onyx chat. Onyx continues to own streaming, conversation persistence, citations, attachments, tools, model selection and authentication. A single AWS model response contains the spoken question and a compact working brief; no second extraction request or new agent runtime is introduced.
+[Open Burn](https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app/app?agentId=5). The stable Vercel address serves the native executive interview. The backend runs on AWS at `https://api.dev.subconscious.ai/burn2`; desktop services are no longer the serving backend.
 
-## Entry points
+## Architecture
 
-- `/app/executive` resolves the accessible **Executive interview** agent without a hardcoded database ID.
-- `/executive-preview` is a labeled, interactive design sample with fictional company data. The sample is separate from live interviews and never writes customer records.
+- Vercel serves the existing Next.js interface and forwards authenticated streaming requests.
+- Native Onyx on AWS owns accounts, conversations, tool permissions, source search, and working briefs in Postgres 15. AWS Bedrock supplies conversation and background extraction models.
+- GPT Researcher runs as a private MCP container with AWS and Exa. Native Onyx retrieves the existing MBB corpus; no corpus re-import or second analyst framework is required.
+- PDL context comes from the authenticated account and remains an unconfirmed professional match. Enrichment never grants company access.
+- Background extraction validates journey, OKR and model structure against saved executive messages. Unknown inputs remain unknown. Public references and hypotheses never silently become executive facts.
+- causl-kb owns accepted market ontology and organization-scoped model persistence. The browser handoff binds the exact origin and nonce; Onyx holds no causl-kb administrator credential.
 
-The live workspace includes four specialist descriptions, a customer journey, evidence attribution, proposed interventions and a Markdown brief download. The native transcript remains the record; the side panel is a validated display projection reconstructed from saved messages or current streaming packets.
+## Start here
 
-## Configure an existing Onyx instance
+- [Hosting, recovery and deployment lessons](durable-hosting.md): native Compose, rootless execution, encrypted Vercel Blob backups, restart and restore evidence.
+- [Interview operation and QA](burn2-operations.md): source ownership, model handoff, configuration and acceptance checks.
+- [Executive research and scope](executive-interviewer.md): retained MBB source-use findings and consulting guidance.
+- [Earlier research evaluations](research-model-qa.md): historical failures, not a current release pass.
 
-Use the existing administrator session and an existing AWS Bedrock model configuration. The source agent supplies enabled tools and document-set access; the source agent remains unchanged.
+The active Burn agent is `5`, conversation model `8` (GPT OSS 120B), preparation model `5` (DeepSeek v3.2), all in the migrated native database. Resolve IDs again for another database. Ordinary conversation streaming remains separate from background preparation.
 
-```bash
-python3 scripts/subconscious/configure_executive.py \
-  --origin http://localhost:3011 \
-  --cookies /private/path/to/administrator-cookies.txt \
-  --model-configuration 15 \
-  --source-agent 1 --apply
-```
+## Remaining product work
 
-The command returns the saved agent ID and verifies the prompts, tool attachments and model configuration through a fresh read. Subsequent updates require `--update-agent <saved-id>`. The saved name must match `--name`, which defaults to `Executive interview`. Use a separate name for private QA. Attach existing native tools with repeatable `--tool-id` arguments. The model configuration ID is instance-specific. The installer rejects non-Bedrock configurations. The current preview uses Amazon Nova Pro on AWS.
+[Issue #6](https://github.com/Subconscious-ai/onyx/issues/6) records intermittent structured-brief validation failures and provider timeouts. A retry produced a persisted reviewable brief during hosting QA; a successful retry does not establish reliable first-attempt generation.
 
-The rubric uses native Onyx's `replace_base_system_prompt` setting. Without replacement, Onyx inserts agent instructions as a user message. A short native `task_prompt` reinforces answer retention and the brief contract after tool cycles. Both prompts come from versioned Markdown. Ordinary interview turns still use one model response.
+Cross-application SSO remains causl-kb #450. Community Edition is not evidence of shared-instance enterprise isolation. Rehoboam execution, measured operating outcomes, and multi-host failover are outside the hosted release. Native Onyx and causl-kb still require separate authenticated sessions.
 
-## Research and model acceptance
+## Development
 
-The current research-enabled candidate remains under evaluation. See [the research-to-model QA report](research-model-qa.md) before interpreting earlier tool-disabled checks. The native executive agent retains the earlier Nova Pro configuration until candidate quality passes. The candidate uses a separate private agent.
+The Subconscious fork is `Subconscious-ai/onyx`. The existing local `origin` remote points upstream; publish Burn changes through `subconscious`. Never push Burn-specific changes to `onyx-dot-app/onyx`.
 
-[GPT Researcher setup](research-preview.md) reuses the upstream MCP server, AWS Bedrock and Exa. Research runs on demand through native Onyx tools. No second chat interface or research implementation is added.
-
-## Conversation regression check
-
-Run synthetic conversations against a private validation agent before updating the live agent:
-
-```bash
-python3 scripts/subconscious/eval_interview.py \
-  --cookies /private/path/to/administrator-cookies.txt \
-  --agent <validation-agent-id> \
-  --model-configuration <bedrock-model-id> \
-  --output /private/path/to/interview-results.json
-```
-
-The runner soft-deletes only runner-created sessions. Results contain synthetic spoken responses and briefs. Native reasoning packets are excluded. Some providers can still put reasoning tags inside message content; raw reports remain private. Review saved answers alongside the targeted checks; regex checks cannot establish general consulting quality.
-
-The regression covers commercial framing, unknown answers, frustration, previously supplied flavors, isolated complaints, software renewal context, and conversation recovery. The original configuration failed four of five initial replay turns. The final Nova Pro configuration passed eight turns across four cases. First content packets ranged from 0.5 to 0.8 seconds locally. The sample establishes neither a latency SLA nor a general accuracy score.
-
-The repair keeps unknown topics parked, retains supplied answers, and offers provisional journeys after repeated uncertainty. A single complaint remains an observation in the transcript. A complaint cannot establish a normal journey step, a lost sale, or the main business bottleneck.
-
-The existing workspace projector accepted all eight responses and attributed all eight objectives to executive evidence. Deployed Vercel browser validation covered three further turns, saved history, and brief preservation after reload. Native request records confirmed AWS Bedrock Nova Pro. The reported conversation's messages remain unchanged; the saved model selection now uses Nova Pro.
-
-## Vercel frontend and local preview transport
-
-The Vercel project uses the repository's `web` root, Next.js, `bun install --frozen-lockfile`, and `bun run build`. Preview environment variables:
-
-```text
-INTERNAL_URL=https://<authenticated-preview-backend>
-OVERRIDE_API_PRODUCTION=true
-```
-
-Automatic Git deployments are disabled in `web/vercel.json`; preview publication uses an explicit Vercel deployment with the pushed Git SHA and the API's `staging` target. The initial automatic Git deployment selected production and was canceled. Docker standalone output remains enabled outside Vercel; Vercel builds omit standalone packaging to avoid Next.js issue #96646.
-
-`preview-nginx.conf` provides a temporary transport on the existing `onyx_default` Docker network. Native Onyx authenticates every private request. Public account registration and alternate enrollment routes are disabled on the gateway. Bind the container port to loopback before attaching a dedicated HTTPS preview tunnel. Preserve existing Tailscale serve rules.
-
-Current preview transport uses container `onyx-executive-preview-gateway`, loopback port 3176, and a dedicated Tailscale Funnel HTTPS listener on port 10000. The local Onyx stack and workstation must remain online. The gateway carries no model-provider or MCP credentials. Stop the dedicated listener with `tailscale funnel --https=10000 off`; stop the dedicated container separately. No production backend migration is included.
-
-Vercel logs exposed repeated `ENOTFOUND` failures during saved-chat reload. For Vercel connections to the configured Tailscale backend, an Undici dispatcher resolves the public hostname through Google Public DNS over HTTPS. An unsuccessful lookup falls back once to Cloudflare DNS over HTTPS before any application request is sent. Concurrent DNS lookups share a request. Addresses expire with the record TTL, capped at five minutes. TLS still verifies the original hostname. The DNS request contains no session cookies or provider credentials.
-
-The API proxy and server-side login, identity, and saved-page loaders use the same backend connection. Every application request is sent once. Native streaming remains unchanged. Other backend hosts retain the normal resolver. Thirteen focused tests cover DNS lookup sharing, expiry, failure recovery, host restriction, request preservation, server-side sign-in, authentication, and unbuffered streams with cookies. The three server-rendering regressions failed before integration. A real connection through the public resolver passed original-host TLS verification and returned health 200.
-
-## Evidence and limitations
-
-- Fifteen regression cases cover restored objectives and journey stages, live packet updates, incomplete updates, native stream termination, attributable quotes, safe source URLs, grounded contradictions, intervention references and preservation of newer executive corrections.
-- The existing nine catalog checks pass. Executive pilot copy remains English in every locale catalog; no translated pilot experience is claimed.
-- Full TypeScript checks pass. Focused lint has no errors; two pre-existing assertion warnings remain in native AppPage and AgentMessage.
-- Real AWS Bedrock responses were exercised against synthetic hospital-software interviews. Observed first-output times across three probes were 2.5–6.7 seconds; the range is a small local sample, not a latency SLA.
-- Browser checks verified immediate brief updates, identical state after reload, a mobile evidence view without horizontal overflow, and a reachable native composer after returning to the conversation.
-- Five running-gateway checks cover login bootstrap, JSON access denials, blocked public enrollment authenticated session refresh and research bearer authentication. Run `PREVIEW_COOKIE_JAR=/private/path/to/cookies.txt python3 scripts/subconscious/test_preview_gateway.py`. Set `PREVIEW_GATEWAY_URL` for a different authorized gateway.
-- Model quote fidelity is imperfect. Altered or invented quotes remain assumptions rather than attributed executive evidence. A valid later quote restores attribution. Explicit scenario, hypothesis and public-case context also prevents executive attribution. The conservative check examines the complete executive message; mixed factual and hypothetical messages can require later confirmation. Exact quote checks do not establish semantic entailment. Recruiting cases are synthetic evaluation material, not client evidence.
-
-## Remaining unified-plan work
-
-The native interviewer slice is implemented. Email-triggered PDL preparation, background GPT Researcher delivery, accepted causl-kb market writes and the saved Guesstimate V3 model connection are not implemented by this PR. The UI reports the pending market/model connection instead of presenting conversation JSON as canonical ontology or as a saved calculation model.
-
-Accepted market memory must continue through causl-kb's existing tenant authority and safe door. The next integration must bind the authenticated Onyx principal to the authorized causl-kb organization, reuse the current preparation queue, and save the validated model through the Guesstimate boundary. A model-supplied email, organization ID or journey object cannot establish authorization. Existing causl-kb #433, #437 and #450 cover relevant preparation, memory and organization work; no shared database schema is duplicated in Onyx.
+Reuse `scripts/subconscious/test_*.py`, the executive Jest tests and `eval_interview.py` for focused proof. Use synthetic sessions for writes and preserve customer transcripts. Credentials, corpus files, browser state, database dumps and encryption keys stay outside Git.

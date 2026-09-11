@@ -50,13 +50,17 @@ async def configure(upstream: Path) -> FastMCP:
             "A private preview token of at least 32 characters is required."
         )
     for key in (
-        "AWS_ACCESS_KEY_ID",
-        "AWS_SECRET_ACCESS_KEY",
         "AWS_DEFAULT_REGION",
         "EXA_API_KEY",
     ):
         if not os.environ.get(key):
             raise ValueError(f"{key} is required.")
+    if not os.environ.get("AWS_BEARER_TOKEN_BEDROCK") and not all(
+        os.environ.get(key) for key in ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY")
+    ):
+        raise ValueError(
+            "Configure AWS Bedrock bearer authentication or an AWS key pair."
+        )
     os.environ.update(
         {
             "FAST_LLM": "bedrock:us.amazon.nova-pro-v1:0",
