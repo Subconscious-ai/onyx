@@ -13883,6 +13883,9 @@
     "handoffSignIn": "Business model opened in the connected workspace. Existing workspace authentication may be required.",
     "sourceDisclosure": "Source",
     "automaticDraftBoundary": "The draft updates after each answer. Market evidence changes only after review.",
-    "reviewInGuesstimate": "Open business model"
+    "reviewInGuesstimate": "Open business model",
+    "becaName": "Beca",
+    "whatNeedsToChange": "何を変える必要がありますか？",
+    "researchContextAndLenses": "調査の背景と専門家の視点"
   }
 }

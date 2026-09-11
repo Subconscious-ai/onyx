@@ -13883,6 +13883,9 @@
     "handoffSignIn": "Business model opened in the connected workspace. Existing workspace authentication may be required.",
     "sourceDisclosure": "Source",
     "automaticDraftBoundary": "The draft updates after each answer. Market evidence changes only after review.",
-    "reviewInGuesstimate": "Revisar no business model"
+    "reviewInGuesstimate": "Revisar no business model",
+    "becaName": "Beca",
+    "whatNeedsToChange": "O que precisa mudar?",
+    "researchContextAndLenses": "Contexto da pesquisa e perspectivas especializadas"
   }
 }

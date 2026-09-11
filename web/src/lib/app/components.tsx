@@ -9,6 +9,8 @@ import {
 import { cn } from "@opal/utils";
 import Text from "@/refresh-components/texts/Text";
 import Truncated from "@/refresh-components/texts/Truncated";
+import { Wordmark } from "@/sections/brand/wordmark";
+import { DagMark } from "@/sections/brand/dag-mark";
 import { SvgOnyxLogo, SvgOnyxLogoTyped } from "@opal/logos";
 
 export interface LogoProps {
@@ -32,6 +34,17 @@ export function Logo({ folded, size, className, onyxBranded }: LogoProps) {
       <SvgOnyxLogo size={resolvedSize} className={cn("shrink-0", className)} />
     ) : (
       <SvgOnyxLogoTyped size={resolvedSize} className={className} />
+    );
+  }
+
+  if (!applicationName && !logoUrl) {
+    return folded ? (
+      <DagMark
+        className={className}
+        style={{ width: resolvedSize, height: resolvedSize }}
+      />
+    ) : (
+      <Wordmark className={className} />
     );
   }
 

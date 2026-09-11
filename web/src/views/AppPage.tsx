@@ -29,7 +29,6 @@ import { FederatedConnectorDetail, ValidSources } from "@/lib/types";
 import DocumentsSidebar from "@/sections/document-sidebar/DocumentsSidebar";
 import useChatController from "@/hooks/useChatController";
 import useMultiModelChat from "@/hooks/useMultiModelChat";
-import MultiModelSelector from "@/sections/model-selector/MultiModelSelector";
 import { useActiveAgent } from "@/lib/agents/hooks";
 import useChatSessionController from "@/hooks/useChatSessionController";
 import useDeepResearchToggle from "@/hooks/useDeepResearchToggle";
@@ -707,7 +706,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
       ? "minmax(min-content, 1fr) minmax(0, max-content) minmax(0, 1fr)"
       : isSearch
         ? "0fr auto 1fr"
-        : appPosition.isChat()
+        : appPosition.isChat() || isExecutiveAgent(activeAgent)
           ? "1fr auto 0fr"
           : appPosition.isProject()
             ? "auto auto 1fr"
@@ -914,21 +913,6 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                             isDefaultAgent={isPlainChat}
                           />
                         )}
-                        {!isSearch &&
-                          !(
-                            state.phase === "idle" && state.appMode === "search"
-                          ) &&
-                          activeAgent &&
-                          llmManager.hasAnyProvider && (
-                            <MultiModelSelector
-                              selectedModels={multiModel.selectedModels}
-                              onAdd={multiModel.addModel}
-                              onRemove={multiModel.removeModel}
-                              onReplace={multiModel.replaceModel}
-                              temperatureManager={llmManager}
-                              reasoningManager={llmManager}
-                            />
-                          )}
                       </Section>
                       <Spacer rem={1.5} />
                     </Fade>
@@ -1000,18 +984,6 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                             isSearch ? "h-[14px]" : "h-0"
                           )}
                         />
-                        {appPosition.isChat() && activeAgent && (
-                          <div className="pb-1">
-                            <MultiModelSelector
-                              selectedModels={multiModel.selectedModels}
-                              onAdd={multiModel.addModel}
-                              onRemove={multiModel.removeModel}
-                              onReplace={multiModel.replaceModel}
-                              temperatureManager={llmManager}
-                              reasoningManager={llmManager}
-                            />
-                          </div>
-                        )}
                         <AppInputBar
                           toolConfiguration={toolConfiguration}
                           ref={chatInputBarRef}
@@ -1062,7 +1034,8 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                   <div className="row-start-3 min-h-0 overflow-hidden flex flex-col items-center w-full px-2 sm:px-4">
                     {/* Agent description below input */}
                     {(appPosition.isNewSession() || appPosition.isAgent()) &&
-                      !isPlainChat && (
+                      !isPlainChat &&
+                      !isExecutiveAgent(activeAgent) && (
                         <>
                           <Spacer rem={1} />
                           <AgentDescription agent={activeAgent} />
@@ -1080,7 +1053,8 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                     <Fade
                       show={
                         (appPosition.isNewSession() || appPosition.isAgent()) &&
-                        hasAgentStarterMessages
+                        hasAgentStarterMessages &&
+                        !isExecutiveAgent(activeAgent)
                       }
                       className="h-full flex-1 w-full max-w-(--app-page-main-content-width)"
                     >

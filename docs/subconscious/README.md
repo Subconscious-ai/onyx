@@ -2,6 +2,8 @@
 
 [Open Burn](https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app/app?agentId=5). The stable Vercel address serves the native executive interview. The backend runs on AWS at `https://api.dev.subconscious.ai/burn2`; desktop services are no longer the serving backend.
 
+The customer-facing interview is Beca. See [the capability review](beca-capabilities.md) for current MCP access, MBB sourcing, voice prerequisites and the compact conversation layout.
+
 ## Architecture
 
 - Vercel serves the existing Next.js interface and forwards authenticated streaming requests.
