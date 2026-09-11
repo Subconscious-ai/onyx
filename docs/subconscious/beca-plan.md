@@ -65,3 +65,15 @@ Focused UI checks pass 33 tests, TypeScript passes, and five backend checks cove
 Backend packaging extends the current executive-proof runtime rather than replacing concurrent interview fixes. The rootless Python service now binds the stable runtime directory at /var/run and preserves that directory across restarts. The native entrypoint requires /var/run/docker.sock even when DOCKER_HOST points elsewhere; a socket-file bind retains a stale inode after daemon restart. The executive-proof task verified native execution before and after a real restart. No new executor image is required.
 
 Publication and final hosted proof are recorded in PR #10. Merge remains pending executive QA. No paid experiment was launched and no accepted model or ontology records were modified during Beca QA.
+
+### Hosted repair proof
+
+Candidate `76a416ea93` passes GitHub Jest (1,274 tests), quality, dependency audit and Vercel checks. The web tree is identical to the browser-verified `f80240d4c8` tree; follow-up commits align existing environment documentation and the root widget Next.js pin with the executive-proof fixes. No audit suppressions were added.
+
+AWS runs the five-module overlay `onyx-burn2:beca-20260911`, image `sha256:7efe1dbd1c04f1e0b7e12d86179770f8ffb8efe4b120d3a4164efb1b8f14df78`, based on `executive-32b6026edc`. The interview api/profile/validation file hashes match the base exactly. Persona 5 and the proven rootless socket mount were preserved. External health and hosted notification list/count reads return HTTP 200; upstream promotions are absent.
+
+The existing Rehoboam `ask_analyst` returned a source-bound attribute-importance chart in 64.4 seconds. Native storage served a 58,169-byte PNG; the hosted mobile browser decoded the 631×300 image at a 350-pixel display width without overflow. A canary validator initially matched a partial streamed URL; final verification used the complete returned file ID and real browser retrieval.
+
+The three requested workflows are pinned for the review account. Older personas and conversations remain available. The Beca branch model destination now points to the verified causl-kb preview `https://causl-lw0z6f3rh-subconcious.vercel.app/dashboard/burn-import`, which fixes the separate CamelCase target-admission bug. Full executive-to-model replay remains owned by the paired executive-proof PR; the Beca visual repair does not claim completion of that broader release.
+
+Picture generation remains blocked on AWS Nova Canvas authorization and expired administrator AWS login. Keep PR #10 draft and unmerged pending executive QA. Exact final deployment and cleanup receipts are recorded in the PR.

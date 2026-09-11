@@ -30,7 +30,7 @@ GPT Researcher gathers public evidence. Rehoboam exposes experiment drafting, la
 
 Rehoboam includes `check_causality`, attribute/level and outcome generation, draft create/revise/read, `start_experiment`, status/details, experiment questions, analytics metadata, feature importance, posterior distributions, willingness to pay, market share, latent-trait factors and segments. No experiment was launched during QA. `find_experiments` now supplies authorized IDs from owner-only cached summaries; `ask_analyst` calls the existing smolagents interpreter. Native MCP raster blocks are persisted through the existing file store and returned as actual chat links. Discovery coverage and artifact availability remain separate checks.
 
-Experiment execution requires an explicit instruction for the identified draft. The Actions menu never submits or launches automatically. The interview prompt enforces the conversational boundary; a separate deterministic launch-approval mechanism is not implemented by this change.
+Experiment execution requires an explicit instruction for the identified draft. The Actions menu never submits or launches automatically. The interview prompt enforces the conversational boundary; Rehoboam now owns a durable specification-hash and idempotency approval boundary through MCP elicitation. Native client elicitation support and a paid launch are not exercised by this change.
 
 The native description for `check_causality` now explicitly identifies question suitability. `is_causal=false` requests question reframing; classification is not an estimated effect or evidence of no conversion lift. Generated attribute levels remain proposals. Preserve this description when refreshing the MCP registration, or fix the upstream description before refresh.
 
@@ -76,3 +76,9 @@ Fenced Mermaid now renders through a lazy, pinned Mermaid library with strict se
 The native image provider registry now supports Amazon Nova Canvas through installed LiteLLM and the AWS credential chain. Setup is available under administrator Image Generation. No OpenAI secret is needed. Activation is blocked by missing `bedrock:InvokeModel` permission for `arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-canvas-v1:0`; an expired local AWS login prevented the narrow policy update. Reference-image editing is explicitly unsupported. No picture-generation success is claimed before actual PNG output passes.
 
 Upstream promotional notifications are filtered from both counts and lists. Operational, connector and administrator-authored notifications remain available. Product copy, fallback icons, loading indicators and the old permissions-migration banners use the Subconscious surface. Source publisher identities, legal notices, technical identifiers and official documentation links remain accurate.
+
+### Latest hosted verification
+
+Saved-study discovery returned three authorized study summaries in 6.9 seconds. A supplied-structure Mermaid request returned in 1.8 seconds without tool calls and rendered in both themes. The smolagents analyst returned a real PNG from existing study results in 64.4 seconds; native chat-file retrieval and mobile image decoding passed. Analyst work is slower than ordinary conversation and saved-study search. No experiment was launched.
+
+The model handoff destination for the Beca review branch is the verified causl-kb preview `https://causl-lw0z6f3rh-subconcious.vercel.app/dashboard/burn-import`. Preserve exact origin checks. Full interview/model reliability evidence remains in the paired executive-proof work.
