@@ -42,10 +42,10 @@ Push reviewed frontend changes to a Burn branch. Vercel builds the commit and up
 Use the branch URL from the Vercel deployment record. A failed build leaves the last successful branch preview available.
 Before enabling `main`, configure production backend and model-handoff settings, then complete executive acceptance checks.
 The current project has preview connection settings only; enabling production releases now would publish an unconfigured application.
-The current feature remains in review; automatic builds do not authorize feature merges or establish executive readiness.
+Automatic builds do not authorize feature merges or establish executive readiness.
 
 The existing `burn.subconscious.ai` domain serves causl-kb. Domain replacement requires explicit approval.
-The shared review alias is `https://onyx-executive-subconcious.vercel.app/app/executive`; alias promotion remains manual.
+The shared review alias is `https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app/app?agentId=5`; alias promotion remains manual.
 Native Git builds update branch aliases, not the manually assigned shared review alias.
 
 Vercel releases only the frontend and API forwarding. AWS backend images, data, backups and service restarts remain separate.
