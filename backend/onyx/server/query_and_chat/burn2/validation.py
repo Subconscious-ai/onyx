@@ -189,6 +189,26 @@ def needs_completion(value: dict) -> bool:
     )
 
 
+def latest_saved_brief(transcript: list[dict], statements: list[str]) -> dict | None:
+    """Reuse the owned native draft as context, never as new source evidence."""
+    for message in reversed(transcript):
+        if (
+            message["type"] != "assistant"
+            or "</interview-brief>" not in message["message"]
+        ):
+            continue
+        try:
+            text = (
+                message["message"]
+                .split("<interview-brief>", 1)[1]
+                .split("</interview-brief>", 1)[0]
+            )
+            return validate_brief(json.loads(text), statements)
+        except (ValueError, IndexError):
+            continue
+    return None
+
+
 def prepare_validated_brief(
     generate: Callable[[str | None], Any], statements: list[str]
 ) -> dict[str, Any]:

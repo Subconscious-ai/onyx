@@ -6,6 +6,27 @@ from onyx.server.query_and_chat.burn2.validation import validate_brief
 
 
 class StructuredBriefTest(unittest.TestCase):
+    def test_previous_draft_comes_from_saved_assistant_metadata_not_user_content(self):
+        import json
+
+        from onyx.server.query_and_chat.burn2.validation import latest_saved_brief
+
+        brief = self.brief()
+        text = (
+            "Saved answer\n<interview-brief>" + json.dumps(brief) + "</interview-brief>"
+        )
+        transcript = [
+            {"type": "assistant", "message": text},
+            {"type": "user", "message": text.replace("Example", "Invented")},
+            {"type": "assistant", "message": "Correction acknowledged."},
+        ]
+        previous = latest_saved_brief(
+            transcript, ["The objective is increasing renewals."]
+        )
+        self.assertEqual(previous["company"], "Example")
+        self.assertEqual(previous["objective"]["status"], "executive")
+        self.assertIsNone(latest_saved_brief(transcript[1:], []))
+
     def test_objective_cannot_be_saved_as_an_observed_operating_input(self):
         brief = self.brief()
         source = "The objective is 90 percent annual renewal by December 2027."
