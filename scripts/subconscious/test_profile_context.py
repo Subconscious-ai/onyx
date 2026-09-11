@@ -11,7 +11,9 @@ class ProfileTests(unittest.TestCase):
     def test_every_turn_has_an_executive_attention_budget(self):
         for turn in (1, 2, 3, 4, 5):
             with self.subTest(turn=turn):
-                self.assertIn("Maximum 60 spoken words", turn_guidance(turn, "No questions."))
+                self.assertIn(
+                    "Maximum 60 spoken words", turn_guidance(turn, "No questions.")
+                )
 
     def test_explicit_summary_request_sets_a_zero_question_turn_budget(self):
         for request in (
