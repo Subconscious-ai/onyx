@@ -7,8 +7,10 @@ saved answers as well. Only sessions created by this runner are soft-deleted.
 import argparse
 import http.cookiejar
 import json
+import os
 import re
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -31,6 +33,11 @@ class Turn:
     model_ready: bool = False
     scenario_guard: bool = False
     brief_required: bool = True
+    jerry: bool | None = None
+    prepare_brief: bool = False
+    target_requires: str = ""
+    target_forbidden: str = ""
+    unknown_inputs: tuple[str, ...] = ()
 
 
 CASES = {
@@ -132,6 +139,11 @@ def assess(turn: Turn, text: str, previous: str) -> list[str]:
     asked = question(spoken)
     if not spoken.strip() or len(spoken.split()) > turn.max_words:
         failures.append("Missing or overlong spoken turn")
+    roast_count = len(re.findall(r"\bJerry\s*\*{0,2}:\s*", spoken, re.I))
+    if turn.jerry is not None and roast_count != int(turn.jerry):
+        failures.append(
+            "Jerry must appear exactly once on the scheduled answer, never otherwise"
+        )
     if asked and asked == question(previous.split("<interview-brief>", 1)[0]):
         failures.append("Question repeated verbatim from the previous turn")
     if len(questions(spoken)) > 1:
@@ -172,6 +184,22 @@ def assess(turn: Turn, text: str, previous: str) -> list[str]:
             failures.append(
                 "Unknown answer re-asked on the same topic: " + ", ".join(repeated)
             )
+    failures.extend(assess_embedded_brief(turn, text))
+    if turn.model_ready and not re.search(
+        r"scenario|hypothes|provisional|conditional|propos|draft", spoken, re.I
+    ):
+        failures.append("Model output hides provisional assumptions")
+    if turn.scenario_guard and not re.search(
+        r"unknown|unmeasured|not (?:observed|measured)|scenario|hypothetical|illustrative",
+        spoken,
+        re.I,
+    ):
+        failures.append("Scenario pressure lost the unknown-input boundary")
+    return failures
+
+
+def assess_embedded_brief(turn: Turn, text: str) -> list[str]:
+    failures = []
     if turn.brief_required and "<interview-brief>" not in text:
         failures.append("Working brief missing")
     elif "<interview-brief>" in text:
@@ -194,16 +222,6 @@ def assess(turn: Turn, text: str, previous: str) -> list[str]:
                 )
         except (ValueError, AttributeError):
             failures.append("Working brief is not complete JSON")
-    if turn.model_ready and not re.search(
-        r"scenario|hypothes|provisional|conditional|propos|draft", spoken, re.I
-    ):
-        failures.append("Model output hides provisional assumptions")
-    if turn.scenario_guard and not re.search(
-        r"unknown|unmeasured|not (?:observed|measured)|scenario|hypothetical|illustrative",
-        spoken,
-        re.I,
-    ):
-        failures.append("Scenario pressure lost the unknown-input boundary")
     return failures
 
 
@@ -258,6 +276,144 @@ def assess_tools(turn: Turn, tool_packets: list[dict[str, Any]]) -> list[str]:
     return failures
 
 
+def assess_prepared(
+    turn: Turn, before: list[dict], after: list[dict], prepared: dict
+) -> list[str]:
+    """Compare durable native messages, not an optimistic success banner."""
+    failures = []
+    if not prepared.get("saved") or not isinstance(prepared.get("message"), str):
+        return ["Preparation did not return a saved brief"]
+    if (
+        not before
+        or len(before) != len(after)
+        or after[-1] != {"type": "assistant", "message": prepared["message"]}
+    ):
+        return ["Reopened conversation does not contain the prepared brief"]
+    if (
+        before[:-1] != after[:-1]
+        or before[-1]["message"].split("<interview-brief>")[0].rstrip()
+        != after[-1]["message"].split("<interview-brief>")[0].rstrip()
+    ):
+        failures.append(
+            "Preparation changed original source messages or spoken answers"
+        )
+    text = prepared["message"]
+    if text.count("<interview-brief>") != 1 or text.count("</interview-brief>") != 1:
+        return failures + ["Prepared brief missing or duplicated"]
+    try:
+        brief = json.loads(
+            text.split("<interview-brief>", 1)[1].split("</interview-brief>", 1)[0]
+        )
+        targets = " ".join(item["target"]["text"] for item in brief["keyResults"])
+        if turn.target_requires and not re.search(turn.target_requires, targets, re.I):
+            failures.append("Corrected target missing from the saved brief")
+        if turn.target_forbidden and re.search(turn.target_forbidden, targets, re.I):
+            failures.append("Superseded target remains in the saved brief")
+        for pattern in turn.unknown_inputs:
+            matches = [
+                item
+                for item in brief["model"]["inputs"]
+                if re.search(pattern, item["name"], re.I)
+            ]
+            if not matches or any(
+                item["value"]["status"] != "unknown"
+                or not re.search(
+                    r"unknown|unavailable|not (?:known|measured|established)",
+                    item["value"]["text"],
+                    re.I,
+                )
+                for item in matches
+            ):
+                failures.append(
+                    "Unknown operating input omitted or fabricated: " + pattern
+                )
+    except (ValueError, KeyError, TypeError):
+        failures.append("Prepared brief is not readable model data")
+    return failures
+
+
+def native_messages(session: dict) -> list[dict]:
+    return [
+        {"type": row["message_type"], "message": row["message"]}
+        for row in session["messages"]
+        if row["message_type"] in {"user", "assistant"} and row["message"].strip()
+    ]
+
+
+def checkpoint(api, sid: str, turn: Turn, expected_sources: list[str]) -> dict:
+    """Use the same saved chat, preparation endpoint and handoff as the UI."""
+    with api("/chat/get-chat-session/" + sid) as response:
+        before = native_messages(json.load(response))
+    failures = []
+    if [row["message"] for row in before if row["type"] == "user"] != expected_sources:
+        failures.append(
+            "Reopened executive statements differ from the submitted conversation"
+        )
+    try:
+        with api("/chat/executive-brief", {"chat_id": sid}) as response:
+            prepared = json.load(response)
+    except urllib.error.HTTPError as error:
+        # No silent retry: intermittent failures remain visible in the receipt.
+        with api("/chat/get-chat-session/" + sid) as response:
+            after = native_messages(json.load(response))
+        failures.append(f"Preparation failed: HTTP {error.code}")
+        if after != before:
+            failures.append("Failed preparation changed the saved conversation")
+        return {"failures": failures, "failure_preserved_transcript": after == before}
+    with api("/chat/get-chat-session/" + sid) as response:
+        after = native_messages(json.load(response))
+    failures.extend(assess_prepared(turn, before, after, prepared))
+    return {
+        "failures": failures,
+        "message_id": prepared.get("message_id"),
+        "handoff": {
+            "format": "burn/onyx-interview",
+            "version": 1,
+            "chatId": sid,
+            "messages": after,
+        },
+    }
+
+
+def write_private_json(path: Path, value: Any, *, exclusive: bool = False) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with open(
+        path,
+        "x" if exclusive else "w",
+        opener=lambda filename, flags: os.open(filename, flags, 0o600),
+    ) as output:
+        os.fchmod(output.fileno(), 0o600)
+        json.dump(value, output, indent=2)
+
+
+def cleanup_session(api, sid: str, name: str) -> list[dict]:
+    try:
+        with api(
+            "/chat/delete-chat-session/" + sid + "?hard_delete=false", method="DELETE"
+        ):
+            return []
+    except urllib.error.URLError as error:
+        return [
+            {
+                "case": name,
+                "session_id": sid,
+                "failures": [
+                    f"Synthetic session cleanup failed: {type(error).__name__}"
+                ],
+            }
+        ]
+
+
+def allowed_bedrock_models(providers: list[dict]) -> set[int]:
+    return {
+        model["id"]
+        for provider in providers
+        if provider["provider"] == "bedrock"
+        for model in provider["model_configurations"]
+        if model.get("name") and not re.search(r"anthropic|claude", model["name"], re.I)
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--origin", default="http://localhost:3011")
@@ -269,6 +425,11 @@ def main() -> None:
         help="Optional existing Bedrock model for a comparison",
     )
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument(
+        "--handoff-dir",
+        type=Path,
+        help="Private native handoffs for the causl-kb review/save test",
+    )
     parser.add_argument("--case", action="append")
     parser.add_argument(
         "--scenario-file", type=Path, help="Synthetic tool-enabled interview cases"
@@ -287,6 +448,11 @@ def main() -> None:
         }
     if args.case and any(name not in cases for name in args.case):
         parser.error("Unknown selected case")
+    if not cases or any(
+        not turns or any(not turn.message.strip() for turn in turns)
+        for turns in cases.values()
+    ):
+        parser.error("Evaluation requires nonempty conversations and executive answers")
     if urllib.parse.urlsplit(args.origin).scheme not in ("http", "https"):
         parser.error("Origin must use HTTP or HTTPS")
     jar = http.cookiejar.MozillaCookieJar(args.cookies)
@@ -305,23 +471,19 @@ def main() -> None:
         )
 
     results: list[dict[str, Any]] = []
-    if args.model_configuration is not None:
-        with api("/llm/provider") as response:
-            providers = json.load(response)["providers"]
-        bedrock_ids = {
-            model["id"]
-            for provider in providers
-            if provider["provider"] == "bedrock"
-            for model in provider["model_configurations"]
-        }
-        if args.model_configuration not in bedrock_ids:
-            raise ValueError(
-                "Model comparison requires an existing AWS Bedrock configuration"
-            )
+    with api(f"/persona/{args.agent}") as response:
+        agent = json.load(response)
+    selected_model = args.model_configuration or agent.get(
+        "default_model_configuration_id"
+    )
+    with api("/llm/provider") as response:
+        providers = json.load(response)["providers"]
+    if selected_model not in allowed_bedrock_models(providers):
+        raise ValueError(
+            "Interview evaluation requires an explicit non-Anthropic AWS Bedrock model"
+        )
     allowed_tools = []
     if args.scenario_file:
-        with api(f"/persona/{args.agent}") as response:
-            agent = json.load(response)
         allowed_tools = [
             tool["id"]
             for tool in agent["tools"]
@@ -386,7 +548,7 @@ def main() -> None:
                         ):
                             tool_packets.append(obj)
                         if packet.get("error"):
-                            errors.append(str(packet["error"]))
+                            errors.append("Native chat returned a stream error")
                 answer = "".join(fragments)
                 failures = errors + assess(turn, answer, previous)
                 simulated_minutes += (
@@ -395,6 +557,18 @@ def main() -> None:
                     + 0.25
                 )
                 failures.extend(assess_tools(turn, tool_packets))
+                saved = None
+                if turn.prepare_brief:
+                    saved = checkpoint(
+                        api,
+                        sid,
+                        turn,
+                        [item.message for item in cases[name][: index + 1]],
+                    )
+                    failures.extend(saved["failures"])
+                    if args.handoff_dir and not saved["failures"]:
+                        path = args.handoff_dir / f"{sid}-turn-{index + 1}.json"
+                        write_private_json(path, saved["handoff"], exclusive=True)
                 results.append(
                     {
                         "case": name,
@@ -410,8 +584,14 @@ def main() -> None:
                         "scripted_read_answer_minutes_proxy": round(
                             simulated_minutes, 2
                         ),
-                        "model_checkpoint_requested": turn.model_ready,
-                        "usable_model_pass": None,  # Manual review remains required.
+                        "model_checkpoint_requested": turn.model_ready
+                        or turn.prepare_brief,
+                        "causl_model_saved_and_reopened": None,  # Separate authenticated causl-kb UAT owns this proof.
+                        "brief_saved_and_reopened": None
+                        if saved is None
+                        else not saved["failures"],
+                        "preparation": saved,
+                        "model_configuration_id": selected_model,
                         "expected_numbers": turn.expected_numbers,
                         "tool_packets": tool_packets,
                         "session_id": sid,
@@ -429,16 +609,23 @@ def main() -> None:
                     flush=True,
                 )
                 previous = answer
+        except (urllib.error.URLError, TimeoutError, ValueError, KeyError) as error:
+            results.append(
+                {
+                    "case": name,
+                    "session_id": sid,
+                    "failures": [f"Evaluation interrupted: {type(error).__name__}"],
+                    "http_status": getattr(error, "code", None),
+                }
+            )
+            print(
+                json.dumps({"case": name, "failures": results[-1]["failures"]}),
+                flush=True,
+            )
         finally:
             if not args.keep_sessions:
-                with api(
-                    "/chat/delete-chat-session/" + sid + "?hard_delete=false",
-                    method="DELETE",
-                ):
-                    pass
-            args.output.parent.mkdir(parents=True, exist_ok=True)
-            args.output.write_text(json.dumps(results, indent=2))
-            args.output.chmod(0o600)
+                results.extend(cleanup_session(api, sid, name))
+            write_private_json(args.output, results)
     raise SystemExit(1 if any(result["failures"] for result in results) else 0)
 
 

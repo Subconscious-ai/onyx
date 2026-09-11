@@ -29,11 +29,38 @@ Set the Onyx frontend build variable `NEXT_PUBLIC_BURN_MODEL_WORKSPACE` to the p
 
 ## QA path
 
+The #13 candidate schedules Jerry on the **fourth nonempty executive answer**, replacing the previous fifth-answer rule. A short `Jerry:` punchline targets a volunteered business boast or contradiction. Opt-out and distress suppress humor. Jokes never become accepted evidence. Backend image and native persona reminder must both be released before hosted timing changes; a Vercel frontend build alone cannot change server guidance.
+
 1. Open `/app/executive` and select Burn 2.0. State a product, business objective, target, deadline and known customer decisions. Mark unavailable operating values unknown.
 2. Correct a target or state an unknown answer. Verify that the interview incorporates the correction without repeating the same question or inventing a baseline.
 3. Select **OKRs & model**. Reload the conversation. Verify the source labels, goal, deadline, customer states, proposed transitions and material gaps.
 4. Select **Open business model**. Sign into causl-kb, choose the organization market and review the imported brief. The downloaded file supports an explicit import if browser handoff is unavailable.
 5. Select only source-supported journey statements intended for accepted market memory. Prepare the model, review the native grid, and explicitly save. Reopen the model and verify persistence. Unknown inputs must remain unknown; unsupported coefficients and invalid units must never become a usable forecast.
+
+### Repeatable acceptance suite
+
+Run deterministic checks with the existing backend validator dependency installed:
+
+```bash
+PYTHONPATH=backend:scripts/subconscious python3 -m unittest test_profile_context test_eval_interview test_structured_brief test_requested_tool
+```
+
+The scoped `Burn interview proof` workflow runs these checks on an AWS runner without model credentials. The suite detects missing fourth-answer humor, humor on other answers, fabricated unknowns, stale targets, unsuccessful preparation, transcript rewrites and optimistic save receipts. Generative joke quality still requires reviewing actual answers.
+
+For an authorized native Onyx test account, run from the repository root:
+
+```bash
+python3 scripts/subconscious/eval_interview.py \
+  --origin https://onyx-executive-subconcious.vercel.app \
+  --cookies /absolute/private/onyx.cookies --agent 5 \
+  --scenario-file scripts/subconscious/executive-proof-cases.json \
+  --output /absolute/private/run/interview.json \
+  --handoff-dir /absolute/private/run/handoffs --keep-sessions
+```
+
+The runner verifies a non-Anthropic Bedrock conversation model, invokes the real preparation endpoint, reopens native messages and exports the existing `burn/onyx-interview` format. Resolve the preparation model separately on the target instance; no provider configuration is changed by the runner. Missing authentication fails, rather than skips. Failed preparation remains a failed checkpoint even after a later successful preparation. `brief_saved_and_reopened` is separate from `causl_model_saved_and_reopened`, which remains unset until the paired causl-kb browser UAT proves the actual model save.
+
+Pass the final-turn handoff to `web/scripts/onyx-handoff-uat.ts` in causl-kb; follow [causl-kb executive QA](https://github.com/Subconscious-ai/causl-kb/blob/codex/544-onyx-proof/docs/onyx-executive-qa.md). No new ingestion protocol, cross-application administrator token or automatic ontology acceptance exists. Keep transcripts, cookie jars, handoffs and screenshots private. `--keep-sessions` deliberately retains synthetic conversations for review; omit the flag for native soft deletion. No existing conversations are deleted.
 
 ## Evidence and release boundary
 

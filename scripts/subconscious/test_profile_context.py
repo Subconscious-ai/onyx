@@ -40,8 +40,21 @@ class ProfileTests(unittest.TestCase):
             select_profile({"likelihood": 2, "data": {"full_name": "Wrong person"}})
         )
 
-    def test_jerry_is_once_on_fifth_answer_and_suppressed_after_frustration(self):
-        self.assertIn("Jerry", turn_guidance(5, "The product is ice cream."))
-        self.assertNotIn("Jerry", turn_guidance(4, "The product is ice cream."))
-        self.assertNotIn("Jerry", turn_guidance(6, "The product is ice cream."))
-        self.assertNotIn("Jerry", turn_guidance(5, "Stop repeating the same question."))
+    def test_jerry_is_once_on_fourth_executive_answer(self):
+        self.assertIn("Jerry", turn_guidance(4, "The sales forecast runs on optimism."))
+        for turn in (0, 1, 2, 3, 5, 6, 8):
+            with self.subTest(turn=turn):
+                self.assertNotIn(
+                    "Jerry", turn_guidance(turn, "The product is ice cream.")
+                )
+
+    def test_fourth_answer_respects_humor_opt_out_and_distress(self):
+        for answer in (
+            "Stop repeating the same question.",
+            "No jokes, please.",
+            "Don't roast me.",
+            "Please keep this serious.",
+            "The company is closing and everyone is losing their jobs.",
+        ):
+            with self.subTest(answer=answer):
+                self.assertNotIn("Jerry", turn_guidance(4, answer))

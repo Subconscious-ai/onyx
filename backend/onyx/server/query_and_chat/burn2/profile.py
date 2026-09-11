@@ -22,12 +22,14 @@ def select_profile(payload: dict) -> dict[str, Any] | None:
 
 
 def turn_guidance(turn: int, text: str) -> str:
-    if turn == 5 and not re.search(
-        r"\b(stop|frustrat\w*|repeat\w*|annoy\w*|awful|angry|roast me not|no jokes|no humor)\b",
+    if turn == 4 and not re.search(
+        r"\b(stop|frustrat\w*|annoy\w*|awful|angry|repeating the same|"
+        r"roast me not|no jokes|no humo[u]?r|don.t roast|do not roast|"
+        r"keep (?:this|it) serious|losing their jobs|layoffs|company is closing)\b",
         text,
         re.I,
     ):
-        return "Turn five: Jerry contributes one short, affectionate roast about a volunteered business remark, then the normal interviewer continues. Maximum 15 words of humor. Never mock identity, personal data, customers or uncertainty. Omit humor if the conversation shows distress. No extra question."
+        return "Executive answer four: Jerry contributes exactly one sharp, funny business roast, prefixed 'Jerry:'. Maximum 15 words for the punchline. Skewer a volunteered boast, business contradiction or unsupported grand ambition; aim for a cutting observation, not encouragement. Use only executive-supplied business context, never invent facts. Never mock identity, personal data, customers, job losses or an honest unknown. Omit humor after a humor opt-out or distress anywhere in the conversation. The regular interviewer then continues briefly, with no extra question. A joke is not evidence and must never enter the model brief."
     return "No humor on this turn. Do not repeat previous jokes. Use the relevant specialist objective: Sarah maps customer decisions; Frankie links the target to economic drivers; Mei checks alternatives and conflicting evidence. One concise answer, one material question maximum."
 
 
