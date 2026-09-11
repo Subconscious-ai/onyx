@@ -31,3 +31,23 @@ Cross-application SSO remains causl-kb #450. Community Edition is not evidence o
 The Subconscious fork is `Subconscious-ai/onyx`. The existing local `origin` remote points upstream; publish Burn changes through `subconscious`. Never push Burn-specific changes to `onyx-dot-app/onyx`.
 
 Reuse `scripts/subconscious/test_*.py`, the executive Jest tests and `eval_interview.py` for focused proof. Use synthetic sessions for writes and preserve customer transcripts. Credentials, corpus files, browser state, database dumps and encryption keys stay outside Git.
+
+## Automatic frontend releases
+
+The existing `onyx-executive` Vercel project connects to `Subconscious-ai/onyx`, with `web` as the root directory.
+`web/vercel.json` enables native Git builds for `codex/**` previews. Production and other branches remain disabled.
+The rules apply after the configuration reaches each branch. No extra GitHub deployment token or release workflow is required.
+
+Push reviewed frontend changes to a Burn branch. Vercel builds the commit and updates the branch preview after success.
+Use the branch URL from the Vercel deployment record. A failed build leaves the last successful branch preview available.
+Before enabling `main`, configure production backend and model-handoff settings, then complete executive acceptance checks.
+The current project has preview connection settings only; enabling production releases now would publish an unconfigured application.
+Automatic builds do not authorize feature merges or establish executive readiness.
+
+The existing `burn.subconscious.ai` domain serves causl-kb. Domain replacement requires explicit approval.
+The shared review alias is `https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app/app?agentId=5`; alias promotion remains manual.
+Native Git builds update branch aliases, not the manually assigned shared review alias.
+
+Vercel releases only the frontend and API forwarding. AWS backend images, data, backups and service restarts remain separate.
+Use [the hosting procedure](durable-hosting.md) for backend changes. Never restart desktop writers after the AWS migration.
+Preserve the exact handoff origins, authenticated access and private configuration during release.
