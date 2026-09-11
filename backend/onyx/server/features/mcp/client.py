@@ -5,6 +5,7 @@ This module provides a proper MCP client that follows the JSON-RPC 2.0 specifica
 and handles connection initialization, session management, and protocol communication.
 """
 
+import base64
 from collections.abc import Callable, Coroutine
 from enum import Enum
 from typing import Any, Dict, TypeVar
@@ -15,6 +16,7 @@ from mcp.client.sse import sse_client
 from mcp.client.streamable_http import streamablehttp_client  # or use stdio_client
 from mcp.types import (
     CallToolResult,
+    ImageContent,
     InitializeResult,
     ListResourcesResult,
     TextResourceContents,
@@ -220,11 +222,41 @@ async def _call_mcp_client_function_async(
     return await run_client_function()
 
 
+def _save_mcp_image(block: ImageContent) -> str:
+    from onyx.file_store.utils import build_frontend_file_url, save_file_from_base64
+    from onyx.utils.b64 import get_image_type_from_bytes
+
+    if block.mimeType not in {"image/png", "image/jpeg", "image/webp"}:
+        raise ValueError("Unsupported MCP image type")
+    decoded = base64.b64decode(block.data, validate=True)
+    if get_image_type_from_bytes(decoded) != block.mimeType:
+        raise ValueError("MCP image type mismatch")
+    file_id = save_file_from_base64(block.data)
+    return f"![Analysis chart]({build_frontend_file_url(file_id)})"
+
+
 def process_mcp_result(call_tool_result: CallToolResult) -> str:
-    """Flatten MCP CallToolResult->text (prefers text content blocks)."""
+    """Keep MCP text and bounded raster charts in native conversation storage."""
     # TODO: use structured_content if available
     parts = []
+    image_count = 0
+    image_bytes = 0
     for content_block in call_tool_result.content:
+        if isinstance(content_block, ImageContent):
+            image_count += 1
+            image_bytes += len(content_block.data)
+            if call_tool_result.isError or image_count > 4 or image_bytes > 8_000_000:
+                parts.append(
+                    "An image is unavailable: the tool failed or exceeded image limits."
+                )
+                continue
+            try:
+                parts.append(_save_mcp_image(content_block))
+            except Exception as error:
+                logger.warning("MCP image unavailable: %s", type(error).__name__)
+                parts.append(
+                    "An image is unavailable. The text results remain available."
+                )
         if content_block.type == ContentBlockTypes.TEXT.value:
             parts.append(content_block.text or "")
         if content_block.type == ContentBlockTypes.RESOURCE.value:
@@ -240,7 +272,10 @@ def process_mcp_result(call_tool_result: CallToolResult) -> str:
             )
         # TODO: handle other content block types
 
-    return "\n\n".join(p for p in parts if p) or str(call_tool_result.structuredContent)
+    result = "\n\n".join(p for p in parts if p) or str(
+        call_tool_result.structuredContent
+    )
+    return f"Tool reported an error: {result}" if call_tool_result.isError else result
 
 
 def _call_mcp_tool(tool_name: str, arguments: dict[str, Any]) -> MCPClientFunction[str]:

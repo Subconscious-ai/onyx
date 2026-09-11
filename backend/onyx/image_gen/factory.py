@@ -5,17 +5,20 @@ from onyx.image_gen.interfaces import (
     ImageGenerationProviderCredentials,
 )
 from onyx.image_gen.providers.azure_img_gen import AzureImageGenerationProvider
+from onyx.image_gen.providers.bedrock_img_gen import BedrockImageGenerationProvider
 from onyx.image_gen.providers.openai_img_gen import OpenAIImageGenerationProvider
 from onyx.image_gen.providers.vertex_img_gen import VertexImageGenerationProvider
 
 
 class ImageGenerationProviderName(str, Enum):
+    BEDROCK = "bedrock"
     AZURE = "azure"
     OPENAI = "openai"
     VERTEX_AI = "vertex_ai"
 
 
 PROVIDERS: dict[ImageGenerationProviderName, type[ImageGenerationProvider]] = {
+    ImageGenerationProviderName.BEDROCK: BedrockImageGenerationProvider,
     ImageGenerationProviderName.AZURE: AzureImageGenerationProvider,
     ImageGenerationProviderName.OPENAI: OpenAIImageGenerationProvider,
     ImageGenerationProviderName.VERTEX_AI: VertexImageGenerationProvider,

@@ -1,0 +1,9 @@
+# Extend the verified native runtime without replacing dependencies or database state.
+ARG BURN_BASE_IMAGE
+FROM ${BURN_BASE_IMAGE}
+COPY backend/onyx/image_gen/factory.py /app/onyx/image_gen/factory.py
+COPY backend/onyx/image_gen/providers/bedrock_img_gen.py /app/onyx/image_gen/providers/bedrock_img_gen.py
+COPY backend/onyx/db/notification.py /app/onyx/db/notification.py
+COPY backend/onyx/server/features/notifications/api.py /app/onyx/server/features/notifications/api.py
+COPY backend/onyx/server/features/mcp/client.py /app/onyx/server/features/mcp/client.py
+COPY scripts/subconscious/test_beca_providers.py /tmp/test_beca_providers.py

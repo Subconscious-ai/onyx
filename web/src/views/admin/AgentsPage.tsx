@@ -1,6 +1,7 @@
 "use client";
 
-import { SvgOnyxOctagon, SvgPlus } from "@opal/icons";
+import { SvgPlus } from "@opal/icons";
+import { SubconsciousIcon as SvgOnyxOctagon } from "@/sections/brand/SubconsciousIcon";
 import { Button } from "@opal/components";
 import { SettingsLayouts } from "@opal/layouts";
 import Link from "next/link";

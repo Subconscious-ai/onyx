@@ -45,3 +45,23 @@ Live canaries reached both MCP servers and native internal search. GPT Researche
 Python first timed out, then returned the expected synthetic total of 4,500. The final retry produced a downloadable PNG in 8.6 seconds. The initial causality answer incorrectly interpreted classification as a measured effect. Updated rubric, turn reminder and native tool description corrected the final canary to question framing. Those narrow passes do not close model-grounding issue #12 or structured-brief reliability issue #6.
 
 No experiment was launched, no accepted ontology/model records were changed, and no enterprise data connector was provisioned. Synthetic QA sessions were soft-deleted. Draft publication remains separate from merge and production promotion.
+
+## September 11 acceptance repairs
+
+Job: make the three requested workflows discoverable and make visual requests and saved-experiment reads usable.
+
+1. Remove upstream product announcements and customer-facing branding. Preserve operational notifications, source identifiers, and licenses.
+2. Render Mermaid through the maintained library with strict sanitization and a recoverable source view. Reuse native image generation with AWS credentials; distinguish illustrations from diagrams.
+3. Expose Executive interview, Experiment design, and Experiment analytics through native personas and compact navigation. Preserve existing conversations and drafts.
+4. Trace authenticated Rehoboam discovery. Reuse the existing authorized run list and smolagents interpreter. Never accept a model-supplied owner or equate unavailable results with no experiments.
+5. Verify focused regressions, actual image output, diagram rendering, persona navigation, and authorized saved-run discovery. Publish the exact candidate to the existing draft preview. Keep merge pending executive QA.
+
+Initial inspection found an older seventeen-tool Rehoboam production catalog. Fresh upstream inspection located the already implemented thirty-tool dev catalog, including `find_experiments` and `ask_analyst`. Native MCP server 3 now targets the existing dev endpoint; no Rehoboam code or duplicate server was needed. The temporary discovery issue was closed as superseded.
+
+The native agent catalog now contains private Experiment design and Experiment analytics personas, beside existing Burn 2.0/Beca. Navigation resolves authorized catalog entries rather than fixed IDs. A real analytics chat returned three saved studies in 6.9 seconds with cache limitations. Initial diagram canaries overused analytics tools; an explicit latest-request reminder corrected the final canary to Mermaid in 1.8 seconds without tools. Actual browser rendering passed in light and dark themes at 390×844 without horizontal overflow.
+
+Focused UI checks pass 33 tests, TypeScript passes, and five backend checks cover native AWS image routing, notification ownership/filtering, and MCP chart persistence. The image adapter reaches AWS but Nova Canvas invocation is denied; the local AWS login has expired. Picture generation remains unconfigured until narrow model permission and a real output canary pass.
+
+Backend packaging extends the current executive-proof runtime rather than replacing concurrent interview fixes. The rootless Python service now binds the stable runtime directory at /var/run and preserves that directory across restarts. The native entrypoint requires /var/run/docker.sock even when DOCKER_HOST points elsewhere; a socket-file bind retains a stale inode after daemon restart. The executive-proof task verified native execution before and after a real restart. No new executor image is required.
+
+Publication and final hosted proof are recorded in PR #10. Merge remains pending executive QA. No paid experiment was launched and no accepted model or ontology records were modified during Beca QA.

@@ -5,8 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import useSWR from "swr";
-import { SvgExternalLink, SvgUsers, SvgSimpleLoader } from "@opal/icons";
-import { Button, MessageCard } from "@opal/components";
+import { SvgUsers, SvgSimpleLoader } from "@opal/icons";
 import { SettingsLayouts } from "@opal/layouts";
 import { errorHandlingFetcher } from "@/lib/fetcher";
 import type { UserGroup } from "@/lib/types";
@@ -54,27 +53,11 @@ function GroupsPage() {
   return (
     <SettingsLayouts.Root>
       <div data-testid="groups-page-heading">
-        <SettingsLayouts.Header icon={SvgUsers} title={t("page.title")} divider>
-          <MessageCard
-            variant="info"
-            title={t("permissionsChanged.title")}
-            description={t("permissionsChanged.description")}
-            rightChildren={
-              <Button
-                icon={SvgExternalLink}
-                onClick={() =>
-                  window.open(
-                    "https://docs.onyx.app/admins/permissions/whats_changing",
-                    "_blank",
-                    "noopener,noreferrer"
-                  )
-                }
-              >
-                {t("permissionsChanged.learnMore.label")}
-              </Button>
-            }
-          />
-        </SettingsLayouts.Header>
+        <SettingsLayouts.Header
+          icon={SvgUsers}
+          title={t("page.title")}
+          divider
+        ></SettingsLayouts.Header>
       </div>
 
       <SettingsLayouts.Body>

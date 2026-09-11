@@ -88,6 +88,7 @@ import ExecutiveWorkspace, {
   ExecutiveWelcome,
 } from "@/sections/executive/ExecutiveWorkspace";
 import { isExecutiveAgent } from "@/lib/executive/brief";
+import { consultingRole } from "@/lib/agents/consulting";
 
 interface FadeProps {
   show: boolean;
@@ -706,7 +707,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
       ? "minmax(min-content, 1fr) minmax(0, max-content) minmax(0, 1fr)"
       : isSearch
         ? "0fr auto 1fr"
-        : appPosition.isChat() || isExecutiveAgent(activeAgent)
+        : appPosition.isChat() || consultingRole(activeAgent)
           ? "1fr auto 0fr"
           : appPosition.isProject()
             ? "auto auto 1fr"
@@ -1036,7 +1037,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                     {/* Agent description below input */}
                     {(appPosition.isNewSession() || appPosition.isAgent()) &&
                       !isPlainChat &&
-                      !isExecutiveAgent(activeAgent) && (
+                      !consultingRole(activeAgent) && (
                         <>
                           <Spacer rem={1} />
                           <AgentDescription agent={activeAgent} />
@@ -1055,7 +1056,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                       show={
                         (appPosition.isNewSession() || appPosition.isAgent()) &&
                         hasAgentStarterMessages &&
-                        !isExecutiveAgent(activeAgent)
+                        !consultingRole(activeAgent)
                       }
                       className="h-full flex-1 w-full max-w-(--app-page-main-content-width)"
                     >

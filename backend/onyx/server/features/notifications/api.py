@@ -19,18 +19,13 @@ from onyx.db.notification import (
 )
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
-from onyx.server.features.build.utils import ensure_build_mode_intro_notification
 from onyx.server.features.notifications.models import (
     NotificationResponse,
     NotificationSummary,
     PaginatedNotifications,
 )
 from onyx.server.features.notifications.utils import (
-    ensure_permissions_migration_notification,
     ensure_system_announcement_notification,
-)
-from onyx.server.features.release_notes.utils import (
-    ensure_release_notes_fresh_and_notify,
 )
 from onyx.utils.logger import setup_logger
 from onyx.utils.variable_functionality import fetch_ee_implementation_or_noop
@@ -59,30 +54,6 @@ def _polled_ensures_due(user_id: UUID) -> bool:
 def _mark_polled_ensures_done(user_id: UUID) -> None:
     with _polled_ensure_lock:
         _polled_ensure_cache[user_id] = True
-
-
-def _check_for_notifications_to_create(
-    user: User,
-    db_session: Session,
-) -> None:
-    try:
-        ensure_build_mode_intro_notification(user, db_session)
-    except Exception:
-        logger.exception(
-            "Failed to check for build mode intro in notifications endpoint"
-        )
-
-    try:
-        ensure_permissions_migration_notification(user, db_session)
-    except Exception:
-        logger.exception(
-            "Failed to create permissions_migration_v1 announcement in notifications endpoint"
-        )
-
-    try:
-        ensure_release_notes_fresh_and_notify(db_session)
-    except Exception:
-        logger.exception("Failed to check for release notes in notifications endpoint")
 
 
 def _ensure_system_announcement_notification(user: User, db_session: Session) -> bool:
@@ -139,8 +110,6 @@ def get_notifications_api(
     - Explicitly announcing breaking changes
     """
     if page_num == 0:
-        if notif_type is None and min_severity is None:
-            _check_for_notifications_to_create(user, db_session)
         # A severity-only request is the banner queue's polled fetch: its
         # ensures are throttled, and a user is only marked done once both
         # succeed so a transient failure retries on the next poll. Other
@@ -199,7 +168,6 @@ def get_notifications_summary_api(
 ) -> NotificationSummary:
     # Preserve app-load notification bootstrap behavior: notifications that are
     # lazily created on read should exist before we compute badge counts.
-    _check_for_notifications_to_create(user=user, db_session=db_session)
     _ensure_system_announcement_notification(user=user, db_session=db_session)
     total_items, undismissed_count = count_notifications(
         user=user,

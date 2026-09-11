@@ -47,7 +47,6 @@ import { useSWRConfig } from "swr";
 import {
   SvgArrowExchange,
   SvgChevronDown,
-  SvgOnyxOctagon,
   SvgOrganization,
   SvgPlusCircle,
   SvgRefreshCw,
@@ -57,6 +56,7 @@ import {
   SvgX,
   SvgSimpleLoader,
 } from "@opal/icons";
+import { SubconsciousIcon as SvgOnyxOctagon } from "@/sections/brand/SubconsciousIcon";
 import SvgOnyxLogo from "@opal/logos/onyx-logo";
 import { Card, EmptyMessageCard } from "@opal/components";
 import { ContentAction } from "@opal/layouts";

@@ -4,7 +4,7 @@ services:
     extends:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: api_server
-    image: onyx-burn2:durable-a93ef9a24b
+    image: onyx-burn2:beca-20260911
     profiles: !reset []
     build: !reset null
     environment: !override
@@ -139,7 +139,7 @@ services:
     mem_limit: 512m
     cpus: 1
     volumes: !override
-      - /run/burn-executor/docker.sock:/var/run/docker.sock
+      - /run/burn-executor:/var/run:ro
   gateway:
     image: nginx:1.25.5-alpine
     restart: unless-stopped

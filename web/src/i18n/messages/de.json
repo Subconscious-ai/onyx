@@ -274,7 +274,7 @@
         },
         "placeholder": "Methode auswählen",
         "ptOauth": {
-          "description": "Das OAuth-Zugriffstoken des Benutzers weiterleiten, mit dem Onyx authentifiziert wird.",
+          "description": "Das OAuth-Zugriffstoken des Benutzers weiterleiten, mit dem Subconscious authentifiziert wird.",
           "label": "OAuth Pass-through"
         },
         "required": "Der Authentifizierungstyp ist erforderlich"
@@ -313,11 +313,11 @@
         "title": "Keine Authentifizierung für diesen MCP-Server"
       },
       "oauthInfo": {
-        "discovery": "Client ID und Secret sind optional. Bei der automatischen Erkennung verwendet Onyx ein Client ID Metadata Document (CIMD), sofern unterstützt, und greift sonst auf Dynamic Client Registration (DCR) zurück.",
-        "manualRegistration": "Wenn Ihr Server keine der beiden Methoden unterstützt, registrieren Sie Ihre Onyx-Instanz zuerst beim Anbieter des Servers. Gewähren Sie Onyx die für Ihre Aktionen nötigen Scopes."
+        "discovery": "Client ID und Secret sind optional. Bei der automatischen Erkennung verwendet Subconscious ein Client ID Metadata Document (CIMD), sofern unterstützt, und greift sonst auf Dynamic Client Registration (DCR) zurück.",
+        "manualRegistration": "Wenn Ihr Server keine der beiden Methoden unterstützt, registrieren Sie Ihre Subconscious-Instanz zuerst beim Anbieter des Servers. Gewähren Sie Subconscious die für Ihre Aktionen nötigen Scopes."
       },
       "passThroughNotice": {
-        "description": "Onyx leitet das OAuth-Zugriffstoken des Benutzers direkt als Authorization-Header an den Server weiter. Stellen Sie sicher, dass der Server die Authentifizierung mit demselben Anbieter unterstützt.",
+        "description": "Subconscious leitet das OAuth-Zugriffstoken des Benutzers direkt als Authorization-Header an den Server weiter. Stellen Sie sicher, dass der Server die Authentifizierung mit demselben Anbieter unterstützt.",
         "title": "Verwenden Sie Pass-through für Dienste mit gemeinsamem Identitätsanbieter."
       },
       "providerMode": {
@@ -471,7 +471,7 @@
         },
         "placeholder": "Methode auswählen",
         "ptOauth": {
-          "description": "Das OAuth-Zugriffstoken des Benutzers weiterleiten, mit dem Onyx authentifiziert wird.",
+          "description": "Das OAuth-Zugriffstoken des Benutzers weiterleiten, mit dem Subconscious authentifiziert wird.",
           "label": "OAuth Pass-through"
         },
         "required": "Die Authentifizierungsmethode ist erforderlich"
@@ -519,7 +519,7 @@
         "description": "OAuth Pass-through erfordert eine OAuth-fähige Anmeldemethode (Google oder OIDC)."
       },
       "passThroughNotice": {
-        "description": "Onyx leitet das OAuth-Zugriffstoken des Benutzers direkt als Authorization-Header an den Server weiter. Stellen Sie sicher, dass der Server die Authentifizierung mit demselben Anbieter unterstützt.",
+        "description": "Subconscious leitet das OAuth-Zugriffstoken des Benutzers direkt als Authorization-Header an den Server weiter. Stellen Sie sicher, dass der Server die Authentifizierung mit demselben Anbieter unterstützt.",
         "title": "Verwenden Sie Pass-through für Dienste mit gemeinsamem Identitätsanbieter."
       },
       "redirectUri": {
@@ -1025,7 +1025,7 @@
         "title": "Feedback"
       },
       "page": {
-        "description": "Verstehen Sie, wie Ihr Arbeitsbereich Onyx bei Abfragen, Feedback und Agenten nutzt."
+        "description": "Verstehen Sie, wie Ihr Arbeitsbereich Subconscious bei Abfragen, Feedback und Agenten nutzt."
       },
       "reports": {
         "calendar": {
@@ -1092,8 +1092,8 @@
       },
       "slackChannelChart": {
         "description": "Gesamtzahl der Abfragen gegenüber automatisch gelösten Abfragen",
-        "empty": "Keine OnyxBot-Aktivität in diesem Arbeitsbereich im ausgewählten Zeitraum.",
-        "error": "OnyxBot-Daten konnten nicht abgerufen werden.",
+        "empty": "Keine Beca-Aktivität in diesem Arbeitsbereich im ausgewählten Zeitraum.",
+        "error": "Beca-Daten konnten nicht abgerufen werden.",
         "series": {
           "autoResolved": {
             "label": "Automatisch gelöst"
@@ -1285,7 +1285,7 @@
         "close": {
           "label": "Schließen"
         },
-        "description": "Fügen Sie manuell eine Lizenz für diese Onyx-Instanz hinzu und aktivieren Sie sie.",
+        "description": "Fügen Sie manuell eine Lizenz für diese Subconscious-Instanz hinzu und aktivieren Sie sie.",
         "emptyKey": {
           "error": "Bitte geben Sie einen Lizenzschlüssel ein"
         },
@@ -1296,7 +1296,7 @@
           "label": "Lizenzschlüssel abgelaufen"
         },
         "keyField": {
-          "description": "Fügen Sie Ihre von Onyx erhaltene Lizenzschlüsseldatei ein oder hängen Sie sie an.",
+          "description": "Fügen Sie Ihre von Subconscious erhaltene Lizenzschlüsseldatei ein oder hängen Sie sie an.",
           "title": "Lizenzschlüssel"
         },
         "updateKey": {
@@ -1592,7 +1592,7 @@
           "placeholder": "In Tagen",
           "restoreTooltip": "Standard wiederherstellen"
         },
-        "description": "Legen Sie fest, wie lange Onyx Chats in Ihrer Organisation aufbewahren soll.",
+        "description": "Legen Sie fest, wie lange Subconscious Chats in Ihrer Organisation aufbewahren soll.",
         "enterprisePlanTag": {
           "label": "Enterprise-Tarif"
         },
@@ -1654,7 +1654,7 @@
       },
       "teamContext": {
         "description": "Benutzer können in ihren persönlichen Einstellungen zusätzlich eigenen Kontext angeben.",
-        "placeholder": "Beschreiben Sie Ihr Team und wie sich Onyx verhalten soll.",
+        "placeholder": "Beschreiben Sie Ihr Team und wie sich Subconscious verhalten soll.",
         "title": "Team-Kontext"
       },
       "teamName": {
@@ -1774,7 +1774,7 @@
     "connector": {
       "accessType": {
         "autoSyncOption": {
-          "description": "Wir synchronisieren Berechtigungen automatisch aus der Quelle. Ein Dokument ist in Onyx nur dann auffindbar, wenn der suchende Benutzer in der Quelle Zugriff auf das Dokument hat.",
+          "description": "Wir synchronisieren Berechtigungen automatisch aus der Quelle. Ein Dokument ist in Subconscious nur dann auffindbar, wenn der suchende Benutzer in der Quelle Zugriff auf das Dokument hat.",
           "disabledReason": "Die aktuelle Authentifizierungsmethode der Zugangsdaten unterstützt keine automatische Berechtigungssynchronisierung. Bitte wechsle zu einer unterstützten Authentifizierungsmethode.",
           "name": "Berechtigungen automatisch synchronisieren"
         },
@@ -1787,7 +1787,7 @@
           "name": "Privat"
         },
         "publicOption": {
-          "description": "Jeder mit einem Onyx-Konto kann auf die von diesem Konnektor importierten Dokumente zugreifen",
+          "description": "Jeder mit einem Subconscious-Konto kann auf die von diesem Konnektor importierten Dokumente zugreifen",
           "name": "Öffentlich"
         }
       },
@@ -2813,7 +2813,7 @@
         "title": "Keine Benutzer gefunden"
       },
       "header": {
-        "description": "Legen Sie fest, wer Craft verwenden darf, den agentischen App-Builder von Onyx.",
+        "description": "Legen Sie fest, wer Craft verwenden darf, den agentischen App-Builder von Subconscious.",
         "title": "Zugriff"
       },
       "perUserAccess": {
@@ -2844,7 +2844,7 @@
         }
       },
       "unavailable": {
-        "description": "Craft wird von Onyx pro Bereitstellung aktiviert. Wenden Sie sich an Ihren Onyx-Ansprechpartner, um Zugriff zu erhalten.",
+        "description": "Craft wird von Subconscious pro Bereitstellung aktiviert. Wenden Sie sich an Ihren Subconscious-Ansprechpartner, um Zugriff zu erhalten.",
         "title": "Craft ist in dieser Bereitstellung nicht verfügbar"
       },
       "usersLoadError": {
@@ -2930,7 +2930,7 @@
         "label": "In Craft ausprobieren"
       },
       "unavailable": {
-        "description": "Craft wird von Onyx pro Bereitstellung aktiviert. Wenden Sie sich an Ihren Onyx-Ansprechpartner, um Zugriff zu erhalten.",
+        "description": "Craft wird von Subconscious pro Bereitstellung aktiviert. Wenden Sie sich an Ihren Subconscious-Ansprechpartner, um Zugriff zu erhalten.",
         "title": "Craft ist in dieser Bereitstellung nicht verfügbar"
       }
     },
@@ -3074,10 +3074,10 @@
     },
     "customAnalytics": {
       "intro": {
-        "description": "Damit können Sie Ihr eigenes Analytics-Tool mit Onyx nutzen! Kopieren Sie das Web-Snippet Ihres Analytics-Anbieters in das Feld unten, und wir beginnen, Nutzungsereignisse zu senden."
+        "description": "Damit können Sie Ihr eigenes Analytics-Tool mit Subconscious nutzen! Kopieren Sie das Web-Snippet Ihres Analytics-Anbieters in das Feld unten, und wir beginnen, Nutzungsereignisse zu senden."
       },
       "notEnabled": {
-        "description": "Um benutzerdefinierte Analytics-Skripte einzurichten, wenden Sie sich an das Team, das Onyx eingerichtet hat, um die Umgebungsvariable <i>CUSTOM_ANALYTICS_SECRET_KEY</i> zu setzen.",
+        "description": "Um benutzerdefinierte Analytics-Skripte einzurichten, wenden Sie sich an das Team, das Subconscious eingerichtet hat, um die Umgebungsvariable <i>CUSTOM_ANALYTICS_SECRET_KEY</i> zu setzen.",
         "title": "Benutzerdefinierte Analytics sind nicht aktiviert."
       },
       "script": {
@@ -3086,7 +3086,7 @@
         "label": "Skript"
       },
       "secretKey": {
-        "description": "Aus Sicherheitsgründen müssen Sie einen geheimen Schlüssel angeben, um dieses Skript zu aktualisieren. Dies sollte der Wert der Umgebungsvariablen <i>CUSTOM_ANALYTICS_SECRET_KEY</i> sein, die bei der Ersteinrichtung von Onyx gesetzt wurde.",
+        "description": "Aus Sicherheitsgründen müssen Sie einen geheimen Schlüssel angeben, um dieses Skript zu aktualisieren. Dies sollte der Wert der Umgebungsvariablen <i>CUSTOM_ANALYTICS_SECRET_KEY</i> sein, die bei der Ersteinrichtung von Subconscious gesetzt wurde.",
         "label": "Geheimer Schlüssel"
       },
       "updateButton": {
@@ -3315,7 +3315,7 @@
       },
       "page": {
         "header": {
-          "description": "Verbinden Sie Onyx mit Ihren Discord-Servern. Benutzer können Fragen direkt in Discord-Kanälen stellen."
+          "description": "Verbinden Sie Subconscious mit Ihren Discord-Servern. Benutzer können Fragen direkt in Discord-Kanälen stellen."
         }
       },
       "registrationKey": {
@@ -3352,7 +3352,7 @@
           "label": "API-Schlüssel löschen"
         },
         "deleteHint": "Löschen Sie den aktuellen API-Schlüssel, bevor Sie ihn aktualisieren.",
-        "description": "Unstructured extrahiert komplexe Daten aus Formaten wie .pdf, .docx, .png, .pptx usw. und wandelt sie in sauberen Text um, den Onyx aufnehmen kann. Geben Sie einen API-Schlüssel an, um die Dokumentverarbeitung mit Unstructured zu aktivieren.",
+        "description": "Unstructured extrahiert komplexe Daten aus Formaten wie .pdf, .docx, .png, .pptx usw. und wandelt sie in sauberen Text um, den Subconscious aufnehmen kann. Geben Sie einen API-Schlüssel an, um die Dokumentverarbeitung mit Unstructured zu aktivieren.",
         "learnMore": "Erfahren Sie <link>hier</link> mehr über Unstructured.",
         "note": "<label>Hinweis:</label> Dadurch werden Dokumente zur Verarbeitung an die Server von Unstructured gesendet.",
         "saveButton": {
@@ -3429,7 +3429,7 @@
         "deleteScheduled": {
           "toast": "Löschen des Dokumentensatzes \"{name}\" geplant"
         },
-        "description": "Mit **Dokumentensätzen** können Sie logisch zusammengehörende Dokumente zu einem Paket bündeln. Diese können Sie dann bei der Suche als Filter verwenden, um den Umfang der von Onyx durchsuchten Informationen zu steuern.",
+        "description": "Mit **Dokumentensätzen** können Sie logisch zusammengehörende Dokumente zu einem Paket bündeln. Diese können Sie dann bei der Suche als Filter verwenden, um den Umfang der von Subconscious durchsuchten Informationen zu steuern.",
         "edit": {
           "header": {
             "title": "Dokumentensatz bearbeiten"
@@ -3577,7 +3577,7 @@
         "title": "Logs exportieren"
       },
       "header": {
-        "description": "Laden Sie ein Zip-Archiv der Server-Logdateien herunter, um es an einen Onyx-Support-Thread anzuhängen."
+        "description": "Laden Sie ein Zip-Archiv der Server-Logdateien herunter, um es an einen Subconscious-Support-Thread anzuhängen."
       },
       "receipt": {
         "duplicateHost": {
@@ -3692,7 +3692,7 @@
         "noCustomSkills": "keine benutzerdefinierten Skills",
         "orgCredentialsSet": "Anmeldedaten der Organisation festgelegt",
         "perUserCredentials": "Anmeldedaten pro Benutzer",
-        "providedByOnyx": "von Onyx bereitgestellt",
+        "providedByOnyx": "von Subconscious bereitgestellt",
         "tools": "{count, plural, one {# Tool} other {# Tools}}",
         "upstreamPatterns": "{count, plural, one {# Upstream-Muster} other {# Upstream-Muster}}"
       },
@@ -3941,7 +3941,7 @@
           "tooltip": "Die Dokument-Embeddings werden aufgrund kürzlicher Änderungen an dieser Gruppe aktualisiert."
         },
         "systemGroup": {
-          "description": "Onyx verwaltet diese Gruppe. Sie enthält nur Mitglieder, und nur diese können Sie ändern.",
+          "description": "Subconscious verwaltet diese Gruppe. Sie enthält nur Mitglieder, und nur diese können Sie ändern.",
           "title": "Systemgruppe"
         },
         "toasts": {
@@ -4054,7 +4054,7 @@
         }
       },
       "permissionsChanged": {
-        "description": "Onyx verwendet jetzt gruppenbasierte Berechtigungen. Der Zugriff wird pro Gruppe konfiguriert, sodass sich die Berechtigungen eines Benutzers aus allen Gruppen ergeben, denen er angehört.",
+        "description": "Subconscious verwendet jetzt gruppenbasierte Berechtigungen. Der Zugriff wird pro Gruppe konfiguriert, sodass sich die Berechtigungen eines Benutzers aus allen Gruppen ergeben, denen er angehört.",
         "learnMore": {
           "label": "Mehr erfahren"
         },
@@ -4117,7 +4117,7 @@
           "placeholder": "Kostenlimit",
           "unit": "(USD)"
         },
-        "disabledTooltip": "Token-Ratenlimits sind nur in der [Enterprise-Version von Onyx](/admin/billing) verfügbar.",
+        "disabledTooltip": "Token-Ratenlimits sind nur in der [Enterprise-Version von Subconscious](/admin/billing) verfügbar.",
         "section": {
           "description": "Begrenzen Sie die Anzahl der Token, die diese Gruppe in einem bestimmten Zeitraum verwenden darf.",
           "title": "Token-Ratenlimit"
@@ -4180,7 +4180,7 @@
       },
       "disconnectModal": {
         "body": {
-          "description": "Onyx ruft diesen Endpunkt für Hook ***{name}*** nicht mehr auf. Laufende Anfragen werden weiter ausgeführt. Der externe Endpunkt kann zuvor gesendete Daten weiterhin speichern. Sie können diesen Hook bei Bedarf später wieder verbinden."
+          "description": "Subconscious ruft diesen Endpunkt für Hook ***{name}*** nicht mehr auf. Laufende Anfragen werden weiter ausgeführt. Der externe Endpunkt kann zuvor gesendete Daten weiterhin speichern. Sie können diesen Hook bei Bedarf später wieder verbinden."
         },
         "deleteNote": {
           "description": "Sie können diesen Hook auch löschen. Das Löschen kann nicht rückgängig gemacht werden."
@@ -4200,7 +4200,7 @@
       },
       "form": {
         "apiKey": {
-          "description": "Onyx verwendet diesen Schlüssel zur Authentifizierung bei Ihrem API-Endpunkt.",
+          "description": "Subconscious verwendet diesen Schlüssel zur Authentifizierung bei Ihrem API-Endpunkt.",
           "keepCurrent": {
             "placeholder": "Leer lassen, um den aktuellen Schlüssel zu behalten"
           },
@@ -4250,10 +4250,10 @@
           "label": "Änderungen speichern"
         },
         "softStrategy": {
-          "description": "Wenn der Endpunkt einen Fehler zurückgibt, protokolliert Onyx ihn und setzt die Pipeline normal fort, wobei das Hook-Ergebnis ignoriert wird."
+          "description": "Wenn der Endpunkt einen Fehler zurückgibt, protokolliert Subconscious ihn und setzt die Pipeline normal fort, wobei das Hook-Ergebnis ignoriert wird."
         },
         "timeout": {
-          "description": "Maximale Zeit, die Onyx auf eine Antwort des Endpunkts wartet, bevor die Fehlerstrategie angewendet wird. Muss größer als 0 und höchstens {max} Sekunden sein.",
+          "description": "Maximale Zeit, die Subconscious auf eine Antwort des Endpunkts wartet, bevor die Fehlerstrategie angewendet wird. Muss größer als 0 und höchstens {max} Sekunden sein.",
           "revert": {
             "tooltip": "Auf Standard zurücksetzen"
           },
@@ -4318,7 +4318,7 @@
         }
       },
       "page": {
-        "description": "Erweitern Sie Onyx-Pipelines, indem Sie externe API-Endpunkte als Callbacks an vordefinierten Hook-Punkten registrieren.",
+        "description": "Erweitern Sie Subconscious-Pipelines, indem Sie externe API-Endpunkte als Callbacks an vordefinierten Hook-Punkten registrieren.",
         "empty": {
           "title": "Keine Hook-Punkte verfügbar"
         },
@@ -4460,7 +4460,7 @@
           "message": "Die Prüfung des API-Schlüssels ist fehlgeschlagen"
         },
         "authMethod": {
-          "idle": "Wählen Sie, wie sich Onyx bei Google Vertex AI authentifizieren soll.",
+          "idle": "Wählen Sie, wie sich Subconscious bei Google Vertex AI authentifizieren soll.",
           "label": "Authentifizierungsmethode",
           "required": "Authentifizierungsmethode ist erforderlich",
           "serviceAccount": {
@@ -4504,7 +4504,7 @@
           "required": "Standort ist erforderlich"
         },
         "projectId": {
-          "idle": "Das GCP-Projekt, in dem Vertex AI aktiviert ist. Onyx authentifiziert sich mit dem an den Pod gebundenen Dienstkonto (GKE Workload Identity).",
+          "idle": "Das GCP-Projekt, in dem Vertex AI aktiviert ist. Subconscious authentifiziert sich mit dem an den Pod gebundenen Dienstkonto (GKE Workload Identity).",
           "label": "GCP-Projekt-ID",
           "required": "Projekt-ID ist erforderlich"
         },
@@ -4556,6 +4556,10 @@
         },
         "openaiGptImage2": {
           "description": "Das neueste Bilderzeugungsmodell von OpenAI mit der höchsten Prompt-Treue."
+        },
+        "bedrockCanvas": {
+          "description": "Bilder mit den AWS-Zugangsdaten der Bereitstellung erstellen. Kein zusätzlicher API-Schlüssel erforderlich.",
+          "region": "AWS-Region"
         }
       },
       "setDefaultError": {
@@ -4594,7 +4598,7 @@
           "title": "Bereitstellungsname"
         },
         "modelName": {
-          "description": "Eine Bezeichnung für dieses Modell in Onyx. Azure leitet Anfragen über den Bereitstellungsnamen weiter, daher muss dies nur eine eindeutige Kennung sein."
+          "description": "Eine Bezeichnung für dieses Modell in Subconscious. Azure leitet Anfragen über den Bereitstellungsnamen weiter, daher muss dies nur eine eindeutige Kennung sein."
         },
         "targetUrl": {
           "title": "Ziel-URL"
@@ -4629,7 +4633,7 @@
         }
       },
       "cloudDisabled": {
-        "tooltip": "Diese Einstellung wird von Onyx Cloud verwaltet."
+        "tooltip": "Diese Einstellung wird von Subconscious Cloud verwaltet."
       },
       "contextualModel": {
         "description": "Dieses Modell erzeugt Kontext für Chunks.",
@@ -4643,9 +4647,9 @@
       },
       "embeddingModel": {
         "cloudManaged": {
-          "title": "Das Embedding-Modell und die Einstellungen werden von Onyx Cloud verwaltet."
+          "title": "Das Embedding-Modell und die Einstellungen werden von Subconscious Cloud verwaltet."
         },
-        "description": "Onyx verwendet dieses Modell, um Dokumente für Suche und Retrieval zu kodieren.",
+        "description": "Subconscious verwendet dieses Modell, um Dokumente für Suche und Retrieval zu kodieren.",
         "title": "Embedding-Modell"
       },
       "errorsModal": {
@@ -4693,7 +4697,7 @@
         },
         "modelName": {
           "placeholder": "model-name",
-          "selfHostedDescription": "Onyx verbindet sich mit diesem Modell auf Ihrem selbst gehosteten Endpunkt.",
+          "selfHostedDescription": "Subconscious verbindet sich mit diesem Modell auf Ihrem selbst gehosteten Endpunkt.",
           "title": "Modellname"
         },
         "normalize": {
@@ -4737,7 +4741,7 @@
           "title": "API-Basis-URL"
         },
         "modelName": {
-          "description": "Onyx verbindet sich mit diesem Modell auf Ihrem {provider}-Proxy."
+          "description": "Subconscious verbindet sich mit diesem Modell auf Ihrem {provider}-Proxy."
         }
       },
       "maxImageSize": {
@@ -4953,7 +4957,7 @@
       "wontPortConsentModal": {
         "title": "{count, plural, one {Dieser Konnektor wird gelöscht} other {Diese # Konnektoren werden gelöscht}}",
         "submit": "Löschen & neu indizieren",
-        "description": "{count, plural, one {Beim Neuindizieren werden pausierte und ungültige Konnektoren übersprungen. Dieser wird daher nicht in den neuen Index übernommen. Onyx löscht ihn zusammen mit den von ihm indizierten Dokumenten:} other {Beim Neuindizieren werden pausierte und ungültige Konnektoren übersprungen. Diese # werden daher nicht in den neuen Index übernommen. Onyx löscht sie zusammen mit den von ihnen indizierten Dokumenten:}}",
+        "description": "{count, plural, one {Beim Neuindizieren werden pausierte und ungültige Konnektoren übersprungen. Dieser wird daher nicht in den neuen Index übernommen. Subconscious löscht ihn zusammen mit den von ihm indizierten Dokumenten:} other {Beim Neuindizieren werden pausierte und ungültige Konnektoren übersprungen. Diese # werden daher nicht in den neuen Index übernommen. Subconscious löscht sie zusammen mit den von ihnen indizierten Dokumenten:}}",
         "connector": "{name} — {status}",
         "statusInvalid": "ungültig",
         "statusPaused": "pausiert",
@@ -5118,7 +5122,7 @@
         "title": "Neue LLM-Konfiguration vorübergehend nicht verfügbar."
       },
       "defaultModel": {
-        "description": "Dieses Modell wird von Onyx standardmäßig in Ihren Chats verwendet.",
+        "description": "Dieses Modell wird von Subconscious standardmäßig in Ihren Chats verwendet.",
         "title": "Standardmodell"
       },
       "deleteModal": {
@@ -5132,7 +5136,7 @@
       },
       "groups": {
         "addProvider": {
-          "description": "Onyx unterstützt sowohl gängige Anbieter als auch selbst gehostete Modelle.",
+          "description": "Subconscious unterstützt sowohl gängige Anbieter als auch selbst gehostete Modelle.",
           "title": "Anbieter hinzufügen"
         },
         "gateways": {
@@ -5210,7 +5214,7 @@
               "description": "Für Umgebungen außerhalb von AWS",
               "label": "Access Key"
             },
-            "description": "Wählen Sie, wie sich Onyx bei Bedrock authentifizieren soll.",
+            "description": "Wählen Sie, wie sich Subconscious bei Bedrock authentifizieren soll.",
             "iam": {
               "description": "Empfohlen für AWS-Umgebungen",
               "label": "IAM-Rolle der Umgebung"
@@ -5222,7 +5226,7 @@
             "title": "Authentifizierungsmethode"
           },
           "iamNotice": {
-            "title": "Onyx authentifiziert sich mit der IAM-Rolle, die an die Umgebung angehängt ist, in der Onyx läuft."
+            "title": "Subconscious authentifiziert sich mit der IAM-Rolle, die an die Umgebung angehängt ist, in der Subconscious läuft."
           },
           "longTermApiKeyField": {
             "placeholder": "Ihr langfristiger API-Schlüssel",
@@ -5493,7 +5497,7 @@
         },
         "setup": {
           "apiBaseField": {
-            "containerizedNote": "Wenn Onyx in einem Container läuft, verwenden Sie `host.docker.internal` statt `localhost`, um einen Dienst auf Ihrem Host zu erreichen.",
+            "containerizedNote": "Wenn Subconscious in einem Container läuft, verwenden Sie `host.docker.internal` statt `localhost`, um einen Dienst auf Ihrem Host zu erreichen.",
             "title": "API-Basis-URL"
           },
           "apiKeyField": {
@@ -5546,7 +5550,7 @@
         },
         "vertexAi": {
           "authMethodField": {
-            "description": "Wählen Sie, wie sich Onyx bei Google Vertex AI authentifizieren soll.",
+            "description": "Wählen Sie, wie sich Subconscious bei Google Vertex AI authentifizieren soll.",
             "serviceAccount": {
               "description": "Laden Sie eine JSON-Schlüsseldatei eines GCP-Dienstkontos hoch",
               "label": "Service Account JSON"
@@ -5575,7 +5579,7 @@
             "projectRequired": "Die GCP-Projekt-ID ist erforderlich"
           },
           "workloadIdentityNotice": {
-            "title": "Onyx verwendet die impliziten Google Cloud-Anmeldedaten des Pods (über google.auth.default). Stellen Sie sicher, dass der Kubernetes-ServiceAccount an ein GCP-Dienstkonto mit Zugriff auf Vertex AI gebunden ist."
+            "title": "Subconscious verwendet die impliziten Google Cloud-Anmeldedaten des Pods (über google.auth.default). Stellen Sie sicher, dass der Kubernetes-ServiceAccount an ein GCP-Dienstkonto mit Zugriff auf Vertex AI gebunden ist."
           }
         }
       },
@@ -5643,7 +5647,7 @@
         },
         "requestSentBody": "Ihre Beitrittsanfrage wurde gesendet. Sie können als eigenes Team weitermachen, während ein Administrator von {domain} Ihre Anfrage genehmigt.",
         "tryOnyxButton": {
-          "label": "Onyx währenddessen ausprobieren"
+          "label": "Subconscious währenddessen ausprobieren"
         }
       },
       "newTenant": {
@@ -6202,7 +6206,7 @@
     },
     "serviceAccounts": {
       "deleteModal": {
-        "description": "Jede Anwendung, die den API-Schlüssel des Kontos *{name}* (`{keyDisplay}`) verwendet, verliert den Zugriff auf Onyx.",
+        "description": "Jede Anwendung, die den API-Schlüssel des Kontos *{name}* (`{keyDisplay}`) verwendet, verliert den Zugriff auf Subconscious.",
         "submit": {
           "label": "Löschen"
         },
@@ -6249,7 +6253,7 @@
         "cancelButton": {
           "label": "Abbrechen"
         },
-        "description": "Verwenden Sie den API-Schlüssel eines Dienstkontos, um programmatisch mit Berechtigungen auf Benutzerebene auf die Onyx-API zuzugreifen. Sie können die Kontodetails später ändern.",
+        "description": "Verwenden Sie den API-Schlüssel eines Dienstkontos, um programmatisch mit Berechtigungen auf Benutzerebene auf die Subconscious-API zuzugreifen. Sie können die Kontodetails später ändern.",
         "groups": {
           "empty": {
             "description": "Diesem Dienstkonto sind keine Gruppen zugewiesen.",
@@ -6311,7 +6315,7 @@
         }
       },
       "page": {
-        "description": "Verwenden Sie Dienstkonten, um programmatisch auf die Onyx-API zuzugreifen.",
+        "description": "Verwenden Sie Dienstkonten, um programmatisch auf die Subconscious-API zuzugreifen.",
         "error": {
           "description": "Weitere Details finden Sie in der Konsole.",
           "title": "Dienstkonten konnten nicht geladen werden."
@@ -6381,7 +6385,7 @@
         }
       },
       "liteModeNotice": {
-        "description": "Diese Bereitstellung führt Onyx Lite aus. Onyx Lite hat keine Vektordatenbank — Konnektoren und die Dokumentenindizierung sind deaktiviert, und es wird nichts indiziert. Um Datenquellen zu verbinden und Dokumente zu indizieren, stellen Sie Onyx im **Standardmodus** bereit. Lesen Sie die [Bereitstellungsanleitung]({docsUrl}), um zu beginnen.",
+        "description": "Diese Bereitstellung führt Subconscious Lite aus. Subconscious Lite hat keine Vektordatenbank — Konnektoren und die Dokumentenindizierung sind deaktiviert, und es wird nichts indiziert. Um Datenquellen zu verbinden und Dokumente zu indizieren, stellen Sie Subconscious im **Standardmodus** bereit. Lesen Sie die [Bereitstellungsanleitung]({docsUrl}), um zu beginnen.",
         "title": "Die Indizierung ist im Lite-Modus nicht verfügbar"
       },
       "providerCard": {
@@ -6407,10 +6411,10 @@
     "slackBots": {
       "channelConfig": {
         "createError": {
-          "toast": "Fehler beim Erstellen der OnyxBot-Konfiguration - {error}"
+          "toast": "Fehler beim Erstellen der Beca-Konfiguration - {error}"
         },
         "updateError": {
-          "toast": "Fehler beim Aktualisieren der OnyxBot-Konfiguration - {error}"
+          "toast": "Fehler beim Aktualisieren der Beca-Konfiguration - {error}"
         }
       },
       "channels": {
@@ -6528,16 +6532,16 @@
         },
         "disableDefault": {
           "label": "Standardkonfiguration deaktivieren",
-          "warning": "Warnung: Wenn Sie die Standardkonfiguration deaktivieren, antwortet OnyxBot nur in Slack-Kanälen, die ausdrücklich konfiguriert sind. Außerdem antwortet OnyxBot nicht auf Direktnachrichten."
+          "warning": "Warnung: Wenn Sie die Standardkonfiguration deaktivieren, antwortet Beca nur in Slack-Kanälen, die ausdrücklich konfiguriert sind. Außerdem antwortet Beca nicht auf Direktnachrichten."
         },
         "documentSets": {
           "autoSyncedDisabled": {
-            "tooltip": "Dieser Dokumentensatz kann nicht verwendet werden, weil er einen Konnektor mit automatisch synchronisierten Berechtigungen enthält. Die Antworten von OnyxBot in diesem Kanal sind für alle Slack-Benutzer sichtbar. Die Berechtigungen der fragenden Person zu spiegeln, könnte daher versehentlich private Informationen offenlegen."
+            "tooltip": "Dieser Dokumentensatz kann nicht verwendet werden, weil er einen Konnektor mit automatisch synchronisierten Berechtigungen enthält. Die Antworten von Beca in diesem Kanal sind für alle Slack-Benutzer sichtbar. Die Berechtigungen der fragenden Person zu spiegeln, könnte daher versehentlich private Informationen offenlegen."
           },
           "autoSyncedNote": {
             "text": "Diese Dokumentensätze können nicht angehängt werden, da sie automatisch synchronisierte Dokumente enthalten:"
           },
-          "description": "Wählen Sie die Dokumentensätze aus, die OnyxBot beim Beantworten von Fragen in Slack verwendet.",
+          "description": "Wählen Sie die Dokumentensätze aus, die Beca beim Beantworten von Fragen in Slack verwendet.",
           "hideUnselectableButton": {
             "label": "Nicht auswählbare Dokumentensätze ausblenden"
           },
@@ -6562,12 +6566,12 @@
         },
         "isEphemeral": {
           "label": "Dem Benutzer in einer privaten (kurzlebigen) Nachricht antworten",
-          "tooltip": "Wenn aktiviert, antwortet OnyxBot nur dem Benutzer in einer privaten (kurzlebigen) Nachricht. Wenn Sie oben außerdem den Agenten „Suche“ gewählt haben, macht diese Option auch Dokumente verfügbar, die für den Benutzer privat sind."
+          "tooltip": "Wenn aktiviert, antwortet Beca nur dem Benutzer in einer privaten (kurzlebigen) Nachricht. Wenn Sie oben außerdem den Agenten „Suche“ gewählt haben, macht diese Option auch Dokumente verfügbar, die für den Benutzer privat sind."
         },
         "knowledgeSource": {
           "allPublic": {
             "label": "Gesamtes öffentliches Wissen",
-            "sublabel": "OnyxBot antwortet auf Basis der Informationen aus allen öffentlichen Konnektoren"
+            "sublabel": "Beca antwortet auf Basis der Informationen aus allen öffentlichen Konnektoren"
           },
           "documentSets": {
             "label": "Bestimmte Dokumentensätze",
@@ -6584,7 +6588,7 @@
           }
         },
         "nonSearchAgent": {
-          "description": "Wählen Sie den Agenten ohne Suche aus, den OnyxBot beim Beantworten von Fragen in Slack verwendet."
+          "description": "Wählen Sie den Agenten ohne Suche aus, den Beca beim Beantworten von Fragen in Slack verwendet."
         },
         "privacyAlert": {
           "connectors": {
@@ -6595,7 +6599,7 @@
         },
         "questionmarkPrefilter": {
           "label": "Nur auf Fragen antworten",
-          "tooltip": "Wenn aktiviert, antwortet OnyxBot nur auf Nachrichten, die ein Fragezeichen enthalten"
+          "tooltip": "Wenn aktiviert, antwortet Beca nur auf Nachrichten, die ein Fragezeichen enthalten"
         },
         "removedDocumentSets": {
           "toast": "Wir haben einen oder mehrere Dokumentensätze aus Ihrer Auswahl entfernt, weil sie nicht mehr gültig sind. Bitte prüfen und aktualisieren Sie Ihre Konfiguration."
@@ -6605,15 +6609,15 @@
             "tooltip": "Deaktiviert, solange „Dem Benutzer in einer privaten (kurzlebigen) Nachricht antworten“ aktiv ist — kurzlebige Antworten richten sich nur an einen einzelnen Benutzer."
           },
           "label": "(Optional) Nur bestimmten Benutzern / Gruppen antworten",
-          "subtext": "Wenn angegeben, können nur diese Benutzer / Gruppen OnyxBot in diesem Kanal aufrufen, und die Antworten sind nur für sie sichtbar."
+          "subtext": "Wenn angegeben, können nur diese Benutzer / Gruppen Beca in diesem Kanal aufrufen, und die Antworten sind nur für sie sichtbar."
         },
         "respondTagOnly": {
-          "label": "Nur auf @OnyxBot antworten",
-          "tooltip": "Wenn aktiviert, antwortet OnyxBot nur, wenn er direkt markiert wird"
+          "label": "Nur auf @Beca antworten",
+          "tooltip": "Wenn aktiviert, antwortet Beca nur, wenn er direkt markiert wird"
         },
         "respondToBots": {
           "label": "Auf Bot-Nachrichten antworten",
-          "tooltip": "Wenn nicht aktiviert, ignoriert OnyxBot Nachrichten von Bots immer"
+          "tooltip": "Wenn nicht aktiviert, ignoriert Beca Nachrichten von Bots immer"
         },
         "responseType": {
           "detailed": {
@@ -6623,10 +6627,10 @@
           "standard": {
             "label": "Standard"
           },
-          "tooltip": "Steuert das Format der Antworten von OnyxBot."
+          "tooltip": "Steuert das Format der Antworten von Beca."
         },
         "searchAgent": {
-          "description": "Wählen Sie den suchfähigen Agenten aus, den OnyxBot beim Beantworten von Fragen in Slack verwendet."
+          "description": "Wählen Sie den suchfähigen Agenten aus, den Beca beim Beantworten von Fragen in Slack verwendet."
         },
         "searchConfig": {
           "section": {
@@ -6635,14 +6639,14 @@
         },
         "showContinueInWebUi": {
           "label": "Schaltfläche zum Fortsetzen in der Weboberfläche anzeigen",
-          "tooltip": "Wenn aktiviert, wird am Ende der Antwort eine Schaltfläche angezeigt, mit der der Benutzer das Gespräch in der Onyx-Weboberfläche fortsetzen kann"
+          "tooltip": "Wenn aktiviert, wird am Ende der Antwort eine Schaltfläche angezeigt, mit der der Benutzer das Gespräch in der Subconscious-Weboberfläche fortsetzen kann"
         },
         "stillNeedHelp": {
           "label": "Schaltfläche \"Brauchen Sie noch Hilfe?\" anzeigen",
           "section": {
             "prompt": "Schaltfläche \"Brauchen Sie noch Hilfe?\" konfigurieren"
           },
-          "tooltip": "Die Antwort von OnyxBot enthält am Ende eine Schaltfläche, die den Benutzer fragt, ob er noch Hilfe braucht."
+          "tooltip": "Die Antwort von Beca enthält am Ende eine Schaltfläche, die den Benutzer fragt, ob er noch Hilfe braucht."
         },
         "syncEnabledAgents": {
           "hideButton": {
@@ -6663,17 +6667,17 @@
       },
       "intro": {
         "autoAnswer": {
-          "item": "Richten Sie OnyxBot so ein, dass er Fragen in bestimmten Kanälen automatisch beantwortet."
+          "item": "Richten Sie Beca so ein, dass er Fragen in bestimmten Kanälen automatisch beantwortet."
         },
-        "description": "Richten Sie Slack-Bots ein, die sich mit Onyx verbinden. Nach der Einrichtung können Sie Onyx direkt aus Slack Fragen stellen. Außerdem können Sie:",
+        "description": "Richten Sie Slack-Bots ein, die sich mit Subconscious verbinden. Nach der Einrichtung können Sie Subconscious direkt aus Slack Fragen stellen. Außerdem können Sie:",
         "directMessage": {
-          "item": "Schreiben Sie OnyxBot direkt eine Nachricht, um wie in der Weboberfläche zu suchen."
+          "item": "Schreiben Sie Beca direkt eine Nachricht, um wie in der Weboberfläche zu suchen."
         },
         "docsPrompt": {
-          "text": "Folgen Sie der <link>Anleitung</link> in der Onyx-Dokumentation, um zu beginnen!"
+          "text": "Folgen Sie der <link>Anleitung</link> in der Subconscious-Dokumentation, um zu beginnen!"
         },
         "documentSets": {
-          "item": "Wählen Sie je nach Kanal, in dem die Frage gestellt wird, aus welchen Dokumentensätzen OnyxBot antworten soll."
+          "item": "Wählen Sie je nach Kanal, in dem die Frage gestellt wird, aus welchen Dokumentensätzen Beca antworten soll."
         }
       },
       "list": {
@@ -6691,7 +6695,7 @@
       },
       "newChannel": {
         "header": {
-          "title": "OnyxBot für Slack-Kanal konfigurieren"
+          "title": "Beca für Slack-Kanal konfigurieren"
         }
       },
       "table": {
@@ -6708,7 +6712,7 @@
           "badge": "Deaktiviert"
         },
         "empty": {
-          "message": "Bitte fügen Sie einen neuen Slack-Bot hinzu, um mit Onyx zu chatten!"
+          "message": "Bitte fügen Sie einen neuen Slack-Bot hinzu, um mit Subconscious zu chatten!"
         },
         "enabled": {
           "badge": "Aktiviert"
@@ -7115,13 +7119,13 @@
         "label": "Pop-up-Hinweis beim ersten Besuch"
       },
       "appName": {
-        "description": "Dieser Name wird in der gesamten App angezeigt und ersetzt \"Onyx\" in der Benutzeroberfläche.",
+        "description": "Dieser Name wird in der gesamten App angezeigt und ersetzt \"Subconscious\" in der Benutzeroberfläche.",
         "label": "Anzeigename der Anwendung"
       },
       "branding": {
-        "description": "Entfernen Sie \"powered by Onyx\" und andere Onyx-Branding-Elemente in der App.",
-        "enterpriseTooltip": "Das Ausblenden des Onyx-Brandings ist eine Funktion des Enterprise-Plans.",
-        "label": "Onyx-Branding ausblenden"
+        "description": "Entfernen Sie \"powered by Subconscious\" und andere Subconscious-Branding-Elemente in der App.",
+        "enterpriseTooltip": "Das Ausblenden des Subconscious-Brandings ist eine Funktion des Enterprise-Plans.",
+        "label": "Subconscious-Branding ausblenden"
       },
       "chatFooter": {
         "description": "Fügen Sie Markdown-Inhalte für Haftungsausschlüsse oder zusätzliche Informationen hinzu.",
@@ -7146,7 +7150,7 @@
         "label": "Begrüßungsnachricht"
       },
       "helpLink": {
-        "description": "Fügen Sie im Benutzermenü zusätzlich zur Onyx-Dokumentation einen benutzerdefinierten Hilfelink hinzu.",
+        "description": "Fügen Sie im Benutzermenü zusätzlich zur Subconscious-Dokumentation einen benutzerdefinierten Hilfelink hinzu.",
         "enterpriseTooltip": "Der benutzerdefinierte Hilfelink ist eine Funktion des Enterprise-Plans.",
         "label": "Benutzerdefinierter Hilfelink"
       },
@@ -7564,7 +7568,7 @@
         }
       },
       "activateModal": {
-        "description": "<strong>{email}</strong> erhält den Zugriff auf Onyx zurück.",
+        "description": "<strong>{email}</strong> erhält den Zugriff auf Subconscious zurück.",
         "submit": {
           "label": "Aktivieren"
         },
@@ -7574,7 +7578,7 @@
         }
       },
       "cancelInviteModal": {
-        "description": "<strong>{email}</strong> kann Onyx mit dieser Einladung nicht mehr beitreten.",
+        "description": "<strong>{email}</strong> kann Subconscious mit dieser Einladung nicht mehr beitreten.",
         "submit": {
           "label": "Einladung zurückziehen"
         },
@@ -7584,7 +7588,7 @@
         }
       },
       "deactivateModal": {
-        "description": "<strong>{email}</strong> verliert sofort den Zugriff auf Onyx. Die Sitzungen und Agenten dieses Benutzers bleiben erhalten. Der Lizenzplatz wird freigegeben. Sie können dieses Konto später wieder aktivieren.",
+        "description": "<strong>{email}</strong> verliert sofort den Zugriff auf Subconscious. Die Sitzungen und Agenten dieses Benutzers bleiben erhalten. Der Lizenzplatz wird freigegeben. Sie können dieses Konto später wieder aktivieren.",
         "submit": {
           "label": "Deaktivieren"
         },
@@ -7594,7 +7598,7 @@
         }
       },
       "deleteModal": {
-        "description": "<strong>{email}</strong> wird dauerhaft aus Onyx entfernt. Der gesamte Sitzungsverlauf wird gelöscht. Das Löschen kann nicht rückgängig gemacht werden.",
+        "description": "<strong>{email}</strong> wird dauerhaft aus Subconscious entfernt. Der gesamte Sitzungsverlauf wird gelöscht. Das Löschen kann nicht rückgängig gemacht werden.",
         "submit": {
           "label": "Löschen"
         },
@@ -7719,7 +7723,7 @@
         "title": "Benutzer & Anfragen"
       },
       "permissionsNotice": {
-        "description": "Onyx verwendet jetzt gruppenbasierte Berechtigungen. Die Rollen Curator und Global Curator wurden durch konfigurierbare Gruppenberechtigungen ersetzt, mit Managern pro Gruppe für eine eingegrenzte Verwaltung.",
+        "description": "Subconscious verwendet jetzt gruppenbasierte Berechtigungen. Die Rollen Curator und Global Curator wurden durch konfigurierbare Gruppenberechtigungen ersetzt, mit Managern pro Gruppe für eine eingegrenzte Verwaltung.",
         "learnMoreButton": {
           "label": "Mehr erfahren"
         },
@@ -7946,12 +7950,12 @@
           "label": "STT-Modell"
         },
         "targetUri": {
-          "description": "Fügen Sie den Endpunkt ein, der im [Azure Portal (Keys and Endpoint)]({portalUrl}) angezeigt wird. Onyx extrahiert die Sprachregion aus dieser URL. Beispiele: `https://westus.api.cognitive.microsoft.com/` oder `https://westus.tts.speech.microsoft.com/`.",
+          "description": "Fügen Sie den Endpunkt ein, der im [Azure Portal (Keys and Endpoint)]({portalUrl}) angezeigt wird. Subconscious extrahiert die Sprachregion aus dieser URL. Beispiele: `https://westus.api.cognitive.microsoft.com/` oder `https://westus.tts.speech.microsoft.com/`.",
           "label": "Ziel-URI",
           "required": "Ziel-URI ist erforderlich"
         },
         "ttsModel": {
-          "description": "Dieses Modell wird von Onyx standardmäßig für Text-zu-Sprache verwendet.",
+          "description": "Dieses Modell wird von Subconscious standardmäßig für Text-zu-Sprache verwendet.",
           "label": "Standardmodell"
         },
         "updateButton": {
@@ -8014,7 +8018,7 @@
           "message": "{label} getrennt"
         },
         "fallback": {
-          "description": "Onyx greift auf den integrierten Web-Crawler zurück."
+          "description": "Subconscious greift auf den integrierten Web-Crawler zurück."
         },
         "header": {
           "description": "Dadurch werden die gespeicherten Anmeldedaten für diesen Anbieter entfernt.",
@@ -8438,7 +8442,7 @@
           "title": "Gesprächseinstiege"
         },
         "defaultModel": {
-          "description": "Dieses Modell wird von Onyx standardmäßig in Ihren Chats verwendet.",
+          "description": "Dieses Modell wird von Subconscious standardmäßig in Ihren Chats verwendet.",
           "title": "Standardmodell"
         },
         "featured": {
@@ -8539,7 +8543,7 @@
         "label": "Neue Organisation erstellen"
       },
       "createTeamOption": {
-        "text": "Ein neues Onyx-Team erstellen"
+        "text": "Ein neues Subconscious-Team erstellen"
       },
       "differentEmailPrompt": {
         "text": "Haben Sie ein Konto mit einer anderen E-Mail-Adresse?"
@@ -8548,10 +8552,10 @@
         "title": "Konto nicht gefunden"
       },
       "inviteOption": {
-        "text": "In ein bestehendes Onyx-Team eingeladen werden"
+        "text": "In ein bestehendes Subconscious-Team eingeladen werden"
       },
       "notFound": {
-        "description": "Wir konnten Ihr Konto nicht finden. Um auf Onyx zuzugreifen, haben Sie folgende Möglichkeiten:"
+        "description": "Wir konnten Ihr Konto nicht finden. Um auf Subconscious zuzugreifen, haben Sie folgende Möglichkeiten:"
       },
       "signInLink": {
         "label": "Anmelden"
@@ -8620,7 +8624,7 @@
         "description": "Zugriffsbeschränkungen oder Berechtigungen des Kontos"
       },
       "cloudSupportPrompt": {
-        "text": "Wenn das Problem weiterhin besteht, wenden Sie sich an das Onyx-Team unter <link>support@onyx.app</link>"
+        "text": "Wenn das Problem weiterhin besteht, wenden Sie sich an das Subconscious-Team unter <link>support@onyx.app</link>"
       },
       "code": {
         "accessDenied": "Ihr Identitätsanbieter hat den Zugriff verweigert.",
@@ -8919,7 +8923,7 @@
         "label": "Wie haben Sie von uns erfahren?"
       },
       "subtitle": {
-        "text": "Starten Sie mit Onyx"
+        "text": "Starten Sie mit Subconscious"
       }
     },
     "verifyEmail": {
@@ -9153,7 +9157,7 @@
       },
       "healthBanner": {
         "backendUnavailable": {
-          "description": "Wenn dies Ihre Ersteinrichtung ist oder Sie Ihre Onyx-Bereitstellung gerade aktualisiert haben, startet das Backend wahrscheinlich noch. Warten Sie ein bis zwei Minuten und laden Sie die Seite neu. Wenn das nicht hilft, stellen Sie sicher, dass das Backend eingerichtet ist, oder wenden Sie sich an einen Administrator.",
+          "description": "Wenn dies Ihre Ersteinrichtung ist oder Sie Ihre Subconscious-Bereitstellung gerade aktualisiert haben, startet das Backend wahrscheinlich noch. Warten Sie ein bis zwei Minuten und laden Sie die Seite neu. Wenn das nicht hilft, stellen Sie sicher, dass das Backend eingerichtet ist, oder wenden Sie sich an einen Administrator.",
           "title": "Das Backend ist derzeit nicht erreichbar"
         }
       },
@@ -9258,7 +9262,7 @@
           "placeholder": "Wie kann ich Ihnen heute helfen?",
           "queuedPlaceholder": "Pfeil nach oben drücken, um Nachrichten in der Warteschlange zu bearbeiten",
           "searchPlaceholder": "Verbundene Quellen durchsuchen",
-          "speakingPlaceholder": "Onyx spricht..."
+          "speakingPlaceholder": "Subconscious spricht..."
         },
         "sendButton": {
           "processingFilesTooltip": "Warten, bis die angehängten Dateien verarbeitet sind"
@@ -9379,7 +9383,7 @@
       },
       "sharedAppInputBar": {
         "input": {
-          "placeholder": "Wie kann Onyx Ihnen heute helfen?"
+          "placeholder": "Wie kann Subconscious Ihnen heute helfen?"
         },
         "startSessionButton": {
           "label": "Neue Sitzung starten"
@@ -9963,6 +9967,12 @@
         "stopButton": {
           "tooltip": "Wiedergabe stoppen"
         }
+      },
+      "diagram": {
+        "label": "Diagramm",
+        "source": "Diagrammquelle",
+        "preparing": "Diagramm wird vorbereitet…",
+        "unavailable": "Diagramm nicht verfügbar. Die Quelle bleibt verfügbar."
       }
     },
     "modals": {
@@ -10307,7 +10317,7 @@
           "loginButton": {
             "label": "Anmelden"
           },
-          "title": "Willkommen bei Onyx"
+          "title": "Willkommen bei Subconscious"
         },
         "noResubmitMessage": {
           "toast": "Keine zuvor gesendete Nachricht gefunden."
@@ -10325,8 +10335,8 @@
           "confirmButton": {
             "label": "Deaktivieren"
           },
-          "description": "Stattdessen sehen Sie die Standard-Neuer-Tab-Seite Ihres Browsers. Sie können sie jederzeit in Ihren Onyx-Einstellungen wieder aktivieren.",
-          "title": "Onyx als Neuer-Tab-Seite deaktivieren?"
+          "description": "Stattdessen sehen Sie die Standard-Neuer-Tab-Seite Ihres Browsers. Sie können sie jederzeit in Ihren Subconscious-Einstellungen wieder aktivieren.",
+          "title": "Subconscious als Neuer-Tab-Seite deaktivieren?"
         }
       },
       "settingsPanel": {
@@ -10352,7 +10362,7 @@
           "title": "Einstellungen"
         },
         "newTabToggle": {
-          "label": "Onyx als Neuer-Tab-Seite verwenden"
+          "label": "Subconscious als Neuer-Tab-Seite verwenden"
         },
         "themeToggle": {
           "tooltip": "{mode, select, light {Zum hellen Design wechseln} other {Zum dunklen Design wechseln}}"
@@ -10363,7 +10373,7 @@
           "tooltip": "Neuer Chat"
         },
         "openInOnyxButton": {
-          "tooltip": "In Onyx öffnen"
+          "tooltip": "In Subconscious öffnen"
         }
       }
     },
@@ -10375,7 +10385,7 @@
         "error": "Sie müssen den Bedingungen zustimmen, um auf die Anwendung zuzugreifen."
       },
       "header": {
-        "title": "Willkommen bei Onyx!"
+        "title": "Willkommen bei Subconscious!"
       },
       "logoIcon": {
         "alt": "Logo"
@@ -10739,10 +10749,10 @@
           "title": "Zugriff eingeschränkt"
         },
         "licenseLapse": {
-          "description": "Dein Zugriff auf Onyx wurde wegen einer abgelaufenen Lizenz vorübergehend ausgesetzt."
+          "description": "Dein Zugriff auf Subconscious wurde wegen einer abgelaufenen Lizenz vorübergehend ausgesetzt."
         },
         "licenseRequired": {
-          "description": "Für die Nutzung von Onyx ist eine Lizenz erforderlich. Deine Daten sind geschützt und stehen zur Verfügung, sobald eine Lizenz aktiviert ist."
+          "description": "Für die Nutzung von Subconscious ist eine Lizenz erforderlich. Deine Daten sind geschützt und stehen zur Verfügung, sobald eine Lizenz aktiviert ist."
         },
         "logoutButton": {
           "label": "Abmelden"
@@ -10754,7 +10764,7 @@
           "description": "Um loszulegen, wende dich bitte an deinen Systemadministrator, um eine Lizenz zu erhalten."
         },
         "renewLicense": {
-          "description": "Um deinen Zugriff wiederherzustellen und Onyx weiter zu nutzen, wende dich bitte an deinen Systemadministrator, um die Lizenz zu verlängern."
+          "description": "Um deinen Zugriff wiederherzustellen und Subconscious weiter zu nutzen, wende dich bitte an deinen Systemadministrator, um die Lizenz zu verlängern."
         },
         "resubscribeButton": {
           "label": "Erneut abonnieren",
@@ -10773,10 +10783,10 @@
           "description": "Deine Organisation hat die lizenzierte Anzahl an Plätzen überschritten ({used} Benutzer / {seats} Plätze). Der Zugriff ist eingeschränkt, bis die Benutzerzahl reduziert oder die Lizenz erweitert wird."
         },
         "subscriptionLapse": {
-          "description": "Dein Zugriff auf Onyx wurde wegen eines abgelaufenen Abonnements vorübergehend ausgesetzt."
+          "description": "Dein Zugriff auf Subconscious wurde wegen eines abgelaufenen Abonnements vorübergehend ausgesetzt."
         },
         "updatePayment": {
-          "description": "Um deinen Zugriff wiederherzustellen und die leistungsstarken Funktionen von Onyx weiter zu nutzen, aktualisiere bitte deine Zahlungsinformationen."
+          "description": "Um deinen Zugriff wiederherzustellen und die leistungsstarken Funktionen von Subconscious weiter zu nutzen, aktualisiere bitte deine Zahlungsinformationen."
         }
       },
       "configError": {
@@ -10784,7 +10794,7 @@
           "text": "Wenn du Administrator bist, findest du in unserer <docsLink>Dokumentation</docsLink> die richtigen Konfigurationsschritte. Wenn du Benutzer bist, wende dich bitte an deinen Administrator."
         },
         "heading": {
-          "description": "Beim Laden deiner Onyx-Einstellungen ist offenbar ein Problem aufgetreten. Das kann an einem Konfigurationsproblem oder einer unvollständigen Einrichtung liegen.",
+          "description": "Beim Laden deiner Subconscious-Einstellungen ist offenbar ein Problem aufgetreten. Das kann an einem Konfigurationsproblem oder einer unvollständigen Einrichtung liegen.",
           "title": "Es ist ein Problem aufgetreten"
         }
       },
@@ -10793,7 +10803,7 @@
           "description": "Wir entschuldigen uns für etwaige Unannehmlichkeiten und danken für deine Geduld."
         },
         "checkBack": {
-          "description": "Onyx befindet sich derzeit in einem Wartungsfenster. Bitte schau in ein paar Minuten wieder vorbei."
+          "description": "Subconscious befindet sich derzeit in einem Wartungsfenster. Bitte schau in ein paar Minuten wieder vorbei."
         },
         "heading": {
           "title": "Wartung läuft"
@@ -11074,7 +11084,7 @@
         "alt": "Logo"
       },
       "poweredBy": {
-        "label": "Bereitgestellt von Onyx"
+        "label": "Bereitgestellt von Subconscious"
       }
     },
     "nonSelectableConnectors": {
@@ -11271,8 +11281,8 @@
             "label": "Name"
           }
         },
-        "managedDescription": "Von Onyx bereitgestellt: Lege fest, was der Agent tun darf.",
-        "managedNote": "Diese App wird von Onyx bereitgestellt; die Zugangsdaten werden für dich verwaltet. Lege unten fest, was der Agent tun darf. Nutzer verbinden sie über die Apps-Seite.",
+        "managedDescription": "Von Subconscious bereitgestellt: Lege fest, was der Agent tun darf.",
+        "managedNote": "Diese App wird von Subconscious bereitgestellt; die Zugangsdaten werden für dich verwaltet. Lege unten fest, was der Agent tun darf. Nutzer verbinden sie über die Apps-Seite.",
         "saveButton": "Speichern"
       },
       "customApp": {
@@ -11357,14 +11367,14 @@
           "startAuthFailed": "Autorisierung konnte nicht gestartet werden"
         },
         "header": {
-          "description": "Verbinde die Tools, die Onyx Craft während der Arbeit als Kontext nutzen kann.",
+          "description": "Verbinde die Tools, die Subconscious Craft während der Arbeit als Kontext nutzen kann.",
           "manageButton": "Apps verwalten",
           "searchPlaceholder": "Apps suchen...",
           "title": "Apps"
         },
         "kinds": {
           "app": {
-            "blurb": "Integrationen, die Onyx direkt unterstützt. Jede bringt Skills mit, die Craft die Nutzung beibringen: Starte hier.",
+            "blurb": "Integrationen, die Subconscious direkt unterstützt. Jede bringt Skills mit, die Craft die Nutzung beibringen: Starte hier.",
             "empty": "Für deine Organisation sind noch keine Apps konfiguriert.",
             "emptyTitle": "Noch keine Apps",
             "tabLabel": "Apps · {count}"
@@ -11739,7 +11749,7 @@
       },
       "llmLocked": {
         "backToChatButton": "Zurück zum Chat",
-        "description": "Onyx Craft benötigt einen Modellanbieter, den nur Admins einrichten können. Bitte deinen Admin, Anthropic, OpenAI oder OpenRouter zu verbinden.",
+        "description": "Subconscious Craft benötigt einen Modellanbieter, den nur Admins einrichten können. Bitte deinen Admin, Anthropic, OpenAI oder OpenRouter zu verbinden.",
         "title": "Ein LLM-Anbieter ist erforderlich"
       },
       "llmSetup": {
@@ -11884,7 +11894,7 @@
         "ariaLabel": "Link kopieren"
       },
       "organization": {
-        "description": "Jeder, der in deinem Onyx angemeldet ist, kann diese App sehen.",
+        "description": "Jeder, der in deinem Subconscious angemeldet ist, kann diese App sehen.",
         "label": "Organisation"
       },
       "private": {
@@ -12420,7 +12430,7 @@
         "placeholder": "Dateien filtern..."
       },
       "processing": {
-        "description": "Onyx verarbeitet Ihre hochgeladenen Dateien noch. Sie können den Agenten jetzt erstellen, aber er hat erst nach Abschluss der Verarbeitung Zugriff auf alle Dateien."
+        "description": "Subconscious verarbeitet Ihre hochgeladenen Dateien noch. Sie können den Agenten jetzt erstellen, aber er hat erst nach Abschluss der Verarbeitung Zugriff auf alle Dateien."
       }
     },
     "search": {
@@ -12499,7 +12509,7 @@
         "button": {
           "label": "Websuche"
         },
-        "description": "Ermöglichen Sie Onyx, im Internet nach Informationen zu suchen.",
+        "description": "Ermöglichen Sie Subconscious, im Internet nach Informationen zu suchen.",
         "title": "Websuche-Anbieter auswählen"
       }
     },
@@ -12519,7 +12529,7 @@
         "subtitle": "LiteLLM-kompatible APIs",
         "title": "Benutzerdefinierter LLM-Anbieter"
       },
-      "description": "Onyx unterstützt sowohl selbst gehostete Modelle als auch gängige Anbieter.",
+      "description": "Subconscious unterstützt sowohl selbst gehostete Modelle als auch gängige Anbieter.",
       "edit": {
         "ariaLabel": "LLM-Anbieter bearbeiten"
       },
@@ -12539,7 +12549,7 @@
       "input": {
         "placeholder": "Ihr Name"
       },
-      "title": "Wie soll Onyx Sie nennen?"
+      "title": "Wie soll Subconscious Sie nennen?"
     },
     "nonAdminStep": {
       "confirmation": {
@@ -12665,7 +12675,7 @@
         "searchPlaceholder": "Suchen..."
       },
       "revokeModal": {
-        "description": "Jede Anwendung, die das Token {name} ({tokenDisplay}) verwendet, verliert den Zugriff auf Onyx. Diese Aktion kann nicht rückgängig gemacht werden.",
+        "description": "Jede Anwendung, die das Token {name} ({tokenDisplay}) verwendet, verliert den Zugriff auf Subconscious. Diese Aktion kann nicht rückgängig gemacht werden.",
         "question": "Möchten Sie dieses Token wirklich widerrufen?",
         "submit": "Widerrufen",
         "title": "Zugriffstoken widerrufen"
@@ -12731,7 +12741,7 @@
         "title": "Standard-App-Modus"
       },
       "defaultModel": {
-        "description": "Dieses Modell wird von Onyx standardmäßig in Ihren Chats verwendet.",
+        "description": "Dieses Modell wird von Subconscious standardmäßig in Ihren Chats verwendet.",
         "title": "Standardmodell"
       },
       "defaultReasoningLevel": {
@@ -12756,7 +12766,7 @@
       "connectButton": "Verbinden",
       "disconnectModal": {
         "continueNote": "Sie können bestehende Sitzungen, die auf Inhalte von {name} verweisen, weiterhin fortsetzen.",
-        "description": "Onyx kann nicht mehr auf Inhalte aus Ihrem {name}-Konto zugreifen oder diese durchsuchen.",
+        "description": "Subconscious kann nicht mehr auf Inhalte aus Ihrem {name}-Konto zugreifen oder diese durchsuchen.",
         "disconnecting": "Wird getrennt...",
         "submit": "Trennen",
         "title": "*{name}* trennen"
@@ -12803,7 +12813,7 @@
         "copy": "Kopieren",
         "copyError": "Wert konnte nicht kopiert werden."
       },
-      "description": "Verbinden Sie externe Tools mit den Modellen, die Ihnen in Onyx zur Verfügung stehen.",
+      "description": "Verbinden Sie externe Tools mit den Modellen, die Ihnen in Subconscious zur Verfügung stehen.",
       "guideButton": "Anleitung",
       "loadError": {
         "description": "Bitte laden Sie die Seite neu und versuchen Sie es erneut.",
@@ -12866,7 +12876,7 @@
         "maxReached": "Maximum von {count} Erinnerungen erreicht"
       },
       "empty": {
-        "description": "Fügen Sie eine persönliche Notiz oder Erinnerung hinzu, die sich Onyx merken soll.",
+        "description": "Fügen Sie eine persönliche Notiz oder Erinnerung hinzu, die sich Subconscious merken soll.",
         "getStarted": "Noch keine Erinnerungen. Klicken Sie auf „Zeile hinzufügen“, um zu beginnen.",
         "noMatches": "Keine Erinnerungen entsprechen Ihrer Suche."
       },
@@ -12877,11 +12887,11 @@
         "label": "{count, plural, one {Zeile} other {Zeilen}}"
       },
       "modal": {
-        "description": "Lassen Sie Onyx diese gespeicherten Notizen und Erinnerungen in Chats verwenden.",
+        "description": "Lassen Sie Subconscious diese gespeicherten Notizen und Erinnerungen in Chats verwenden.",
         "searchPlaceholder": "Suchen..."
       },
       "referenceStoredMemories": {
-        "description": "Lassen Sie Onyx gespeicherte Erinnerungen in Chats verwenden.",
+        "description": "Lassen Sie Subconscious gespeicherte Erinnerungen in Chats verwenden.",
         "title": "Gespeicherte Erinnerungen verwenden"
       },
       "removeLineButton": {
@@ -12893,7 +12903,7 @@
         "saved": "Einstellungen gespeichert"
       },
       "updateMemories": {
-        "description": "Lassen Sie Onyx gespeicherte Erinnerungen erstellen und aktualisieren.",
+        "description": "Lassen Sie Subconscious gespeicherte Erinnerungen erstellen und aktualisieren.",
         "title": "Erinnerungen aktualisieren"
       },
       "viewAll": {
@@ -13171,10 +13181,10 @@
     },
     "adminSidebar": {
       "businessOrEnterpriseOnly": {
-        "tooltip": "Diese Funktion ist nur in der [Business- oder Enterprise-Version von Onyx](/admin/billing) verfügbar."
+        "tooltip": "Diese Funktion ist nur in der [Business- oder Enterprise-Version von Subconscious](/admin/billing) verfügbar."
       },
       "enterpriseOnly": {
-        "tooltip": "Diese Funktion ist nur in der [Enterprise-Version von Onyx](/admin/billing) verfügbar."
+        "tooltip": "Diese Funktion ist nur in der [Enterprise-Version von Subconscious](/admin/billing) verfügbar."
       },
       "exitAdminPanel": {
         "label": "Admin-Bereich verlassen"
@@ -13715,7 +13725,7 @@
           "title": "Aus GitHub importieren"
         },
         "scratch": {
-          "description": "Schreiben Sie die Anweisungen und fügen Sie unterstützende Dateien in Onyx hinzu.",
+          "description": "Schreiben Sie die Anweisungen und fügen Sie unterstützende Dateien in Subconscious hinzu.",
           "title": "Von Grund auf neu beginnen"
         },
         "trigger": {
@@ -13863,8 +13873,8 @@
     "changeTheOutcome": "Change the outcome.",
     "aFocusedPanelADevelopingBusinessPicture": "A focused panel. A developing business picture. A conversation that earns the next five minutes.",
     "sarahJourneySynthesis": "SARAH / JOURNEY & SYNTHESIS",
-    "openLiveOnyxInterview": "Open live Onyx interview",
-    "interactiveDesignPreviewMeridianIsFictionalSample": "Interactive design preview. Meridian is fictional; sample dialogue illustrates the workflow. Live interviews use native Onyx chat and require a connected backend.",
+    "openLiveOnyxInterview": "Open live Subconscious interview",
+    "interactiveDesignPreviewMeridianIsFictionalSample": "Interactive design preview. Meridian is fictional; sample dialogue illustrates the workflow. Live interviews use native Subconscious chat and require a connected backend.",
     "behaviorToOutcomes": "Vom Kundenverhalten zu Geschäftsergebnissen",
     "targetsGuideModel": "Zielwerte leiten das Modell. Fehlende Betriebswerte bleiben unbekannt.",
     "proposedDriverEquation": "Vorgeschlagene Modellgleichung",
@@ -13899,6 +13909,12 @@
       "empty": "Keine passenden Aktionen",
       "draft": "Entwurf",
       "review": "Anfrage vor dem Senden prüfen."
+    },
+    "workflows": {
+      "label": "Agenten",
+      "interview": "Führungskräfteinterview",
+      "design": "Experimentplanung",
+      "analytics": "Experimentanalyse"
     }
   }
 }

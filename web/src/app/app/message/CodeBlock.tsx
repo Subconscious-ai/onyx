@@ -3,6 +3,7 @@ import Text from "@/refresh-components/texts/Text";
 import React, { useState, ReactNode, useCallback, useMemo, memo } from "react";
 import { SvgCheck, SvgCode, SvgCopy } from "@opal/icons";
 import { useTranslations } from "next-intl";
+import MermaidDiagram from "@/sections/diagrams/MermaidDiagram";
 
 interface CodeBlockProps {
   className?: string;
@@ -65,6 +66,10 @@ export const CodeBlock = memo(function CodeBlock({
       )}
     </button>
   );
+
+  if (language.toLowerCase() === "mermaid") {
+    return <MermaidDiagram source={codeText} />;
+  }
 
   if (typeof children === "string" && !language) {
     return (

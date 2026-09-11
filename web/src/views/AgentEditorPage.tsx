@@ -64,7 +64,6 @@ import {
   SvgFold,
   SvgImage,
   SvgLock,
-  SvgOnyxOctagon,
   SvgOrganization,
   SvgSliders,
   SvgTag,
@@ -72,6 +71,7 @@ import {
   SvgTrash,
   SvgSimpleLoader,
 } from "@opal/icons";
+import { SubconsciousIcon as SvgOnyxOctagon } from "@/sections/brand/SubconsciousIcon";
 import CustomAgentAvatar, {
   agentAvatarIconMap,
 } from "@/refresh-components/avatars/CustomAgentAvatar";

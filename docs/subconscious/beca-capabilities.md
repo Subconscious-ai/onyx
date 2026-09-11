@@ -16,13 +16,19 @@ Verified on the migrated native database. Resolve IDs again on another database.
 | --- | --- | --- | --- |
 | Market researcher, ID 1 | Enabled | Absent | Enabled |
 | Executive interview, ID 2 | Enabled | Absent | Enabled |
-| Beca, ID 5 | Enabled | Enabled | Enabled |
+| Beca, ID 5 | Enabled | Enabled | Full current catalog |
+| Experiment design, ID 7 | Enabled | Absent | Discovery, design, draft review, confirmed launch and status |
+| Experiment analytics, ID 8 | Enabled | Absent | Discovery and smolagents analytics; no launch tool |
 
-A server registration and a persona tool assignment are separate native settings. Beca now has 23 assigned tools: three native tools, three GPT Researcher tools and 17 existing Rehoboam tools. No MCP server was duplicated. Persona permissions, document sets and AWS model configuration 8 were preserved.
+A server registration and a persona tool assignment are separate native settings. Server 3 now connects to `https://api.dev.subconscious.ai/mcp/`, exposing thirty existing Rehoboam tools. The older production endpoint still exposed seventeen tools during September 11 verification. Admin discovery refreshes stored tool snapshots; a user discovery call alone does not update stored assignments. Refresh, attach the intended tool subset, and restore the classification-only `check_causality` description below.
+
+The sidebar resolves the three workflow links from the authenticated catalog. IDs 7 and 8 are private native personas; permissions and existing conversations remain preserved. The experiment prompts live in [experiment-design-prompt.md](experiment-design-prompt.md) and [experiment-analytics-prompt.md](experiment-analytics-prompt.md). Configure those prompts using the native persona editor, conversation model 8, and native system-prompt extension mode. The task reminder must say: “Respond to the latest customer message. Use tools only when external facts or calculations are needed. Render requested diagrams from supplied structure without retrieving experiments. Keep facts, assumptions and tool errors distinct.” A vague tool-only reminder caused irrelevant study retrieval for a diagram request.
+
+Server 3 currently authenticates through a shared administrator token for the existing review account. Owned-study discovery was verified for that account; the deployment is not enterprise-isolated. Do not publish the private experiment personas or claim cross-organization separation without per-user credentials or a reviewed tenant boundary.
 
 GPT Researcher gathers public evidence. Rehoboam exposes experiment drafting, launch, status and analysis. The same Beca conversation can call both services. Customer targets and transcripts remain excluded from external research queries.
 
-Rehoboam includes `check_causality`, attribute/level and outcome generation, draft create/revise/read, `start_experiment`, status/details, experiment questions, analytics metadata, feature importance, posterior distributions, willingness to pay, market share, latent-trait factors and segments. No experiment was launched during QA. Result-analysis endpoints still require a valid authorized experiment ID and an end-to-end results canary.
+Rehoboam includes `check_causality`, attribute/level and outcome generation, draft create/revise/read, `start_experiment`, status/details, experiment questions, analytics metadata, feature importance, posterior distributions, willingness to pay, market share, latent-trait factors and segments. No experiment was launched during QA. `find_experiments` now supplies authorized IDs from owner-only cached summaries; `ask_analyst` calls the existing smolagents interpreter. Native MCP raster blocks are persisted through the existing file store and returned as actual chat links. Discovery coverage and artifact availability remain separate checks.
 
 Experiment execution requires an explicit instruction for the identified draft. The Actions menu never submits or launches automatically. The interview prompt enforces the conversational boundary; a separate deterministic launch-approval mechanism is not implemented by this change.
 
@@ -62,3 +68,11 @@ Both transcription and synthesis upgrade paths pass authentication and token-rep
 ## Relationship to Hermes
 
 Onyx owns document ingestion, search, citations, conversations and tool permissions in the current product. Hermes offers an alternative operator runtime and reusable skills. No comparative benchmark supports a quality claim. Replacing Onyx would add migration work without resolving the current evidence and experiment boundaries. Reuse bounded procedures before adding another runtime.
+
+## Visuals and upstream branding
+
+Fenced Mermaid now renders through a lazy, pinned Mermaid library with strict security, SVG sanitization, streaming debounce, theme-aware rendering and recoverable source disclosure. A diagram request uses supplied structure; a picture request must use the configured image provider. Beca must never treat the assistant name as the customer product.
+
+The native image provider registry now supports Amazon Nova Canvas through installed LiteLLM and the AWS credential chain. Setup is available under administrator Image Generation. No OpenAI secret is needed. Activation is blocked by missing `bedrock:InvokeModel` permission for `arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-canvas-v1:0`; an expired local AWS login prevented the narrow policy update. Reference-image editing is explicitly unsupported. No picture-generation success is claimed before actual PNG output passes.
+
+Upstream promotional notifications are filtered from both counts and lists. Operational, connector and administrator-authored notifications remain available. Product copy, fallback icons, loading indicators and the old permissions-migration banners use the Subconscious surface. Source publisher identities, legal notices, technical identifiers and official documentation links remain accurate.

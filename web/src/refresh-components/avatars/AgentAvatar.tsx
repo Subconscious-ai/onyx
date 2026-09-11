@@ -2,6 +2,7 @@
 
 import { DagMark } from "@/sections/brand/dag-mark";
 import { isExecutiveAgent } from "@/lib/executive/brief";
+import { consultingRole } from "@/lib/agents/consulting";
 import { MinimalAgent } from "@/lib/agents/types";
 import { buildAgentAvatarUrl } from "@/lib/agents/utils";
 import { useSettings } from "@/lib/settings/hooks";
@@ -23,7 +24,7 @@ export default function AgentAvatar({
   const t = useTranslations("common.agentAvatar");
   const { enterprise: enterpriseSettings } = useSettings();
 
-  if (isExecutiveAgent(agent))
+  if (isExecutiveAgent(agent) || consultingRole(agent))
     return <DagMark style={{ width: size, height: size }} />;
 
   if (agent.id === DEFAULT_AGENT_ID) {
