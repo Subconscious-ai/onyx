@@ -51,7 +51,7 @@ interface IconLoaderProps {
 /**
  * Generic loader: continuously spins the given icon. Pass any `@opal/icons`
  * icon, or use the default spinner. Holds still under `prefers-reduced-motion`.
- * For the Onyx-branded octagon mark, use `OnyxLoader`.
+ * Full-page loading uses the same indicator through `OnyxLoader`.
  */
 function IconLoader({
   icon: Icon = SvgLoader,
@@ -80,75 +80,9 @@ interface OnyxLoaderProps {
   color?: LoaderColor;
 }
 
-// Geometry matches the @opal/icons `onyx-octagon`/`onyx-logo` paths. Stroke
-// is defined here, not reused from them, so weight can be tuned: ~2.5px at
-// the default 64px, scaling with `size`.
-const STROKE_WIDTH = 0.625;
-
-const OUTLINE_PATH =
-  "M4.5 2.50002L8 1.00002L11.5 2.50002M13.5 4.50002L15 8.00001L13.5 11.5M11.5 13.5L8 15L4.5 13.5M2.5 11.5L1 8L2.5 4.50002";
-
-function svgLayerProps(size: number) {
-  return {
-    width: size,
-    height: size,
-    viewBox: "0 0 16 16",
-    fill: "none",
-    stroke: "currentColor",
-    xmlns: "http://www.w3.org/2000/svg",
-  };
-}
-
-const MARK_PATHS = [
-  "M8 4.00001L4.5 2.50002L8 1.00002L11.5 2.50002L8 4.00001Z",
-  "M8 12L11.5 13.5L8 15L4.5 13.5L8 12Z",
-  "M4 8L2.5 11.5L1 8L2.5 4.50002L4 8Z",
-  "M12 8.00002L13.5 4.50002L15 8.00001L13.5 11.5L12 8.00002Z",
-];
-
-/**
- * Onyx-branded loading mark: rotates a full turn while crossfading between the
- * octagon outline and the diamond logo (2s loop), holding the static outline
- * under `prefers-reduced-motion`. Uses `currentColor`, so `color` themes it.
- * For a full-page loading state with a label, use `PageLoader`.
- */
+// Retain the native API while using the existing neutral loading indicator.
 function OnyxLoader({ size = 64, color = "border-02" }: OnyxLoaderProps) {
-  return (
-    <div
-      role="status"
-      aria-label="Loading"
-      className={cn("relative shrink-0", COLOR_CLASS[color])}
-      style={{ width: size, height: size }}
-    >
-      <div className="opal-loader-rotator">
-        <svg
-          {...svgLayerProps(size)}
-          className="opal-loader-layer opal-loader-outline"
-        >
-          <path
-            d={OUTLINE_PATH}
-            strokeWidth={STROKE_WIDTH}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <svg
-          {...svgLayerProps(size)}
-          className="opal-loader-layer opal-loader-mark"
-        >
-          {MARK_PATHS.map((d) => (
-            <path
-              key={d}
-              d={d}
-              strokeWidth={STROKE_WIDTH}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          ))}
-        </svg>
-      </div>
-    </div>
-  );
+  return <IconLoader size={size} color={color} />;
 }
 
 export {

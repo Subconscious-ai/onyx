@@ -129,7 +129,7 @@ export type InterviewMessage = {
 };
 export const EXECUTIVE_AGENT_NAME = "Executive interview";
 export const isExecutiveAgent = (agent?: { name: string } | null) =>
-  [EXECUTIVE_AGENT_NAME, "Burn 2.0"].includes(agent?.name ?? "");
+  [EXECUTIVE_AGENT_NAME, "Burn 2.0", "Beca"].includes(agent?.name ?? "");
 const OPEN = "<interview-brief>";
 const CLOSE = "</interview-brief>";
 const normalized = (text: string) =>

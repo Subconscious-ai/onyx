@@ -19,7 +19,6 @@ import {
   SvgImageSmall,
   SvgInfoSmall,
   SvgMusicSmall,
-  SvgOnyxOctagon,
   SvgPenSmall,
   SvgQuestionMarkSmall,
   SvgSearchSmall,
@@ -28,6 +27,7 @@ import {
   SvgTextLinesSmall,
   SvgTwoLineSmall,
 } from "@opal/icons";
+import { SubconsciousIcon as SvgOnyxOctagon } from "@/sections/brand/SubconsciousIcon";
 
 interface IconConfig {
   Icon: React.FunctionComponent<IconProps>;

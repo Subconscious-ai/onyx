@@ -13,6 +13,7 @@ Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1003/bus
 Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 RuntimeDirectory=burn-executor
 RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
 ExecStart=/usr/local/lib/burn/dockerd-rootless.sh --host=unix:///run/burn-executor/docker.sock --data-root=/var/lib/burn-executor/docker
 Restart=always
 RestartSec=5

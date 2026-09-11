@@ -40,8 +40,15 @@ export function useAgents() {
     }
   );
 
+  const agents = useMemo(
+    () =>
+      (data ?? []).map((agent) =>
+        agent.name === "Burn 2.0" ? { ...agent, name: "Beca" } : agent
+      ),
+    [data]
+  );
   return {
-    agents: data ?? [],
+    agents,
     isLoading: !error && !data,
     error,
     refresh: mutate,

@@ -9,14 +9,14 @@ import {
 import { cn } from "@opal/utils";
 import Text from "@/refresh-components/texts/Text";
 import Truncated from "@/refresh-components/texts/Truncated";
-import { SvgOnyxLogo, SvgOnyxLogoTyped } from "@opal/logos";
+import { Wordmark } from "@/sections/brand/wordmark";
+import { DagMark } from "@/sections/brand/dag-mark";
 
 export interface LogoProps {
   folded?: boolean;
   size?: number;
   className?: string;
-  // Always render the real Onyx logo, ignoring enterprise white-label settings
-  // (custom logo / application name). Used by Onyx-branded surfaces like Craft.
+  // Retained native flag: force the default product brand instead of a custom logo.
   onyxBranded?: boolean;
 }
 
@@ -29,9 +29,23 @@ export function Logo({ folded, size, className, onyxBranded }: LogoProps) {
 
   if (onyxBranded) {
     return folded ? (
-      <SvgOnyxLogo size={resolvedSize} className={cn("shrink-0", className)} />
+      <DagMark
+        style={{ width: resolvedSize, height: resolvedSize }}
+        className={cn("shrink-0", className)}
+      />
     ) : (
-      <SvgOnyxLogoTyped size={resolvedSize} className={className} />
+      <Wordmark className={className} />
+    );
+  }
+
+  if (!applicationName && !logoUrl) {
+    return folded ? (
+      <DagMark
+        className={className}
+        style={{ width: resolvedSize, height: resolvedSize }}
+      />
+    ) : (
+      <Wordmark className={className} />
     );
   }
 
@@ -51,7 +65,10 @@ export function Logo({ folded, size, className, onyxBranded }: LogoProps) {
       />
     </div>
   ) : (
-    <SvgOnyxLogo size={resolvedSize} className={cn("shrink-0", className)} />
+    <DagMark
+      style={{ width: resolvedSize, height: resolvedSize }}
+      className={cn("shrink-0", className)}
+    />
   );
 
   const renderNameAndPoweredBy = (opts: {
@@ -98,8 +115,11 @@ export function Logo({ folded, size, className, onyxBranded }: LogoProps) {
   return applicationName ? (
     renderNameAndPoweredBy({ includeLogo: true, includeName: true })
   ) : folded ? (
-    <SvgOnyxLogo size={resolvedSize} className={cn("shrink-0", className)} />
+    <DagMark
+      style={{ width: resolvedSize, height: resolvedSize }}
+      className={cn("shrink-0", className)}
+    />
   ) : (
-    <SvgOnyxLogoTyped size={resolvedSize} className={className} />
+    <Wordmark className={className} />
   );
 }

@@ -1,3 +1,4 @@
+import { SubconsciousIcon as SvgOnyxOctagon } from "@/sections/brand/SubconsciousIcon";
 import { Permission } from "@/lib/types";
 import { Tier } from "@/lib/settings/types";
 import { IconFunctionComponent } from "@opal/types";
@@ -20,7 +21,6 @@ import {
   SvgHistory,
   SvgImage,
   SvgMcp,
-  SvgOnyxOctagon,
   SvgPaintBrush,
   SvgPieChart,
   SvgPlug,

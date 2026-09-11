@@ -61,3 +61,17 @@ The full restart check exposed native Redis-backed login sessions on disposable 
 Final restart proof: the same native Postgres-backed login cookie authenticated after a full `burn2.service` restart, and the saved model brief remained present. All five authenticated gateway checks pass afterward. Desktop Onyx containers are stopped and the old port-10000 Funnel is disabled. The resolved Compose graph includes every required service, external data volumes and only the isolated executor socket.
 
 The native Onyx MCP call now returns a successful GPT Researcher receipt with five source URLs in 26.1 seconds. The earlier private-hostname refusal was a tool error, despite a successful outer chat HTTP response; inspect `custom_tool_delta.error` and the nested research receipt, not only HTTP 200.
+
+## Beca voice routing, September 11
+
+Vercel cannot forward the native live-audio WebSocket through the HTTP catch-all. The frontend uses the public AWS voice gateway plus a native single-use token. The gateway allows only the stable review origin and Beca branch origin, then normalizes Origin to the native WEB_DOMAIN. Tokens, provider secrets and cookies are never logged or sent to another origin. HTTP authentication and public-enrollment restrictions remain unchanged.
+
+The first gateway reload inspected an old bind-mounted inode. Recreating only the gateway loaded the candidate and exposed nginx's default 64-byte map bucket limit for long Vercel hostnames. `map_hash_bucket_size 128` corrected startup; backend health, five original gateway checks and two voice authentication checks pass afterward. For future changes, syntax-check a candidate in a disposable nginx container with the actual mount before replacement. Verify the live container configuration after reload. No database or worker restart is needed for gateway configuration.
+
+Native ElevenLabs provider validation rejected the supplied API key IDs. Provider creation rolled back and voice remains disabled. Configure a valid secret through native administration, select the existing Beca voice ID, then test speech and read-aloud. `test_voice_gateway.py` proves transport authentication only, not working speech.
+
+### September 11 runtime repair
+
+Mount the rootless daemon directory `/run/burn-executor` at `/var/run:ro` in the native code interpreter, and retain `RuntimeDirectoryPreserve=yes`. A socket-file bind holds a stale inode after a daemon restart. Mounting the directory at another path also fails: the native entrypoint checks `/var/run/docker.sock` before honoring Docker client configuration. Native execution passed before and after a daemon restart with the directory mount; no privileged container or host Docker socket is involved.
+
+`hosting/Dockerfile.beca` is a five-module overlay on the current executive-proof image. Supply the verified current image explicitly with `--build-arg BURN_BASE_IMAGE=<verified-image>` and preserve concurrent Burn extraction changes. The build intentionally has no guessed base image. Vercel publication does not deploy backend code. Coordinate shared API restarts; do not replace the entire live compose file from a divergent worktree. The offline backend check runs as `python /tmp/test_beca_providers.py` inside the candidate image.

@@ -3,7 +3,7 @@
  * Plays audio chunks as they arrive for smooth, low-latency playback.
  */
 
-import { INTERNAL_URL, IS_DEV } from "@/lib/constants";
+import { getVoiceWebSocketUrl } from "@/lib/voice/websocket";
 
 /**
  * HTTPStreamingTTSPlayer - Uses HTTP streaming with MediaSource Extensions
@@ -386,22 +386,7 @@ export class WebSocketStreamingTTSPlayer {
   }
 
   private async getWebSocketUrl(): Promise<string> {
-    // Fetch short-lived WS token
-    const tokenResponse = await fetch("/api/voice/ws-token", {
-      method: "POST",
-      credentials: "include",
-    });
-    if (!tokenResponse.ok) {
-      throw new Error("Failed to get WebSocket authentication token");
-    }
-    const { token } = await tokenResponse.json();
-
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = IS_DEV ? new URL(INTERNAL_URL).host : window.location.host;
-    const path = IS_DEV
-      ? "/voice/synthesize/stream"
-      : "/api/voice/synthesize/stream";
-    return `${protocol}//${host}${path}?token=${encodeURIComponent(token)}`;
+    return getVoiceWebSocketUrl("synthesize");
   }
 
   async connect(voice?: string, speed?: number): Promise<void> {
