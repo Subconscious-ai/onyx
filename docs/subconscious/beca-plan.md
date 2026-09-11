@@ -74,6 +74,12 @@ AWS runs the five-module overlay `onyx-burn2:beca-20260911`, image `sha256:7efe1
 
 The existing Rehoboam `ask_analyst` returned a source-bound attribute-importance chart in 64.4 seconds. Native storage served a 58,169-byte PNG; the hosted mobile browser decoded the 631×300 image at a 350-pixel display width without overflow. A canary validator initially matched a partial streamed URL; final verification used the complete returned file ID and real browser retrieval.
 
-The three requested workflows are pinned for the review account. Older personas and conversations remain available. The Beca branch model destination now points to the verified causl-kb preview `https://causl-lw0z6f3rh-subconcious.vercel.app/dashboard/burn-import`, which fixes the separate CamelCase target-admission bug. Full executive-to-model replay remains owned by the paired executive-proof PR; the Beca visual repair does not claim completion of that broader release.
+The three requested workflows are pinned for the review account. Older personas and conversations remain available. The Beca branch model destination now points to the verified causl-kb preview `https://causl-2sfwv61jz-subconcious.vercel.app/dashboard/burn-import`, which fixes the separate CamelCase target-admission bug. Full executive-to-model replay remains owned by the paired executive-proof PR; the Beca visual repair does not claim completion of that broader release.
 
 Picture generation remains blocked on AWS Nova Canvas authorization and expired administrator AWS login. Keep PR #10 draft and unmerged pending executive QA. Exact final deployment and cleanup receipts are recorded in the PR.
+
+### Exact preview pairing and credential handling
+
+The Beca model preview reuses causl-kb commit `eee6ef33` with deployment-specific `BURN_ONYX_ORIGIN`, `ENABLE_BURN_PANEL=true`, `AWS_REGION=us-east-1`, `BURN_BEDROCK_MODEL_ID=openai.gpt-oss-120b-1:0`, and the existing private Bedrock bearer token at build/runtime. The source origin is exactly the Beca branch alias. A destination URL alone is insufficient; missing AWS configuration also disables the import route with 404. Preserve the separate executive-proof preview and project defaults.
+
+Vercel `protectionBypass` map keys are secrets. Never print the map or keys. Two exposed preview tokens were revoked and regenerated during diagnostics; live project readback confirmed revocation and unchanged deployment protection. Reusable authentication helpers must read private credentials at runtime. Manual deployments use a clean Git archive and explicit exclusions, because Git ignore rules alone do not exclude local QA artifacts from CLI uploads.

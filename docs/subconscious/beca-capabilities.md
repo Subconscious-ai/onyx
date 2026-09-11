@@ -81,4 +81,4 @@ Upstream promotional notifications are filtered from both counts and lists. Oper
 
 Saved-study discovery returned three authorized study summaries in 6.9 seconds. A supplied-structure Mermaid request returned in 1.8 seconds without tool calls and rendered in both themes. The smolagents analyst returned a real PNG from existing study results in 64.4 seconds; native chat-file retrieval and mobile image decoding passed. Analyst work is slower than ordinary conversation and saved-study search. No experiment was launched.
 
-The model handoff destination for the Beca review branch is the verified causl-kb preview `https://causl-lw0z6f3rh-subconcious.vercel.app/dashboard/burn-import`. Preserve exact origin checks. Full interview/model reliability evidence remains in the paired executive-proof work.
+The model handoff destination for the Beca review branch is the verified causl-kb preview `https://causl-2sfwv61jz-subconcious.vercel.app/dashboard/burn-import`. Preserve exact origin checks. Full interview/model reliability evidence remains in the paired executive-proof work.
