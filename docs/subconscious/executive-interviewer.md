@@ -1,5 +1,7 @@
 ## Outcome
-Replace the Burn application surface with a native Onyx executive interview. An executive starts with researched market context, supplies private objectives and customer behavior, and leaves with a coherent journey and evidence-linked intervention brief.
+Complete the existing native Onyx executive interview. Reach a saved, evidence-linked Guesstimate business model with minimal executive questioning.
+
+Status: simplified 2026-09-09. Onyx issue #1 / draft PR #2 owns implementation. Burn remains the preserved reference.
 
 ## Reuse and boundaries
 - Preserve native Onyx conversation, streaming, citations, uploads, history, Exa, Python analysis, AWS Bedrock, and existing Subconscious MCP.
@@ -8,13 +10,24 @@ Replace the Burn application surface with a native Onyx executive interview. An 
 - Reuse PDL and background researcher preparation. Unknown operating numbers remain unknown. Public research cannot establish private objectives.
 
 ## Implementation plan
-1. Add regression fixtures for selective questions, explicit objectives, behavioral transitions, grounded conflicts, and evidence status before runtime changes.
-2. Add an executive workspace around native Onyx chat: restrained Subconscious typography, specialist roster, evolving brief, journey, and source provenance. Preserve standard Onyx behavior outside the executive agent.
-3. Configure the executive agent rubric from primary consulting guidance and Burn roles; use AWS and existing tools. Persist the conversation and reconstruct the draft brief on reload without another model call.
-4. Connect preparation and the existing scoped market/model boundary where deployed services permit. Expose unavailable or pending integration states explicitly; never present demo data as accepted customer records.
-5. Validate desktop/mobile interaction, a real AWS interview and reload, then publish the exact commit as a draft PR and Vercel preview. A remotely reachable authenticated Onyx backend is required for remote chat UAT.
+
+1. **Make the existing interview useful.** Keep native Onyx chat and the existing MBB index. Repair the retained source-use failure first. Use approved open-weight Bedrock models, cited references, selective questions, explicit unknowns, and automatic grounded Jerry humor. No new UI, template catalog, nested analyst-agent, or Dify deployment. Reuse existing regression cases before changing behavior.
+2. **Prove a saved business model.** Connect existing authorized PDL preparation, background GPT Researcher, causl-kb acceptance, and Guesstimate validation/save. Keep PostgreSQL authoritative. Demonstrate an interview, accepted source receipts, and the reopened model under the same verified organization. Reuse existing services and authentication; no database migration or new workflow engine.
+
+## MBB access evidence — 2026-09-09
+
+Native Executive interview agent `2` already has enabled `internal_search`. No connector or persona configuration change was necessary.
+
+Authenticated connector readback reports successful file indexing: McKinsey 15,316, BCG 5,145, Bain 5,664, external cases 2,255. The combined 28,380 count is not a unique-document or retrieval-quality score. A separate MBB GitHub connector reports `completed_with_errors`.
+
+Synthetic session `63aeb1a0-9166-46b8-851c-f480f0edf975` used the existing executive persona with a per-request Bedrock GPT-OSS 120B override. Only native internal search was allowed and forced. The model, persona, and provider defaults remained unchanged.
+
+The 26.1-second response returned the exact Wharton Hospital Administrative Software case through GitHub and file sources. Saved-session readback retained the turn and search packets. **Access passed; answer usefulness failed.** The reply omitted the requested installation comparison and supplied zero citations. Forced retrieval does not prove reliable autonomous search selection.
+
+Next bounded change: preserve the canary as a source-use regression and repair the existing interviewer response. No corpus re-import is indicated. The broader [research-model QA](research-model-qa.md) still fails acceptance; MBB access does not establish executive readiness.
 
 ## Acceptance
+
 - Native Onyx handles chat; no replacement chat framework or new swarm runtime.
 - A concise opening focuses on the decision and missing private context. Already known facts never become questionnaire homework.
 - Every journey stage represents customer behavior or state; proposed interventions identify the affected transition and objective.
@@ -22,6 +35,16 @@ Replace the Burn application surface with a native Onyx executive interview. An 
 - Reload preserves the interview; failed or incomplete updates cannot silently replace a valid brief.
 - Research and model preparation do not block ordinary chat turns.
 - Vercel preview renders a useful, responsive experience with truthful integration readiness.
+- A retrieved case informs a cited answer without becoming a company fact. Recruiting exercises remain labeled examples.
+- Guesstimate validates, saves, and reopens the model. Correct Python arithmetic alone cannot establish completion.
+
+## Plan ownership
+
+The Burn front-door and executive-working-session plans overlap the interview, research, accepted-memory, and model requirements. Preserve Burn evidence and invariants; continue implementation here. The original Burn `docs/PLAN.md` is a historical TypeScript port plan, not another active migration.
+
+The analyst-agent integration plan also overlaps. Reuse retrieval and evaluation utilities only. Earlier template-selection and analyst-agent ownership proposals are superseded by the existing Onyx application and free model structure.
+
+Keep private MBB corpus files outside the public Onyx fork. Confirm permitted customer-facing use before exposing internal research material externally.
 
 ## Research
 - McKinsey: https://www.mckinsey.com/capabilities/strategy-and-corporate-finance/our-insights/how-to-master-the-seven-step-problem-solving-process
@@ -30,4 +53,4 @@ Replace the Burn application surface with a native Onyx executive interview. An 
 - Internal reference: Subconscious-ai/analyst-agent and Subconscious-ai/mbb-casebook; recruiting cases are evaluation fixtures, not verified client engagements.
 
 ## Deployment dependency
-The existing Onyx backend is local at port 3011. A Vercel frontend requires an authenticated reachable backend. Existing AWS infrastructure sessions currently require renewal. No production migration, merge, or unauthenticated exposure is authorized by this issue.
+The preview still depends on the local workstation and Onyx stack. Before executive rollout, verify an authorized always-on backend with the workstation disconnected. Keep the draft release hold until hosted acceptance succeeds. No merge, deployment, provider-default change, or accepted business-data write occurred during the MBB access check.
