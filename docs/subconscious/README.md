@@ -35,12 +35,13 @@ Reuse `scripts/subconscious/test_*.py`, the executive Jest tests and `eval_inter
 ## Automatic frontend releases
 
 The existing `onyx-executive` Vercel project connects to `Subconscious-ai/onyx`, with `web` as the root directory.
-`web/vercel.json` enables native Git builds for `codex/**` previews and `main` production releases. Other branches remain disabled.
+`web/vercel.json` enables native Git builds for `codex/**` previews. Production and other branches remain disabled.
 The rules apply after the configuration reaches each branch. No extra GitHub deployment token or release workflow is required.
 
 Push reviewed frontend changes to a Burn branch. Vercel builds the commit and updates the branch preview after success.
 Use the branch URL from the Vercel deployment record. A failed build leaves the last successful branch preview available.
-Merging the accepted feature into `main` enables subsequent production releases through the existing Vercel connection.
+Before enabling `main`, configure production backend and model-handoff settings, then complete executive acceptance checks.
+The current project has preview connection settings only; enabling production releases now would publish an unconfigured application.
 The current feature remains in review; automatic builds do not authorize feature merges or establish executive readiness.
 
 The existing `burn.subconscious.ai` domain serves causl-kb. Domain replacement requires explicit approval.
