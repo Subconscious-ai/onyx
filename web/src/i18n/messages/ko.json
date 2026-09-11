@@ -13886,6 +13886,19 @@
     "reviewInGuesstimate": "Open business model",
     "becaName": "Beca",
     "whatNeedsToChange": "무엇을 바꿔야 하나요?",
-    "researchContextAndLenses": "조사 배경 및 전문가 관점"
+    "researchContextAndLenses": "조사 배경 및 전문가 관점",
+    "actions": {
+      "findEvidence": "고객 근거 찾기",
+      "researchMarket": "시장 조사",
+      "checkModel": "비즈니스 모델 검토",
+      "designExperiment": "실험 설계",
+      "analyzeExperiment": "실험 결과 분석",
+      "analyzeData": "데이터셋 분석",
+      "open": "작업",
+      "search": "작업 찾기",
+      "empty": "일치하는 작업 없음",
+      "draft": "초안",
+      "review": "전송 전에 요청을 검토하세요."
+    }
   }
 }

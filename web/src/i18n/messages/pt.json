@@ -13886,6 +13886,19 @@
     "reviewInGuesstimate": "Revisar no business model",
     "becaName": "Beca",
     "whatNeedsToChange": "O que precisa mudar?",
-    "researchContextAndLenses": "Contexto da pesquisa e perspectivas especializadas"
+    "researchContextAndLenses": "Contexto da pesquisa e perspectivas especializadas",
+    "actions": {
+      "findEvidence": "Encontrar evidências de clientes",
+      "researchMarket": "Pesquisar o mercado",
+      "checkModel": "Revisar o modelo de negócio",
+      "designExperiment": "Criar um experimento",
+      "analyzeExperiment": "Analisar resultados do experimento",
+      "analyzeData": "Analisar um conjunto de dados",
+      "open": "Ações",
+      "search": "Encontrar uma ação",
+      "empty": "Nenhuma ação correspondente",
+      "draft": "Rascunho",
+      "review": "Revisar a solicitação antes de enviar."
+    }
   }
 }

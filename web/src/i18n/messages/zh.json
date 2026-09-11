@@ -13886,6 +13886,19 @@
     "reviewInGuesstimate": "Open business model",
     "becaName": "Beca",
     "whatNeedsToChange": "需要改变什么？",
-    "researchContextAndLenses": "研究背景与专业视角"
+    "researchContextAndLenses": "研究背景与专业视角",
+    "actions": {
+      "findEvidence": "查找客户证据",
+      "researchMarket": "调研市场",
+      "checkModel": "检查商业模型",
+      "designExperiment": "设计实验",
+      "analyzeExperiment": "分析实验结果",
+      "analyzeData": "分析数据集",
+      "open": "操作",
+      "search": "查找操作",
+      "empty": "没有匹配的操作",
+      "draft": "草稿",
+      "review": "发送前检查请求。"
+    }
   }
 }

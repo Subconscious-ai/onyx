@@ -1,67 +1,64 @@
-# Beca: capability review and smallest useful rollout
+# Beca capabilities and integration boundaries
 
-Verified September 11, 2026 against native Onyx configuration and repository source.
+## Current delivery
 
-## One conversation
+Beca uses the existing Onyx conversation, native files, source search, citations, Python execution and tool administration. The native persona remains named `Burn 2.0` because profile and brief guards use that identity. The interface displays Beca. AWS Bedrock remains the reasoning provider.
 
-Beca is the customer-facing Burn name. The native persona remains `Burn 2.0` (ID 5 in the migrated database). Existing backend profile and brief guards depend on the native name. The interface changes the display name without changing stored identity, history, permissions, or tool routing. The prompt introduces Beca; specialist objectives remain internal lenses, not four autonomous conversations.
+The compact Actions menu prepares a request for review in the native composer. Existing text and attachments remain present. Actions cover customer evidence, public market research, model review, experiment design, experiment analysis and dataset analysis. Brief opens the journey, OKRs, evidence and model handoff. No permanent roster, provider selector or draft footer competes with chat.
 
-The conversation owns the available screen. Brief opens the journey, OKRs, evidence, preparation status, retry, and model handoff. The composer stays mounted during review. Customer chat omits model controls; administrator provider and agent configuration remain available. The Subconscious wordmark and causal mark come from the design-system registry source. Provider icons and upstream attribution links retain the correct identities.
+Brand components come from the canonical design-system Wordmark and DagMark sources. The Kokonut `action-search-bar` informed the searchable action pattern. Native Onyx CommandMenu supplies focus, keyboard navigation and selection. No Pro package, second composer or new animation framework is installed. Native audio controls already provide recording and playback presentation.
 
-## Actual tool access
+## Tool assignments
 
-| Native agent | Internal MBB search, web search, Python | GPT Researcher MCP | Rehoboam MCP |
+Verified on the migrated native database. Resolve IDs again on another database.
+
+| Agent | Internal search, web, Python | GPT Researcher | Rehoboam |
 | --- | --- | --- | --- |
 | Market researcher, ID 1 | Enabled | Absent | Enabled |
 | Executive interview, ID 2 | Enabled | Absent | Enabled |
-| Burn 2.0 / Beca, ID 5 | Enabled | Enabled | Absent |
+| Beca, ID 5 | Enabled | Enabled | Enabled |
 
-The existing Rehoboam MCP registration exposes the complete lifecycle:
+A server registration and a persona tool assignment are separate native settings. Beca now has 23 assigned tools: three native tools, three GPT Researcher tools and 17 existing Rehoboam tools. No MCP server was duplicated. Persona permissions, document sets and AWS model configuration 8 were preserved.
 
-- Design: `check_causality`, `generate_attributes_levels`, `generate_dependent_variable`, `create_experiment_draft`, `revise_experiment_draft`, `get_experiment_draft`.
-- Run and inspect: `start_experiment`, `get_experiment_status`, `get_experiment_details`.
-- Analyze: `ask_experiment`, `get_analytics_metadata`, `get_feature_importance`, `get_posterior_distribution`, `get_willingness_to_pay`, `get_market_share`, `get_factors_affecting_latent_trait`, `get_clusters_or_segments`.
+GPT Researcher gathers public evidence. Rehoboam exposes experiment drafting, launch, status and analysis. The same Beca conversation can call both services. Customer targets and transcripts remain excluded from external research queries.
 
-Registration proves availability, not a successful new experiment. No experiment was executed during the review.
+Rehoboam includes `check_causality`, attribute/level and outcome generation, draft create/revise/read, `start_experiment`, status/details, experiment questions, analytics metadata, feature importance, posterior distributions, willingness to pay, market share, latent-trait factors and segments. No experiment was launched during QA. Result-analysis endpoints still require a valid authorized experiment ID and an end-to-end results canary.
 
-Recommended next step: attach selected existing Rehoboam tools to Beca through native agent configuration. Begin with drafting, status and analysis. Keep launch behind an explicit approved experiment and execution instruction. Preserve experiment IDs and result receipts across calls. No second orchestrator, duplicated MCP, or replacement chat is needed. Complete a read-only existing-experiment canary before enabling execution.
+Experiment execution requires an explicit instruction for the identified draft. The Actions menu never submits or launches automatically. The interview prompt enforces the conversational boundary; a separate deterministic launch-approval mechanism is not implemented by this change.
 
-## MBB source path
+The native description for `check_causality` now explicitly identifies question suitability. `is_causal=false` requests question reframing; classification is not an estimated effect or evidence of no conversion lift. Generated attribute levels remain proposals. Preserve this description when refreshing the MCP registration, or fix the upstream description before refresh.
 
-The current native connector list contains Bain, BCG, McKinsey and external casebook file corpora, plus the mbb-casebook GitHub connector. The file corpora are workspace-public, meaning searchable within the authenticated Onyx workspace. Document-set lists are empty on the three agents, so no narrower document-set restriction is configured; native access checks still apply.
+## Analyst and MBB integration
 
-[mbb-casebook](https://github.com/Subconscious-ai/mbb-casebook) contains public firm articles, cases, reports and external recruiting casebooks. Markdown front matter preserves title, firm, category and original URL. [analyst-agent](https://github.com/Subconscious-ai/analyst-agent) supplies the existing Onyx connector setup, retrieval evaluation and citation patterns. The analyst-agent runtime does not run inside each interviewer.
+`analyst-agent` is a reference implementation, not a connector or an installed Burn skill. The reusable pieces are source-bound answers from `agent/answer.py`, native Onyx retrieval from `agent/onyx.py`, and source-retrieval evaluation from `eval/probe_retrieval.py`. No nested analyst runtime or legacy provider configuration was imported.
 
-Onyx indexes content for search. `internal_search` retrieves relevant passages when a question or useful analogy needs evidence. The complete library is not inserted into every turn, and no separate dossier is assigned to Sarah, Frankie, Mei or Jerry. The current rubric requires actual retrieval for explicit MBB requests and citations to original sources. Recruiting cases and public frameworks remain references, never evidence about the executive's company. Historical index counts do not prove current citation quality; the retained source-use canary remains relevant.
+The Beca rubric applies those patterns during the interview: use an executive quote or retrieved passage for a factual claim, identify missing evidence, compare conflicting sources, and ask only questions that can change the model or decision. Proposed journeys remain proposals. Public article dates never establish executive deadlines. Explicit research requests receive findings rather than unsolicited OKRs.
 
-## Comparison with Hermes
+`mbb-casebook` supplies indexed public firm articles, cases, reports and recruiting casebooks. Native file corpora cover Bain, BCG, McKinsey and external casebooks. A GitHub connector also indexes mbb-casebook. Corpus access is workspace-public within authenticated Onyx, not public internet access. Empty persona document-set lists impose no additional subset filter; native document permissions still apply.
 
-Assuming [Nous Research Hermes Agent](https://hermes-agent.nousresearch.com/docs/): Hermes emphasizes persistent memory, reusable skills, shell/browser operations, messaging channels, scheduled work and delegation. Onyx supplies the existing document connectors, searchable corpus, citations, conversation history and tool administration. Beca adds the executive journey/OKR workflow and the causl-kb acceptance boundary.
+Internal search retrieves relevant passages as needed. The complete case library is not loaded into every turn. MBB references inform a useful question or model proposal; cases never become facts about an executive business. Citation QA must distinguish the retrieved GitHub copy from the original publisher URL stored in front matter.
 
-No comparative quality benchmark was run. For the current executive product, replacing Onyx would discard working integration. Hermes is a possible background operator if scheduled multi-step operations become a concrete requirement. Reviewed reusable interview procedures can improve Beca without adding Hermes as another runtime.
+## Customer evidence and useful native additions
 
-## Highest-value native additions
+| Capability | Existing path | Remaining requirement |
+| --- | --- | --- |
+| Customer files | Native composer attachments and project files | Use an authorized customer dataset; preserve source attribution |
+| Internal research | Native search and document sets | Select the relevant permitted collection |
+| Google Drive / SharePoint | Native administrator connectors | Dataset selection, connector credentials and permission-sync review |
+| Analysis and charts | Native Python sandbox | Check actual stdout, returned files and units; no invented operating values |
+| Feedback | Native response feedback and saved conversations | Review repeated questions, unsupported inputs, calculation failures and executive time |
+| Voice | Native microphone, ElevenLabs provider and playback | Valid ElevenLabs API secret and audio QA |
 
-1. Customer evidence through existing file uploads, projects and document sets; add Google Drive or SharePoint connectors after source authorization.
-2. Rehoboam design and analysis tools on the same Beca persona.
-3. Existing Python analysis for uploaded CSVs and experiment results, with source-linked charts and calculation receipts.
-4. Native feedback and saved conversations for interview evaluation and repeated-question review.
-5. Native voice providers for optional dictation and read-aloud.
+Prioritize evidence and experiment results in the same conversation before additional frameworks. No Fivetran pipeline, separate notebook application or Data Formulator chat is needed for the current scope. Accepted market memory and organization models remain owned by causl-kb. Current Onyx Community Edition deployment is not proof of shared-instance enterprise isolation. Cross-application SSO remains causl-kb #450.
 
-[Onyx connector documentation](https://docs.onyx.app/overview/core_features/connectors) describes native ingestion and connector choices. Enterprise permission synchronization remains connector- and edition-dependent; the current single workspace is not proof of multi-enterprise isolation. No Fivetran pipeline, separate Data Formulator chat or notebook platform is needed for the initial evidence-and-experiment flow.
+## ElevenLabs transport and credential state
 
-## Kokonut choices
+Onyx already implements ElevenLabs transcription and synthesis. No ElevenLabs conversational-agent runtime is added. The supplied disabled environment file contains a Beca voice ID, but both API key entries were rejected with `api_key_id_used_as_api_key`. No provider was saved or activated; a valid API secret is required. Never copy credentials into frontend variables, prompts or Git.
 
-- The design-system `action-search-bar` is useful later for a compact command menu: find evidence, open brief, review experiments. Reuse native Onyx search where possible.
-- [AI Voice](https://kokonutui.com/docs/ai/ai-voice) provides a compact microphone/listening presentation. Use the native recorder behavior; a waveform alone is not speech integration.
-- [AI Input Search](https://kokonutui.com/docs/ai/ai-input-search) is already available through the design-system registry. The current Onyx composer already supports attachments, streaming, queues and voice. Replacing the composer would add regression risk for little benefit.
+`NEXT_PUBLIC_VOICE_WEBSOCKET_URL=wss://api.dev.subconscious.ai/burn2` is configured for the Beca Vercel branch. The native HTTP endpoint issues a single-use token with a 60-second lifetime. Browser audio connects directly to AWS. Only the two explicitly listed review origins can reach native voice token validation. Origin aliases normalize to native WEB_DOMAIN after allowlisting. Arbitrary deployment origins remain denied.
 
-No Pro component is required for the requested simplification. Avoid animated status carousels, extra cards, prominent model pickers and large agent rosters. Existing controls and progressive disclosure produce the larger gain.
+Both transcription and synthesis upgrade paths pass authentication and token-replay checks. Provider audio, microphone capture and physical iPhone behavior remain unverified until a valid secret is configured. Native HTTP read-aloud still uses the existing authenticated frontend proxy.
 
-## ElevenLabs
+## Relationship to Hermes
 
-The native implementation already exists in `backend/onyx/voice/providers/elevenlabs.py`, the provider factory and `/admin/voice`. The live provider list is empty.
-
-The smallest rollout is to configure an authorized ElevenLabs API key and a stock voice through native administration, test credentials, activate TTS, and verify read-aloud. Continue using AWS Bedrock for reasoning. ElevenLabs supplies audio only; no ElevenLabs conversational-agent replacement is required.
-
-The microphone uses a short-lived native WebSocket token and currently constructs a same-origin `/api/voice/transcribe/stream` URL. The deployed Next catch-all forwards HTTP requests and does not implement upgrade forwarding. Full live dictation needs an authenticated WebSocket route, preferably directly to the already-hosted AWS native voice service, plus an iPhone microphone/reconnect test. Existing native recording, streaming transcription and playback should be reused. No voice provider was activated or paid plan purchased during this change.
+Onyx owns document ingestion, search, citations, conversations and tool permissions in the current product. Hermes offers an alternative operator runtime and reusable skills. No comparative benchmark supports a quality claim. Replacing Onyx would add migration work without resolving the current evidence and experiment boundaries. Reuse bounded procedures before adding another runtime.

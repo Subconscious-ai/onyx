@@ -13886,6 +13886,19 @@
     "reviewInGuesstimate": "In business model prüfen",
     "becaName": "Beca",
     "whatNeedsToChange": "Was muss sich ändern?",
-    "researchContextAndLenses": "Recherchekontext und Fachperspektiven"
+    "researchContextAndLenses": "Recherchekontext und Fachperspektiven",
+    "actions": {
+      "findEvidence": "Kundenbelege finden",
+      "researchMarket": "Markt recherchieren",
+      "checkModel": "Geschäftsmodell prüfen",
+      "designExperiment": "Experiment entwerfen",
+      "analyzeExperiment": "Experimentergebnisse analysieren",
+      "analyzeData": "Datensatz analysieren",
+      "open": "Aktionen",
+      "search": "Aktion finden",
+      "empty": "Keine passenden Aktionen",
+      "draft": "Entwurf",
+      "review": "Anfrage vor dem Senden prüfen."
+    }
   }
 }

@@ -13886,6 +13886,19 @@
     "reviewInGuesstimate": "Open business model",
     "becaName": "Beca",
     "whatNeedsToChange": "何を変える必要がありますか？",
-    "researchContextAndLenses": "調査の背景と専門家の視点"
+    "researchContextAndLenses": "調査の背景と専門家の視点",
+    "actions": {
+      "findEvidence": "顧客の根拠を探す",
+      "researchMarket": "市場を調査",
+      "checkModel": "ビジネスモデルを確認",
+      "designExperiment": "実験を設計",
+      "analyzeExperiment": "実験結果を分析",
+      "analyzeData": "データセットを分析",
+      "open": "アクション",
+      "search": "アクションを検索",
+      "empty": "該当するアクションなし",
+      "draft": "下書き",
+      "review": "送信前に依頼内容を確認。"
+    }
   }
 }

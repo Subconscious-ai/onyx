@@ -74,6 +74,7 @@ import QueuedMessageBar from "@/sections/input/QueuedMessageBar";
 import { handleInputNavKeys } from "@/sections/input/inputBarKeys";
 
 export interface AppInputBarHandle {
+  appendDraft: (text: string) => void;
   reset: () => void;
   focus: () => void;
 }
@@ -308,6 +309,13 @@ const AppInputBar = React.memo(
 
     // Expose reset and focus methods to parent via ref
     React.useImperativeHandle(ref, () => ({
+      appendDraft: (text: string) => {
+        setMessage(message.trim() ? `${message}\n\n${text}` : text);
+        requestAnimationFrame(() => {
+          inputRef.current?.focus();
+          setCursorToEnd();
+        });
+      },
       reset: () => {
         if (!isAutoSending.current) {
           clearMessage();

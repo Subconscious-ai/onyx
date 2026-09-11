@@ -13886,6 +13886,19 @@
     "reviewInGuesstimate": "Vérifier dans business model",
     "becaName": "Beca",
     "whatNeedsToChange": "Que faut-il changer ?",
-    "researchContextAndLenses": "Contexte de recherche et perspectives spécialisées"
+    "researchContextAndLenses": "Contexte de recherche et perspectives spécialisées",
+    "actions": {
+      "findEvidence": "Trouver des preuves clients",
+      "researchMarket": "Étudier le marché",
+      "checkModel": "Vérifier le modèle économique",
+      "designExperiment": "Concevoir une expérience",
+      "analyzeExperiment": "Analyser les résultats",
+      "analyzeData": "Analyser un jeu de données",
+      "open": "Actions",
+      "search": "Rechercher une action",
+      "empty": "Aucune action correspondante",
+      "draft": "Brouillon",
+      "review": "Vérifier la demande avant envoi."
+    }
   }
 }

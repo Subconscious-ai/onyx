@@ -13886,6 +13886,19 @@
     "reviewInGuesstimate": "Open business model",
     "becaName": "Beca",
     "whatNeedsToChange": "What needs to change?",
-    "researchContextAndLenses": "Research context and specialist lenses"
+    "researchContextAndLenses": "Research context and specialist lenses",
+    "actions": {
+      "findEvidence": "Find customer evidence",
+      "researchMarket": "Research the market",
+      "checkModel": "Check the business model",
+      "designExperiment": "Design an experiment",
+      "analyzeExperiment": "Analyze experiment results",
+      "analyzeData": "Analyze a dataset",
+      "open": "Actions",
+      "search": "Find an action",
+      "empty": "No matching actions",
+      "draft": "Draft",
+      "review": "Review the request before sending."
+    }
   }
 }

@@ -13886,6 +13886,19 @@
     "reviewInGuesstimate": "Open business model",
     "becaName": "Beca",
     "whatNeedsToChange": "ما الذي يجب تغييره؟",
-    "researchContextAndLenses": "سياق البحث ووجهات نظر المتخصصين"
+    "researchContextAndLenses": "سياق البحث ووجهات نظر المتخصصين",
+    "actions": {
+      "findEvidence": "البحث عن أدلة العملاء",
+      "researchMarket": "بحث السوق",
+      "checkModel": "مراجعة نموذج العمل",
+      "designExperiment": "تصميم تجربة",
+      "analyzeExperiment": "تحليل نتائج التجربة",
+      "analyzeData": "تحليل مجموعة بيانات",
+      "open": "إجراءات",
+      "search": "البحث عن إجراء",
+      "empty": "لا توجد إجراءات مطابقة",
+      "draft": "مسودة",
+      "review": "مراجعة الطلب قبل الإرسال."
+    }
   }
 }

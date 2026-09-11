@@ -1,5 +1,6 @@
 "use client";
 
+import BecaActions from "./BecaActions";
 import { Wordmark } from "@/sections/brand/wordmark";
 import { useTranslations } from "next-intl";
 
@@ -115,6 +116,7 @@ export default function ExecutiveWorkspace({
   chatId = null,
   busy = false,
   onAsk,
+  onDraft,
   preview = false,
   children,
 }: {
@@ -123,6 +125,7 @@ export default function ExecutiveWorkspace({
   chatId?: string | null;
   busy?: boolean;
   onAsk?: (message: string) => void;
+  onDraft?: (message: string) => void;
   preview?: boolean;
   children: React.ReactNode;
 }) {
@@ -263,22 +266,32 @@ export default function ExecutiveWorkspace({
           <Wordmark ariaLabel="Subconscious" />
           <Text font="main-ui-action">{t("becaName")}</Text>
         </div>
-        <Button
-          prominence="secondary"
-          size="sm"
-          onClick={() => setMobileBrief(!mobileBrief)}
-          data-executive="executive-mobile-toggle"
-          aria-expanded={mobileBrief}
-          aria-controls="executive-brief"
-        >
-          {mobileBrief
-            ? "Conversation"
-            : preparation.phase === "error"
-              ? "Brief · retry"
-              : preparation.phase === "updating"
-                ? "Brief · updating"
-                : "Brief"}
-        </Button>
+        <div className="flex items-center gap-1">
+          {onDraft && (
+            <BecaActions
+              onDraft={(message) => {
+                setMobileBrief(false);
+                onDraft(message);
+              }}
+            />
+          )}
+          <Button
+            prominence="secondary"
+            size="sm"
+            onClick={() => setMobileBrief(!mobileBrief)}
+            data-executive="executive-mobile-toggle"
+            aria-expanded={mobileBrief}
+            aria-controls="executive-brief"
+          >
+            {mobileBrief
+              ? "Conversation"
+              : preparation.phase === "error"
+                ? "Brief · retry"
+                : preparation.phase === "updating"
+                  ? "Brief · updating"
+                  : "Brief"}
+          </Button>
+        </div>
       </header>
 
       <div className="executive-main">
