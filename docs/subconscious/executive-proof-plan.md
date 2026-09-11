@@ -127,6 +127,12 @@ and the target gap. No weekly-use uplift or invented coefficient exists.
 The grid remains a symbolic draft, not a numeric forecast.
 
 Proof run: `701f983a-4d2b-472d-bd89-663968ccb309`.
+Candidate 14 also passed the complete browser path in run
+`74986acf-ca27-4f2a-b036-cc10aa0c84e3`: seven cells, five canonical source
+readbacks, retained target and unknowns, exact save/reopen and duplicate refusal.
+The first browser repeat timed out on network silence despite a usable handoff
+button. The runner now waits for the real button instead; application code is
+unchanged. Both original failed receipts and successful receipts remain private.
 Frontend: `dpl_2GneUZToKgfxhfxkDiMh7Ao2a2gA`, source `f2ed7b14fe`.
 causl-kb: `dpl_1skSc2ChUjFsL3jZxaFMBjaQntJJ`, source `c5d0a86`.
 Both frontend archives exclude private working files. Native login, saved-chat
