@@ -26,4 +26,25 @@ Implemented: fourth-answer server/reminder change, evaluator readback/checkpoint
 
 Paired causl-kb tests passed against real disposable PostgreSQL: 18 checks, with 66 tenant tables forced-RLS protected. Fifteen handoff/route checks and the actual review-component Chromium check pass. The component test simulates the calculator result; the hosted browser runner uses the real native calculator and real HTTP endpoints.
 
-Hosted replay remains unverified. No authorized native Onyx cookie jar or organization-authenticated causl-kb browser state was found in the scoped QA artifacts; an available Vercel protection cookie is not an application login. No running AWS backend or native persona was changed. Next: obtain existing authorized QA sessions, release the matching backend/reminder candidate while preserving concurrent Beca configuration, then execute the two linked hosted runners. DNS stays parked under #11. No merge or production-readiness claim before the complete hosted path passes.
+Correction: authorized QA sessions already exist in the private local recovery
+directory outside the repository. Native Onyx login and causl-kb organization
+login both passed; lack of credentials was not the blocker.
+
+The AWS candidate `executive-5787c6f343` and fourth-answer native reminder are
+deployed. Model, system prompt, tools, document sets and sharing remain intact.
+Twenty-eight focused Python checks pass. Hosted candidate 1 passed all ten
+conversational checks, including correction retention, no-question requests,
+fourth-answer Jerry and humor opt-out. Two intermediate preparation calls
+failed (invalid transition endpoint; missing structured tool response). The
+final saved draft preserved unknown inputs and the corrected target but lacked
+a fully source-supported journey transition. No successful complete
+interview-to-model run exists yet.
+
+The isolated Python executor's stale-socket failure is fixed and passed an
+actual daemon restart plus execution check; see `durable-hosting.md`. Shared
+AWS deployment writes are coordinated with the concurrent Beca task. Next:
+compare the existing non-Anthropic Bedrock preparation models, repair only the
+demonstrated extraction failure, and run both hosted runners successfully.
+The public fork cannot currently access the private-only organization AWS
+runner group; do not widen runner access silently. DNS stays parked under #11.
+No merge or production-readiness claim before the complete hosted path passes.

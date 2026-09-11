@@ -61,3 +61,21 @@ The full restart check exposed native Redis-backed login sessions on disposable 
 Final restart proof: the same native Postgres-backed login cookie authenticated after a full `burn2.service` restart, and the saved model brief remained present. All five authenticated gateway checks pass afterward. Desktop Onyx containers are stopped and the old port-10000 Funnel is disabled. The resolved Compose graph includes every required service, external data volumes and only the isolated executor socket.
 
 The native Onyx MCP call now returns a successful GPT Researcher receipt with five source URLs in 26.1 seconds. The earlier private-hostname refusal was a tool error, despite a successful outer chat HTTP response; inspect `custom_tool_delta.error` and the nested research receipt, not only HTTP 200.
+
+### Executor restart regression
+
+A later rootless-daemon restart replaced `docker.sock`, leaving the interpreter's
+file bind-mount attached to the old socket inode. Health reported a reachable
+interpreter but an unreachable Docker daemon. The hosting overlay now mounts
+the isolated daemon directory read-only at `/var/run`; the native interpreter
+entrypoint requires `/var/run/docker.sock`. `RuntimeDirectoryPreserve=yes`
+preserves the parent directory across daemon restarts. Do not substitute a host
+Docker socket, privileged Docker-in-Docker, or a different socket path without
+checking the native entrypoint.
+
+Live regression proof: `CodeInterpreterClient().health(use_cache=False)` and a
+synthetic Python calculation passed before and after restarting only
+`burn-executor.service`. The directory inode remained unchanged, the socket
+inode changed, and native execution returned `190` with exit code zero. Wait
+for the new socket and healthy daemon after `systemctl restart`; service
+activation alone does not prove Docker readiness.
