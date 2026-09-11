@@ -19,16 +19,39 @@ Existing service routes remain unchanged. Native authentication and the existing
 3. Publish the isolated HTTPS route and Vercel candidate. Verify streaming, PDL, source search, automatic brief persistence, and authenticated model handoff without desktop endpoints.
 4. Verify a backup restore and service restart. Switch the existing QA alias only after proof. Keep the original data snapshot for rollback; avoid deleting original volumes.
 
-## Current evidence and recovery
-
-Vercel CLI authentication works. The linked team is subconcious; project onyx-executive. Ubuntu SSH to rehoboam-dev works. The EC2 instance role supports identity readback but denies volume inventory and S3 bucket listing. Both local AWS deployment profiles have expired; refreshed AWS access is requested for independent backup configuration.
-
-Existing AWS host has 32 GiB RAM and approximately 35 GiB free disk. Existing native Onyx uses approximately 8 GiB RAM. Native images and volumes must be pinned and resource bounded before migration. The existing api.dev.subconscious.ai certificate avoids a DNS change. No runtime or public route has changed yet.
-
 ## Hosting preparation (2026-09-11 UTC)
 
 AWS API and research images built. CPU-only PyTorch 2.9.1 model image replaces the CUDA image that exceeded available extraction space. Native model code and embedding weights remain unchanged. Services use isolated `burn2_*` volumes. Python execution uses a separate rootless Docker daemon with resource limits.
 
 A private Vercel Blob store (`burn2-durable-backups`, iad1) is connected to the Onyx project. The backup token and archive encryption key live outside Git, root-only on AWS and in the local private recovery directory. Renewed AWS SSO is no longer required for backups. Daily backups include Postgres, source objects, and private runtime configuration; the search index is rebuildable and included in the initial cold migration snapshot. Retention automation is deferred; no backup is automatically deleted.
 
-Focused proof: the frontend Host-header regression failed before the fix and 10 proxy/SSR tests pass afterward. The Bedrock bearer-token regression failed against the original research launcher and all three research-launcher tests pass afterward. Cloud migration, restart, restore and user-flow checks remain pending.
+Focused proof: the frontend Host-header regression failed before the fix and 10 proxy/SSR tests pass afterward. The Bedrock bearer-token regression failed against the original research launcher and all three research-launcher tests pass afterward. Migration, native authenticated readback, source search, PDL, Python and private backup restore now pass. Final cutover/restart evidence is recorded below.
+
+## Operations and recovery
+
+The host deployment lives at `/opt/burn/app`; `burn2.service` starts the native services after Docker and the isolated execution daemon. The external `burn2_db_volume`, `burn2_minio_data` and `burn2_opensearch-data` volumes survive Compose removal. Never remove the original desktop volumes during QA.
+
+`burn-backup.timer` runs daily at 08:15 UTC, with a five-minute jitter. The backup pauses native API/background writers while capturing Postgres and source objects, resumes writers, then encrypts and uploads the archive. Failed jobs resume writers via `ExecStopPost`; inspect `journalctl -u burn-backup.service` for the upload receipt. Backups are private and separately encrypted. Archive decryption requires the recovery key retained outside the AWS disk.
+
+Restore an archive using `backup.mjs get`, decrypt with OpenSSL AES-256-CBC/PBKDF2 (200,000 iterations), then restore `postgres.dump` with `pg_restore` into an empty Postgres 15 database. Restore `objects.tar` (the first backup used `objects.tgz`) into the matching MinIO volume and preserve `runtime/` encryption configuration. Rebuild OpenSearch from restored sources if the cold search snapshot is unavailable. Test restores against a disposable database before changing the serving database.
+
+After cutover, keep the source desktop writers stopped. Reverting only the frontend alias would create divergent databases; rollback requires preserving new AWS writes and restoring the current cloud state first. The current design survives a desktop shutdown and container/service restarts. A single AWS host is not a multi-host availability guarantee.
+
+
+## Verified migration and lessons, September 11
+
+The cold migration preserved three accounts, 255 conversations and 1,171 messages before synthetic QA writes. Native search returned 36 documents for a profitability query. PDL returned a cached ready profile. A hosted synthetic answer streamed first content in 6.36 seconds and finished in 6.77 seconds. Native Python computed `1000 * 0.95 * 1200 = 1140000` through the isolated executor. Direct GPT Researcher completed an AWS/Exa request in 27.6 seconds with eight source URLs. Ordinary chat and background preparation are measured separately.
+
+The private backup uploaded, downloaded, decrypted and restored into `burn_restore_check`. The second archive includes a manifest of account/chat/message counts; restored counts must match exactly. Source-object archives also pass archive readback. The revised capture resumes writers after 18 seconds; compression and upload happen afterward. The 08:15 UTC timer is enabled. The first compressed-object capture held writers longer and was replaced.
+
+Deployment surprises:
+
+1. Forwarding Vercel's frontend Host header misroutes HTTPS requests at a shared backend nginx. Strip only Host while preserving native session cookies. Ten focused proxy/SSR checks pass.
+2. Native Compose profiles can silently omit MinIO and execution services. Reset inherited profiles in the hosting overlay and inspect the resolved service graph. Missing MinIO caused startup failure before the fix.
+3. The CUDA model image exceeded available extraction space. Build the native model server with the same PyTorch version using the CPU wheel. Both native model services pass health checks. Preserve the cached embedding weights and index.
+4. A rootless daemon needs the user's systemd/DBus controller, not merely a Unix socket. Enable linger and `user@1003.service` for the existing `burn-executor` account; bound `user-1003.slice` to 3 GiB and two CPUs. Another host must substitute the actual UID. Never mount the shared host Docker socket into the interpreter.
+5. Keep the native SSRF guard. The MCP URL is the public authenticated `https://api.dev.subconscious.ai/burn2/research-mcp/mcp`, not the Docker hostname `research`. Only the private gateway forwards to the research container; no database ports are public.
+6. Vercel env commands can exit after an unanswered branch prompt. Use `--yes`, read back configuration and verify the compiled handoff action. A ready deployment alone does not prove configuration or backend availability.
+7. Preserve exact encryption configuration and native source/object volumes. Do not let desktop and cloud writers diverge. A frontend-only rollback after new cloud writes is unsafe.
+
+Background brief generation produced an invalid-structure rejection and a provider timeout before a successful retry. The retained failures belong to Onyx #6; hosting evidence does not establish general interview quality. A deliberately synthetic scenario remained an assumption, as required.

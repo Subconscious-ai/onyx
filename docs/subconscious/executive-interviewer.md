@@ -1,7 +1,7 @@
 ## Outcome
 Complete the existing native Onyx executive interview. Reach a saved, evidence-linked Guesstimate business model with minimal executive questioning.
 
-Status: simplified 2026-09-09. Onyx issue #1 / draft PR #2 owns implementation. Burn remains the preserved reference.
+Status: implemented in Onyx #2; durable hosting in #5. Merge authorized during the September 11 closeout. Burn remains the preserved reference. Current operation and remaining reliability work are summarized in [README](README.md).
 
 ## Reuse and boundaries
 - Preserve native Onyx conversation, streaming, citations, uploads, history, Exa, Python analysis, AWS Bedrock, and existing Subconscious MCP.
@@ -53,4 +53,4 @@ Keep private MBB corpus files outside the public Onyx fork. Confirm permitted cu
 - Internal reference: Subconscious-ai/analyst-agent and Subconscious-ai/mbb-casebook; recruiting cases are evaluation fixtures, not verified client engagements.
 
 ## Deployment dependency
-The preview still depends on the local workstation and Onyx stack. Before executive rollout, verify an authorized always-on backend with the workstation disconnected. Keep the draft release hold until hosted acceptance succeeds. No merge, deployment, provider-default change, or accepted business-data write occurred during the MBB access check.
+The serving backend now runs on AWS with Vercel as the frontend. Hosting checks cover migrated account/chat readback, PDL, source search, Python execution, research and encrypted backup restore. The earlier MBB check did not itself authorize deployment or change accepted business records. Current hosting and recovery evidence: [durable hosting](durable-hosting.md).

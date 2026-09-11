@@ -5,6 +5,7 @@ services:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: api_server
     image: onyx-burn2:durable-a93ef9a24b
+    profiles: !reset []
     build: !reset null
     environment: !reset {}
     env_file: !override
@@ -20,6 +21,7 @@ services:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: background
     image: onyxdotapp/onyx-backend@sha256:473fdffe4e67fb67dcdac154c57d595ba73d7bf64b5926d24807a86d7e888d6f
+    profiles: !reset []
     build: !reset null
     environment: !reset {}
     env_file: !override
@@ -34,6 +36,7 @@ services:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: relational_db
     image: postgres@sha256:d9c304353c031b21e9a7e33dc4781e272a9fa802a2ab9703fe4199d72ba1422c
+    profiles: !reset []
     build: !reset null
     environment: !reset {}
     env_file: !override
@@ -48,6 +51,7 @@ services:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: cache
     image: redis@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
+    profiles: !reset []
     build: !reset null
     environment: !reset {}
     env_file: !override
@@ -62,6 +66,7 @@ services:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: minio
     image: minio/minio@sha256:7330be2e7320a7a699b36f72bd06a94d8a21ec9f6f397345d9c38fc6751141f5
+    profiles: !reset []
     build: !reset null
     environment: !reset {}
     env_file: !override
@@ -76,6 +81,7 @@ services:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: opensearch
     image: opensearchproject/opensearch@sha256:b5dd1512af2a99748c942cfbbd7f32162623336b210667d0fc6333c6321f171d
+    profiles: !reset []
     build: !reset null
     environment: !reset {}
     env_file: !override
@@ -90,6 +96,7 @@ services:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: inference_model_server
     image: burn-model-cpu:onyx-a93ef9a24b
+    profiles: !reset []
     build: !reset null
     environment: !reset {}
     env_file: !override
@@ -104,6 +111,7 @@ services:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: indexing_model_server
     image: burn-model-cpu:onyx-a93ef9a24b
+    profiles: !reset []
     build: !reset null
     environment: !reset {}
     env_file: !override
@@ -118,6 +126,7 @@ services:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: code-interpreter
     image: onyxdotapp/code-interpreter@sha256:f961ada02d11029adcfbaa4811ef227ae724ebfcab33f261e59d6205591d3136
+    profiles: !reset []
     build: !reset null
     environment: !reset {}
     env_file: !override
@@ -148,8 +157,12 @@ services:
       - path: ./runtime/research.env
         format: raw
 volumes:
-  db_volume: {}
-  minio_data: {}
+  db_volume:
+    external: true
+    name: burn2_db_volume
+  minio_data:
+    external: true
+    name: burn2_minio_data
   model_cache_huggingface: {}
   indexing_huggingface_model_cache: {}
   api_server_logs: {}
@@ -157,4 +170,6 @@ volumes:
   inference_model_server_logs: {}
   indexing_model_server_logs: {}
   file-system: {}
-  opensearch-data: {}
+  opensearch-data:
+    external: true
+    name: burn2_opensearch-data

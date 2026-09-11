@@ -1,4 +1,4 @@
-# Burn 2.0 preview
+# Burn 2.0 operations
 
 Burn 2.0 interviews an executive for customer behavior transitions and measurable OKRs. The output is a sourced model brief for a private Guesstimate draft. Ontology coverage supports the business model; ontology completion is not the interview objective.
 
@@ -41,9 +41,9 @@ Local synthetic tests exercised three industries, short unknown/correction turns
 
 Research/calculation stress tests found provider-dependent failures even when tool selection was requested: a GPT Researcher request was skipped in one GPT OSS replay; a Mistral comparison produced a Python execution error. Successful real GPT Researcher and Python receipts exist across multiple cases. The stress runs are not evidence of universal agent reliability. Explicit model preparation fails closed and leaves the saved conversation unchanged on validation/provider failure.
 
-The preview is not a production readiness claim. The native backend still depends on the existing local host and tunnel. Production needs durable hosting, backups/restore proof, secure object-store credentials, organization access/SSO design and operational monitoring. Community Edition licensing does not establish shared-instance enterprise isolation. The native Guesstimate chat assistant remains unconnected in the pinned preview; causl-kb's existing model proposal service prepares the draft. Rehoboam execution and measured operating outcomes remain outside this preview.
+The preview is not a production readiness claim. The native backend now runs on AWS behind the stable Vercel application. Encrypted private Vercel Blob backups have restore proof; object-store credentials were rotated for the cloud stack. See [durable hosting](durable-hosting.md). Organization access/SSO and wider operational monitoring remain separate work. Community Edition licensing does not establish shared-instance enterprise isolation. The native Guesstimate chat assistant remains unconnected in the pinned preview; causl-kb's existing model proposal service prepares the draft. Rehoboam execution and measured operating outcomes remain outside this preview.
 
-No merge before executive QA. Draft PRs: Onyx #2 and causl-kb #508; causl-kb issue #507 owns the model handoff.
+Merge authorized during the September 11 closeout. causl-kb #508 is merged and #507 is closed. Onyx #2 contains the interviewer; #5 contains durable hosting. Intermittent model-brief preparation remains tracked in Onyx #6.
 
 
 ## Executive QA corrections, September 10

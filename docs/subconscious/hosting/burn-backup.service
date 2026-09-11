@@ -5,6 +5,6 @@ After=burn2.service
 Type=oneshot
 ExecStart=/opt/burn/app/docs/subconscious/hosting/backup.sh
 TimeoutStartSec=15min
-ExecStopPost=-/usr/bin/docker unpause burn2-api_server-1 burn2-background-1
+ExecStopPost=/opt/burn/app/docs/subconscious/hosting/resume-writers.sh
 Nice=10
 MemoryMax=1G

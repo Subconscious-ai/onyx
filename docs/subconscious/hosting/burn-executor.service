@@ -1,6 +1,7 @@
 [Unit]
 Description=Isolated rootless Docker for Burn Python execution
-After=network-online.target
+After=network-online.target user@1003.service
+Requires=user@1003.service
 Wants=network-online.target
 
 [Service]
@@ -8,6 +9,7 @@ User=burn-executor
 Group=burn-executor
 Environment=HOME=/var/lib/burn-executor
 Environment=XDG_RUNTIME_DIR=/run/burn-executor
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1003/bus
 Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 RuntimeDirectory=burn-executor
 RuntimeDirectoryMode=0700

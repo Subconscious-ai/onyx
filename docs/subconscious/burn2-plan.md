@@ -1,3 +1,5 @@
+> **Closeout, September 11:** Hosting moved to AWS behind Vercel; causl-kb #508 merged. Merge is authorized. Current operations: [Burn README](README.md). Remaining generation reliability: Onyx #6. The chronological notes below retain earlier failures and superseded release holds.
+
 # Active: Burn 2.0 journey and OKR handoff
 
 ## Issues to address

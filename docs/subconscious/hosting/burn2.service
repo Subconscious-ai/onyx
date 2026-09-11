@@ -1,8 +1,8 @@
 [Unit]
 Description=Burn native Onyx services
-Requires=docker.service burn-executor.service
+Requires=docker.service
 After=docker.service burn-executor.service network-online.target
-Wants=network-online.target
+Wants=network-online.target burn-executor.service
 
 [Service]
 Type=oneshot
