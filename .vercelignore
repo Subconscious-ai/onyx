@@ -1,0 +1,10 @@
+.qa/
+**/.qa/
+**/.env*
+!**/.env.template
+!**/.env.example
+**/runtime/
+**/playwright/.auth/
+**/test-results/
+**/playwright-report/
+**/*.cookies

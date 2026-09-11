@@ -182,7 +182,7 @@ Use "Unknown" for an unidentified company. No unsupported quotes or invented ide
             max_tokens=6000,
             timeout_override=int(min(45, remaining)),
             total_timeout_override=remaining,
-            reasoning_effort=ReasoningEffort.OFF,
+            reasoning_effort=ReasoningEffort.HIGH,
         )
         calls = response.choice.message.tool_calls
         if (
