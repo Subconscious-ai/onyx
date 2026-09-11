@@ -6,6 +6,60 @@ from onyx.server.query_and_chat.burn2.validation import validate_brief
 
 
 class StructuredBriefTest(unittest.TestCase):
+    def test_invalid_generated_links_get_one_repair_before_persistence(self):
+        from onyx.server.query_and_chat.burn2.validation import prepare_validated_brief
+
+        attempts = []
+
+        def generate(feedback):
+            attempts.append(feedback)
+            value = self.brief()
+            if len(attempts) == 1:
+                value["transitions"] = [
+                    {
+                        "id": "invalid",
+                        "from": "missing",
+                        "to": "also_missing",
+                        "behavior": {"text": "Buys", "status": "assumption"},
+                        "metric": "Purchase rate",
+                    }
+                ]
+            return value
+
+        result = prepare_validated_brief(
+            generate, ["The objective is increasing renewals."]
+        )
+        self.assertEqual(result["transitions"], [])
+        self.assertEqual(attempts, [None, "Unknown behavior transition endpoint"])
+
+    def test_repeated_invalid_extraction_fails_without_an_infinite_retry_or_fallback(
+        self,
+    ):
+        from onyx.server.query_and_chat.burn2.validation import prepare_validated_brief
+
+        attempts = []
+
+        def generate(feedback):
+            attempts.append(feedback)
+            raise ValueError("Structured brief was not returned")
+
+        with self.assertRaisesRegex(ValueError, "Structured brief was not returned"):
+            prepare_validated_brief(generate, ["The objective is increasing renewals."])
+        self.assertEqual(len(attempts), 2)
+
+    def test_provider_outage_is_not_retried_as_a_schema_repair(self):
+        from onyx.server.query_and_chat.burn2.validation import prepare_validated_brief
+
+        attempts = []
+
+        def generate(feedback):
+            attempts.append(feedback)
+            raise TimeoutError("Provider unavailable")
+
+        with self.assertRaises(TimeoutError):
+            prepare_validated_brief(generate, ["The objective is increasing renewals."])
+        self.assertEqual(attempts, [None])
+
     def brief(self):
         return {
             "version": 2,

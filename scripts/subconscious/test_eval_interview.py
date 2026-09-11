@@ -19,6 +19,46 @@ from eval_interview import (
 
 
 class EvaluationChecks(unittest.TestCase):
+    def test_saved_brief_must_preserve_explicit_behavior_before_model_handoff(self):
+        turn = Turn("Prepare", sourced_journey_required=True)
+        brief = {
+            "keyResults": [],
+            "journey": [],
+            "transitions": [],
+            "model": {"inputs": []},
+        }
+
+        def check():
+            text = (
+                "Known.\n<interview-brief>" + json.dumps(brief) + "</interview-brief>"
+            )
+            before = [
+                {"type": "user", "message": "Managers schedule then renew."},
+                {"type": "assistant", "message": "Known."},
+            ]
+            return assess_prepared(
+                turn,
+                before,
+                [before[0], {"type": "assistant", "message": text}],
+                {"saved": True, "message": text},
+            )
+
+        self.assertIn(
+            "Explicit customer behavior missing from the sourced journey", check()
+        )
+        brief["journey"] = [
+            {"id": "schedule", "status": "executive"},
+            {"id": "renew", "status": "executive"},
+        ]
+        brief["transitions"] = [
+            {"from": "schedule", "to": "renew", "behavior": {"status": "assumption"}}
+        ]
+        self.assertTrue(
+            check(), "An inferred link cannot substitute for a stated transition"
+        )
+        brief["transitions"][0]["behavior"]["status"] = "executive"
+        self.assertEqual(check(), [])
+
     def test_rhetorical_roast_does_not_count_as_executive_homework(self):
         turn = Turn(
             "No questions.", brief_required=False, questions_allowed=False, jerry=True

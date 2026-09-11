@@ -38,6 +38,7 @@ class Turn:
     target_requires: str = ""
     target_forbidden: str = ""
     unknown_inputs: tuple[str, ...] = ()
+    sourced_journey_required: bool = False
 
 
 CASES = {
@@ -306,6 +307,21 @@ def assess_prepared(
         brief = json.loads(
             text.split("<interview-brief>", 1)[1].split("</interview-brief>", 1)[0]
         )
+        if turn.sourced_journey_required:
+            stages = {
+                item["id"] for item in brief["journey"] if item["status"] == "executive"
+            }
+            supported = [
+                edge
+                for edge in brief["transitions"]
+                if edge["behavior"]["status"] == "executive"
+                and edge["from"] in stages
+                and edge["to"] in stages
+            ]
+            if len(stages) < 2 or not supported:
+                failures.append(
+                    "Explicit customer behavior missing from the sourced journey"
+                )
         targets = " ".join(item["target"]["text"] for item in brief["keyResults"])
         if turn.target_requires and not re.search(turn.target_requires, targets, re.I):
             failures.append("Corrected target missing from the saved brief")

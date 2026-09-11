@@ -3,6 +3,7 @@
 import copy
 import json
 import re
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -169,6 +170,30 @@ def needs_completion(value: dict) -> bool:
             not value.get("keyResults") or not (value.get("model") or {}).get("inputs")
         )
     )
+
+
+def prepare_validated_brief(
+    generate: Callable[[str | None], Any], statements: list[str]
+) -> dict[str, Any]:
+    """Repair one malformed extraction; never persist an invalid fallback."""
+    feedback = None
+    for attempt in range(2):
+        try:
+            value = generate(feedback)
+            if not isinstance(value, dict):
+                raise ValueError("Invalid tool payload")
+            value["version"] = 2
+            brief = validate_brief(value, statements)
+            if needs_completion(brief):
+                raise ValueError(
+                    "A stated numeric objective requires key results and named model inputs"
+                )
+            return brief
+        except ValueError as error:
+            if attempt:
+                raise
+            feedback = str(error)
+    raise AssertionError("Unreachable extraction state")
 
 
 def extraction_schema(source_count: int) -> dict:
