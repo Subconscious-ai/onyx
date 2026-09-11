@@ -8,6 +8,21 @@ from onyx.server.query_and_chat.burn2.profile import (
 
 
 class ProfileTests(unittest.TestCase):
+    def test_explicit_summary_request_sets_a_zero_question_turn_budget(self):
+        for request in (
+            "No questions.",
+            "No extra questions.",
+            "Summarize without another question.",
+        ):
+            with self.subTest(request=request):
+                guidance = turn_guidance(2, request)
+                self.assertIn("Question budget: zero", guidance)
+                self.assertNotIn("at most one material question", guidance)
+        self.assertIn(
+            "at most one material question",
+            turn_guidance(2, "The baseline is unknown."),
+        )
+
     def test_unknown_operating_answers_remain_in_active_turn_context(self):
         result = interview_context(
             ["Baseline is unknown.", "The proposed lever is weekly use."]
