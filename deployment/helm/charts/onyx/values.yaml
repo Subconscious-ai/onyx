@@ -1512,6 +1512,10 @@ sandboxPushPolicy:
   allowTelepresenceAmbassador: false
 
 configMap:
+  # Burn executive interview is opt-in; select an existing native Bedrock model ID.
+  # BURN2_ENABLED: "false"
+  # BURN2_BRIEF_MODEL_CONFIGURATION_ID: ""
+  # Optional PDL_API_KEY belongs in extraEnvFromSecret, never plaintext values.
   # WARNING: do NOT copy hostname keys from a docker-compose .env into this
   # block. The compose stack uses underscored service names (e.g. `api_server`,
   # `cache`, `inference_model_server`) which are invalid in K8s DNS labels and

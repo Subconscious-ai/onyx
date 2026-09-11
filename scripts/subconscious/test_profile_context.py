@@ -8,6 +8,28 @@ from onyx.server.query_and_chat.burn2.profile import (
 
 
 class ProfileTests(unittest.TestCase):
+    def test_every_turn_has_an_executive_attention_budget(self):
+        for turn in (1, 2, 3, 4, 5):
+            with self.subTest(turn=turn):
+                self.assertIn(
+                    "Maximum 60 spoken words", turn_guidance(turn, "No questions.")
+                )
+
+    def test_explicit_summary_request_sets_a_zero_question_turn_budget(self):
+        for request in (
+            "No questions.",
+            "No extra questions.",
+            "Summarize without another question.",
+        ):
+            with self.subTest(request=request):
+                guidance = turn_guidance(2, request)
+                self.assertIn("Question budget: zero", guidance)
+                self.assertNotIn("at most one material question", guidance)
+        self.assertIn(
+            "at most one material question",
+            turn_guidance(2, "The baseline is unknown."),
+        )
+
     def test_unknown_operating_answers_remain_in_active_turn_context(self):
         result = interview_context(
             ["Baseline is unknown.", "The proposed lever is weekly use."]
@@ -40,8 +62,21 @@ class ProfileTests(unittest.TestCase):
             select_profile({"likelihood": 2, "data": {"full_name": "Wrong person"}})
         )
 
-    def test_jerry_is_once_on_fifth_answer_and_suppressed_after_frustration(self):
-        self.assertIn("Jerry", turn_guidance(5, "The product is ice cream."))
-        self.assertNotIn("Jerry", turn_guidance(4, "The product is ice cream."))
-        self.assertNotIn("Jerry", turn_guidance(6, "The product is ice cream."))
-        self.assertNotIn("Jerry", turn_guidance(5, "Stop repeating the same question."))
+    def test_jerry_is_once_on_fourth_executive_answer(self):
+        self.assertIn("Jerry", turn_guidance(4, "The sales forecast runs on optimism."))
+        for turn in (0, 1, 2, 3, 5, 6, 8):
+            with self.subTest(turn=turn):
+                self.assertNotIn(
+                    "Jerry", turn_guidance(turn, "The product is ice cream.")
+                )
+
+    def test_fourth_answer_respects_humor_opt_out_and_distress(self):
+        for answer in (
+            "Stop repeating the same question.",
+            "No jokes, please.",
+            "Don't roast me.",
+            "Please keep this serious.",
+            "The company is closing and everyone is losing their jobs.",
+        ):
+            with self.subTest(answer=answer):
+                self.assertNotIn("Jerry", turn_guidance(4, answer))

@@ -29,15 +29,42 @@ Set the Onyx frontend build variable `NEXT_PUBLIC_BURN_MODEL_WORKSPACE` to the p
 
 ## QA path
 
+The #13 candidate schedules Jerry on the **fourth nonempty executive answer**, replacing the previous fifth-answer rule. A short `Jerry:` punchline targets a volunteered business boast or contradiction. Opt-out and distress suppress humor. Jokes never become accepted evidence. Backend image and native persona reminder must both be released before hosted timing changes; a Vercel frontend build alone cannot change server guidance.
+
 1. Open `/app/executive` and select Burn 2.0. State a product, business objective, target, deadline and known customer decisions. Mark unavailable operating values unknown.
 2. Correct a target or state an unknown answer. Verify that the interview incorporates the correction without repeating the same question or inventing a baseline.
 3. Select **OKRs & model**. Reload the conversation. Verify the source labels, goal, deadline, customer states, proposed transitions and material gaps.
 4. Select **Open business model**. Sign into causl-kb, choose the organization market and review the imported brief. The downloaded file supports an explicit import if browser handoff is unavailable.
 5. Select only source-supported journey statements intended for accepted market memory. Prepare the model, review the native grid, and explicitly save. Reopen the model and verify persistence. Unknown inputs must remain unknown; unsupported coefficients and invalid units must never become a usable forecast.
 
+### Repeatable acceptance suite
+
+Run deterministic checks with the existing backend validator dependency installed:
+
+```bash
+PYTHONPATH=backend:scripts/subconscious python3 -m unittest test_profile_context test_eval_interview test_structured_brief test_requested_tool
+```
+
+The scoped `Burn interview proof` workflow uses GitHub-hosted Ubuntu without model credentials, under explicit September 11 approval. The five-minute job is an exception to the workspace AWS default: the public fork cannot access the private-only runner group. Shared AWS runner security remains unchanged. Deterministic checks protect source validation and turn guidance. The hosted evaluator detects missing fourth-answer humor, fabricated unknowns, stale targets, unsuccessful preparation, transcript rewrites and optimistic save receipts. Generative joke quality still requires reviewing actual answers.
+
+For an authorized native Onyx test account, run from the repository root:
+
+```bash
+python3 scripts/subconscious/eval_interview.py \
+  --origin https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app \
+  --cookies /absolute/private/onyx.cookies --agent 5 \
+  --scenario-file scripts/subconscious/executive-proof-cases.json \
+  --output /absolute/private/run/interview.json \
+  --handoff-dir /absolute/private/run/handoffs --keep-sessions
+```
+
+The runner verifies a non-Anthropic Bedrock conversation model, invokes the real preparation endpoint, reopens native messages and exports the existing `burn/onyx-interview` format. Resolve the preparation model separately on the target instance; no provider configuration is changed by the runner. Missing authentication fails, rather than skips. Failed preparation remains a failed checkpoint even after a later successful preparation. `brief_saved_and_reopened` is separate from `causl_model_saved_and_reopened`, which remains unset until the paired causl-kb browser UAT proves the actual model save.
+
+Pass the final-turn handoff to `web/scripts/onyx-handoff-uat.ts` in causl-kb; follow [causl-kb executive QA](https://github.com/Subconscious-ai/causl-kb/blob/codex/544-onyx-proof/docs/onyx-executive-qa.md). No new ingestion protocol, cross-application administrator token or automatic ontology acceptance exists. Keep transcripts, cookie jars, handoffs and screenshots private. `--keep-sessions` deliberately retains synthetic conversations for review; omit the flag for native soft deletion. No existing conversations are deleted.
+
 ## Evidence and release boundary
 
-Local synthetic tests exercised three industries, short unknown/correction turns, the real AWS preparation action, saved conversation readback, native owner/CAS denial, PostgreSQL tenant isolation, and a real authenticated causl-kb save/reopen. Source grounding and formula checks have dedicated regression tests. The latest core conversation replay passed nine of nine turns; observed first-content latency was approximately 0.9–3.1 seconds, not an SLA.
+Earlier synthetic tests exercised three industries, short unknown/correction turns, the real AWS preparation action, saved conversation readback, native owner/CAS denial, PostgreSQL tenant isolation, and a real authenticated causl-kb save/reopen. The earlier core replay passed nine turns. Current ten-turn acceptance, failed replays and exact candidate revisions are recorded in [the active proof plan](executive-proof-plan.md). Earlier passing transport checks do not establish current model quality.
 
 Research/calculation stress tests found provider-dependent failures even when tool selection was requested: a GPT Researcher request was skipped in one GPT OSS replay; a Mistral comparison produced a Python execution error. Successful real GPT Researcher and Python receipts exist across multiple cases. The stress runs are not evidence of universal agent reliability. Explicit model preparation fails closed and leaves the saved conversation unchanged on validation/provider failure.
 
@@ -46,7 +73,9 @@ The preview is not a production readiness claim. The native backend now runs on 
 Merge authorized during the September 11 closeout. causl-kb #508 is merged and #507 is closed. Onyx #2 contains the interviewer; #5 contains durable hosting. Intermittent model-brief preparation remains tracked in Onyx #6.
 
 
-## Executive QA corrections, September 10
+## Historical executive QA corrections, September 10
+
+The fifth-answer schedule below is historical. The September 11 candidate uses answer four.
 
 The working brief now updates after completed answers while the interview remains open. Live packet text and saved messages use the same reader. A new answer supersedes an in-flight extraction; a distributed lock prevents duplicate preparation. Saved metadata returns directly to the UI, without a page reload. The bottom action remains visible. Failed preparation retains the previous draft and exposes one retry action. Background generation is bounded and resumes from saved conversation state when the interview reopens; no unattended infinite research loop exists.
 
