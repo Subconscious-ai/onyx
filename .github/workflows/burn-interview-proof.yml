@@ -14,7 +14,8 @@ permissions:
 
 jobs:
   contracts:
-    runs-on: [self-hosted, aws]
+    # Approved exception: the public fork cannot use the private AWS runner group.
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     container: python:3.12-slim
     steps:

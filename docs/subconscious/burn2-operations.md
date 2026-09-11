@@ -45,7 +45,7 @@ Run deterministic checks with the existing backend validator dependency installe
 PYTHONPATH=backend:scripts/subconscious python3 -m unittest test_profile_context test_eval_interview test_structured_brief test_requested_tool
 ```
 
-The scoped `Burn interview proof` workflow requests an AWS runner without model credentials. The public fork currently cannot access the private-only runner group; queued jobs are not passing checks. Deterministic checks protect source validation and turn guidance. The hosted evaluator detects missing fourth-answer humor, fabricated unknowns, stale targets, unsuccessful preparation, transcript rewrites and optimistic save receipts. Generative joke quality still requires reviewing actual answers.
+The scoped `Burn interview proof` workflow uses GitHub-hosted Ubuntu without model credentials, under explicit September 11 approval. The five-minute job is an exception to the workspace AWS default: the public fork cannot access the private-only runner group. Shared AWS runner security remains unchanged. Deterministic checks protect source validation and turn guidance. The hosted evaluator detects missing fourth-answer humor, fabricated unknowns, stale targets, unsuccessful preparation, transcript rewrites and optimistic save receipts. Generative joke quality still requires reviewing actual answers.
 
 For an authorized native Onyx test account, run from the repository root:
 

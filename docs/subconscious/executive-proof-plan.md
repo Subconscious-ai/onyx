@@ -140,7 +140,10 @@ reload and exact compiled destination checks pass before alias assignment.
 The live API owner/CAS check rejects foreign ownership and stale updates while
 preserving the original transcript. No production rollout or DNS change occurred.
 
-Publication remains blocked: the public Onyx fork cannot use the organization
-AWS runner group because `allows_public_repositories` is false. Do not expose
-the shared privileged runner to public pull requests or fabricate passing checks.
-Keep both PRs draft until the release boundary and required checks are satisfied.
+The public Onyx fork cannot use the organization AWS runner group because
+`allows_public_repositories` is false. September 11 approval permits GitHub-hosted
+CI for the Burn release check. The existing five-minute proof job now requests
+Ubuntu 24.04; test commands, pinned validator, read-only permissions and disabled
+checkout credential persistence remain unchanged. Shared AWS runner security
+and unrelated upstream workflows remain unchanged. Verify the actual hosted
+job before removing the runner-access blocker or making a publication claim.
