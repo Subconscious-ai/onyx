@@ -18,7 +18,16 @@ with tempfile.NamedTemporaryFile(mode="w", suffix=".Dockerfile") as file:
     file.write(source[:start] + replacement + source[end:])
     file.flush()
     subprocess.run(
-        ["docker", "build", "--memory", "3g", "-f", file.name,
-         "-t", "burn-model-cpu:onyx-a93ef9a24b", str(root / "backend")],
+        [
+            "docker",
+            "build",
+            "--memory",
+            "3g",
+            "-f",
+            file.name,
+            "-t",
+            "burn-model-cpu:onyx-a93ef9a24b",
+            str(root / "backend"),
+        ],
         check=True,
     )

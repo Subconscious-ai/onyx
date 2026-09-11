@@ -55,3 +55,9 @@ Deployment surprises:
 7. Preserve exact encryption configuration and native source/object volumes. Do not let desktop and cloud writers diverge. A frontend-only rollback after new cloud writes is unsafe.
 
 Background brief generation produced an invalid-structure rejection and a provider timeout before a successful retry. The retained failures belong to Onyx #6; hosting evidence does not establish general interview quality. A deliberately synthetic scenario remained an assumption, as required.
+
+The full restart check exposed native Redis-backed login sessions on disposable Redis. The hosting overlay now selects native `AUTH_BACKEND=postgres` for API and workers, using the existing `accesstoken` table. No schema migration or custom authentication code is added. A one-time login is required when switching strategies. Restart proof must use the same newly issued cookie before and after restarting API/cache.
+
+Final restart proof: the same native Postgres-backed login cookie authenticated after a full `burn2.service` restart, and the saved model brief remained present. All five authenticated gateway checks pass afterward. Desktop Onyx containers are stopped and the old port-10000 Funnel is disabled. The resolved Compose graph includes every required service, external data volumes and only the isolated executor socket.
+
+The native Onyx MCP call now returns a successful GPT Researcher receipt with five source URLs in 26.1 seconds. The earlier private-hostname refusal was a tool error, despite a successful outer chat HTTP response; inspect `custom_tool_delta.error` and the nested research receipt, not only HTTP 200.

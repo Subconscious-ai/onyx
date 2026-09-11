@@ -7,7 +7,8 @@ services:
     image: onyx-burn2:durable-a93ef9a24b
     profiles: !reset []
     build: !reset null
-    environment: !reset {}
+    environment: !override
+      AUTH_BACKEND: postgres
     env_file: !override
       - path: ./runtime/api_server.env
         format: raw
@@ -23,7 +24,8 @@ services:
     image: onyxdotapp/onyx-backend@sha256:473fdffe4e67fb67dcdac154c57d595ba73d7bf64b5926d24807a86d7e888d6f
     profiles: !reset []
     build: !reset null
-    environment: !reset {}
+    environment: !override
+      AUTH_BACKEND: postgres
     env_file: !override
       - path: ./runtime/background.env
         format: raw

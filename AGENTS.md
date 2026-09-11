@@ -2,6 +2,10 @@
 
 This file provides guidance to AI agents when working with code in this repository.
 
+## Subconscious Burn fork
+
+For Burn interview, hosting, authentication, or model-handoff work, read [the Burn entry point](docs/subconscious/README.md) before the upstream notes below. Publish through the `subconscious` remote; `origin` still points to upstream Onyx. Hosted QA uses existing authorized accounts. The upstream Playwright credentials below apply only to disposable test stacks.
+
 ## KEY NOTES
 
 - Python deps live in a `uv`-managed virtualenv at `.venv` (repo root). If it doesn't exist yet, create it
