@@ -209,6 +209,61 @@ class EvaluationChecks(unittest.TestCase):
             assess(Turn("Draft a model"), answer, ""),
         )
 
+    def test_derived_rate_preserves_unknown_baseline_without_duplicate_input(self):
+        brief = {
+            "keyResults": [
+                {
+                    "metric": "Renewal rate",
+                    "target": {"text": "95 percent"},
+                    "baseline": {
+                        "status": "unknown",
+                        "text": "Current renewal rate is unknown",
+                    },
+                }
+            ],
+            "model": {
+                "inputs": [
+                    {
+                        "name": "Budget approvals",
+                        "value": {"status": "unknown", "text": "Unknown"},
+                    }
+                ]
+            },
+        }
+        before = [
+            {"type": "user", "message": "Renewal baseline is unknown."},
+            {"type": "assistant", "message": "Noted."},
+        ]
+
+        def check():
+            text = (
+                "Noted.\n<interview-brief>" + json.dumps(brief) + "</interview-brief>"
+            )
+            return assess_prepared(
+                Turn("Prepare", unknown_inputs=("renewal",)),
+                before,
+                [before[0], {"type": "assistant", "message": text}],
+                {"saved": True, "message": text},
+            )
+
+        self.assertEqual(
+            check(),
+            [],
+            "A computed rate retains uncertainty in the matching OKR baseline",
+        )
+        brief["model"]["inputs"].append(
+            {"name": "Renewal rate", "value": {"status": "executive", "text": "0.8"}}
+        )
+        self.assertTrue(
+            check(), "An unknown OKR cannot conceal a fabricated operating input"
+        )
+        brief["model"]["inputs"].pop()
+        brief["keyResults"][0]["baseline"] = {"status": "executive", "text": "0.8"}
+        self.assertTrue(
+            check(),
+            "A fabricated baseline still fails when the model has no rate input",
+        )
+
     def test_two_executive_questions_still_fail(self):
         self.assertIn(
             "Multiple questions create interview homework",

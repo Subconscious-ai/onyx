@@ -329,15 +329,22 @@ def assess_prepared(
             failures.append("Superseded target remains in the saved brief")
         for pattern in turn.unknown_inputs:
             matches = [
-                item
+                item["value"]
                 for item in brief["model"]["inputs"]
                 if re.search(pattern, item["name"], re.I)
             ]
+            # A rate computed from unknown counts is an output, not a duplicate input.
+            # Check matching baselines and inputs together so neither can hide fabrication.
+            matches.extend(
+                item["baseline"]
+                for item in brief["keyResults"]
+                if re.search(pattern, item.get("metric", ""), re.I)
+            )
             if not matches or any(
-                item["value"]["status"] != "unknown"
+                item["status"] != "unknown"
                 or not re.search(
                     r"unknown|unavailable|not (?:known|measured|established)",
-                    item["value"]["text"],
+                    item["text"],
                     re.I,
                 )
                 for item in matches
