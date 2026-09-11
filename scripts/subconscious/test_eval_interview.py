@@ -19,6 +19,27 @@ from eval_interview import (
 
 
 class EvaluationChecks(unittest.TestCase):
+    def test_rhetorical_roast_does_not_count_as_executive_homework(self):
+        turn = Turn(
+            "No questions.", brief_required=False, questions_allowed=False, jerry=True
+        )
+        self.assertEqual(
+            assess(
+                turn,
+                "Jerry: An unstoppable machine? The spreadsheet still needs batteries.\nUnknown inputs remain unknown.",
+                "",
+            ),
+            [],
+        )
+        self.assertIn(
+            "Repeated uncertainty needs a useful synthesis before more questions",
+            assess(
+                turn,
+                "Jerry: An unstoppable machine? The spreadsheet still needs batteries.\nWhat is the baseline?",
+                "",
+            ),
+        )
+
     def test_evaluation_never_selects_anthropic_even_through_bedrock(self):
         providers = [
             {

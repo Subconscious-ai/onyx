@@ -1,6 +1,7 @@
 self-hosted-runner:
   # Labels of self-hosted runner in array of strings.
   labels:
+    - aws
     - extras=ecr-cache
     - extras=s3-cache
     - runs-on

@@ -119,7 +119,9 @@ TOPICS = {
 
 
 def questions(text: str) -> list[str]:
-    prose = re.sub(r"https?://[^\s)]+", "", text)
+    # Jerry's single-line rhetorical punchline is not an interview question.
+    prose = re.sub(r"(?im)^\s*\*{0,2}Jerry\s*\*{0,2}:.*$", "", text)
+    prose = re.sub(r"https?://[^\s)]+", "", prose)
     prose = re.sub(r"(?<=\|)\s*\?\s*(?=\|)", " unknown ", prose)
     return [
         part.strip().lower()

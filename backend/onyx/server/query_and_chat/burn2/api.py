@@ -115,10 +115,13 @@ Indices are zero-based. With one source message, the only valid index is 0. Neve
 The server copies the original evidence. Prefer an index over retyping a quote.
 The executive's stated objective, desired target and deadline use executive status with a supporting source index.
 Unknown baselines and proposed algebra remain unknown/assumption, without a source index.
+An explicitly unknown operating value always has status unknown, even when the executive stated that the value is unknown.
+Keep every explicitly unknown baseline rate and cohort size in model.inputs across later corrections and conclusions. Do not replace unknown baselines with the desired target or subjective scores.
 The status "executive" means explicitly STATED by the executive, including a desired TARGET or deadline.
 A target supported by an exact quote must use executive status; the separate baseline is unknown.
 Reuse the exact objective sentence as quote for target and deadline. Do not paraphrase quotes.
 Split an established journey into individual human behavior states, each with its own ID.
+When the executive explicitly states an actor's behavior and sequence, preserve those stages and transitions as executive with the supporting sourceMessageIndex. Only inferred behavior or sequence is an assumption.
 An early conversation may have no established journey or key results. Return empty journey arrays for absent customer behavior, never filler.
 A stated numeric objective MUST appear in keyResults, with the exact target and deadline.
 Every proposed equation MUST list the named model.inputs. Use unknown input values, not omitted inputs.
@@ -128,11 +131,13 @@ For example, trying and buying are separate states, not one combined journey ent
 Each transition's from and to are distinct IDs copied EXACTLY from the journey array.
 List the named inputs of the symbolic equation as model.inputs even when every value is unknown.
 Do not return null: omit absent quote/url properties. An unidentified company is "Unknown".
+Omit url unless the exact URL occurs in the executive source. Never insert example.com or a placeholder source URL.
 Capture the actual customer journey and measurable OKRs: metric, unit, target, deadline and unknown or observed baseline.
 Preserve latest corrections. Quote exact contiguous executive text for executive claims.
 Never promote a target, hypothetical scenario, benchmark or public case into an observed input.
 Propose a free symbolic driver equation and meaningful behavior transitions; label structure assumptions.
 Missing operating numbers remain unknown. Never put missing values at zero. Park previously unknown gaps.
+Business jokes, sales boasts, heroic confidence and spreadsheet metaphors are not measured model inputs. Never turn those phrases into factors in the equation.
 Customer states describe human behavior, not department tasks. One complaint does not establish a journey or causal effect.
 Use stable lowercase IDs. Stage IDs must exist before use in transitions, key results and interventions.
 No new interview question, no numeric calculation, no external research. Extract known facts and propose only material structure.
