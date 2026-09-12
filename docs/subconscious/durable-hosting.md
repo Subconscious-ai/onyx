@@ -75,3 +75,22 @@ Native ElevenLabs provider validation rejected the supplied API key IDs. Provide
 Mount the rootless daemon directory `/run/burn-executor` at `/var/run:ro` in the native code interpreter, and retain `RuntimeDirectoryPreserve=yes`. A socket-file bind holds a stale inode after a daemon restart. Mounting the directory at another path also fails: the native entrypoint checks `/var/run/docker.sock` before honoring Docker client configuration. Native execution passed before and after a daemon restart with the directory mount; no privileged container or host Docker socket is involved.
 
 `hosting/Dockerfile.beca` is a five-module overlay on the current executive-proof image. Supply the verified current image explicitly with `--build-arg BURN_BASE_IMAGE=<verified-image>` and preserve concurrent Burn extraction changes. The build intentionally has no guessed base image. Vercel publication does not deploy backend code. Coordinate shared API restarts; do not replace the entire live compose file from a divergent worktree. The offline backend check runs as `python /tmp/test_beca_providers.py` inside the candidate image.
+
+### Executor restart regression
+
+A later rootless-daemon restart replaced `docker.sock`, leaving the interpreter's
+file bind-mount attached to the old socket inode. Health reported a reachable
+interpreter but an unreachable Docker daemon. The hosting overlay now mounts
+the isolated daemon directory read-only at `/var/run`; the native interpreter
+entrypoint requires `/var/run/docker.sock`. `RuntimeDirectoryPreserve=yes`
+preserves the parent directory across daemon restarts. Do not substitute a host
+Docker socket, privileged Docker-in-Docker, or a different socket path without
+checking the native entrypoint.
+
+Live regression proof: `CodeInterpreterClient().health(use_cache=False)` and a
+synthetic Python calculation passed before and after restarting only
+`burn-executor.service`. The directory inode remained unchanged, the socket
+inode changed, and native execution returned `190` with exit code zero. Wait
+for the new socket and healthy daemon after `systemctl restart`; service
+activation alone does not prove Docker readiness.
+

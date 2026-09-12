@@ -67,3 +67,7 @@ plans
 .claude/scheduled_tasks.lock
 .claude/worktrees/
 !.claude/settings.json
+
+# Private QA artifacts and local deployment linkage are never source.
+.qa/
+.vercel/

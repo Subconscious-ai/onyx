@@ -37,6 +37,7 @@ def owned_snapshot(session_id: UUID, user_id: UUID, db: Session) -> dict[str, An
             json.dumps(transcript, sort_keys=True).encode()
         ).hexdigest(),
         "statements": [row["message"] for row in transcript if row["type"] == "user"],
+        "transcript": transcript,
     }
 
 

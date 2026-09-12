@@ -4,7 +4,7 @@ services:
     extends:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: api_server
-    image: onyx-burn2:beca-20260911
+    image: onyx-burn2:executive-f509b393b7
     profiles: !reset []
     build: !reset null
     environment: !override
@@ -139,6 +139,8 @@ services:
     mem_limit: 512m
     cpus: 1
     volumes: !override
+      # Preserve the native entrypoint's /var/run/docker.sock detection while
+      # allowing the rootless daemon to replace the socket after a restart.
       - /run/burn-executor:/var/run:ro
   gateway:
     image: nginx:1.25.5-alpine

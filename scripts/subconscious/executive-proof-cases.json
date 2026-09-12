@@ -1,0 +1,43 @@
+{
+  "correction_unknowns_and_roast": [
+    {
+      "message": "The company is Northstar Scheduling, selling scheduling software to operations managers. The objective is 90 percent annual renewal by December 2027. Managers schedule a team and then choose whether to renew. Current renewal rate and eligible customer count are unknown. No research or experiment execution. Summarize briefly; no questions.",
+      "brief_required": false, "questions_allowed": false, "jerry": false,
+      "prepare_brief": true, "sourced_journey_required": true, "target_requires": "90", "max_words": 100
+    },
+    {
+      "message": "Correction: the target is 95 percent annual renewal by December 2027, replacing 90 percent. Baseline renewal rate and eligible customer count remain unknown. No questions.",
+      "brief_required": false, "questions_allowed": false, "jerry": false,
+      "prepare_brief": true, "sourced_journey_required": true, "target_requires": "95", "target_forbidden": "90",
+      "unknown_inputs": ["eligible|customer|cohort", "^(?!.*(?:target|goal)).*(?:renewal|renew|retention)"], "max_words": 80
+    },
+    {
+      "message": "Budget owners approve the renewal after the operations manager recommends continuing. Weekly product use is a possible driver, not an established causal effect. No questions.",
+      "brief_required": false, "questions_allowed": false, "jerry": false, "max_words": 80
+    },
+    {
+      "message": "The sales deck calls the business an unstoppable renewal machine. The approved budget so far is one spreadsheet and heroic confidence. A sharper package-value message is a proposed intervention. No questions.",
+      "brief_required": false, "questions_allowed": false, "jerry": true, "max_words": 80
+    },
+    {
+      "message": "Conclude with the proposed business model and the unknown inputs. Keep the corrected 95 percent target. No extra questions or jokes.",
+      "brief_required": false, "questions_allowed": false, "jerry": false,
+      "prepare_brief": true, "sourced_journey_required": true, "target_requires": "95", "target_forbidden": "90",
+      "unknown_inputs": ["eligible|customer|cohort", "^(?!.*(?:target|goal)).*(?:renewal|renew|retention)"], "max_words": 100
+    }
+  ],
+  "unknown_journey_and_deadline": [
+    {
+      "message": "The business sells office furniture to small companies. The objective is more repeat purchases. No customer journey, target or deadline has been established. Briefly summarize knowns and unknowns; no questions, research or experiment execution.",
+      "brief_required": false, "questions_allowed": false, "jerry": false,
+      "scenario_guard": true, "max_words": 90,
+      "forbidden": ["FY.?26|2026|2027|installation|follow.up service"]
+    }
+  ],
+  "humor_opt_out": [
+    {"message": "The company sells ice cream. The goal is more repeat purchases; all operating inputs are unknown. No jokes during this interview. No questions.", "brief_required": false, "questions_allowed": false, "jerry": false},
+    {"message": "Shoppers compare tubs, buy a tub, then decide whether to buy again. No questions.", "brief_required": false, "questions_allowed": false, "jerry": false},
+    {"message": "A clearer package claim is a proposed intervention, not a measured result. No questions.", "brief_required": false, "questions_allowed": false, "jerry": false},
+    {"message": "Keep this serious. Summarize the proposed model and unknowns without another question.", "brief_required": false, "questions_allowed": false, "jerry": false}
+  ]
+}
