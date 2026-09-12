@@ -1,94 +1,67 @@
 # Beca prototype, issue 18
 
-User authorization: September 12, complete the narrow prototype. Feature PRs remain drafts pending executive QA.
+Updated September 12, 2026. The integrated prototype is available for executive QA. Feature PRs remain drafts and unmerged. Preview verification does not establish production readiness or reliable generation for every business.
 
-## Outcome
+## Scope and ownership
 
-Email/company → PDL and public research → sourced interview → journey and OKRs → reviewed business model → scenario comparison or authorized study analysis.
+Email/company → PDL and public research → sourced executive interview → journey and OKRs → reviewed business model → scenario comparison or authorized study analysis.
 
 Reuse native Onyx, AWS, GPT Researcher MCP, causl-kb and the existing calculator. No new runtime, accepted-state store, enterprise identity migration or paid study launch.
 
-## Integrated delivery
+- Onyx #18 / draft #20 owns research startup, persisted receipts, background briefs and compact Beca recovery. Branch `codex/18-beca-prototype`, worktree `worktrees/onyx-prototype`, publication remote `subconscious`. Draft #20 is stacked on #10; scenario helper #19 is integrated.
+- causl-kb #558 / draft #559 owns native calculation, atomic acceptance, scenario review and organization-scoped persistence. Serving source `1b7216435b8487c183b0b38404441c17fd788eaa`; the single calculator follows main at `a71a578`.
+- causl-kb #549/#556 and Onyx #17 own the separate customer-document pilot. Preserve unrelated connector fixtures and worktrees.
 
-- Onyx #18 / draft #20 owns native research startup, persisted receipts, background briefs and compact Beca recovery. Branch `codex/18-beca-prototype`, worktree `worktrees/onyx-prototype`, remote `subconscious`.
-- Draft #20 is stacked on #10. Scenario helper #19 is integrated from `4f99d81ba6`; navigation nonce repair comes from `d8404ee2d6`.
-- causl-kb #558 / draft #559 owns native calculation, atomic acceptance, scenario review and organization-scoped persistence. Current paired code is `1c766de`; the single native calculator follows main at `a71a578`.
-- causl-kb #549/#556 and Onyx #17 own the separate customer-document pilot. Preserve the connector fixture and unrelated worktrees.
+## Exact serving artifacts
 
-## Preview and runtime
+- [Beca preview](https://onyx-executive-git-codex-18-beca-prototype-subconcious.vercel.app/app?agentId=5): runtime source `cdde87137209fef04490971bc9cb73b9e4065ae5`, verified Vercel deployment `dpl_HnSoxVBCvfLaMTWSp3m2zTq1Xn3c`.
+- [Model preview](https://causl-scenarios-558-subconcious.vercel.app/dashboard/burn-import): deployment `dpl_DjBtaMQCYAjWkE31wZbrcycG1Xwn` at paired source `1b72164`.
+- AWS API and background: `onyx-burn2:prototype18-cdde871372`, image digest `sha256:159073e8cdca27443bf1c519da684624ec03c274789eca825deebf9b594e2304`. Both containers match reviewed process/profile fingerprints. API health and authenticated readback pass.
+- The replacement preserves the separately verified indexer cap of 5 GiB from #22. CPU, database volumes and indexer image remain unchanged.
+- Native persona prompts exactly match `executive-rubric.md` and `executive-turn-reminder.md`. Beca remains model 8; tools, source sets and sharing remain unchanged. Experiment design uses the separately evaluated AWS Nova 2 Lite configuration.
 
-Beca: `https://onyx-executive-git-codex-18-beca-prototype-subconcious.vercel.app/app?agentId=5`.
+Vercel Git builds publish frontend changes only. Native images and database persona prompts require separate deployment and readback. Documentation-only follow-up commits preserve unchanged runtime proof.
 
-Paired model: `https://causl-scenarios-558-subconcious.vercel.app/dashboard/burn-import`.
+## Verified behavior
 
-API and background run `onyx-burn2:prototype18-3d1b45aaab`, image digest `sha256:5b1ab58eacae1929fbcc4867a1c3f9237ca36fb3e3651d0656cd9b8d0ebb75f4`. Native authenticated readback and research persistence survived replacement. Vercel Git builds publish frontend changes only. Native persona prompts require a separate exact-text update and readback.
+| Boundary | Actual evidence |
+| --- | --- |
+| Public research | PDL entry queued GPT Researcher in 0.65 seconds; AWS/Exa worker completed in 17.39 seconds. Nine original URLs and the report persisted in Postgres and survived replacement. Public queries contain company/domain context, never the private interview. |
+| Interview and background brief | Software, retail and consulting replayed twice: 18 source turns retained original quotes, explicit unknowns and corrections. First content took 1.31–3.96 seconds; background briefs took 8.78–33.48 seconds. Timing excludes executive reading/thinking. Preparation continues without browser polling. |
+| Software model | Two independent hosted initial-model flows passed AWS generation, native calculation, atomic save, duplicate rejection, reload and quote disclosure. Baseline 1,000 leads × 10% × $100 gives $10,000; native 12% scenario gives $12,000; saved 15% gives $15,000. Invalid 120% returns 422; stale approval 409; foreign-organization access 404. |
+| Retail and consulting models | Final paired artifact generated, saved and reopened one retail model with five unknowns and one consulting model with three unknowns. Targets remain $12 million annually and six engagements quarterly. Native diagnostic clones verify initial retail revenue survives zero repeats and changes with repeat frequency. Diagnostic numbers never enter accepted records. |
+| Long conversation/model receipts | Final five-phase replay on exact `cdde871372` + `1b72164` passed transport and core spoken review: no pre-calculation projection; actual $10,000 → $12,000 receipt and $3,000 gap; rejection leaves storage unchanged; reopening retains saved 15%; separate chat receives no model context. Five HTTP 200 streams, no stream/page errors or mobile overflow. |
+| Experiment design | Actual Python output verifies 10,000 baseline and 0.15 required conversion. Arm-specific metrics, unknown costs and rejected offer terms remain distinct. Generation took 65.16 seconds; correction 15.24 seconds. No study launched. |
+| Saved-study analytics | Authorized discovery and smolagents analysis returned source values and two native PNGs. Authenticated readback and mobile decoding passed. Analysis took 71.66 seconds; digital-twin outputs remain simulated evidence. |
+| Mobile interface | Chat occupies 743 of 844 pixels. Subconscious branding and Beca remain prominent; provider controls stay outside the executive interface. |
 
-Rollback configuration: `/opt/burn/private/prototype18-20260912T181848Z`. Never commit configuration, credentials or browser state. Private synthetic QA receipts live outside Git under `~/.local/share/causl-uat/beca-prototype18`.
+## Reliability limits and retained failures
 
-## Proof and failures retained
+The second independent hosted retail generation failed native unit validation after the bounded repair. Exact tenant-scoped read-only checks found zero models, journey rows or source-support edges for the failed market. Source selections and reviewed confirmation remain selected; the preparation button returns with a no-partial-save error. A Chromium regression confirms no PUT or fake success.
 
-Real profile entry queued GPT Researcher in 0.65 seconds. Native worker completion took 17.39 seconds with nine original URLs retained in Postgres. Brief preparation continued independently of browser polling.
+The native failing-cell/dimensional explanation and previous proposal already reach the single repair. No missing-feedback defect was found. No relaxed validation, provider switch, expanded retries or unchanged hosted retry followed. Final hosted retail evidence is **one pass and one rejection**, not repeated successful generation. Consulting passed separately.
 
-Three synthetic businesses were replayed twice after the question-memory repair: software, ice cream and consulting. All 18 turns retained original executive text and a validated background brief. Executive-attributed notes had matching source quotes. Unknown operating inputs remained unknown; the annual-sales correction retained $12 million. Ordinary first content took 1.31–3.96 seconds; background briefs took 8.78–33.48 seconds. Automated timing excludes human reading and thinking time.
+A schema pass cannot establish correct economics. The paired compiler checks recurring-event quantities through the existing formula AST and bounded measurement classification. Uncertain/malformed measurements fail closed. Native zero/one/multiple-repeat counterfactuals remain essential. Symbolic inputs intentionally remain unknown; the upstream grid labels some dependent cells “Broken inputs,” while the host notice explains missing evidence.
 
-Human review rejected earlier replays despite successful HTTP responses and valid schemas. Failures included unrelated professional-company research, repeated questions, requests for declared unknowns and unsupported scenario narration. Repairs constrain company context, retain prior questions, synchronize the native reminder and defer scenario conclusions to calculation receipts. The original goal/unknown sequence also exposed a canned scenario acknowledgement in an ordinary interview. The repaired reminder asks one material framing question, parks unknowns and does not imply an unrequested scenario calculation. Fresh replies took 2.50–4.37 seconds without a repeated timeframe or channel question. Spoken proposals still require executive review; a valid structured brief is not proof of perfect conversational judgment.
+Earlier runs contained repeated unknown questions, assistant/company confusion and unsupported scenario narration. Earlier long-session replies repeated stale assistant conclusions. Failed receipts remain retained privately. The final long-session replay corrects numerical/state failures; one em dash remains despite style guidance. Occasional immaterial questions remain a conversational-quality limit.
 
-Two independent hosted software initial-model flows passed real AWS generation, native calculation, atomic save, duplicate rejection, grid reload and original-quote disclosure. The synthetic model retains 1,000 leads, 10% conversion, $100 contribution and a $15,000 target. Native scenarios calculate $12,000 at 12% and $15,000 at 15%; 120% fails validation.
+Separate boundaries: native/Clerk login remains separate; existing-session tests do not prove fresh-password login. The customer-document pilot lacks non-admin permission proof. Enterprise onboarding requires deliberate company/workspace memory scoping; only the review account has memory injection/writes disabled, with stored memories preserved. Voice/image activation, enterprise isolation, human outcome calibration and paid experiment execution are outside prototype proof.
 
-Experiment-design QA exposed incorrect spoken arithmetic, unsupported offer examples and confusion between full-business and per-arm quantities. The design prompt now requires native Python receipts, preserves economic units and uses an arm-specific conversion denominator. The existing AWS Nova 2 Lite configuration is selected for design; Beca, analytics and background brief defaults remain unchanged. The two-turn regression lives in `scripts/subconscious/experiment_design_cases.json`. The isolated native design replay retained actual Python output (10,000 baseline; 0.15 required conversion), a per-arm metric, unknown costs and rejected offer terms. Generation took 65.16 seconds and the correction 15.24 seconds; no paid tool was available to the test.
+## Load-bearing lessons
 
-Native account memories also contained earlier synthetic company facts. Memory injection and memory-tool writes are disabled only for the review account; stored memories, personal preferences, conversation history and causl-kb records remain preserved. New customer workspaces need deliberate memory scoping before enterprise onboarding. A fresh consulting replay from the original three answers retained the quarterly target and unknown quarterly operating inputs; ordinary first content took 1.91–3.23 seconds.
+1. Native Postgres retains source messages and working briefs. causl-kb owns accepted ontology and models. No second accepted-state store.
+2. Briefs supply sourced objectives, journey and unknowns. Public models and MBB cases are retrieved references, never compulsory structures or executive facts. Executable algebra belongs to the existing model compiler.
+3. Preserve full validation/source history before summarization. Repeated stored brief snapshots must not flood dialogue. During model review, exact receipt presence in the final assembled user context permits projecting prior assistant narration and summaries out of copied LLM history. Original statements, tool pairs and storage remain intact. Incognito assembly can drop additional context; a pre-assembly flag is insufficient.
+4. Separate observed baseline cells, saved scenario overlay and latest preview/rejection state. Rejecting a new preview never rejects the saved scenario. Calculation transport and spoken correctness require separate checks.
+5. The existing version-1 model handoff verifies origin, popup, fresh navigation nonce, revision, references, finite results and bounds. Request/chat/agent changes clear transient context. Display projections hide machine IDs and disambiguate names while preserving numeric receipts and executable formulas.
+6. Worker registration extends the verified native image. Persona updates require exact database readback. Frontend publication alone changes neither worker code nor active prompts.
 
-Saved-study discovery and actual smolagents analysis returned source values and two native PNG files. Authenticated PNG readback and mobile decoding passed. Analysis took 71.66 seconds; analysis latency is separate from ordinary conversation. Digital-twin outputs remain simulated evidence.
+## Validation and recovery
 
-Mobile chat occupies 743 of 844 pixels, without horizontal overflow or page errors. Recovery opens the existing authorized model selector without a stale transcript. Every model-window navigation uses a fresh nonce; previous-page heartbeats cannot consume new requests.
+The exact native image passed **68 tests**: 54 interview/source/evaluator checks, 11 worker checks and three final-history tests. Distinguishing regressions failed before repair. All 44 executive frontend tests passed; the final context marker additionally passed focused projection tests and full TypeScript. Scoped lint and independent Standards/Outcome reviews passed. Applicable GitHub checks on `cdde871372` passed; the superseded deployment workflow remains intentionally skipped.
 
-Additional symbolic-model checks found two defects beyond software: a written target needed number-word normalization, and the proposed total-sales equation erased initial revenue when repeat purchases were zero. The retained counterfactual returned $0 instead of $100. The repaired brief prompt checks outcome scope and zero-event boundaries without imposing an industry template. Further actual-provider probes still copied or omitted required factors. The undeployed producer prompt and lexical equation-binding experiment were discarded. Executable algebra belongs to the existing model compiler; the native brief supplies sourced facts, journey, objectives and suggested unknowns. Additional required operating quantities may be proposed as visible unknown inputs, never invented numeric observations. The paired compiler owns reference, unit, cycle, objective-coverage and calculation checks. Zero-repeat and multiple-repeat counterfactuals remain the semantic acceptance gate; successful extraction alone cannot certify a model.
+Private synthetic receipts: `~/.local/share/causl-uat/beca-prototype18`. Final browser proof uses `model-context-*-fifth`; earlier numbered artifacts preserve failures. Credentials, browser state, corpus material and exports stay outside Git.
 
-## Final publication gate and recovery
+Rollback: `/opt/burn/private/prototype18-20260912T181848Z/compose-before-model-review.yml` restores preceding `3d1b45aaab` API/worker pins. After API replacement: verify health, run `nginx -t`, reload the gateway, then finish the graceful worker replacement. Preserve the 5 GiB indexer cap. Shared-host disk pressure delayed replacement and briefly approached capacity; no broad cache/container/volume prune was used.
 
-The current source gate includes 54 interview/source checks, 11 native worker checks, frontend polling/handoff/layout tests, typecheck and scoped lint. The deployed image passed 61 checks before the additional evaluator-only regression. Recovery and navigation regressions distinguish stale-brief access and old-window races. Final integrated browser receipts and exact Git/Vercel status belong in [draft #20](https://github.com/Subconscious-ai/onyx/pull/20) and [draft #559](https://github.com/Subconscious-ai/causl-kb/pull/559).
-
-The Compose snapshot also retains the separately verified indexer memory correction from #22 (`3e163e3d83`): 5 GiB, unchanged CPU/image/volumes. API/worker image replacement must preserve the current cap.
-
-Retain the paired previews, source worktrees and synthetic QA showcase until executive review. No feature merge or production-readiness claim follows from preview publication.
-
-Separate boundaries remain: native and Clerk sessions require separate login; the private-document pilot remains queued behind existing ingestion after the indexer memory repair, with non-admin permission proof still unavailable; voice/image provider activation remains documented in the capability review. The prototype does not establish enterprise isolation, customer-document ingestion or human outcome validation.
-
-
-## Model context recovery
-
-The model window originally sent only connection and scenario status. Beca therefore had no actual calculation receipt, even after a successful native calculation. The paired version-1 message now carries bounded saved cells, model identity/revision, optional saved scenario and actual calculation analysis. Native `additional_context` supplies the receipt only to the matching Beca conversation. No second conversation store or backend endpoint is introduced.
-
-The receiver verifies the exact origin, popup, navigation nonce, model revision, reference IDs, finite outputs and payload bounds. Preview, rejection, approval and missing calculation remain distinct. A new request clears prior calculation context; changing chats or agents clears the temporary model context. Reopening reads the saved model from the existing authorized Postgres route. An actual scenario calculation is still a model assumption, never evidence that an experiment launched or monitoring started.
-
-The distinguishing receiver regression failed before implementation. Independent Standards and Outcome reviews verified the market-ID limit, absolute import and stale-business replacement corrections. Hosted receipt-to-chat transport subsequently passed; spoken accuracy remains a separate check.
-
-
-The first paired hosted context replay passed five actual native requests: saved-model context, exact 12% calculation receipt (10,000 to 12,000), rejected preview with unchanged saved model, reopened saved 15% scenario, and no model context in a fresh chat. Spoken review separately rejected ambiguous wording that called the retained saved scenario rejected. The corrected LLM projection calls the status `latestReviewState`, retains `savedScenario` independently and omits model/market UUIDs. Both independent reviewers verified the correction. Later hosted replies preserve the distinction.
-
-
-## Latest-request and baseline corrections
-
-The second hosted context replay verified exact native calculation receipt transport and retained the saved scenario after rejection. Spoken review still found an answer to a historical question. Authenticated readback contained seven stored brief snapshots: 56,385 total characters versus 5,266 spoken characters. The Beca-only prompt now retains historical source/spoken messages, removes prior brief metadata from the copied LLM history, injects the current validated working draft once, and explicitly marks the latest executive request. Postgres source and brief snapshots remain unchanged. Two distinguishing regressions failed before the correction. Independent Standards review verified bounded request duplication and full-branch provenance before summarization. Both native services now run the verified correction. The third hosted replay answered the latest 12% request and preserved the saved scenario.
-
-The paired model projection also exposed saved scenario cells as baseline cells. The actual calculator retained the original baseline in existing scenario metadata. The paired fix projects the original baseline and saved overlay separately. The third hosted replay verified baseline 10%, saved overlay 15%, preview 12%, and actual `a71a578` results of 10,000 and 12,000. Rejection left the persisted document unchanged.
-
-## Remaining acceptance boundary
-
-Prototype completion remains pending. The retained retail source-8 fixture exposes a missing repeat-frequency quantity. Schema, source and ordinary unit checks accepted a formula equating returning customers with repeat purchases. Precise accounting feedback repairs the candidate through the existing compiler: an explicit unknown additional-purchases-per-returner input preserves initial revenue and permits multiple repeats. Native calculator probes return 100 with zero repeats and 250 with three additional purchases among half the initial buyers. Automatic accounting review still missed the original defect. Unreliable reviewer experiments remain local and outside the serving runtime. No provider lottery, copied industry template or second calculator is accepted as a repair.
-
-Prompt consolidation removed duplicated instructions and clarified the assistant/company boundary. Exact persona readback matches `executive-rubric.md` and `executive-turn-reminder.md`; model 8, tools, source sets and sharing remain unchanged. Nine fresh turns preserve source quotes, unknowns and corrections, with first content in 1.58–3.92 seconds. The separate greeting no longer infers Beca as the company. Remaining spoken limitations include an immaterial contract-value question, occasional perspective names and scenario arithmetic without a tool receipt. Successful extraction does not erase spoken failures.
-
-The display-only model-context projection removes machine IDs and engine names from LLM data. Display expressions use metric names; wire validation and native executable formulas remain unchanged. Regressions prove exact numeric receipt preservation, source immutability and consistent duplicate-name disambiguation. All 44 executive frontend tests pass. Fresh hosted spoken verification of the final display projection remains pending.
-
-Public synthetic replay cases live in `scripts/subconscious/prototype_cases.json`, consumed by the existing evaluator's `--scenario-file` option. Failure checks cover declared-unknown questions, assistant/company confusion and unsupported $12,000 scenario narration. Background checkpoints poll the native saved-brief route without manual preparation. Reassessment of retained replay 10 flags the actual unsupported projection; eight other spoken turns pass the focused checks. Both independent reviewers verified the fixture and duplicate-name corrections. Private response receipts and failed candidates remain outside Git. Completion requires the remaining semantic and hosted acceptance evidence; feature PRs remain drafts for executive QA.
-
-
-## Long-session model review
-
-Frontend `260a76d565` passed five hosted receipt phases against paired `1c766de`: preview, exact native calculation, rejection without storage changes, reopen and separate chat. Display IDs and assistant/company confusion are corrected. Spoken review still rejects the first pre-receipt projection and retains an em-dash style violation.
-
-A bounded same-context AWS comparison isolated the history effect. Model 8 handled fresh saved/proposed/rejected turns correctly in 1.71–3.19 seconds. Model 17 confused the saved 15% scenario with the observed 10% baseline. Provider/default changes are rejected.
-
-The next native correction marks model-review context explicitly. Attached model receipts govern numerical model claims. Historical non-tool assistant narration and generated summaries remain stored, but leave the copied LLM history after final assembly. The working interview draft, original executive statements, validation history and native tool call/result pairs remain intact. Existing interview guidance still permits returning to discovery; receipt presence never forces a no-question workflow. Conversations without attached model context retain existing behavior. Local regression proof passes; independent review, native image verification and the long-session hosted replay remain pending.
+Retain worktrees, paired previews and synthetic showcase models for executive QA. Issue #18 and draft #20 remain open, paired with causl-kb draft #559. No feature merge or production-readiness claim follows from prototype publication.

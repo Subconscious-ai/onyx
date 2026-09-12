@@ -2,6 +2,8 @@
 
 [Open Burn](https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app/app?agentId=5). The stable Vercel address serves the native executive interview. The backend runs on AWS at `https://api.dev.subconscious.ai/burn2`; desktop services are no longer the serving backend.
 
+The integrated interview/model prototype is available in the [Beca QA preview](https://onyx-executive-git-codex-18-beca-prototype-subconcious.vercel.app/app?agentId=5). Exact serving artifacts, successful checks and retained generation limits live in the [prototype plan](prototype-plan.md). Draft #20 and the paired model draft remain unmerged for executive review.
+
 The customer-facing interview is Beca. The review sidebar also exposes Experiment design and Experiment analytics, backed by the existing Rehoboam MCP. See [the capability review](beca-capabilities.md) for current MCP access, MBB sourcing, voice prerequisites and the compact conversation layout.
 
 ## Architecture
