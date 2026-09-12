@@ -4,8 +4,8 @@ import BecaActions from "./BecaActions";
 import { Wordmark } from "@/sections/brand/wordmark";
 import { useTranslations } from "next-intl";
 
-import { useEffect, useMemo, useState } from "react";
-import { useAutomaticBrief } from "@/lib/executive/hooks";
+import { useMemo, useState } from "react";
+import { useAutomaticBrief, useExecutiveContext } from "@/lib/executive/hooks";
 import { Button, Text } from "@opal/components";
 import { Interactive } from "@opal/core";
 import { Content } from "@opal/layouts";
@@ -43,7 +43,7 @@ const specialists = [
     name: "Jerry",
     role: "Perspective & humor",
     initial: "J",
-    job: "One brief, grounded roast after the fifth answer. Never after frustration or about personal data.",
+    job: "One brief, grounded roast after the fourth answer. Never after frustration or about personal data.",
   },
 ];
 
@@ -154,35 +154,7 @@ export default function ExecutiveWorkspace({
   const brief = projection.brief;
   const readiness = modelReadiness(projection.stale ? null : brief);
   const [handoffStatus, setHandoffStatus] = useState("");
-  const [profileStatus, setProfileStatus] = useState(
-    "Checking professional context…"
-  );
-  useEffect(() => {
-    if (!active || preview) return;
-    let cancelled = false;
-    fetch("/api/chat/executive-profile", { method: "POST" })
-      .then((response) =>
-        response.ok ? response.json() : { status: "unavailable" }
-      )
-      .then((value) => {
-        if (!cancelled)
-          setProfileStatus(
-            value.status === "ready"
-              ? `PDL professional match loaded${value.profile?.company ? ` · ${value.profile.company}` : ""}`
-              : value.status === "not_found"
-                ? "PDL: no confident match"
-                : value.status === "verification_required"
-                  ? "PDL match not established"
-                  : "PDL context unavailable"
-          );
-      })
-      .catch(() => {
-        if (!cancelled) setProfileStatus("PDL context unavailable");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [active, preview]);
+  const { profileStatus, research } = useExecutiveContext(active && !preview);
 
   const [view, setView] = useState<
     "journey" | "evidence" | "decisions" | "model"
@@ -351,6 +323,32 @@ export default function ExecutiveWorkspace({
                 <Text as="p" font="secondary-body">
                   {profileStatus}
                 </Text>
+              )}
+              {!preview && (
+                <div role="status" aria-live="polite">
+                  <Text as="p" font="secondary-body">
+                    {research.status === "ready"
+                      ? `Public research · ${research.source_urls?.length ?? 0} sources`
+                      : ["pending", "queued", "running"].includes(
+                            research.status
+                          )
+                        ? "Researching the public market…"
+                        : research.status === "needs_company"
+                          ? "Public research needs a company website"
+                          : "Public research unavailable"}
+                  </Text>
+                  {research.source_urls?.map((url) => (
+                    <Button
+                      key={url}
+                      href={url}
+                      prominence="tertiary"
+                      size="sm"
+                      rightIcon={SvgArrowUpRight}
+                    >
+                      {new URL(url).hostname}
+                    </Button>
+                  ))}
+                </div>
               )}
               {specialists.map((specialist) => (
                 <Text as="p" font="secondary-body" key={specialist.name}>

@@ -18,6 +18,8 @@ from onyx.db.enums import Permission
 from onyx.db.llm import fetch_model_configuration_by_id
 from onyx.db.models import User
 from onyx.db.persona import get_persona_by_id
+from onyx.error_handling.error_codes import OnyxErrorCode
+from onyx.error_handling.exceptions import OnyxError
 from onyx.llm.factory import get_llm_for_persona, get_llm_token_counter
 from onyx.llm.models import (
     ReasoningEffort,
@@ -236,6 +238,24 @@ Use "Unknown" for an unidentified company. No unsupported quotes or invented ide
 def prepare_profile(
     user: User = Depends(require_permission(Permission.WRITE_CHAT)),
 ) -> dict:
+    from onyx.server.query_and_chat.burn2.background import ensure_research
+
+    profile = _prepare_profile(user)
+    return {**profile, "research": ensure_research(user.id)}
+
+
+@router.get("/executive-research")
+def read_executive_research(
+    user: User = Depends(require_permission(Permission.WRITE_CHAT)),
+) -> dict:
+    from onyx.db.burn2_research import read_research
+
+    if os.environ.get("BURN2_ENABLED") != "true":
+        raise OnyxError(OnyxErrorCode.NOT_FOUND, "Not found")
+    return read_research(user.id) or {"status": "unavailable"}
+
+
+def _prepare_profile(user: User) -> dict:
     import requests
 
     from onyx.db.burn2_profile import read_profile, save_profile
@@ -282,6 +302,47 @@ def prepare_profile(
     finally:
         if lock.owned():
             lock.release()
+
+
+@router.get("/executive-brief")
+def read_executive_brief(
+    chat_id: UUID,
+    user: User = Depends(require_permission(Permission.WRITE_CHAT)),
+    db: Session = Depends(get_session),
+) -> dict:
+    if os.environ.get("BURN2_ENABLED") != "true":
+        raise OnyxError(OnyxErrorCode.NOT_FOUND, "Not found")
+    try:
+        snapshot = owned_snapshot(chat_id, user.id, db)
+        persona = get_persona_by_id(snapshot["persona_id"], user, db, is_for_edit=False)
+        if persona.name not in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}:
+            raise ValueError("Executive conversation required")
+    except ValueError:
+        raise OnyxError(
+            OnyxErrorCode.NOT_FOUND, "Saved executive conversation not available"
+        ) from None
+    if "</interview-brief>" in snapshot["last_text"]:
+        try:
+            brief = validate_brief(
+                json.loads(
+                    snapshot["last_text"]
+                    .split("<interview-brief>", 1)[1]
+                    .split("</interview-brief>", 1)[0]
+                ),
+                snapshot["statements"],
+            )
+            if not needs_completion(brief):
+                return {
+                    "saved": True,
+                    "message": snapshot["last_text"],
+                    "message_id": snapshot["last_id"],
+                }
+        except (ValueError, IndexError):
+            pass
+    return {
+        "saved": False,
+        "background": os.environ.get("BURN2_BACKGROUND_PREPARATION") == "true",
+    }
 
 
 @router.post("/executive-brief")

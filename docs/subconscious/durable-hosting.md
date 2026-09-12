@@ -29,6 +29,44 @@ Focused proof: the frontend Host-header regression failed before the fix and 10 
 
 ## Operations and recovery
 
+### Prototype research and background briefs
+
+Issue #18 adds native primary-worker tasks, native encrypted Postgres research
+receipts and read-only brief polling. Deploy `hosting/Dockerfile.prototype` over
+the verified executive API image for both API and background services. Preserve
+the native background Compose command and unrelated task registrations. The
+deployed primary worker predates two upstream registrations in the repository;
+the Docker overlay adds only Burn tasks and deliberately retains the native list.
+
+Set `BURN2_ENABLED=true`, `BURN2_RESEARCH_PERSONA_ID=5` and
+`BURN2_BACKGROUND_PREPARATION=true` on API and background. Copy the existing
+`BURN2_BRIEF_MODEL_CONFIGURATION_ID` setting to background. The primary worker
+requires the same native encrypted-store configuration and Bedrock provider
+records as API. No new database tables or provider secrets are introduced.
+
+PDL preparation schedules public-domain-only research through the assigned
+native GPT Researcher MCP tool. Original URLs and bounded context are retained
+under the authenticated account in Postgres. Public context expires after one
+day; pending jobs become recoverable after five minutes on the next entry.
+An unavailable provider remains an explicit unavailable receipt. Research never
+becomes accepted market memory, private operating numbers or executive evidence.
+
+The authoritative native chat writer queues brief preparation after saving a
+completed answer, including after a browser disconnect. Preparation reuses the
+existing per-chat lock, original-message validation and stale-write rejection.
+The browser reads the saved brief; explicit retry uses the existing preparation
+endpoint. A failed worker does not erase the transcript or masquerade as saved.
+Provider time remains outside ordinary chat latency. Missing saved output becomes
+a visible retry state after 90 seconds.
+
+Before replacement, run the 17 research/worker checks inside the candidate image
+and verify both task names appear in native primary-worker registration. Preserve
+private environment snapshots and previous image IDs for rollback. Replace only
+API/background services; preserve volumes and the isolated execution daemon.
+Verify authenticated login, a real queued research receipt, background brief
+readback and existing saved source text after replacement. A frontend deployment
+alone does not publish worker code.
+
 The host deployment lives at `/opt/burn/app`; `burn2.service` starts the native services after Docker and the isolated execution daemon. The external `burn2_db_volume`, `burn2_minio_data` and `burn2_opensearch-data` volumes survive Compose removal. Never remove the original desktop volumes during QA.
 
 `burn-backup.timer` runs daily at 08:15 UTC, with a five-minute jitter. The backup pauses native API/background writers while capturing Postgres and source objects, resumes writers, then encrypts and uploads the archive. Failed jobs resume writers via `ExecStopPost`; inspect `journalctl -u burn-backup.service` for the upload receipt. Backups are private and separately encrypted. Archive decryption requires the recovery key retained outside the AWS disk.
@@ -93,4 +131,3 @@ synthetic Python calculation passed before and after restarting only
 inode changed, and native execution returned `190` with exit code zero. Wait
 for the new socket and healthy daemon after `systemctl restart`; service
 activation alone does not prove Docker readiness.
-

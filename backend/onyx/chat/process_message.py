@@ -988,10 +988,29 @@ def build_chat_turn(
 
     if os.environ.get("BURN2_ENABLED") == "true" and persona.name == "Burn 2.0" and user is not None:
         from onyx.db.burn2_profile import read_profile
+        from onyx.db.burn2_research import read_research
+        from onyx.server.query_and_chat.burn2.research import (
+            public_research_query,
+            research_context,
+            research_reusable,
+        )
         from onyx.server.query_and_chat.burn2.profile import profile_context, turn_guidance, interview_context
         statements = [row.message for row in chat_history if row.message_type == MessageType.USER and row.message.strip()]
         turns = len(statements)
-        context = profile_context(read_profile(user.id))
+        profile = read_profile(user.id)
+        research = read_research(user.id)
+        public_query = public_research_query(profile)
+        context = "\n".join(
+            filter(
+                None,
+                [
+                    profile_context(profile),
+                    research_context(research)
+                    if public_query and research_reusable(research, public_query)
+                    else "",
+                ],
+            )
+        )
         guidance = turn_guidance(turns, message_text)
         additional_context = "\n".join(filter(None, [additional_context or new_msg_req.additional_context, context, guidance, interview_context(statements)]))
 
@@ -1327,6 +1346,16 @@ def _run_models(
             )
         except Exception:
             logger.exception("post-steps processing status reset failed")
+
+        if (
+            os.environ.get("BURN2_ENABLED") == "true"
+            and setup.persona.name == "Burn 2.0"
+            and setup.incognito_record_mode is None
+            and any(model_succeeded)
+        ):
+            from onyx.server.query_and_chat.burn2.background import enqueue_brief
+
+            enqueue_brief(user.id, setup.chat_session_id)
 
     def _run_model(model_idx: int) -> None:
         """Run one LLM loop inside a worker thread, writing packets to ``merged_queue``."""

@@ -2,7 +2,13 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import ExecutiveWorkspace from "./ExecutiveWorkspace";
 import { useAutomaticBrief } from "@/lib/executive/hooks";
 
-jest.mock("@/lib/executive/hooks", () => ({ useAutomaticBrief: jest.fn() }));
+jest.mock("@/lib/executive/hooks", () => ({
+  useAutomaticBrief: jest.fn(),
+  useExecutiveContext: () => ({
+    profileStatus: "PDL: no confident match",
+    research: { status: "needs_company" },
+  }),
+}));
 jest.mock("next-intl", () => ({ useTranslations: () => (key: string) => key }));
 jest.mock("@opal/components", () => ({
   Text: ({
