@@ -1014,8 +1014,9 @@ def build_chat_turn(
         from onyx.db.burn2_research import read_research
         from onyx.server.query_and_chat.burn2.profile import (
             interview_context,
+            is_model_review_context,
             profile_context,
-            spoken_answer,
+            project_chat_history,
             turn_guidance,
         )
         from onyx.server.query_and_chat.burn2.research import (
@@ -1058,6 +1059,10 @@ def build_chat_turn(
                 ],
             )
         )
+        requested_context = additional_context or new_msg_req.additional_context
+        model_review_context = (
+            requested_context if is_model_review_context(requested_context) else None
+        )
         guidance = turn_guidance(turns, message_text)
         additional_context = "\n".join(
             filter(
@@ -1088,26 +1093,6 @@ def build_chat_turn(
         tool_id_to_name_map=tool_id_to_name_map,
     )
     simple_chat_history = chat_history_result.simple_messages
-    if (
-        os.environ.get("BURN2_ENABLED") == "true"
-        and persona.name == "Burn 2.0"
-        and user is not None
-    ):
-        # Persisted brief snapshots remain in Postgres. Only the current draft
-        # belongs in additional context; stale snapshots are not dialogue.
-        simple_chat_history = [
-            message.model_copy(
-                update={
-                    "message": spoken_answer(message.message),
-                    "token_count": token_counter(spoken_answer(message.message)),
-                }
-            )
-            if message.message_type == MessageType.ASSISTANT
-            and "<interview-brief>" in message.message
-            else message
-            for message in simple_chat_history
-        ]
-
     # Incognito rows are content-free, so earlier turns come from the store and
     # the current message's text is restored onto convert_chat_history()'s
     # blank-row shape. Regeneration uses the store as-is, it already holds the turn.
@@ -1150,6 +1135,7 @@ def build_chat_turn(
             [(fid, m.filename) for fid, m in all_injected_file_metadata.items()],
         )
 
+    summary_simple = None
     if summary_message is not None:
         summary_simple = ChatMessageSimple(
             message=summary_message.message,
@@ -1157,6 +1143,18 @@ def build_chat_turn(
             message_type=MessageType.ASSISTANT,
         )
         simple_chat_history.insert(0, summary_simple)
+
+    if (
+        os.environ.get("BURN2_ENABLED") == "true"
+        and persona.name == "Burn 2.0"
+        and user is not None
+    ):
+        simple_chat_history = project_chat_history(
+            simple_chat_history,
+            token_counter,
+            model_context=model_review_context,
+            summary=summary_simple,
+        )
 
     # ── Stop signal and processing status ────────────────────────────────────
     cache = get_cache_backend()

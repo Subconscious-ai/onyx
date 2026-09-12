@@ -2,6 +2,7 @@ import unittest
 
 from onyx.server.query_and_chat.burn2.profile import (
     interview_context,
+    is_model_review_context,
     select_profile,
     spoken_answer,
     turn_guidance,
@@ -9,6 +10,20 @@ from onyx.server.query_and_chat.burn2.profile import (
 
 
 class ProfileTests(unittest.TestCase):
+    def test_model_review_uses_explicit_context_purpose_without_replaying_old_results(
+        self,
+    ):
+        context = 'Model data\n\n{"contextType":"saved-business-model/v1"}'
+        self.assertTrue(is_model_review_context(context))
+        for other in (None, "ordinary context", "{}", '"saved-business-model/v1"'):
+            self.assertFalse(is_model_review_context(other))
+        stored = 'The preview gives $12,000.\n<interview-brief>{"old":"draft"}</interview-brief>'
+        projected = spoken_answer(stored, model_review=True)
+        self.assertNotIn("12,000", projected)
+        self.assertNotIn("draft", projected)
+        self.assertIn("12,000", spoken_answer(stored))
+        self.assertIn("12,000", stored)
+
     def test_current_request_is_distinct_from_historical_questions_and_briefs(self):
         result = interview_context(
             ["Which scenario is saved?", "Preview 12 percent without saving."],

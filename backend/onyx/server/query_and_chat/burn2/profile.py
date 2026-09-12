@@ -1,8 +1,14 @@
 """Professional context only; external enrichment never establishes an executive objective."""
 
+from __future__ import annotations
+
 import json
 import re
-from typing import Any
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from onyx.chat.models import ChatMessageSimple
 
 
 def select_profile(payload: dict) -> dict[str, Any] | None:
@@ -59,9 +65,61 @@ def profile_context(value: dict | None) -> str:
     )
 
 
-def spoken_answer(text: str) -> str:
+def is_model_review_context(context: str | None) -> bool:
+    if not context:
+        return False
+    try:
+        value = json.loads(context.rsplit("\n\n", 1)[-1])
+        return (
+            isinstance(value, dict)
+            and value.get("contextType") == "saved-business-model/v1"
+        )
+    except (TypeError, ValueError, RecursionError):
+        return False
+
+
+def spoken_answer(text: str, *, model_review: bool = False) -> str:
     """Keep native metadata in storage, outside the spoken conversation history."""
+    if model_review:
+        return "Earlier assistant commentary remains in the saved conversation; current model receipts govern model review."
     return text.split("<interview-brief>", 1)[0].rstrip()
+
+
+def project_chat_history(
+    messages: list[ChatMessageSimple],
+    token_counter: Callable[[str], int],
+    *,
+    model_context: str | None,
+    summary: ChatMessageSimple | None = None,
+) -> list[ChatMessageSimple]:
+    """Project final LLM history while retaining stored sources and tool pairs."""
+    model_context_present = (
+        model_context is not None
+        and bool(model_context)
+        and any(
+            message.message_type.value == "user" and model_context in message.message
+            for message in messages
+        )
+    )
+    projected = []
+    for message in messages:
+        if (
+            message.message_type.value != "assistant"
+            or message.tool_calls
+            or (message is summary and not model_context_present)
+        ):
+            projected.append(message)
+            continue
+        spoken = spoken_answer(message.message, model_review=model_context_present)
+        if spoken == message.message:
+            projected.append(message)
+            continue
+        projected.append(
+            message.model_copy(
+                update={"message": spoken, "token_count": token_counter(spoken)}
+            )
+        )
+    return projected
 
 
 def interview_context(

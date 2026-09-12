@@ -47,7 +47,7 @@ Additional symbolic-model checks found two defects beyond software: a written ta
 
 ## Final publication gate and recovery
 
-The current source gate includes 53 interview/source checks, 11 native worker checks, frontend polling/handoff/layout tests, typecheck and scoped lint. The deployed image passed 61 checks before the additional evaluator-only regression. Recovery and navigation regressions distinguish stale-brief access and old-window races. Final integrated browser receipts and exact Git/Vercel status belong in [draft #20](https://github.com/Subconscious-ai/onyx/pull/20) and [draft #559](https://github.com/Subconscious-ai/causl-kb/pull/559).
+The current source gate includes 54 interview/source checks, 11 native worker checks, frontend polling/handoff/layout tests, typecheck and scoped lint. The deployed image passed 61 checks before the additional evaluator-only regression. Recovery and navigation regressions distinguish stale-brief access and old-window races. Final integrated browser receipts and exact Git/Vercel status belong in [draft #20](https://github.com/Subconscious-ai/onyx/pull/20) and [draft #559](https://github.com/Subconscious-ai/causl-kb/pull/559).
 
 The Compose snapshot also retains the separately verified indexer memory correction from #22 (`3e163e3d83`): 5 GiB, unchanged CPU/image/volumes. API/worker image replacement must preserve the current cap.
 
@@ -83,3 +83,12 @@ Prompt consolidation removed duplicated instructions and clarified the assistant
 The display-only model-context projection removes machine IDs and engine names from LLM data. Display expressions use metric names; wire validation and native executable formulas remain unchanged. Regressions prove exact numeric receipt preservation, source immutability and consistent duplicate-name disambiguation. All 44 executive frontend tests pass. Fresh hosted spoken verification of the final display projection remains pending.
 
 Public synthetic replay cases live in `scripts/subconscious/prototype_cases.json`, consumed by the existing evaluator's `--scenario-file` option. Failure checks cover declared-unknown questions, assistant/company confusion and unsupported $12,000 scenario narration. Background checkpoints poll the native saved-brief route without manual preparation. Reassessment of retained replay 10 flags the actual unsupported projection; eight other spoken turns pass the focused checks. Both independent reviewers verified the fixture and duplicate-name corrections. Private response receipts and failed candidates remain outside Git. Completion requires the remaining semantic and hosted acceptance evidence; feature PRs remain drafts for executive QA.
+
+
+## Long-session model review
+
+Frontend `260a76d565` passed five hosted receipt phases against paired `1c766de`: preview, exact native calculation, rejection without storage changes, reopen and separate chat. Display IDs and assistant/company confusion are corrected. Spoken review still rejects the first pre-receipt projection and retains an em-dash style violation.
+
+A bounded same-context AWS comparison isolated the history effect. Model 8 handled fresh saved/proposed/rejected turns correctly in 1.71–3.19 seconds. Model 17 confused the saved 15% scenario with the observed 10% baseline. Provider/default changes are rejected.
+
+The next native correction marks model-review context explicitly. Attached model receipts govern numerical model claims. Historical non-tool assistant narration and generated summaries remain stored, but leave the copied LLM history after final assembly. The working interview draft, original executive statements, validation history and native tool call/result pairs remain intact. Existing interview guidance still permits returning to discovery; receipt presence never forces a no-question workflow. Conversations without attached model context retain existing behavior. Local regression proof passes; independent review, native image verification and the long-session hosted replay remain pending.

@@ -161,6 +161,7 @@ export function modelChatContext(
   });
   const receipt = context.calculation;
   const model = {
+    contextType: "saved-business-model/v1",
     modelName: context.modelName,
     revision: context.revision,
     latestReviewState: context.state,
