@@ -821,6 +821,16 @@ def build_chat_turn(
         db_session=db_session,
     )
 
+    # Keep branch sources for draft provenance even when spoken history is
+    # summarized below. No extra query or mutation of native messages.
+    executive_history = (
+        tuple(chat_history)
+        if os.environ.get("BURN2_ENABLED") == "true"
+        and persona.name == "Burn 2.0"
+        and user is not None
+        else ()
+    )
+
     # Find applicable summary for the current branch
     summary_message = find_summary_for_branch(db_session, chat_history)
     # Collect file metadata from messages that will be dropped by summary truncation.
@@ -1005,6 +1015,7 @@ def build_chat_turn(
         from onyx.server.query_and_chat.burn2.profile import (
             interview_context,
             profile_context,
+            spoken_answer,
             turn_guidance,
         )
         from onyx.server.query_and_chat.burn2.research import (
@@ -1017,7 +1028,7 @@ def build_chat_turn(
 
         statements = [
             row.message
-            for row in chat_history
+            for row in executive_history
             if row.message_type == MessageType.USER and row.message.strip()
         ]
         turns = len(statements)
@@ -1027,7 +1038,7 @@ def build_chat_turn(
         draft = latest_saved_brief(
             [
                 {"type": row.message_type.value, "message": row.message}
-                for row in chat_history
+                for row in executive_history
             ],
             statements,
         )
@@ -1059,9 +1070,10 @@ def build_chat_turn(
                         statements,
                         [
                             row.message
-                            for row in chat_history
+                            for row in executive_history
                             if row.message_type == MessageType.ASSISTANT
                         ],
+                        draft,
                     ),
                 ],
             )
@@ -1076,6 +1088,25 @@ def build_chat_turn(
         tool_id_to_name_map=tool_id_to_name_map,
     )
     simple_chat_history = chat_history_result.simple_messages
+    if (
+        os.environ.get("BURN2_ENABLED") == "true"
+        and persona.name == "Burn 2.0"
+        and user is not None
+    ):
+        # Persisted brief snapshots remain in Postgres. Only the current draft
+        # belongs in additional context; stale snapshots are not dialogue.
+        simple_chat_history = [
+            message.model_copy(
+                update={
+                    "message": spoken_answer(message.message),
+                    "token_count": token_counter(spoken_answer(message.message)),
+                }
+            )
+            if message.message_type == MessageType.ASSISTANT
+            and "<interview-brief>" in message.message
+            else message
+            for message in simple_chat_history
+        ]
 
     # Incognito rows are content-free, so earlier turns come from the store and
     # the current message's text is restored onto convert_chat_history()'s

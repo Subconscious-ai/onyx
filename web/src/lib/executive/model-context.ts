@@ -41,7 +41,12 @@ const contextSchema = yup
     savedScenario: scenario.default(undefined).optional(),
     calculation: yup
       .object({
-        engine: yup.string().oneOf(["guesstimate-8080fe2"]).required(),
+        // Accept the previous pin while the paired preview rolls onto main's
+        // single calculator revision. Arbitrary engine identities stay rejected.
+        engine: yup
+          .string()
+          .oneOf(["guesstimate-8080fe2", "guesstimate-a71a578"])
+          .required(),
         baselineRevision: revision,
         instruction: yup.string().min(1).max(4000).required(),
         selection: scenario

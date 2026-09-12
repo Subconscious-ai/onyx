@@ -66,3 +66,10 @@ The distinguishing receiver regression failed before implementation. Full TypeSc
 
 
 The first paired hosted context replay passed five actual native requests: saved-model context, exact 12% calculation receipt (10,000 to 12,000), rejected preview with unchanged saved model, reopened saved 15% scenario, and no model context in a fresh chat. Spoken review separately rejected ambiguous wording that called the retained saved scenario rejected. The corrected LLM projection calls the status `latestReviewState`, retains `savedScenario` independently and omits model/market UUIDs. Both independent reviewers verified the correction; a fresh spoken replay remains pending.
+
+
+## Latest-request and baseline corrections
+
+The second hosted context replay verified exact native calculation receipt transport and retained the saved scenario after rejection. Spoken review still found an answer to a historical question. Authenticated readback contained seven stored brief snapshots: 56,385 total characters versus 5,266 spoken characters. The Beca-only prompt now retains historical source/spoken messages, removes prior brief metadata from the copied LLM history, injects the current validated working draft once, and explicitly marks the latest executive request. Postgres source and brief snapshots remain unchanged. Two distinguishing regressions failed before the correction; all 50 focused Python contracts pass. Independent Standards review verified bounded request duplication and full-branch provenance before summarization. Native deployment and fresh spoken proof remain pending.
+
+The paired model projection also exposed saved scenario cells as baseline cells. The actual calculator retained the original baseline in existing scenario metadata. The paired fix projects the original baseline and saved overlay separately; actual numeric and browser proof must cover the reconciled calculator pin.

@@ -28,159 +28,171 @@ beforeEach(() => {
 });
 afterEach(() => jest.restoreAllMocks());
 
-test("forwards only bounded current-model receipts from the authenticated review window", () => {
-  const onContext = jest.fn();
-  const handoff = createModelHandoff({
-    destination,
-    onStatus: jest.fn(),
-    onConnected: jest.fn(),
-    onContext,
-  });
-  handoff.recover();
-  const context = {
-    version: 1,
-    modelId: "model-a",
-    modelName: "Acquisition",
-    marketId: "market-a",
-    revision: 2,
-    state: "proposed",
-    cells: [
-      {
-        id: "conversion",
-        name: "Conversion",
-        unit: "PERCENT",
-        type: "POINT",
-        expression: "0.1",
-      },
-    ],
-    calculation: {
-      engine: "guesstimate-8080fe2",
-      baselineRevision: 2,
-      instruction: "Try 12% conversion",
-      selection: {
-        metricId: "conversion",
-        expression: "0.12",
-        name: "Conversion 12%",
-        excerpt: "12%",
-      },
-      analysis: {
-        status: "ready",
-        intervention: {
-          metricName: "Conversion",
-          baselineExpression: "0.1",
-          expression: "0.12",
+test.each(["guesstimate-8080fe2", "guesstimate-a71a578"])(
+  "forwards only bounded current-model receipts from the authenticated review window (%s)",
+  (engine) => {
+    const onContext = jest.fn();
+    const handoff = createModelHandoff({
+      destination,
+      onStatus: jest.fn(),
+      onConnected: jest.fn(),
+      onContext,
+    });
+    handoff.recover();
+    const context = {
+      version: 1,
+      modelId: "model-a",
+      modelName: "Acquisition",
+      marketId: "market-a",
+      revision: 2,
+      state: "proposed",
+      cells: [
+        {
+          id: "conversion",
+          name: "Conversion",
+          unit: "PERCENT",
+          type: "POINT",
+          expression: "0.1",
         },
-        affectedMetrics: [
-          {
-            metricId: "conversion",
-            metricName: "Conversion",
-            baselineMean: 0.1,
-            mean: 0.12,
-            meanChange: 0.02,
-          },
-        ],
-      },
-    },
-  };
-  const event = {
-    type: "burn-model-context",
-    nonce: "proof-nonce",
-    marketId: "market-a",
-    revision: 2,
-    context,
-  };
-  receive(event, "https://foreign.example");
-  expect(onContext).not.toHaveBeenCalledWith(context);
-  receive(event);
-  expect(onContext).toHaveBeenLastCalledWith(context);
-  onContext.mockClear();
-  receive({
-    ...event,
-    revision: 1,
-    context: {
-      ...context,
-      revision: 1,
-      calculation: { ...context.calculation, baselineRevision: 1 },
-    },
-  });
-  expect(onContext).not.toHaveBeenCalled();
-  receive({
-    ...event,
-    marketId: "market-b",
-    context: {
-      ...context,
-      modelId: "model-b",
-      marketId: "market-b",
-      cells: Array(41).fill(context.cells[0]),
-    },
-  });
-  expect(onContext).toHaveBeenLastCalledWith(null);
-  receive(event);
-  receive({
-    ...event,
-    context: {
-      ...context,
+      ],
       calculation: {
-        ...context.calculation,
+        engine,
+        baselineRevision: 2,
+        instruction: "Try 12% conversion",
+        selection: {
+          metricId: "conversion",
+          expression: "0.12",
+          name: "Conversion 12%",
+          excerpt: "12%",
+        },
         analysis: {
-          ...context.calculation.analysis,
+          status: "ready",
+          intervention: {
+            metricName: "Conversion",
+            baselineExpression: "0.1",
+            expression: "0.12",
+          },
           affectedMetrics: [
             {
-              ...context.calculation.analysis.affectedMetrics[0],
-              mean: Infinity,
+              metricId: "conversion",
+              metricName: "Conversion",
+              baselineMean: 0.1,
+              mean: 0.12,
+              meanChange: 0.02,
             },
           ],
         },
       },
-    },
-  });
-  expect(onContext).toHaveBeenLastCalledWith(null);
-  receive(event);
-  receive({ ...event, context: { ...context, revision: 3 } });
-  expect(onContext).toHaveBeenLastCalledWith(null);
-  receive(event);
-  handoff.request("Try 15% conversion");
-  expect(onContext).toHaveBeenLastCalledWith(
-    expect.objectContaining({
-      state: "awaiting-preview",
-      calculation: undefined,
-    })
-  );
-  receive({ ...event, type: "burn-scenario-result", status: "proposed" });
-  expect(onContext).toHaveBeenLastCalledWith(context);
-  const saved = {
-    ...context,
-    state: "saved",
-    revision: 3,
-    savedScenario: {
-      name: "Conversion 12%",
-      metricId: "conversion",
-      expression: "0.12",
-    },
-  };
-  receive({
-    ...event,
-    type: "burn-scenario-result",
-    revision: 3,
-    status: "saved",
-    context: saved,
-  });
-  expect(onContext).toHaveBeenLastCalledWith(saved);
-  const rejected = { ...saved, state: "rejected", calculation: undefined };
-  receive({
-    ...event,
-    type: "burn-scenario-result",
-    revision: 3,
-    status: "rejected",
-    context: rejected,
-  });
-  expect(onContext).toHaveBeenLastCalledWith(rejected);
-  const reopened = { ...saved, calculation: undefined };
-  receive({ ...event, revision: 3, context: reopened });
-  expect(onContext).toHaveBeenLastCalledWith(reopened);
-  handoff.dispose();
-  expect(onContext).toHaveBeenLastCalledWith(null);
-});
+    };
+    const event = {
+      type: "burn-model-context",
+      nonce: "proof-nonce",
+      marketId: "market-a",
+      revision: 2,
+      context,
+    };
+    receive(event, "https://foreign.example");
+    expect(onContext).not.toHaveBeenCalledWith(context);
+    receive(event);
+    expect(onContext).toHaveBeenLastCalledWith(context);
+    receive({
+      ...event,
+      context: {
+        ...context,
+        calculation: { ...context.calculation, engine: "unverified-engine" },
+      },
+    });
+    expect(onContext).toHaveBeenLastCalledWith(null);
+    receive(event);
+    onContext.mockClear();
+    receive({
+      ...event,
+      revision: 1,
+      context: {
+        ...context,
+        revision: 1,
+        calculation: { ...context.calculation, baselineRevision: 1 },
+      },
+    });
+    expect(onContext).not.toHaveBeenCalled();
+    receive({
+      ...event,
+      marketId: "market-b",
+      context: {
+        ...context,
+        modelId: "model-b",
+        marketId: "market-b",
+        cells: Array(41).fill(context.cells[0]),
+      },
+    });
+    expect(onContext).toHaveBeenLastCalledWith(null);
+    receive(event);
+    receive({
+      ...event,
+      context: {
+        ...context,
+        calculation: {
+          ...context.calculation,
+          analysis: {
+            ...context.calculation.analysis,
+            affectedMetrics: [
+              {
+                ...context.calculation.analysis.affectedMetrics[0],
+                mean: Infinity,
+              },
+            ],
+          },
+        },
+      },
+    });
+    expect(onContext).toHaveBeenLastCalledWith(null);
+    receive(event);
+    receive({ ...event, context: { ...context, revision: 3 } });
+    expect(onContext).toHaveBeenLastCalledWith(null);
+    receive(event);
+    handoff.request("Try 15% conversion");
+    expect(onContext).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        state: "awaiting-preview",
+        calculation: undefined,
+      })
+    );
+    receive({ ...event, type: "burn-scenario-result", status: "proposed" });
+    expect(onContext).toHaveBeenLastCalledWith(context);
+    const saved = {
+      ...context,
+      state: "saved",
+      revision: 3,
+      savedScenario: {
+        name: "Conversion 12%",
+        metricId: "conversion",
+        expression: "0.12",
+      },
+    };
+    receive({
+      ...event,
+      type: "burn-scenario-result",
+      revision: 3,
+      status: "saved",
+      context: saved,
+    });
+    expect(onContext).toHaveBeenLastCalledWith(saved);
+    const rejected = { ...saved, state: "rejected", calculation: undefined };
+    receive({
+      ...event,
+      type: "burn-scenario-result",
+      revision: 3,
+      status: "rejected",
+      context: rejected,
+    });
+    expect(onContext).toHaveBeenLastCalledWith(rejected);
+    const reopened = { ...saved, calculation: undefined };
+    receive({ ...event, revision: 3, context: reopened });
+    expect(onContext).toHaveBeenLastCalledWith(reopened);
+    handoff.dispose();
+    expect(onContext).toHaveBeenLastCalledWith(null);
+  }
+);
 
 function receive(
   data: unknown,
