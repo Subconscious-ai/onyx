@@ -108,3 +108,8 @@ Verify indexed source content before claiming retrieval recovery.
 Private-source permission proof also needs a supported non-admin QA account.
 The obsolete local administrator password must not be treated as a login regression.
 Current acceptance and remaining access requirements belong to #17.
+
+The Helm workflow now checks changed chart paths before requesting the chart runner.
+The preflight reuses the existing pinned path-filter action and standard runner.
+Hosting-only changes skip chart allocation; chart changes retain the existing test steps.
+Tag and manual releases retain the full chart workflow.
