@@ -3,6 +3,7 @@
 import copy
 import json
 import re
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -34,7 +35,9 @@ def attach_source(item: Any, statements: list[str]) -> None:
             index = item.pop("sourceMessageIndex")
             if index is not None:
                 if type(index) is not int or not 0 <= index < len(statements):
-                    raise ValueError("Unknown executive source index")
+                    raise ValueError(
+                        f"sourceMessageIndex must be an integer from 0 to {len(statements) - 1}. Use the supplied zero-based executive message index, not a sentence number or an assistant message. Unknowns and hypotheses use null."
+                    )
                 if len(statements[index]) <= 1200:
                     item["quote"] = statements[index]
         for child in item.values():
@@ -42,6 +45,20 @@ def attach_source(item: Any, statements: list[str]) -> None:
     elif isinstance(item, list):
         for child in item:
             attach_source(child, statements)
+
+
+def validate_input_purpose(item: dict[str, Any]) -> None:
+    """Keep explicitly desired outcomes separate from operating observations."""
+    purpose = re.sub(r"([a-z])([A-Z])", r"\1 \2", item["name"])
+    purpose = re.sub(r"[_-]", " ", purpose)
+    if (
+        item["value"]["status"] == "executive"
+        and re.search(r"\b(?:target|goal|objective)\b", item["value"]["text"], re.I)
+        and not re.search(r"\b(?:target|goal|objective)\b", purpose, re.I)
+    ):
+        raise ValueError(
+            "A target cannot become an observed operating input. Keep baseline inputs unknown; label desired targets explicitly and use only the current corrected target."
+        )
 
 
 def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
@@ -141,6 +158,7 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
         ground(edge["behavior"])
     for item in result["model"]["inputs"]:
         ground(item["value"])
+        validate_input_purpose(item)
     equation = result["model"]["equation"]
     equation["status"] = "assumption"
     equation.pop("quote", None)
@@ -171,6 +189,50 @@ def needs_completion(value: dict) -> bool:
     )
 
 
+def latest_saved_brief(transcript: list[dict], statements: list[str]) -> dict | None:
+    """Reuse the owned native draft as context, never as new source evidence."""
+    for message in reversed(transcript):
+        if (
+            message["type"] != "assistant"
+            or "</interview-brief>" not in message["message"]
+        ):
+            continue
+        try:
+            text = (
+                message["message"]
+                .split("<interview-brief>", 1)[1]
+                .split("</interview-brief>", 1)[0]
+            )
+            return validate_brief(json.loads(text), statements)
+        except (ValueError, IndexError):
+            continue
+    return None
+
+
+def prepare_validated_brief(
+    generate: Callable[[str | None], Any], statements: list[str]
+) -> dict[str, Any]:
+    """Repair one malformed extraction; never persist an invalid fallback."""
+    feedback = None
+    for attempt in range(2):
+        try:
+            value = generate(feedback)
+            if not isinstance(value, dict):
+                raise ValueError("Invalid tool payload")
+            value["version"] = 2
+            brief = validate_brief(value, statements)
+            if needs_completion(brief):
+                raise ValueError(
+                    "A stated numeric objective requires key results and named model inputs"
+                )
+            return brief
+        except ValueError as error:
+            if attempt:
+                raise
+            feedback = str(error)
+    raise AssertionError("Unreachable extraction state")
+
+
 def extraction_schema(source_count: int) -> dict:
     """Expose only real transcript references to the extraction provider."""
     if source_count < 1:
@@ -183,12 +245,15 @@ def extraction_schema(source_count: int) -> dict:
         if isinstance(item, dict):
             properties = item.get("properties", {})
             if "text" in properties and "status" in properties:
+                properties.pop("quote", None)
+                properties.pop("url", None)
+                item.setdefault("required", []).append("sourceMessageIndex")
                 properties["sourceMessageIndex"] = {
-                    "type": "integer",
+                    "type": ["integer", "null"],
                     "minimum": 0,
                     "maximum": source_count - 1,
-                    "enum": list(range(source_count)),
-                    "description": "Copy the supporting executive message index exactly. Omit for unknowns and hypotheses. The server supplies the original quote.",
+                    "enum": [*range(source_count), None],
+                    "description": "Select the executive message supporting this statement. Use null only for unknowns and hypotheses. The server supplies the exact original quote; never retype evidence.",
                 }
             for child in item.values():
                 references(child)

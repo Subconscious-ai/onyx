@@ -1,8 +1,19 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import ExecutiveWorkspace from "./ExecutiveWorkspace";
 import { useAutomaticBrief } from "@/lib/executive/hooks";
+import { createModelHandoff } from "@/lib/executive/model-handoff";
 
-jest.mock("@/lib/executive/hooks", () => ({ useAutomaticBrief: jest.fn() }));
+jest.mock("@/lib/executive/model-handoff", () => ({
+  createModelHandoff: jest.fn(),
+}));
+
+jest.mock("@/lib/executive/hooks", () => ({
+  useAutomaticBrief: jest.fn(),
+  useExecutiveContext: () => ({
+    profileStatus: "PDL: no confident match",
+    research: { status: "needs_company" },
+  }),
+}));
 jest.mock("next-intl", () => ({ useTranslations: () => (key: string) => key }));
 jest.mock("@opal/components", () => ({
   Text: ({
@@ -78,5 +89,30 @@ describe("conversation-first brief access", () => {
     await waitFor(() =>
       expect(screen.getByText("PDL: no confident match")).toBeInTheDocument()
     );
+  });
+
+  it("keeps saved model recovery available while the new brief cannot be prepared", () => {
+    process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE =
+      "https://causl.example/dashboard/burn-import";
+    const recover = jest.fn();
+    const connection = { recover, open: jest.fn(), dispose: jest.fn() };
+    jest
+      .mocked(createModelHandoff)
+      .mockReturnValue(
+        connection as unknown as ReturnType<typeof createModelHandoff>
+      );
+    (useAutomaticBrief as jest.Mock).mockReturnValue({ phase: "error", retry });
+    const result = render(
+      <ExecutiveWorkspace active chatId="saved-chat" messages={[]}>
+        <textarea aria-label="Message" />
+      </ExecutiveWorkspace>
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Brief · retry" }));
+    fireEvent.click(screen.getByRole("button", { name: "modelSavedOpen" }));
+    expect(recover).toHaveBeenCalledTimes(1);
+    expect(connection.open).not.toHaveBeenCalled();
+    expect(retry).not.toHaveBeenCalled();
+    result.unmount();
+    delete process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE;
   });
 });

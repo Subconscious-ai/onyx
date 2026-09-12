@@ -4,7 +4,7 @@ services:
     extends:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: api_server
-    image: onyx-burn2:beca-20260911
+    image: onyx-burn2:prototype18-cdde871372
     profiles: !reset []
     build: !reset null
     environment: !override
@@ -21,7 +21,7 @@ services:
     extends:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: background
-    image: onyxdotapp/onyx-backend@sha256:473fdffe4e67fb67dcdac154c57d595ba73d7bf64b5926d24807a86d7e888d6f
+    image: onyx-burn2:prototype18-cdde871372
     profiles: !reset []
     build: !reset null
     environment: !override
@@ -121,7 +121,8 @@ services:
         format: raw
     ports: !reset []
     restart: unless-stopped
-    mem_limit: 1024m
+    # Match the upstream indexing budget; 1 GiB OOMs while loading local embeddings.
+    mem_limit: 5120m
     cpus: 1
   code-interpreter:
     extends:
@@ -139,6 +140,8 @@ services:
     mem_limit: 512m
     cpus: 1
     volumes: !override
+      # Preserve the native entrypoint's /var/run/docker.sock detection while
+      # allowing the rootless daemon to replace the socket after a restart.
       - /run/burn-executor:/var/run:ro
   gateway:
     image: nginx:1.25.5-alpine

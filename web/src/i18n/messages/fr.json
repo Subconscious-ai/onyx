@@ -13838,6 +13838,14 @@
     }
   },
   "executive": {
+    "modelSavedOpen": "Ouvrir le modèle enregistré",
+    "modelScenarioPreview": "Aperçu du changement",
+    "modelScenarioConnected": "Modèle connecté. Demander une nouvelle hypothèse dans la conversation.",
+    "modelScenarioProposed": "Scénario calculé. Vérifier avant l’enregistrement.",
+    "modelScenarioSaved": "Scénario enregistré dans le modèle de l’entreprise.",
+    "modelScenarioRejected": "Modèle enregistré inchangé.",
+    "modelScenarioBlocked": "Autoriser la fenêtre du modèle, puis ouvrir à nouveau le modèle.",
+    "modelScenarioUnavailable": "Ouvrir la fenêtre du modèle pour examiner la demande.",
     "originalSource": "Original source",
     "aWorkingSessionNotAQuestionnaire": "A WORKING SESSION, NOT A QUESTIONNAIRE",
     "theNextMove": "The next move.",

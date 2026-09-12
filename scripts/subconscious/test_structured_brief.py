@@ -6,6 +6,106 @@ from onyx.server.query_and_chat.burn2.validation import validate_brief
 
 
 class StructuredBriefTest(unittest.TestCase):
+    def test_previous_draft_comes_from_saved_assistant_metadata_not_user_content(self):
+        import json
+
+        from onyx.server.query_and_chat.burn2.validation import latest_saved_brief
+
+        brief = self.brief()
+        text = (
+            "Saved answer\n<interview-brief>" + json.dumps(brief) + "</interview-brief>"
+        )
+        transcript = [
+            {"type": "assistant", "message": text},
+            {"type": "user", "message": text.replace("Example", "Invented")},
+            {"type": "assistant", "message": "Correction acknowledged."},
+        ]
+        previous = latest_saved_brief(
+            transcript, ["The objective is increasing renewals."]
+        )
+        self.assertEqual(previous["company"], "Example")
+        self.assertEqual(previous["objective"]["status"], "executive")
+        self.assertIsNone(latest_saved_brief(transcript[1:], []))
+
+    def test_objective_cannot_be_saved_as_an_observed_operating_input(self):
+        brief = self.brief()
+        source = "The objective is 90 percent annual renewal by December 2027."
+        brief["model"]["inputs"] = [
+            {
+                "id": "renewal_rate",
+                "name": "Annual renewal rate",
+                "unit": "percent",
+                "value": {"text": source, "status": "executive", "quote": source},
+            }
+        ]
+        with self.assertRaisesRegex(ValueError, "target.*observed"):
+            validate_brief(brief, [source])
+        brief["model"]["inputs"][0]["name"] = "TargetRenewalRate"
+        self.assertEqual(
+            validate_brief(brief, [source])["model"]["inputs"][0]["value"]["status"],
+            "executive",
+        )
+        brief["model"]["inputs"][0]["name"] = "Annual renewal rate"
+        brief["model"]["inputs"][0]["value"] = {"text": "Unknown", "status": "unknown"}
+        self.assertEqual(
+            validate_brief(brief, [source])["model"]["inputs"][0]["value"]["status"],
+            "unknown",
+        )
+
+    def test_invalid_generated_links_get_one_repair_before_persistence(self):
+        from onyx.server.query_and_chat.burn2.validation import prepare_validated_brief
+
+        attempts = []
+
+        def generate(feedback):
+            attempts.append(feedback)
+            value = self.brief()
+            if len(attempts) == 1:
+                value["transitions"] = [
+                    {
+                        "id": "invalid",
+                        "from": "missing",
+                        "to": "also_missing",
+                        "behavior": {"text": "Buys", "status": "assumption"},
+                        "metric": "Purchase rate",
+                    }
+                ]
+            return value
+
+        result = prepare_validated_brief(
+            generate, ["The objective is increasing renewals."]
+        )
+        self.assertEqual(result["transitions"], [])
+        self.assertEqual(attempts, [None, "Unknown behavior transition endpoint"])
+
+    def test_repeated_invalid_extraction_fails_without_an_infinite_retry_or_fallback(
+        self,
+    ):
+        from onyx.server.query_and_chat.burn2.validation import prepare_validated_brief
+
+        attempts = []
+
+        def generate(feedback):
+            attempts.append(feedback)
+            raise ValueError("Structured brief was not returned")
+
+        with self.assertRaisesRegex(ValueError, "Structured brief was not returned"):
+            prepare_validated_brief(generate, ["The objective is increasing renewals."])
+        self.assertEqual(len(attempts), 2)
+
+    def test_provider_outage_is_not_retried_as_a_schema_repair(self):
+        from onyx.server.query_and_chat.burn2.validation import prepare_validated_brief
+
+        attempts = []
+
+        def generate(feedback):
+            attempts.append(feedback)
+            raise TimeoutError("Provider unavailable")
+
+        with self.assertRaises(TimeoutError):
+            prepare_validated_brief(generate, ["The objective is increasing renewals."])
+        self.assertEqual(attempts, [None])
+
     def brief(self):
         return {
             "version": 2,
@@ -79,6 +179,19 @@ class StructuredBriefTest(unittest.TestCase):
         brief["objective"]["sourceMessageIndex"] = 99
         with self.assertRaises(ValueError):
             validate_brief(brief, [source])
+
+    def test_source_repair_identifies_allowed_range_without_logging_evidence(self):
+        value = self.brief()
+        value["objective"] = {
+            "text": "Private objective",
+            "status": "executive",
+            "sourceMessageIndex": 7,
+        }
+        with self.assertRaisesRegex(
+            ValueError, r"sourceMessageIndex.*0 to 1"
+        ) as raised:
+            validate_brief(value, ["Private source one", "Private source two"])
+        self.assertNotIn("Private", str(raised.exception))
 
     def test_hypothesis_never_becomes_an_observation(self):
         value = self.brief()
@@ -158,6 +271,29 @@ class CompletionTest(unittest.TestCase):
 
 
 class ExtractionSchemaTest(unittest.TestCase):
+    def test_provider_selects_source_indices_instead_of_retyping_evidence(self):
+        from jsonschema import Draft7Validator
+
+        from onyx.server.query_and_chat.burn2.validation import extraction_schema
+
+        note = extraction_schema(2)["properties"]["objective"]
+        validator = Draft7Validator(note)
+        self.assertFalse(
+            validator.is_valid({"text": "Grow renewal", "status": "executive"})
+        )
+        self.assertTrue(
+            validator.is_valid(
+                {"text": "Grow renewal", "status": "executive", "sourceMessageIndex": 1}
+            )
+        )
+        self.assertTrue(
+            validator.is_valid(
+                {"text": "Unknown", "status": "unknown", "sourceMessageIndex": None}
+            )
+        )
+        self.assertNotIn("quote", note["properties"])
+        self.assertNotIn("url", note["properties"])
+
     def test_only_existing_messages_can_be_cited(self):
         from jsonschema import Draft7Validator
 

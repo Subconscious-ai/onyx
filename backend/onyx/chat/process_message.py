@@ -821,6 +821,16 @@ def build_chat_turn(
         db_session=db_session,
     )
 
+    # Keep branch sources for draft provenance even when spoken history is
+    # summarized below. No extra query or mutation of native messages.
+    executive_history = (
+        tuple(chat_history)
+        if os.environ.get("BURN2_ENABLED") == "true"
+        and persona.name == "Burn 2.0"
+        and user is not None
+        else ()
+    )
+
     # Find applicable summary for the current branch
     summary_message = find_summary_for_branch(db_session, chat_history)
     # Collect file metadata from messages that will be dropped by summary truncation.
@@ -922,13 +932,22 @@ def build_chat_turn(
     )
 
     forced_tool_id = new_msg_req.forced_tool_id
-    if os.environ.get("BURN2_ENABLED") == "true" and persona.name == "Burn 2.0" and forced_tool_id is None:
+    if (
+        os.environ.get("BURN2_ENABLED") == "true"
+        and persona.name == "Burn 2.0"
+        and forced_tool_id is None
+    ):
         from onyx.server.query_and_chat.burn2.requested_tool import requested_tool
 
-        forced_tool_id = requested_tool(message_text, {
-            tool.name: tool.id for tool in persona.tools
-            if new_msg_req.allowed_tool_ids is None or tool.id in new_msg_req.allowed_tool_ids
-        })
+        forced_tool_id = requested_tool(
+            message_text,
+            {
+                tool.name: tool.id
+                for tool in persona.tools
+                if new_msg_req.allowed_tool_ids is None
+                or tool.id in new_msg_req.allowed_tool_ids
+            },
+        )
     if (
         search_params.search_usage == SearchToolUsage.DISABLED
         and forced_tool_id is not None
@@ -986,14 +1005,84 @@ def build_chat_turn(
         tool.in_code_tool_id == FILE_READER_TOOL_ID for tool in persona.tools
     )
 
-    if os.environ.get("BURN2_ENABLED") == "true" and persona.name == "Burn 2.0" and user is not None:
+    if (
+        os.environ.get("BURN2_ENABLED") == "true"
+        and persona.name == "Burn 2.0"
+        and user is not None
+    ):
         from onyx.db.burn2_profile import read_profile
-        from onyx.server.query_and_chat.burn2.profile import profile_context, turn_guidance, interview_context
-        statements = [row.message for row in chat_history if row.message_type == MessageType.USER and row.message.strip()]
+        from onyx.db.burn2_research import read_research
+        from onyx.server.query_and_chat.burn2.profile import (
+            interview_context,
+            is_model_review_context,
+            profile_context,
+            project_chat_history,
+            turn_guidance,
+        )
+        from onyx.server.query_and_chat.burn2.research import (
+            public_research_query,
+            research_context,
+            research_matches_company,
+            research_reusable,
+        )
+        from onyx.server.query_and_chat.burn2.validation import latest_saved_brief
+
+        statements = [
+            row.message
+            for row in executive_history
+            if row.message_type == MessageType.USER and row.message.strip()
+        ]
         turns = len(statements)
-        context = profile_context(read_profile(user.id))
+        profile = read_profile(user.id)
+        research = read_research(user.id)
+        public_query = public_research_query(profile)
+        draft = latest_saved_brief(
+            [
+                {"type": row.message_type.value, "message": row.message}
+                for row in executive_history
+            ],
+            statements,
+        )
+        matching_company = research_matches_company(
+            profile, draft.get("company") if draft else None
+        )
+        context = "\n".join(
+            filter(
+                None,
+                [
+                    profile_context(profile) if not draft or matching_company else "",
+                    research_context(research)
+                    if matching_company
+                    and public_query
+                    and research_reusable(research, public_query)
+                    else "",
+                ],
+            )
+        )
+        requested_context = additional_context or new_msg_req.additional_context
+        model_review_context = (
+            requested_context if is_model_review_context(requested_context) else None
+        )
         guidance = turn_guidance(turns, message_text)
-        additional_context = "\n".join(filter(None, [additional_context or new_msg_req.additional_context, context, guidance, interview_context(statements)]))
+        additional_context = "\n".join(
+            filter(
+                None,
+                [
+                    additional_context or new_msg_req.additional_context,
+                    context,
+                    guidance,
+                    interview_context(
+                        statements,
+                        [
+                            row.message
+                            for row in executive_history
+                            if row.message_type == MessageType.ASSISTANT
+                        ],
+                        draft,
+                    ),
+                ],
+            )
+        )
 
     chat_history_result = convert_chat_history(
         chat_history=chat_history,
@@ -1004,7 +1093,6 @@ def build_chat_turn(
         tool_id_to_name_map=tool_id_to_name_map,
     )
     simple_chat_history = chat_history_result.simple_messages
-
     # Incognito rows are content-free, so earlier turns come from the store and
     # the current message's text is restored onto convert_chat_history()'s
     # blank-row shape. Regeneration uses the store as-is, it already holds the turn.
@@ -1047,6 +1135,7 @@ def build_chat_turn(
             [(fid, m.filename) for fid, m in all_injected_file_metadata.items()],
         )
 
+    summary_simple = None
     if summary_message is not None:
         summary_simple = ChatMessageSimple(
             message=summary_message.message,
@@ -1054,6 +1143,18 @@ def build_chat_turn(
             message_type=MessageType.ASSISTANT,
         )
         simple_chat_history.insert(0, summary_simple)
+
+    if (
+        os.environ.get("BURN2_ENABLED") == "true"
+        and persona.name == "Burn 2.0"
+        and user is not None
+    ):
+        simple_chat_history = project_chat_history(
+            simple_chat_history,
+            token_counter,
+            model_context=model_review_context,
+            summary=summary_simple,
+        )
 
     # ── Stop signal and processing status ────────────────────────────────────
     cache = get_cache_backend()
@@ -1327,6 +1428,16 @@ def _run_models(
             )
         except Exception:
             logger.exception("post-steps processing status reset failed")
+
+        if (
+            os.environ.get("BURN2_ENABLED") == "true"
+            and setup.persona.name == "Burn 2.0"
+            and setup.incognito_record_mode is None
+            and any(model_succeeded)
+        ):
+            from onyx.server.query_and_chat.burn2.background import enqueue_brief
+
+            enqueue_brief(user.id, setup.chat_session_id)
 
     def _run_model(model_idx: int) -> None:
         """Run one LLM loop inside a worker thread, writing packets to ``merged_queue``."""

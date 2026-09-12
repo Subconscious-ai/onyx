@@ -13838,6 +13838,14 @@
     }
   },
   "executive": {
+    "modelSavedOpen": "打开已保存的模型",
+    "modelScenarioPreview": "预览模型变更",
+    "modelScenarioConnected": "模型已连接。请在对话中提出新假设。",
+    "modelScenarioProposed": "场景已计算。保存前请审核。",
+    "modelScenarioSaved": "场景已保存至公司模型。",
+    "modelScenarioRejected": "已保存模型保持不变。",
+    "modelScenarioBlocked": "允许打开模型审核窗口，然后重新打开模型。",
+    "modelScenarioUnavailable": "打开模型窗口审核请求。",
     "originalSource": "Original source",
     "aWorkingSessionNotAQuestionnaire": "A WORKING SESSION, NOT A QUESTIONNAIRE",
     "theNextMove": "The next move.",

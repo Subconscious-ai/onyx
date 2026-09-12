@@ -4,8 +4,10 @@ import BecaActions from "./BecaActions";
 import { Wordmark } from "@/sections/brand/wordmark";
 import { useTranslations } from "next-intl";
 
-import { useEffect, useMemo, useState } from "react";
-import { useAutomaticBrief } from "@/lib/executive/hooks";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useAutomaticBrief, useExecutiveContext } from "@/lib/executive/hooks";
+import { createModelHandoff } from "@/lib/executive/model-handoff";
+import type { ModelContext } from "@/lib/executive/model-context";
 import { Button, Text } from "@opal/components";
 import { Interactive } from "@opal/core";
 import { Content } from "@opal/layouts";
@@ -43,7 +45,7 @@ const specialists = [
     name: "Jerry",
     role: "Perspective & humor",
     initial: "J",
-    job: "One brief, grounded roast after the fifth answer. Never after frustration or about personal data.",
+    job: "One brief, grounded roast after the fourth answer. Never after frustration or about personal data.",
   },
 ];
 
@@ -117,6 +119,7 @@ export default function ExecutiveWorkspace({
   busy = false,
   onAsk,
   onDraft,
+  onModelContext,
   preview = false,
   children,
 }: {
@@ -126,6 +129,7 @@ export default function ExecutiveWorkspace({
   busy?: boolean;
   onAsk?: (message: string) => void;
   onDraft?: (message: string) => void;
+  onModelContext?: (context: ModelContext | null) => void;
   preview?: boolean;
   children: React.ReactNode;
 }) {
@@ -154,35 +158,42 @@ export default function ExecutiveWorkspace({
   const brief = projection.brief;
   const readiness = modelReadiness(projection.stale ? null : brief);
   const [handoffStatus, setHandoffStatus] = useState("");
-  const [profileStatus, setProfileStatus] = useState(
-    "Checking professional context…"
+  const [modelConnected, setModelConnected] = useState(false);
+  const modelHandoff = useRef<ReturnType<typeof createModelHandoff> | null>(
+    null
   );
   useEffect(() => {
-    if (!active || preview) return;
-    let cancelled = false;
-    fetch("/api/chat/executive-profile", { method: "POST" })
-      .then((response) =>
-        response.ok ? response.json() : { status: "unavailable" }
-      )
-      .then((value) => {
-        if (!cancelled)
-          setProfileStatus(
-            value.status === "ready"
-              ? `PDL professional match loaded${value.profile?.company ? ` · ${value.profile.company}` : ""}`
-              : value.status === "not_found"
-                ? "PDL: no confident match"
-                : value.status === "verification_required"
-                  ? "PDL match not established"
-                  : "PDL context unavailable"
-          );
-      })
-      .catch(() => {
-        if (!cancelled) setProfileStatus("PDL context unavailable");
-      });
+    setModelConnected(false);
+    onModelContext?.(null);
+    const destination = process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE;
+    if (!active || preview || !destination) return;
+    const connection = createModelHandoff({
+      destination,
+      onConnected: setModelConnected,
+      onContext: onModelContext,
+      onStatus: (status) => {
+        const messages: Record<string, string> = {
+          waiting: t("handoffSignIn"),
+          transferred: t("briefTransferred"),
+          connected: t("modelScenarioConnected"),
+          proposed: t("modelScenarioProposed"),
+          saved: t("modelScenarioSaved"),
+          rejected: t("modelScenarioRejected"),
+          blocked: t("modelScenarioBlocked"),
+          expired: t("modelScenarioBlocked"),
+          unavailable: t("modelScenarioUnavailable"),
+          error: t("modelScenarioUnavailable"),
+        };
+        setHandoffStatus(messages[status] ?? "");
+      },
+    });
+    modelHandoff.current = connection;
     return () => {
-      cancelled = true;
+      connection.dispose();
+      modelHandoff.current = null;
     };
-  }, [active, preview]);
+  }, [active, preview, chatId, t, onModelContext]);
+  const { profileStatus, research } = useExecutiveContext(active && !preview);
 
   const [view, setView] = useState<
     "journey" | "evidence" | "decisions" | "model"
@@ -200,6 +211,13 @@ export default function ExecutiveWorkspace({
     : 0;
 
   function openModel() {
+    if (modelConnected) {
+      const request = [...messages]
+        .reverse()
+        .find((message) => message.type === "user" && message.message.trim());
+      if (request) modelHandoff.current?.request(request.message);
+      return;
+    }
     const chatId = new URL(window.location.href).searchParams.get("chatId");
     if (!chatId) {
       setHandoffStatus(t("saveBeforeHandoff"));
@@ -216,6 +234,10 @@ export default function ExecutiveWorkspace({
           message: message.message,
         })),
     };
+    if (modelHandoff.current) {
+      modelHandoff.current.open(payload);
+      return;
+    }
     const href = URL.createObjectURL(
       new Blob([JSON.stringify(payload)], {
         type: "application/json",
@@ -226,33 +248,7 @@ export default function ExecutiveWorkspace({
     anchor.download = "burn-model-handoff.json";
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(href), 1000);
-    const destination = process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE;
-    if (!destination) {
-      setHandoffStatus(t("fileHandoffReady"));
-      return;
-    }
-    const target = new URL(destination);
-    const nonce = crypto.randomUUID();
-    target.searchParams.set("handoff", nonce);
-    const child = window.open(target.href, "burn-model-review");
-    const receive = (event: MessageEvent) => {
-      if (
-        event.origin !== target.origin ||
-        event.source !== child ||
-        event.data?.type !== "burn-ready" ||
-        event.data?.nonce !== nonce
-      )
-        return;
-      child?.postMessage(
-        { type: "burn-handoff", nonce, payload },
-        target.origin
-      );
-      window.removeEventListener("message", receive);
-      setHandoffStatus(t("briefTransferred"));
-    };
-    window.addEventListener("message", receive);
-    setTimeout(() => window.removeEventListener("message", receive), 600000);
-    setHandoffStatus(t("handoffSignIn"));
+    setHandoffStatus(t("fileHandoffReady"));
   }
 
   return (
@@ -327,22 +323,37 @@ export default function ExecutiveWorkspace({
                   prominence="primary"
                   icon={SvgArrowUpRight}
                   onClick={
-                    preparation.phase === "error"
-                      ? preparation.retry
-                      : readiness.ready
-                        ? openModel
-                        : () => {
-                            setView("model");
-                            setMobileBrief(true);
-                          }
+                    modelConnected
+                      ? openModel
+                      : preparation.phase === "error"
+                        ? preparation.retry
+                        : readiness.ready
+                          ? openModel
+                          : () => {
+                              setView("model");
+                              setMobileBrief(true);
+                            }
                   }
                 >
-                  {preparation.phase === "error"
-                    ? "Retry draft update"
-                    : readiness.ready
-                      ? "Open business model"
-                      : "View business draft"}
+                  {modelConnected
+                    ? t("modelScenarioPreview")
+                    : preparation.phase === "error"
+                      ? "Retry draft update"
+                      : readiness.ready
+                        ? "Open business model"
+                        : "View business draft"}
                 </Button>
+                {!modelConnected &&
+                  chatId &&
+                  process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE &&
+                  (!readiness.ready || preparation.phase === "error") && (
+                    <Button
+                      prominence="secondary"
+                      onClick={() => modelHandoff.current?.recover()}
+                    >
+                      {t("modelSavedOpen")}
+                    </Button>
+                  )}
               </div>
             )}
             <details className="executive-context">
@@ -351,6 +362,32 @@ export default function ExecutiveWorkspace({
                 <Text as="p" font="secondary-body">
                   {profileStatus}
                 </Text>
+              )}
+              {!preview && (
+                <div role="status" aria-live="polite">
+                  <Text as="p" font="secondary-body">
+                    {research.status === "ready"
+                      ? `Public research · ${research.source_urls?.length ?? 0} sources`
+                      : ["pending", "queued", "running"].includes(
+                            research.status
+                          )
+                        ? "Researching the public market…"
+                        : research.status === "needs_company"
+                          ? "Public research needs a company website"
+                          : "Public research unavailable"}
+                  </Text>
+                  {research.source_urls?.map((url) => (
+                    <Button
+                      key={url}
+                      href={url}
+                      prominence="tertiary"
+                      size="sm"
+                      rightIcon={SvgArrowUpRight}
+                    >
+                      {new URL(url).hostname}
+                    </Button>
+                  ))}
+                </div>
               )}
               {specialists.map((specialist) => (
                 <Text as="p" font="secondary-body" key={specialist.name}>
