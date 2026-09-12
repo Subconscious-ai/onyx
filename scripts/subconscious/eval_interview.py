@@ -48,7 +48,11 @@ CASES = {
             forbidden=(r"tasting|sampled|smell|aroma",),
             asks_about=r"when|time|period|year|deadline|channel|sell|company|brand|business|revenue|growth|sales",
         ),
-        Turn("I don't know.", acknowledge=True),
+        Turn(
+            "I don't know.",
+            acknowledge=True,
+            forbidden=(r"scenario noted|preview model change",),
+        ),
         Turn(
             "That repeats the previous question. The answer is still unknown.",
             acknowledge=True,
