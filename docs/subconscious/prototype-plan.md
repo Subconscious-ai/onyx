@@ -12,7 +12,7 @@ Reuse native Onyx, AWS, GPT Researcher MCP, causl-kb and the existing calculator
 
 - Onyx #18 / draft #20 owns native research startup, persisted receipts, background briefs and compact Beca recovery. Branch `codex/18-beca-prototype`, worktree `worktrees/onyx-prototype`, remote `subconscious`.
 - Draft #20 is stacked on #10. Scenario helper #19 is integrated from `4f99d81ba6`; navigation nonce repair comes from `d8404ee2d6`.
-- causl-kb #558 / draft #559 owns native calculation, atomic acceptance, scenario review and organization-scoped persistence. The paired PR records the current model code; the native calculator remains pinned to `8080fe2`.
+- causl-kb #558 / draft #559 owns native calculation, atomic acceptance, scenario review and organization-scoped persistence. Current paired code is `1c766de`; the single native calculator follows main at `a71a578`.
 - causl-kb #549/#556 and Onyx #17 own the separate customer-document pilot. Preserve the connector fixture and unrelated worktrees.
 
 ## Preview and runtime
@@ -21,7 +21,7 @@ Beca: `https://onyx-executive-git-codex-18-beca-prototype-subconcious.vercel.app
 
 Paired model: `https://causl-scenarios-558-subconcious.vercel.app/dashboard/burn-import`.
 
-API and background run `onyx-burn2:prototype18-e00b70fc80`. Native authenticated readback and research persistence survived replacement. Vercel Git builds publish frontend changes only. Native persona prompts require a separate exact-text update and readback.
+API and background run `onyx-burn2:prototype18-3d1b45aaab`, image digest `sha256:5b1ab58eacae1929fbcc4867a1c3f9237ca36fb3e3651d0656cd9b8d0ebb75f4`. Native authenticated readback and research persistence survived replacement. Vercel Git builds publish frontend changes only. Native persona prompts require a separate exact-text update and readback.
 
 Rollback configuration: `/opt/burn/private/prototype18-20260912T181848Z`. Never commit configuration, credentials or browser state. Private synthetic QA receipts live outside Git under `~/.local/share/causl-uat/beca-prototype18`.
 
@@ -47,7 +47,7 @@ Additional symbolic-model checks found two defects beyond software: a written ta
 
 ## Final publication gate and recovery
 
-The source gate includes 47 interview/source checks, 11 native worker checks, frontend polling/handoff/layout tests, typecheck and scoped lint. New recovery and navigation regressions distinguish stale-brief access and old-window races. Final integrated browser receipts and exact Git/Vercel status belong in [draft #20](https://github.com/Subconscious-ai/onyx/pull/20) and [draft #559](https://github.com/Subconscious-ai/causl-kb/pull/559).
+The current source gate includes 53 interview/source checks, 11 native worker checks, frontend polling/handoff/layout tests, typecheck and scoped lint. The deployed image passed 61 checks before the additional evaluator-only regression. Recovery and navigation regressions distinguish stale-brief access and old-window races. Final integrated browser receipts and exact Git/Vercel status belong in [draft #20](https://github.com/Subconscious-ai/onyx/pull/20) and [draft #559](https://github.com/Subconscious-ai/causl-kb/pull/559).
 
 The Compose snapshot also retains the separately verified indexer memory correction from #22 (`3e163e3d83`): 5 GiB, unchanged CPU/image/volumes. API/worker image replacement must preserve the current cap.
 
@@ -62,14 +62,24 @@ The model window originally sent only connection and scenario status. Beca there
 
 The receiver verifies the exact origin, popup, navigation nonce, model revision, reference IDs, finite outputs and payload bounds. Preview, rejection, approval and missing calculation remain distinct. A new request clears prior calculation context; changing chats or agents clears the temporary model context. Reopening reads the saved model from the existing authorized Postgres route. An actual scenario calculation is still a model assumption, never evidence that an experiment launched or monitoring started.
 
-The distinguishing receiver regression failed before implementation. Full TypeScript and all 41 executive frontend tests pass. Independent Standards and Outcome reviews verified the market-ID limit, absolute import and stale-business replacement corrections. Live paired receipt-to-chat proof remains pending; local transport checks do not establish spoken accuracy.
+The distinguishing receiver regression failed before implementation. Independent Standards and Outcome reviews verified the market-ID limit, absolute import and stale-business replacement corrections. Hosted receipt-to-chat transport subsequently passed; spoken accuracy remains a separate check.
 
 
-The first paired hosted context replay passed five actual native requests: saved-model context, exact 12% calculation receipt (10,000 to 12,000), rejected preview with unchanged saved model, reopened saved 15% scenario, and no model context in a fresh chat. Spoken review separately rejected ambiguous wording that called the retained saved scenario rejected. The corrected LLM projection calls the status `latestReviewState`, retains `savedScenario` independently and omits model/market UUIDs. Both independent reviewers verified the correction; a fresh spoken replay remains pending.
+The first paired hosted context replay passed five actual native requests: saved-model context, exact 12% calculation receipt (10,000 to 12,000), rejected preview with unchanged saved model, reopened saved 15% scenario, and no model context in a fresh chat. Spoken review separately rejected ambiguous wording that called the retained saved scenario rejected. The corrected LLM projection calls the status `latestReviewState`, retains `savedScenario` independently and omits model/market UUIDs. Both independent reviewers verified the correction. Later hosted replies preserve the distinction.
 
 
 ## Latest-request and baseline corrections
 
-The second hosted context replay verified exact native calculation receipt transport and retained the saved scenario after rejection. Spoken review still found an answer to a historical question. Authenticated readback contained seven stored brief snapshots: 56,385 total characters versus 5,266 spoken characters. The Beca-only prompt now retains historical source/spoken messages, removes prior brief metadata from the copied LLM history, injects the current validated working draft once, and explicitly marks the latest executive request. Postgres source and brief snapshots remain unchanged. Two distinguishing regressions failed before the correction; all 50 focused Python contracts pass. Independent Standards review verified bounded request duplication and full-branch provenance before summarization. Native deployment and fresh spoken proof remain pending.
+The second hosted context replay verified exact native calculation receipt transport and retained the saved scenario after rejection. Spoken review still found an answer to a historical question. Authenticated readback contained seven stored brief snapshots: 56,385 total characters versus 5,266 spoken characters. The Beca-only prompt now retains historical source/spoken messages, removes prior brief metadata from the copied LLM history, injects the current validated working draft once, and explicitly marks the latest executive request. Postgres source and brief snapshots remain unchanged. Two distinguishing regressions failed before the correction. Independent Standards review verified bounded request duplication and full-branch provenance before summarization. Both native services now run the verified correction. The third hosted replay answered the latest 12% request and preserved the saved scenario.
 
-The paired model projection also exposed saved scenario cells as baseline cells. The actual calculator retained the original baseline in existing scenario metadata. The paired fix projects the original baseline and saved overlay separately; actual numeric and browser proof must cover the reconciled calculator pin.
+The paired model projection also exposed saved scenario cells as baseline cells. The actual calculator retained the original baseline in existing scenario metadata. The paired fix projects the original baseline and saved overlay separately. The third hosted replay verified baseline 10%, saved overlay 15%, preview 12%, and actual `a71a578` results of 10,000 and 12,000. Rejection left the persisted document unchanged.
+
+## Remaining acceptance boundary
+
+Prototype completion remains pending. The retained retail source-8 fixture exposes a missing repeat-frequency quantity. Schema, source and ordinary unit checks accepted a formula equating returning customers with repeat purchases. Precise accounting feedback repairs the candidate through the existing compiler: an explicit unknown additional-purchases-per-returner input preserves initial revenue and permits multiple repeats. Native calculator probes return 100 with zero repeats and 250 with three additional purchases among half the initial buyers. Automatic accounting review still missed the original defect. Unreliable reviewer experiments remain local and outside the serving runtime. No provider lottery, copied industry template or second calculator is accepted as a repair.
+
+Prompt consolidation removed duplicated instructions and clarified the assistant/company boundary. Exact persona readback matches `executive-rubric.md` and `executive-turn-reminder.md`; model 8, tools, source sets and sharing remain unchanged. Nine fresh turns preserve source quotes, unknowns and corrections, with first content in 1.58–3.92 seconds. The separate greeting no longer infers Beca as the company. Remaining spoken limitations include an immaterial contract-value question, occasional perspective names and scenario arithmetic without a tool receipt. Successful extraction does not erase spoken failures.
+
+The display-only model-context projection removes machine IDs and engine names from LLM data. Display expressions use metric names; wire validation and native executable formulas remain unchanged. Regressions prove exact numeric receipt preservation, source immutability and consistent duplicate-name disambiguation. All 44 executive frontend tests pass. Fresh hosted spoken verification of the final display projection remains pending.
+
+Public synthetic replay cases live in `scripts/subconscious/prototype_cases.json`, consumed by the existing evaluator's `--scenario-file` option. Failure checks cover declared-unknown questions, assistant/company confusion and unsupported $12,000 scenario narration. Background checkpoints poll the native saved-brief route without manual preparation. Reassessment of retained replay 10 flags the actual unsupported projection; eight other spoken turns pass the focused checks. Both independent reviewers verified the fixture and duplicate-name corrections. Private response receipts and failed candidates remain outside Git. Completion requires the remaining semantic and hosted acceptance evidence; feature PRs remain drafts for executive QA.

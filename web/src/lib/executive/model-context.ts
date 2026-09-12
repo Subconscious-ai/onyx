@@ -132,13 +132,75 @@ export function modelChatContext(
   context: ModelContext | null
 ): string | undefined {
   if (!context) return undefined;
+  const reservedNames = new Set(context.cells.map((cell) => cell.name));
+  const names = new Map(
+    context.cells.map((cell, index) => {
+      let displayName = cell.name;
+      if (
+        context.cells.filter((entry) => entry.name === cell.name).length > 1
+      ) {
+        do {
+          displayName += ` (input ${index + 1})`;
+        } while (reservedNames.has(displayName));
+        reservedNames.add(displayName);
+      }
+      return [cell.id, displayName];
+    })
+  );
+  // Display references only. The native calculator retains executable formulas.
+  const displayExpression = (value: string) =>
+    value.replace(/\$\{metric:([^}]+)\}/g, (_, metricId: string) =>
+      JSON.stringify(names.get(metricId) ?? "Unknown input")
+    );
+  const displayScenario = (
+    value: NonNullable<ModelContext["savedScenario"]>
+  ) => ({
+    name: value.name,
+    inputName: names.get(value.metricId),
+    expression: displayExpression(value.expression),
+  });
+  const receipt = context.calculation;
   const model = {
     modelName: context.modelName,
     revision: context.revision,
     latestReviewState: context.state,
-    cells: context.cells,
-    savedScenario: context.savedScenario,
-    calculation: context.calculation,
+    cells: context.cells.map((cell) => ({
+      name: names.get(cell.id),
+      unit: cell.unit,
+      type: cell.type,
+      expression: displayExpression(cell.expression),
+    })),
+    savedScenario: context.savedScenario
+      ? displayScenario(context.savedScenario)
+      : undefined,
+    calculation: receipt
+      ? {
+          baselineRevision: receipt.baselineRevision,
+          instruction: receipt.instruction,
+          selection: {
+            ...displayScenario(receipt.selection),
+            excerpt: receipt.selection.excerpt,
+          },
+          analysis: {
+            status: receipt.analysis.status,
+            intervention: {
+              metricName: names.get(receipt.selection.metricId),
+              baselineExpression: displayExpression(
+                receipt.analysis.intervention.baselineExpression
+              ),
+              expression: displayExpression(
+                receipt.analysis.intervention.expression
+              ),
+            },
+            affectedMetrics: receipt.analysis.affectedMetrics.map((metric) => ({
+              metricName: names.get(metric.metricId),
+              baselineMean: metric.baselineMean,
+              mean: metric.mean,
+              meanChange: metric.meanChange,
+            })),
+          },
+        }
+      : undefined,
   };
   return [
     "The current conversation has an existing saved business model. Handle the latest model or scenario request without restarting executive discovery.",

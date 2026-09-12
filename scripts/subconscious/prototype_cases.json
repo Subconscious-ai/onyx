@@ -1,0 +1,94 @@
+{
+  "software": [
+    {
+      "message": "Cedar Metrics sells reporting software to product managers. The goal is $15,000 monthly contribution within 90 days. Managers evaluate a demo, then choose a paid subscription. Current numbers are 1,000 qualified leads per month, 10 percent lead-to-paying conversion and $100 contribution per paying customer, giving $10,000 monthly contribution. These are the operating numbers for Cedar Metrics, a separate business from the professional profile. Keep the interview concise and focus on the next useful decision.",
+      "max_words": 100,
+      "questions_allowed": true,
+      "brief_required": false,
+      "background_brief": true
+    },
+    {
+      "message": "Reasons prospects decline are unknown. Keep that gap unknown and do not ask the reasons again. A clearer product-value message is a proposed intervention; the effect has not been measured.",
+      "max_words": 100,
+      "questions_allowed": true,
+      "forbidden": [
+        "(?:why|what reasons).{0,45}(?:decline|reject)",
+        "what.{0,30}(?:objections|decline reasons)"
+      ],
+      "brief_required": false,
+      "background_brief": true
+    },
+    {
+      "message": "Summarize the proposed model. Keep the observed baseline conversion at 10 percent. A possible 12 percent conversion is only a scenario, not an observed result. Do not run an experiment.",
+      "max_words": 100,
+      "questions_allowed": false,
+      "brief_required": false,
+      "background_brief": true,
+      "calculation_claim": "\\$?\\s*12[ ,]?000\\b|\\b12k\\b",
+      "expected_numbers": [
+        12000
+      ]
+    }
+  ],
+  "ice_cream": [
+    {
+      "message": "Cedar Cream sells tubs of ice cream in independent grocery stores. The goal is $10 million in annual sales by December 2027. Shoppers compare tubs, choose a tub to buy and later decide whether to buy again. The number of shoppers, conversion rate and repeat-purchase rate are unknown. This is a separate business from the professional profile. Ask only one material question at a time.",
+      "max_words": 100,
+      "questions_allowed": true,
+      "brief_required": false,
+      "background_brief": true
+    },
+    {
+      "message": "I do not know the shopper count or conversion rate. The unknown numbers must stay unknown. A clearer vanilla label is a proposed intervention, not a measured effect.",
+      "max_words": 100,
+      "questions_allowed": true,
+      "brief_required": false,
+      "background_brief": true
+    },
+    {
+      "message": "Correction: the target is $12 million in annual sales by December 2027, replacing $10 million. Keep the existing customer journey and unknown operating inputs. No extra questions or experiment execution.",
+      "max_words": 100,
+      "questions_allowed": false,
+      "brief_required": false,
+      "background_brief": true
+    }
+  ],
+  "services": [
+    {
+      "message": "Cedar Advisory sells consulting engagements to B2B software companies. The goal is six new signed engagements per quarter starting January 2027. A product leader accepts a discovery meeting, reviews a proposal, and decides whether to sign. Current meeting volume and proposal-to-signature conversion are unknown. This is a separate business from the professional profile. Focus on the decision and avoid immaterial details.",
+      "max_words": 100,
+      "questions_allowed": true,
+      "forbidden": [
+        "how many.{0,80}discovery meetings",
+        "what.{0,45}(?:meeting volume|proposal.to.signature conversion)"
+      ],
+      "brief_required": false,
+      "background_brief": true
+    },
+    {
+      "message": "We do not know why proposals are rejected. Leave those reasons unknown. An existing customer may introduce another product leader; referrals are a hypothesis for improvement, not an established causal effect.",
+      "max_words": 100,
+      "questions_allowed": true,
+      "brief_required": false,
+      "background_brief": true
+    },
+    {
+      "message": "Prepare the proposed model using the stated customer journey and six-engagement quarterly goal. Keep meeting volume and conversion unknown. Suggest one material experiment without launching any paid study; no further questions.",
+      "max_words": 100,
+      "questions_allowed": false,
+      "brief_required": false,
+      "background_brief": true
+    }
+  ],
+  "separate_greeting": [
+    {
+      "message": "Hello. This is a separate interview.",
+      "max_words": 45,
+      "brief_required": false,
+      "forbidden": [
+        "(?:for|of) Beca(?:[\u2019']s)?(?:\\s|[.,?])",
+        "Beca(?:[\u2019']s)? (?:company|business|product|platform)"
+      ]
+    }
+  ]
+}

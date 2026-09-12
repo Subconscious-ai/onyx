@@ -30,11 +30,13 @@ class Turn:
     max_words: int = 100
     tools_required: tuple[str, ...] = ()
     expected_numbers: tuple[float, ...] = ()
+    calculation_claim: str = ""
     model_ready: bool = False
     scenario_guard: bool = False
     brief_required: bool = True
     jerry: bool | None = None
     prepare_brief: bool = False
+    background_brief: bool = False
     target_requires: str = ""
     target_forbidden: str = ""
     unknown_inputs: tuple[str, ...] = ()
@@ -232,7 +234,9 @@ def assess_embedded_brief(turn: Turn, text: str) -> list[str]:
     return failures
 
 
-def assess_tools(turn: Turn, tool_packets: list[dict[str, Any]]) -> list[str]:
+def assess_tools(
+    turn: Turn, tool_packets: list[dict[str, Any]], spoken: str = ""
+) -> list[str]:
     failures = []
     tool_names = {packet.get("tool_name", "") for packet in tool_packets}
     python_results = [
@@ -269,7 +273,9 @@ def assess_tools(turn: Turn, tool_packets: list[dict[str, Any]]) -> list[str]:
             packet["type"] == "python_tool_delta" and packet.get("stderr")
         ):
             failures.append("Tool error requires review")
-    if turn.expected_numbers:
+    if turn.expected_numbers and (
+        not turn.calculation_claim or re.search(turn.calculation_claim, spoken, re.I)
+    ):
         output = " ".join(packet.get("stdout", "") for packet in python_results)
         numbers = [
             float(value.replace(",", ""))
@@ -379,8 +385,17 @@ def checkpoint(api, sid: str, turn: Turn, expected_sources: list[str]) -> dict:
             "Reopened executive statements differ from the submitted conversation"
         )
     try:
-        with api("/chat/executive-brief", {"chat_id": sid}) as response:
-            prepared = json.load(response)
+        if turn.background_brief:
+            deadline = time.monotonic() + 95
+            while True:
+                with api("/chat/executive-brief?chat_id=" + sid) as response:
+                    prepared = json.load(response)
+                if prepared.get("saved") or time.monotonic() >= deadline:
+                    break
+                time.sleep(2)
+        else:
+            with api("/chat/executive-brief", {"chat_id": sid}) as response:
+                prepared = json.load(response)
     except urllib.error.HTTPError as error:
         # No silent retry: intermittent failures remain visible in the receipt.
         with api("/chat/get-chat-session/" + sid) as response:
@@ -585,9 +600,9 @@ def main() -> None:
                     + len(answer.split("<interview-brief>")[0].split()) / 200
                     + 0.25
                 )
-                failures.extend(assess_tools(turn, tool_packets))
+                failures.extend(assess_tools(turn, tool_packets, answer))
                 saved = None
-                if turn.prepare_brief:
+                if turn.prepare_brief or turn.background_brief:
                     saved = checkpoint(
                         api,
                         sid,
@@ -614,7 +629,8 @@ def main() -> None:
                             simulated_minutes, 2
                         ),
                         "model_checkpoint_requested": turn.model_ready
-                        or turn.prepare_brief,
+                        or turn.prepare_brief
+                        or turn.background_brief,
                         "causl_model_saved_and_reopened": None,  # Separate authenticated causl-kb UAT owns this proof.
                         "brief_saved_and_reopened": None
                         if saved is None
