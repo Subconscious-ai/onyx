@@ -150,7 +150,8 @@ Capture the actual customer journey and measurable OKRs: metric, unit, target, d
 Preserve latest corrections. Quote exact contiguous executive text for executive claims.
 Read every source message. A correction replaces only the corrected information, not earlier uncorrected customer behavior or unknown inputs.
 Extract each explicitly stated actor/action as a journey stage using the original action wording. Unknown operating numbers never justify dropping an established journey or relabeling explicit actions as assumptions.
-Use a concrete symbolic count/rate relationship with every operand declared in model.inputs. Avoid unexplained coefficients, subjective drivers and placeholder functions such as f(x).
+Use a concrete symbolic count/rate relationship with every independent operand declared in model.inputs. Avoid unexplained coefficients, subjective drivers and placeholder functions such as f(x).
+model.inputs contains independent operating quantities only. Inline quantities computable from other inputs in the proposed equation; never declare a derived intermediate as another independent unknown. The same customer cohort must remain the same cohort through the calculation. Keep observed objective outcomes in keyResults.baseline rather than adding outcome values as operating drivers.
 Never promote a target, hypothetical scenario, benchmark or public case into an observed input.
 Propose a free symbolic driver equation and meaningful behavior transitions; label structure assumptions.
 Check the proposed equation against the scope of the objective and zero-event boundary cases before returning. Journey order is not a requirement to multiply every transition into the total outcome.
