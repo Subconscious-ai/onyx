@@ -6,12 +6,26 @@ import unittest
 from onyx.server.query_and_chat.burn2.research import (
     public_research_query,
     research_context,
+    research_matches_company,
     research_receipt,
     research_reusable,
 )
 
 
 class ResearchStartupTests(unittest.TestCase):
+    def test_professional_match_cannot_replace_a_different_interviewed_business(self):
+        profile = {
+            "status": "ready",
+            "profile": {"company": "Subconscious AI", "website": "subconscious.ai"},
+        }
+        self.assertTrue(research_matches_company(profile, "Subconscious AI"))
+        self.assertTrue(research_matches_company(profile, "subconscious.ai"))
+        for company in ("Cedar Metrics", "Unknown", "", None, "AI"):
+            self.assertFalse(research_matches_company(profile, company))
+        self.assertFalse(
+            research_matches_company({"status": "not_found"}, "Subconscious AI")
+        )
+
     def test_only_public_company_domain_enters_research(self):
         query = public_research_query(
             {
@@ -101,6 +115,7 @@ class ResearchStartupTests(unittest.TestCase):
         self.assertIn("untrusted", context)
         self.assertIn("not accepted", context)
         self.assertIn("https://example.com/product", context)
+        self.assertNotIn('"query"', context)
         self.assertEqual(research_context({"status": "unavailable"}), "")
 
 

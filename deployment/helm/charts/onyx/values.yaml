@@ -1515,6 +1515,9 @@ configMap:
   # Burn executive interview is opt-in; select an existing native Bedrock model ID.
   # BURN2_ENABLED: "false"
   # BURN2_BRIEF_MODEL_CONFIGURATION_ID: ""
+  # Native primary-worker preparation and the assigned Burn research persona.
+  # BURN2_BACKGROUND_PREPARATION: "false"
+  # BURN2_RESEARCH_PERSONA_ID: ""
   # Optional PDL_API_KEY belongs in extraEnvFromSecret, never plaintext values.
   # WARNING: do NOT copy hostname keys from a docker-compose .env into this
   # block. The compose stack uses underscored service names (e.g. `api_server`,

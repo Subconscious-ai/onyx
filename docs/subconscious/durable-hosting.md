@@ -59,6 +59,13 @@ endpoint. A failed worker does not erase the transcript or masquerade as saved.
 Provider time remains outside ordinary chat latency. Missing saved output becomes
 a visible retry state after 90 seconds.
 
+Public prompt context requires an exact conservative match between the current
+validated draft company and the PDL company/domain. A professional employer must
+not displace a different interviewed business. Keep the research query out of
+prompt context, limit the injected excerpt, and preserve the full bounded receipt
+and original URLs in Postgres. A live replay caught unrelated public-company
+summaries despite valid saved briefs; spoken answers require independent review.
+
 Before replacement, run the 17 research/worker checks inside the candidate image
 and verify both task names appear in native primary-worker registration. Preserve
 private environment snapshots and previous image IDs for rollback. Replace only
@@ -66,6 +73,11 @@ API/background services; preserve volumes and the isolated execution daemon.
 Verify authenticated login, a real queued research receipt, background brief
 readback and existing saved source text after replacement. A frontend deployment
 alone does not publish worker code.
+
+After an API container replacement, syntax-check and reload the native nginx
+gateway once the API is healthy. Static upstream resolution can retain the old
+container IP and return 502 even while native API health passes. Preserve the
+gateway configuration and authentication boundary.
 
 The host deployment lives at `/opt/burn/app`; `burn2.service` starts the native services after Docker and the isolated execution daemon. The external `burn2_db_volume`, `burn2_minio_data` and `burn2_opensearch-data` volumes survive Compose removal. Never remove the original desktop volumes during QA.
 

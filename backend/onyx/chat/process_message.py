@@ -922,13 +922,22 @@ def build_chat_turn(
     )
 
     forced_tool_id = new_msg_req.forced_tool_id
-    if os.environ.get("BURN2_ENABLED") == "true" and persona.name == "Burn 2.0" and forced_tool_id is None:
+    if (
+        os.environ.get("BURN2_ENABLED") == "true"
+        and persona.name == "Burn 2.0"
+        and forced_tool_id is None
+    ):
         from onyx.server.query_and_chat.burn2.requested_tool import requested_tool
 
-        forced_tool_id = requested_tool(message_text, {
-            tool.name: tool.id for tool in persona.tools
-            if new_msg_req.allowed_tool_ids is None or tool.id in new_msg_req.allowed_tool_ids
-        })
+        forced_tool_id = requested_tool(
+            message_text,
+            {
+                tool.name: tool.id
+                for tool in persona.tools
+                if new_msg_req.allowed_tool_ids is None
+                or tool.id in new_msg_req.allowed_tool_ids
+            },
+        )
     if (
         search_params.search_usage == SearchToolUsage.DISABLED
         and forced_tool_id is not None
@@ -986,33 +995,70 @@ def build_chat_turn(
         tool.in_code_tool_id == FILE_READER_TOOL_ID for tool in persona.tools
     )
 
-    if os.environ.get("BURN2_ENABLED") == "true" and persona.name == "Burn 2.0" and user is not None:
+    if (
+        os.environ.get("BURN2_ENABLED") == "true"
+        and persona.name == "Burn 2.0"
+        and user is not None
+    ):
         from onyx.db.burn2_profile import read_profile
         from onyx.db.burn2_research import read_research
+        from onyx.server.query_and_chat.burn2.profile import (
+            interview_context,
+            profile_context,
+            turn_guidance,
+        )
         from onyx.server.query_and_chat.burn2.research import (
             public_research_query,
             research_context,
+            research_matches_company,
             research_reusable,
         )
-        from onyx.server.query_and_chat.burn2.profile import profile_context, turn_guidance, interview_context
-        statements = [row.message for row in chat_history if row.message_type == MessageType.USER and row.message.strip()]
+        from onyx.server.query_and_chat.burn2.validation import latest_saved_brief
+
+        statements = [
+            row.message
+            for row in chat_history
+            if row.message_type == MessageType.USER and row.message.strip()
+        ]
         turns = len(statements)
         profile = read_profile(user.id)
         research = read_research(user.id)
         public_query = public_research_query(profile)
+        draft = latest_saved_brief(
+            [
+                {"type": row.message_type.value, "message": row.message}
+                for row in chat_history
+            ],
+            statements,
+        )
+        matching_company = research_matches_company(
+            profile, draft.get("company") if draft else None
+        )
         context = "\n".join(
             filter(
                 None,
                 [
-                    profile_context(profile),
+                    profile_context(profile) if not draft or matching_company else "",
                     research_context(research)
-                    if public_query and research_reusable(research, public_query)
+                    if matching_company
+                    and public_query
+                    and research_reusable(research, public_query)
                     else "",
                 ],
             )
         )
         guidance = turn_guidance(turns, message_text)
-        additional_context = "\n".join(filter(None, [additional_context or new_msg_req.additional_context, context, guidance, interview_context(statements)]))
+        additional_context = "\n".join(
+            filter(
+                None,
+                [
+                    additional_context or new_msg_req.additional_context,
+                    context,
+                    guidance,
+                    interview_context(statements),
+                ],
+            )
+        )
 
     chat_history_result = convert_chat_history(
         chat_history=chat_history,
