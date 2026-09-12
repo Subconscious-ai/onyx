@@ -79,3 +79,32 @@ synthetic Python calculation passed before and after restarting only
 inode changed, and native execution returned `190` with exit code zero. Wait
 for the new socket and healthy daemon after `systemctl restart`; service
 activation alone does not prove Docker readiness.
+
+### Private-source indexing recovery, September 12
+
+The private-source pilot in #17 found repeated model-server OOM exits.
+The indexing container restarted more than 3,200 times under a 1 GiB limit.
+Docker recorded OOM events and exit 137 during native Nomic embedding requests.
+The restarting service also caused intermittent indexing-model DNS failures.
+
+The hosting overlay now allows 5 GiB for the existing indexing model server.
+The limit matches the upstream resource profile. The CPU limit remains one core.
+The existing image, model weights, source volumes, API and worker remain unchanged.
+Apply the resource change only to the indexer; a full stack restart is unnecessary.
+Persist the Compose change as well as the runtime limit.
+
+Live proof used the existing container and validated the resolved Compose configuration.
+The model server became healthy and handled embedding requests above the former limit.
+Memory reached about 2.1 GiB without another restart during the initial observation.
+
+The shared host also reached the OpenSearch disk flood threshold.
+Remove only disposable checkouts from idle CI runners under the existing cleanup rules.
+Preserve active jobs, tool caches, images and source volumes.
+After disk use fell below the high watermark, the native index write block cleared automatically.
+No index threshold, permission or search setting was relaxed.
+
+Retry the preserved connector through the normal authenticated run-once endpoint.
+Verify indexed source content before claiming retrieval recovery.
+Private-source permission proof also needs a supported non-admin QA account.
+The obsolete local administrator password must not be treated as a login regression.
+Current acceptance and remaining access requirements belong to #17.
