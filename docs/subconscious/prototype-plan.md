@@ -40,7 +40,15 @@ end-to-end claim rests on the earlier HTTP-200/valid-brief result.
 
 Scenario helper `4f99d81ba6` is integrated as `49037d8577`, preserving the compact
 Beca drawer. Draft #20 is stacked on #10 and includes companion #19. Exact paired
-model candidate: `https://causl-pf4hy0566-subconcious.vercel.app/dashboard/burn-import`.
+model QA alias: `https://causl-scenarios-558-subconcious.vercel.app/dashboard/burn-import`.
+
+The repaired software and services conversations retain sources and background
+briefs. Ice-cream replay2 repeated a price question after an unknown answer; the
+receipt remains failed. A new regression adds prior questions to the existing
+interview context and requires unresolved questions to be parked. Economic labels
+also remain distinct: contribution must not be renamed price. Final replay is
+pending this targeted API update. Native study discovery returned an authorized
+completed study through find_experiments with no tool/stream errors.
 
 1. Prove native scheduling: persona/user access, one job per fresh profile, failed queue/tool receipts, tenant propagation and persisted research after browser closure. Keep tool credentials in native encrypted storage.
 2. Finish read-only brief polling and compact research status. Preserve manual retry and old-stack fallback. Prove no competing extraction, stale-chat update or lost correction.

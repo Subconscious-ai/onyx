@@ -8,6 +8,19 @@ from onyx.server.query_and_chat.burn2.profile import (
 
 
 class ProfileTests(unittest.TestCase):
+    def test_prior_question_is_parked_instead_of_repeated_after_an_unknown(self):
+        result = interview_context(
+            ["Shopper count and conversion remain unknown."],
+            [
+                'Known goal. What average price per tub is targeted? <interview-brief>{"question":"Internal?"}</interview-brief>'
+            ],
+        )
+        self.assertIn("What average price per tub is targeted?", result)
+        self.assertIn("never repeat or paraphrase", result.lower())
+        self.assertNotIn("Internal?", result)
+        self.assertIn("contribution", result)
+        self.assertIn("price", result)
+
     def test_every_turn_has_an_executive_attention_budget(self):
         for turn in (1, 2, 3, 4, 5):
             with self.subTest(turn=turn):

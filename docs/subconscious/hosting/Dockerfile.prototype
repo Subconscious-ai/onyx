@@ -13,8 +13,9 @@ source = path.read_text()
 anchor = '"onyx.background.celery.tasks.connector_deletion",'
 assert source.count(anchor) == 1, 'Native task registration changed'
 addition = '"onyx.background.celery.tasks.burn2",'
-assert addition not in source, 'Burn task registration already exists'
-path.write_text(source.replace(anchor, anchor + '\n            ' + addition))
+assert source.count(addition) <= 1, 'Duplicate Burn task registration'
+if addition not in source:
+    path.write_text(source.replace(anchor, anchor + '\n            ' + addition))
 PY
 COPY scripts/subconscious/test_research_startup.py /tmp/test_research_startup.py
 COPY scripts/subconscious/test_background_preparation.py /tmp/test_background_preparation.py

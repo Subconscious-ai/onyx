@@ -1055,7 +1055,14 @@ def build_chat_turn(
                     additional_context or new_msg_req.additional_context,
                     context,
                     guidance,
-                    interview_context(statements),
+                    interview_context(
+                        statements,
+                        [
+                            row.message
+                            for row in chat_history
+                            if row.message_type == MessageType.ASSISTANT
+                        ],
+                    ),
                 ],
             )
         )
