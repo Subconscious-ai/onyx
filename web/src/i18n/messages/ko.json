@@ -13838,6 +13838,13 @@
     }
   },
   "executive": {
+    "modelScenarioPreview": "모델 변경 미리 보기",
+    "modelScenarioConnected": "모델 연결 완료. 대화에서 새로운 가정을 요청.",
+    "modelScenarioProposed": "시나리오 계산 완료. 저장 전 검토.",
+    "modelScenarioSaved": "회사 모델에 시나리오 저장 완료.",
+    "modelScenarioRejected": "저장된 모델 변경 없음.",
+    "modelScenarioBlocked": "모델 검토 창을 허용한 후 다시 열기.",
+    "modelScenarioUnavailable": "모델 창에서 요청 검토.",
     "originalSource": "Original source",
     "aWorkingSessionNotAQuestionnaire": "A WORKING SESSION, NOT A QUESTIONNAIRE",
     "theNextMove": "The next move.",

@@ -13838,6 +13838,13 @@
     }
   },
   "executive": {
+    "modelScenarioPreview": "معاينة تغيير النموذج",
+    "modelScenarioConnected": "النموذج متصل. طلب افتراض جديد في المحادثة.",
+    "modelScenarioProposed": "اكتمل حساب السيناريو. المراجعة قبل الحفظ.",
+    "modelScenarioSaved": "تم حفظ السيناريو في نموذج الشركة.",
+    "modelScenarioRejected": "النموذج المحفوظ دون تغيير.",
+    "modelScenarioBlocked": "السماح بنافذة مراجعة النموذج ثم فتح النموذج مجددًا.",
+    "modelScenarioUnavailable": "فتح نافذة النموذج لمراجعة الطلب.",
     "originalSource": "Original source",
     "aWorkingSessionNotAQuestionnaire": "A WORKING SESSION, NOT A QUESTIONNAIRE",
     "theNextMove": "The next move.",

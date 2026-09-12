@@ -13838,6 +13838,13 @@
     }
   },
   "executive": {
+    "modelScenarioPreview": "Ver alteração do modelo",
+    "modelScenarioConnected": "Modelo conectado. Solicitar uma nova hipótese na conversa.",
+    "modelScenarioProposed": "Cenário calculado. Rever antes de guardar.",
+    "modelScenarioSaved": "Cenário guardado no modelo da empresa.",
+    "modelScenarioRejected": "Modelo guardado sem alterações.",
+    "modelScenarioBlocked": "Permitir a janela de revisão e abrir novamente o modelo.",
+    "modelScenarioUnavailable": "Abrir a janela do modelo para rever o pedido.",
     "originalSource": "Original source",
     "aWorkingSessionNotAQuestionnaire": "A WORKING SESSION, NOT A QUESTIONNAIRE",
     "theNextMove": "The next move.",
