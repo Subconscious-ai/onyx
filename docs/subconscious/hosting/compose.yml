@@ -4,7 +4,7 @@ services:
     extends:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: api_server
-    image: onyx-burn2:prototype18-5d124aa5f9
+    image: onyx-burn2:prototype18-3a6ac8a8d9
     profiles: !reset []
     build: !reset null
     environment: !override
@@ -21,7 +21,7 @@ services:
     extends:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: background
-    image: onyx-burn2:prototype18-49037d8577
+    image: onyx-burn2:prototype18-3a6ac8a8d9
     profiles: !reset []
     build: !reset null
     environment: !override

@@ -31,7 +31,7 @@ Focused proof: the frontend Host-header regression failed before the fix and 10 
 
 ### Prototype research and background briefs
 
-The September 12 API pin is `onyx-burn2:prototype18-5d124aa5f9`; the native background pin is `onyx-burn2:prototype18-49037d8577`. Source Compose retains both verified images. Frontend recovery and persona prompts can advance independently; record all three publication boundaries.
+The September 12 API and background pin is `onyx-burn2:prototype18-3a6ac8a8d9`. Source Compose retains both verified images. Frontend recovery and persona prompts can advance independently; record all three publication boundaries.
 
 Stored persona prompts survive API replacement. Update native persona 5 from `executive-turn-reminder.md` and persona 8 from `experiment-analytics-prompt.md`. Preserve model, tool assignments, document sets, ownership and shares; compare exact prompt readback. An old stored reminder caused unknown-question and scenario-narration failures despite current source files.
 
@@ -70,13 +70,15 @@ prompt context, limit the injected excerpt, and preserve the full bounded receip
 and original URLs in Postgres. A live replay caught unrelated public-company
 summaries despite valid saved briefs; spoken answers require independent review.
 
-Before replacement, run the 17 research/worker checks inside the candidate image
+Before replacement, run the research/worker checks inside the candidate image
 and verify both task names appear in native primary-worker registration. Preserve
 private environment snapshots and previous image IDs for rollback. Replace only
 API/background services; preserve volumes and the isolated execution daemon.
 Verify authenticated login, a real queued research receipt, background brief
 readback and existing saved source text after replacement. A frontend deployment
 alone does not publish worker code.
+
+For an `api.py`-only patch, `Dockerfile.brief-prompt` extends the verified native image with one linked source layer. Confirm the backend Git diff contains only that file; use the full prototype overlay for broader changes. The September 12 normal copy stalled for over three minutes under shared-host load; the linked layer completed in one second. Native import/worker checks still precede replacement. Cancel only the task-owned stalled build; preserve other builds, containers and volumes.
 
 After an API container replacement, syntax-check and reload the native nginx
 gateway once the API is healthy. Static upstream resolution can retain the old
