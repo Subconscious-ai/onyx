@@ -12,7 +12,7 @@ Reuse native Onyx, AWS, GPT Researcher MCP, causl-kb and the existing calculator
 
 - Onyx #18 / draft #20 owns native research startup, persisted receipts, background briefs and compact Beca recovery. Branch `codex/18-beca-prototype`, worktree `worktrees/onyx-prototype`, remote `subconscious`.
 - Draft #20 is stacked on #10. Scenario helper #19 is integrated from `4f99d81ba6`; navigation nonce repair comes from `d8404ee2d6`.
-- causl-kb #558 / draft #559 owns native calculation, atomic acceptance, scenario review and organization-scoped persistence. Model code `c9e565c` uses the pinned native calculator `8080fe2`.
+- causl-kb #558 / draft #559 owns native calculation, atomic acceptance, scenario review and organization-scoped persistence. The paired PR records the current model code; the native calculator remains pinned to `8080fe2`.
 - causl-kb #549/#556 and Onyx #17 own the separate customer-document pilot. Preserve the connector fixture and unrelated worktrees.
 
 ## Preview and runtime
@@ -34,6 +34,10 @@ Three synthetic businesses were replayed twice after the question-memory repair:
 Human review rejected earlier replays despite successful HTTP responses and valid schemas. Failures included unrelated professional-company research, repeated questions, requests for declared unknowns and unsupported scenario narration. Repairs constrain company context, retain prior questions, synchronize the native reminder and defer scenario conclusions to calculation receipts. Spoken proposals still require executive review; a valid structured brief is not proof of perfect conversational judgment.
 
 Two independent hosted software initial-model flows passed real AWS generation, native calculation, atomic save, duplicate rejection, grid reload and original-quote disclosure. The synthetic model retains 1,000 leads, 10% conversion, $100 contribution and a $15,000 target. Native scenarios calculate $12,000 at 12% and $15,000 at 15%; 120% fails validation.
+
+Experiment-design QA exposed incorrect spoken arithmetic, unsupported offer examples and confusion between full-business and per-arm quantities. The design prompt now requires native Python receipts, preserves economic units and uses an arm-specific conversion denominator. The existing AWS Nova 2 Lite configuration is selected for design; Beca, analytics and background brief defaults remain unchanged. The two-turn regression lives in `scripts/subconscious/experiment_design_cases.json`. The isolated native design replay retained actual Python output (10,000 baseline; 0.15 required conversion), a per-arm metric, unknown costs and rejected offer terms. Generation took 65.16 seconds and the correction 15.24 seconds; no paid tool was available to the test.
+
+Native account memories also contained earlier synthetic company facts. Memory injection and memory-tool writes are disabled only for the review account; stored memories, personal preferences, conversation history and causl-kb records remain preserved. New customer workspaces need deliberate memory scoping before enterprise onboarding. A fresh consulting replay from the original three answers retained the quarterly target and unknown quarterly operating inputs; ordinary first content took 1.91–3.23 seconds.
 
 Saved-study discovery and actual smolagents analysis returned source values and two native PNG files. Authenticated PNG readback and mobile decoding passed. Analysis took 71.66 seconds; analysis latency is separate from ordinary conversation. Digital-twin outputs remain simulated evidence.
 
