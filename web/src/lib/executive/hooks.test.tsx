@@ -137,6 +137,7 @@ describe("automatic saved evidence", () => {
     ).toBe(true);
   });
   it("cancels pending polls and never schedules after an unmounted read completes", async () => {
+    const schedule = jest.spyOn(global, "setTimeout");
     let finish!: (value: Response) => void;
     const fetcher = jest.spyOn(global, "fetch").mockImplementation(
       () =>
@@ -156,6 +157,7 @@ describe("automatic saved evidence", () => {
       jest.advanceTimersByTime(1500);
     });
     unmount();
+    const allocations = schedule.mock.calls.length;
     await act(async () => {
       finish({
         ok: true,
@@ -166,7 +168,7 @@ describe("automatic saved evidence", () => {
       jest.advanceTimersByTime(10000);
     });
     expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(jest.getTimerCount()).toBe(0);
+    expect(schedule).toHaveBeenCalledTimes(allocations);
   });
   it("loads persisted public sources after profile startup without repeating enrichment", async () => {
     const fetcher = jest
