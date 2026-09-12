@@ -107,3 +107,26 @@ test("reports popup rejection without claiming transfer or leaking a transcript"
   expect(child.postMessage).not.toHaveBeenCalled();
   handoff.dispose();
 });
+
+test("an old review heartbeat cannot consume a request before navigation finishes", () => {
+  let sequence = 0;
+  Object.defineProperty(globalThis.crypto, "randomUUID", {
+    configurable: true,
+    value: () => `navigation-${++sequence}`,
+  });
+  const handoff = createModelHandoff({ destination, onStatus: jest.fn(), onConnected: jest.fn() });
+  handoff.open({ chatId: "chat-a" });
+  const previousNonce = new URL(opened).searchParams.get("handoff");
+  receive({ type: "burn-model-context", nonce: previousNonce, marketId: "market-a", revision: 2 });
+  handoff.request("Try 15% conversion.");
+  receive({ type: "burn-ready", nonce: previousNonce });
+  expect(child.postMessage).not.toHaveBeenCalled();
+  const currentNonce = new URL(opened).searchParams.get("handoff");
+  expect(currentNonce).not.toBe(previousNonce);
+  receive({ type: "burn-ready", nonce: currentNonce });
+  expect(child.postMessage).toHaveBeenCalledWith(
+    { type: "burn-scenario-request", nonce: currentNonce, instruction: "Try 15% conversion." },
+    "https://causl.example"
+  );
+  handoff.dispose();
+});

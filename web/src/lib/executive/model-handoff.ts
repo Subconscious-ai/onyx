@@ -5,13 +5,15 @@ export function createModelHandoff(options: {
   onConnected: (connected: boolean) => void;
 }) {
   const target = new URL(options.destination);
-  const nonce = crypto.randomUUID();
+  let nonce = crypto.randomUUID();
   let child: Window | null = null;
   let marketId: string | null = null;
   let pending: Record<string, unknown> | null = null;
   let timeout: ReturnType<typeof setTimeout> | undefined;
 
   function openWindow(url: URL, message: Record<string, unknown>) {
+    // A previous page can still heartbeat while the named window navigates.
+    nonce = crypto.randomUUID();
     pending = message;
     url.searchParams.set("handoff", nonce);
     child = window.open(url.href, "burn-model-review");
