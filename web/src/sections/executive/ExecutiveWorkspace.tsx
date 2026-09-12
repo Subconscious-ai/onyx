@@ -3,8 +3,9 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAutomaticBrief } from "@/lib/executive/hooks";
+import { createModelHandoff } from "@/lib/executive/model-handoff";
 import { Button, Text } from "@opal/components";
 import { Interactive } from "@opal/core";
 import { richNodes } from "@opal/utils";
@@ -170,6 +171,39 @@ export default function ExecutiveWorkspace({
   const brief = projection.brief;
   const readiness = modelReadiness(projection.stale ? null : brief);
   const [handoffStatus, setHandoffStatus] = useState("");
+  const [modelConnected, setModelConnected] = useState(false);
+  const modelHandoff = useRef<ReturnType<typeof createModelHandoff> | null>(
+    null
+  );
+  useEffect(() => {
+    setModelConnected(false);
+    const destination = process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE;
+    if (!active || preview || !destination) return;
+    const connection = createModelHandoff({
+      destination,
+      onConnected: setModelConnected,
+      onStatus: (status) => {
+        const messages: Record<string, string> = {
+          waiting: t("handoffSignIn"),
+          transferred: t("briefTransferred"),
+          connected: t("modelScenarioConnected"),
+          proposed: t("modelScenarioProposed"),
+          saved: t("modelScenarioSaved"),
+          rejected: t("modelScenarioRejected"),
+          blocked: t("modelScenarioBlocked"),
+          expired: t("modelScenarioBlocked"),
+          unavailable: t("modelScenarioUnavailable"),
+          error: t("modelScenarioUnavailable"),
+        };
+        setHandoffStatus(messages[status] ?? "");
+      },
+    });
+    modelHandoff.current = connection;
+    return () => {
+      connection.dispose();
+      modelHandoff.current = null;
+    };
+  }, [active, preview, chatId, t]);
   const [profileStatus, setProfileStatus] = useState(
     "Checking professional context…"
   );
@@ -224,6 +258,13 @@ export default function ExecutiveWorkspace({
   const selected = specialists[selectedSpecialist]!;
 
   function openModel() {
+    if (modelConnected) {
+      const request = [...messages]
+        .reverse()
+        .find((message) => message.type === "user" && message.message.trim());
+      if (request) modelHandoff.current?.request(request.message);
+      return;
+    }
     const chatId = new URL(window.location.href).searchParams.get("chatId");
     if (!chatId) {
       setHandoffStatus(t("saveBeforeHandoff"));
@@ -240,6 +281,10 @@ export default function ExecutiveWorkspace({
           message: message.message,
         })),
     };
+    if (modelHandoff.current) {
+      modelHandoff.current.open(payload);
+      return;
+    }
     const href = URL.createObjectURL(
       new Blob([JSON.stringify(payload)], {
         type: "application/json",
@@ -250,33 +295,7 @@ export default function ExecutiveWorkspace({
     anchor.download = "burn-model-handoff.json";
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(href), 1000);
-    const destination = process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE;
-    if (!destination) {
-      setHandoffStatus(t("fileHandoffReady"));
-      return;
-    }
-    const target = new URL(destination);
-    const nonce = crypto.randomUUID();
-    target.searchParams.set("handoff", nonce);
-    const child = window.open(target.href, "burn-model-review");
-    const receive = (event: MessageEvent) => {
-      if (
-        event.origin !== target.origin ||
-        event.source !== child ||
-        event.data?.type !== "burn-ready" ||
-        event.data?.nonce !== nonce
-      )
-        return;
-      child?.postMessage(
-        { type: "burn-handoff", nonce, payload },
-        target.origin
-      );
-      window.removeEventListener("message", receive);
-      setHandoffStatus(t("briefTransferred"));
-    };
-    window.addEventListener("message", receive);
-    setTimeout(() => window.removeEventListener("message", receive), 600000);
-    setHandoffStatus(t("handoffSignIn"));
+    setHandoffStatus(t("fileHandoffReady"));
   }
 
   return (
@@ -378,21 +397,25 @@ export default function ExecutiveWorkspace({
                 prominence="primary"
                 icon={SvgArrowUpRight}
                 onClick={
-                  preparation.phase === "error"
-                    ? preparation.retry
-                    : readiness.ready
-                      ? openModel
-                      : () => {
-                          setView("model");
-                          setMobileBrief(true);
-                        }
+                  modelConnected
+                    ? openModel
+                    : preparation.phase === "error"
+                      ? preparation.retry
+                      : readiness.ready
+                        ? openModel
+                        : () => {
+                            setView("model");
+                            setMobileBrief(true);
+                          }
                 }
               >
-                {preparation.phase === "error"
-                  ? "Retry draft update"
-                  : readiness.ready
-                    ? "Open business model"
-                    : "View business draft"}
+                {modelConnected
+                  ? t("modelScenarioPreview")
+                  : preparation.phase === "error"
+                    ? "Retry draft update"
+                    : readiness.ready
+                      ? "Open business model"
+                      : "View business draft"}
               </Button>
             </div>
           )}
