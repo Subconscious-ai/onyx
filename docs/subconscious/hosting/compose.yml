@@ -4,7 +4,7 @@ services:
     extends:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: api_server
-    image: onyx-burn2:prototype18-3a6ac8a8d9
+    image: onyx-burn2:prototype18-e00b70fc80
     profiles: !reset []
     build: !reset null
     environment: !override
@@ -21,7 +21,7 @@ services:
     extends:
       file: ../../../deployment/docker_compose/docker-compose.yml
       service: background
-    image: onyx-burn2:prototype18-3a6ac8a8d9
+    image: onyx-burn2:prototype18-e00b70fc80
     profiles: !reset []
     build: !reset null
     environment: !override
@@ -121,7 +121,8 @@ services:
         format: raw
     ports: !reset []
     restart: unless-stopped
-    mem_limit: 1024m
+    # Match the upstream indexing budget; 1 GiB OOMs while loading local embeddings.
+    mem_limit: 5120m
     cpus: 1
   code-interpreter:
     extends:
