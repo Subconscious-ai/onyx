@@ -1,5 +1,7 @@
 # Burn 2.0 operations
 
+Current repository roles, model construction and release inventory: [Executive workflow](https://github.com/Subconscious-ai/causl-kb/blob/main/docs/EXECUTIVE_WORKFLOW.md).
+
 Burn 2.0 interviews an executive for customer behavior transitions and measurable OKRs. The output is a sourced model brief for a private Guesstimate draft. Ontology coverage supports the business model; ontology completion is not the interview objective.
 
 ## Ownership and persistence

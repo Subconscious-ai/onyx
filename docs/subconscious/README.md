@@ -1,5 +1,11 @@
 # Burn 2.0 on native Onyx
 
+Cross-repository source of truth: [Executive workflow](https://github.com/Subconscious-ai/causl-kb/blob/main/docs/EXECUTIVE_WORKFLOW.md).
+Onyx owns conversation memory, causl-kb owns accepted facts and model persistence, and Guesstimate
+owns calculation. The model builder currently runs in causl-kb. Integrating the model-editing
+agent into Onyx is a recommendation requiring parity proof, not a completed migration.
+Legacy burn-panel demos are retired; the Beca draft remains a separate experiment.
+
 [Open Burn](https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app/app?agentId=5). The stable Vercel address serves the native executive interview. The backend runs on AWS at `https://api.dev.subconscious.ai/burn2`; desktop services are no longer the serving backend.
 
 ## Architecture
