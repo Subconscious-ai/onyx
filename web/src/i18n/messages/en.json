@@ -13828,6 +13828,13 @@
     }
   },
   "executive": {
+    "modelScenarioPreview": "Preview model change",
+    "modelScenarioConnected": "Model connected. Request a new assumption in the conversation.",
+    "modelScenarioProposed": "Scenario calculated. Review before saving.",
+    "modelScenarioSaved": "Scenario saved in the company model.",
+    "modelScenarioRejected": "Saved model unchanged.",
+    "modelScenarioBlocked": "Allow the model-review window, then open the model again.",
+    "modelScenarioUnavailable": "Open the model window to review the request.",
     "originalSource": "Original source",
     "aWorkingSessionNotAQuestionnaire": "A WORKING SESSION, NOT A QUESTIONNAIRE",
     "theNextMove": "The next move.",

@@ -13828,6 +13828,13 @@
     }
   },
   "executive": {
+    "modelScenarioPreview": "Modelländerung prüfen",
+    "modelScenarioConnected": "Modell verbunden. Eine neue Annahme im Gespräch anfordern.",
+    "modelScenarioProposed": "Szenario berechnet. Vor dem Speichern prüfen.",
+    "modelScenarioSaved": "Szenario im Unternehmensmodell gespeichert.",
+    "modelScenarioRejected": "Gespeichertes Modell unverändert.",
+    "modelScenarioBlocked": "Modellfenster zulassen und Modell erneut öffnen.",
+    "modelScenarioUnavailable": "Modellfenster zur Prüfung der Anfrage öffnen.",
     "originalSource": "Original source",
     "aWorkingSessionNotAQuestionnaire": "A WORKING SESSION, NOT A QUESTIONNAIRE",
     "theNextMove": "The next move.",
