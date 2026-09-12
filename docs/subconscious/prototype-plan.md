@@ -43,7 +43,7 @@ Saved-study discovery and actual smolagents analysis returned source values and 
 
 Mobile chat occupies 743 of 844 pixels, without horizontal overflow or page errors. Recovery opens the existing authorized model selector without a stale transcript. Every model-window navigation uses a fresh nonce; previous-page heartbeats cannot consume new requests.
 
-Additional symbolic-model checks found two defects beyond software: a written target needed number-word normalization, and the proposed total-sales equation erased initial revenue when repeat purchases were zero. The retained counterfactual returned $0 instead of $100. The repaired brief prompt checks outcome scope and zero-event boundaries without imposing an industry template. The producer now declares only independent operating inputs and inlines derived quantities; a duplicated independent buyer count cannot represent the same cohort reliably. The paired compiler retains the reviewed input set and rejects invented additional unknown drivers. Final symbolic-model readback and counterfactual receipts belong in the paired PRs.
+Additional symbolic-model checks found two defects beyond software: a written target needed number-word normalization, and the proposed total-sales equation erased initial revenue when repeat purchases were zero. The retained counterfactual returned $0 instead of $100. The repaired brief prompt checks outcome scope and zero-event boundaries without imposing an industry template. Further actual-provider probes still copied or omitted required factors. The undeployed producer prompt and lexical equation-binding experiment were discarded. Executable algebra belongs to the existing model compiler; the native brief supplies sourced facts, journey, objectives and suggested unknowns. Additional required operating quantities may be proposed as visible unknown inputs, never invented numeric observations. The paired compiler owns reference, unit, cycle, objective-coverage and calculation checks. Zero-repeat and multiple-repeat counterfactuals remain the semantic acceptance gate; successful extraction alone cannot certify a model.
 
 ## Final publication gate and recovery
 
@@ -53,4 +53,13 @@ The Compose snapshot also retains the separately verified indexer memory correct
 
 Retain the paired previews, source worktrees and synthetic QA showcase until executive review. No feature merge or production-readiness claim follows from preview publication.
 
-Separate boundaries remain: native and Clerk sessions require separate login; private-document indexing has an OpenSearch disk write block and model-server DNS failure; voice/image provider activation remains documented in the capability review. The prototype does not establish enterprise isolation, customer-document ingestion or human outcome validation.
+Separate boundaries remain: native and Clerk sessions require separate login; the private-document pilot remains queued behind existing ingestion after the indexer memory repair, with non-admin permission proof still unavailable; voice/image provider activation remains documented in the capability review. The prototype does not establish enterprise isolation, customer-document ingestion or human outcome validation.
+
+
+## Model context recovery
+
+The model window originally sent only connection and scenario status. Beca therefore had no actual calculation receipt, even after a successful native calculation. The paired version-1 message now carries bounded saved cells, model identity/revision, optional saved scenario and actual calculation analysis. Native `additional_context` supplies the receipt only to the matching Beca conversation. No second conversation store or backend endpoint is introduced.
+
+The receiver verifies the exact origin, popup, navigation nonce, model revision, reference IDs, finite outputs and payload bounds. Preview, rejection, approval and missing calculation remain distinct. A new request clears prior calculation context; changing chats or agents clears the temporary model context. Reopening reads the saved model from the existing authorized Postgres route. An actual scenario calculation is still a model assumption, never evidence that an experiment launched or monitoring started.
+
+The distinguishing receiver regression failed before implementation. Full TypeScript and all 41 executive frontend tests pass. Independent Standards and Outcome reviews verified the market-ID limit, absolute import and stale-business replacement corrections. Live paired receipt-to-chat proof remains pending; local transport checks do not establish spoken accuracy.

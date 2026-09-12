@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAutomaticBrief, useExecutiveContext } from "@/lib/executive/hooks";
 import { createModelHandoff } from "@/lib/executive/model-handoff";
+import type { ModelContext } from "@/lib/executive/model-context";
 import { Button, Text } from "@opal/components";
 import { Interactive } from "@opal/core";
 import { Content } from "@opal/layouts";
@@ -118,6 +119,7 @@ export default function ExecutiveWorkspace({
   busy = false,
   onAsk,
   onDraft,
+  onModelContext,
   preview = false,
   children,
 }: {
@@ -127,6 +129,7 @@ export default function ExecutiveWorkspace({
   busy?: boolean;
   onAsk?: (message: string) => void;
   onDraft?: (message: string) => void;
+  onModelContext?: (context: ModelContext | null) => void;
   preview?: boolean;
   children: React.ReactNode;
 }) {
@@ -161,11 +164,13 @@ export default function ExecutiveWorkspace({
   );
   useEffect(() => {
     setModelConnected(false);
+    onModelContext?.(null);
     const destination = process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE;
     if (!active || preview || !destination) return;
     const connection = createModelHandoff({
       destination,
       onConnected: setModelConnected,
+      onContext: onModelContext,
       onStatus: (status) => {
         const messages: Record<string, string> = {
           waiting: t("handoffSignIn"),
@@ -187,7 +192,7 @@ export default function ExecutiveWorkspace({
       connection.dispose();
       modelHandoff.current = null;
     };
-  }, [active, preview, chatId, t]);
+  }, [active, preview, chatId, t, onModelContext]);
   const { profileStatus, research } = useExecutiveContext(active && !preview);
 
   const [view, setView] = useState<

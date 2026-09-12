@@ -12,6 +12,7 @@ The customer-facing interview is Beca. The review sidebar also exposes Experimen
 - PDL context comes from the authenticated account and remains an unconfirmed professional match. Enrichment never grants company access.
 - Background extraction validates journey, OKR and model structure against saved executive messages. Unknown inputs remain unknown. Public references and hypotheses never silently become executive facts.
 - causl-kb owns accepted market ontology and organization-scoped model persistence. The browser handoff binds the exact origin and nonce; Onyx holds no causl-kb administrator credential.
+- The existing model compiler owns executable algebra. Interview equations are advisory; additional required quantities stay explicit unknowns. The paired model window returns bounded saved-model context and actual calculation receipts through native chat's `additional_context`, scoped to the current Beca conversation. Preview and saved scenario states never imply an experiment launch.
 
 ## Start here
 

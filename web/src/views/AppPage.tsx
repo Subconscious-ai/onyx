@@ -3,6 +3,11 @@
 import { redirect, useRouter, useSearchParams } from "next/navigation";
 import { endIncognitoSession } from "@/app/app/services/lib";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  modelChatContext,
+  type ModelContext,
+} from "@/lib/executive/model-context";
+import type { OnSubmitProps } from "@/hooks/useChatController";
 import { SEARCH_PARAM_NAMES } from "@/app/app/services/searchParams";
 import { Section } from "@/layouts/general-layouts";
 import { useFederatedConnectors, useLlmManager } from "@/lib/hooks";
@@ -416,8 +421,18 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
     }
   }, [multiModel.selectedModels]);
 
+  const [modelContext, setModelContext] = useState<{
+    chatId: string | null;
+    value: ModelContext | null;
+  } | null>(null);
+  const receiveModelContext = useCallback(
+    (value: ModelContext | null) => {
+      setModelContext({ chatId: currentChatSessionId, value });
+    },
+    [currentChatSessionId]
+  );
   const {
-    onSubmit,
+    onSubmit: submitNative,
     stopGenerating,
     handleMessageSpecificFileUpload,
     availableContextTokens,
@@ -431,6 +446,23 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
     searchParams,
     resetInputBar,
   });
+  const onSubmit = useCallback(
+    (params: OnSubmitProps) => {
+      const receipt =
+        isExecutiveAgent(activeAgent) &&
+        currentChatSessionId &&
+        modelContext?.chatId === currentChatSessionId
+          ? modelChatContext(modelContext.value)
+          : undefined;
+      return submitNative({
+        ...params,
+        additionalContext:
+          [params.additionalContext, receipt].filter(Boolean).join("\n\n") ||
+          undefined,
+      });
+    },
+    [activeAgent, currentChatSessionId, modelContext, submitNative]
+  );
 
   const {
     onMessageSelection,
@@ -775,6 +807,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
         ))}
 
       <ExecutiveWorkspace
+        onModelContext={receiveModelContext}
         onDraft={(message) => chatInputBarRef.current?.appendDraft(message)}
         active={isExecutiveAgent(activeAgent)}
         messages={messageHistory}
