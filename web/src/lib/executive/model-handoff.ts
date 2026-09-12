@@ -5,13 +5,15 @@ export function createModelHandoff(options: {
   onConnected: (connected: boolean) => void;
 }) {
   const target = new URL(options.destination);
-  const nonce = crypto.randomUUID();
+  let nonce = crypto.randomUUID();
   let child: Window | null = null;
   let marketId: string | null = null;
   let pending: Record<string, unknown> | null = null;
   let timeout: ReturnType<typeof setTimeout> | undefined;
 
-  function openWindow(url: URL, message: Record<string, unknown>) {
+  function openWindow(url: URL, message: Record<string, unknown> | null) {
+    // Reject previous-page heartbeats while the named window navigates.
+    nonce = crypto.randomUUID();
     pending = message;
     url.searchParams.set("handoff", nonce);
     child = window.open(url.href, "burn-model-review");
@@ -51,6 +53,7 @@ export function createModelHandoff(options: {
       event.data.revision > 0
     ) {
       marketId = event.data.marketId;
+      clearTimeout(timeout);
       options.onConnected(true);
       options.onStatus("connected");
     }
@@ -64,6 +67,9 @@ export function createModelHandoff(options: {
   window.addEventListener("message", receive);
 
   return {
+    recover() {
+      openWindow(new URL(target), null);
+    },
     open(payload: unknown) {
       openWindow(new URL(target), { type: "burn-handoff", payload });
     },

@@ -13838,6 +13838,7 @@
     }
   },
   "executive": {
+    "modelSavedOpen": "保存済みモデルを開く",
     "modelScenarioPreview": "モデル変更を確認",
     "modelScenarioConnected": "モデル接続済み。会話で新しい仮定を指定。",
     "modelScenarioProposed": "シナリオ計算済み。保存前に確認。",

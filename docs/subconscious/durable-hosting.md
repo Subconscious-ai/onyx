@@ -31,6 +31,10 @@ Focused proof: the frontend Host-header regression failed before the fix and 10 
 
 ### Prototype research and background briefs
 
+The September 12 API pin is `onyx-burn2:prototype18-5d124aa5f9`; the native background pin is `onyx-burn2:prototype18-49037d8577`. Source Compose retains both verified images. Frontend recovery and persona prompts can advance independently; record all three publication boundaries.
+
+Stored persona prompts survive API replacement. Update native persona 5 from `executive-turn-reminder.md` and persona 8 from `experiment-analytics-prompt.md`. Preserve model, tool assignments, document sets, ownership and shares; compare exact prompt readback. An old stored reminder caused unknown-question and scenario-narration failures despite current source files.
+
 Issue #18 adds native primary-worker tasks, native encrypted Postgres research
 receipts and read-only brief polling. Deploy `hosting/Dockerfile.prototype` over
 the verified executive API image for both API and background services. Preserve

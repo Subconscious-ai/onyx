@@ -13838,6 +13838,7 @@
     }
   },
   "executive": {
+    "modelSavedOpen": "Gespeichertes Modell öffnen",
     "modelScenarioPreview": "Modelländerung prüfen",
     "modelScenarioConnected": "Modell verbunden. Eine neue Annahme im Gespräch anfordern.",
     "modelScenarioProposed": "Szenario berechnet. Vor dem Speichern prüfen.",

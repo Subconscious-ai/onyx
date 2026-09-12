@@ -15,6 +15,8 @@ The customer-facing interview is Beca. The review sidebar also exposes Experimen
 
 ## Start here
 
+- [Beca prototype and current paired QA](prototype-plan.md): automatic public research, background briefs, saved-model recovery and experiment-analysis proof. Draft #20 remains unmerged pending executive QA.
+
 - [Hosting, recovery and deployment lessons](durable-hosting.md): native Compose, rootless execution, encrypted Vercel Blob backups, restart and restore evidence.
 - [Interview operation and QA](burn2-operations.md): source ownership, model handoff, configuration and acceptance checks.
 - [Executive research and scope](executive-interviewer.md): retained MBB source-use findings and consulting guidance.

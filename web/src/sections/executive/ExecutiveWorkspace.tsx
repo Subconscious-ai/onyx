@@ -338,6 +338,17 @@ export default function ExecutiveWorkspace({
                         ? "Open business model"
                         : "View business draft"}
                 </Button>
+                {!modelConnected &&
+                  chatId &&
+                  process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE &&
+                  (!readiness.ready || preparation.phase === "error") && (
+                    <Button
+                      prominence="secondary"
+                      onClick={() => modelHandoff.current?.recover()}
+                    >
+                      {t("modelSavedOpen")}
+                    </Button>
+                  )}
               </div>
             )}
             <details className="executive-context">

@@ -13838,6 +13838,7 @@
     }
   },
   "executive": {
+    "modelSavedOpen": "打开已保存的模型",
     "modelScenarioPreview": "预览模型变更",
     "modelScenarioConnected": "模型已连接。请在对话中提出新假设。",
     "modelScenarioProposed": "场景已计算。保存前请审核。",

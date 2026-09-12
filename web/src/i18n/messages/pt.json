@@ -13838,6 +13838,7 @@
     }
   },
   "executive": {
+    "modelSavedOpen": "Abrir modelo salvo",
     "modelScenarioPreview": "Ver alteração do modelo",
     "modelScenarioConnected": "Modelo conectado. Solicitar uma nova hipótese na conversa.",
     "modelScenarioProposed": "Cenário calculado. Rever antes de guardar.",

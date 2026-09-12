@@ -13838,6 +13838,7 @@
     }
   },
   "executive": {
+    "modelSavedOpen": "فتح النموذج المحفوظ",
     "modelScenarioPreview": "معاينة تغيير النموذج",
     "modelScenarioConnected": "النموذج متصل. طلب افتراض جديد في المحادثة.",
     "modelScenarioProposed": "اكتمل حساب السيناريو. المراجعة قبل الحفظ.",
