@@ -121,7 +121,8 @@ services:
         format: raw
     ports: !reset []
     restart: unless-stopped
-    mem_limit: 1024m
+    # Match the upstream indexing budget; 1 GiB OOMs while loading local embeddings.
+    mem_limit: 5120m
     cpus: 1
   code-interpreter:
     extends:
