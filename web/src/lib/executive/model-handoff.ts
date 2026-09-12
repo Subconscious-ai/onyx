@@ -1,4 +1,7 @@
-import { parseModelContext, type ModelContext } from "@/lib/executive/model-context";
+import {
+  parseModelContext,
+  type ModelContext,
+} from "@/lib/executive/model-context";
 
 /** One origin-bound review window. Native Onyx remains the only conversation. */
 export function createModelHandoff(options: {
