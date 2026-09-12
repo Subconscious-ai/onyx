@@ -153,6 +153,10 @@ Extract each explicitly stated actor/action as a journey stage using the origina
 Use a concrete symbolic count/rate relationship with every operand declared in model.inputs. Avoid unexplained coefficients, subjective drivers and placeholder functions such as f(x).
 Never promote a target, hypothetical scenario, benchmark or public case into an observed input.
 Propose a free symbolic driver equation and meaningful behavior transitions; label structure assumptions.
+Check the proposed equation against the scope of the objective and zero-event boundary cases before returning. Journey order is not a requirement to multiply every transition into the total outcome.
+An outcome already earned at an earlier customer state must survive a zero probability of a later optional action. For total sales or revenue, zero repeat purchases must preserve initial-purchase revenue. Keep initial and subsequent contributions distinct. A repeat-only outcome may depend on repeat conversion; never label repeat-only revenue as total revenue.
+Do not assume that every repeat buyer makes exactly one additional purchase. Leave repeat frequency, period and purchase value unknown when unspecified; list each required operand as an unknown input or a material gap.
+Repair an invalid proposed equation from a previous draft while preserving executive facts, targets, journey states and original source indices. Previous algebra is a revisable assumption, never authoritative evidence. No industry template is mandatory.
 Missing operating numbers remain unknown. Never put missing values at zero. Park previously unknown gaps.
 Business jokes, sales boasts, heroic confidence and spreadsheet metaphors are not measured model inputs. Never turn those phrases into factors in the equation.
 Customer states describe human behavior, not department tasks. One complaint does not establish a journey or causal effect.
