@@ -8,7 +8,7 @@ import {
   SelectButton,
   Text,
 } from "@opal/components";
-import { SvgOnyxOctagon } from "@opal/icons";
+import { SubconsciousIcon as SvgOnyxOctagon } from "@/sections/brand/SubconsciousIcon";
 import { Section } from "@opal/layouts";
 import { usePersonaMessages, usePersonaUniqueUsers } from "@/lib/usage/hooks";
 import { useAdminAgents } from "@/lib/agents/hooks";

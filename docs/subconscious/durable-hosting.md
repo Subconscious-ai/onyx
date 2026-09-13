@@ -29,6 +29,62 @@ Focused proof: the frontend Host-header regression failed before the fix and 10 
 
 ## Operations and recovery
 
+### Prototype research and background briefs
+
+The September 12 API and background pin is `onyx-burn2:prototype18-3a6ac8a8d9`. Source Compose retains both verified images. Frontend recovery and persona prompts can advance independently; record all three publication boundaries.
+
+Stored persona prompts survive API replacement. Update native persona 5 from `executive-turn-reminder.md` and persona 8 from `experiment-analytics-prompt.md`. Preserve model, tool assignments, document sets, ownership and shares; compare exact prompt readback. An old stored reminder caused unknown-question and scenario-narration failures despite current source files.
+
+Issue #18 adds native primary-worker tasks, native encrypted Postgres research
+receipts and read-only brief polling. Deploy `hosting/Dockerfile.prototype` over
+the verified executive API image for both API and background services. Preserve
+the native background Compose command and unrelated task registrations. The
+deployed primary worker predates two upstream registrations in the repository;
+the Docker overlay adds only Burn tasks and deliberately retains the native list.
+
+Set `BURN2_ENABLED=true`, `BURN2_RESEARCH_PERSONA_ID=5` and
+`BURN2_BACKGROUND_PREPARATION=true` on API and background. Copy the existing
+`BURN2_BRIEF_MODEL_CONFIGURATION_ID` setting to background. The primary worker
+requires the same native encrypted-store configuration and Bedrock provider
+records as API. No new database tables or provider secrets are introduced.
+
+PDL preparation schedules public-domain-only research through the assigned
+native GPT Researcher MCP tool. Original URLs and bounded context are retained
+under the authenticated account in Postgres. Public context expires after one
+day; pending jobs become recoverable after five minutes on the next entry.
+An unavailable provider remains an explicit unavailable receipt. Research never
+becomes accepted market memory, private operating numbers or executive evidence.
+
+The authoritative native chat writer queues brief preparation after saving a
+completed answer, including after a browser disconnect. Preparation reuses the
+existing per-chat lock, original-message validation and stale-write rejection.
+The browser reads the saved brief; explicit retry uses the existing preparation
+endpoint. A failed worker does not erase the transcript or masquerade as saved.
+Provider time remains outside ordinary chat latency. Missing saved output becomes
+a visible retry state after 90 seconds.
+
+Public prompt context requires an exact conservative match between the current
+validated draft company and the PDL company/domain. A professional employer must
+not displace a different interviewed business. Keep the research query out of
+prompt context, limit the injected excerpt, and preserve the full bounded receipt
+and original URLs in Postgres. A live replay caught unrelated public-company
+summaries despite valid saved briefs; spoken answers require independent review.
+
+Before replacement, run the research/worker checks inside the candidate image
+and verify both task names appear in native primary-worker registration. Preserve
+private environment snapshots and previous image IDs for rollback. Replace only
+API/background services; preserve volumes and the isolated execution daemon.
+Verify authenticated login, a real queued research receipt, background brief
+readback and existing saved source text after replacement. A frontend deployment
+alone does not publish worker code.
+
+For an `api.py`-only patch, `Dockerfile.brief-prompt` extends the verified native image with one linked source layer. Confirm the backend Git diff contains only that file; use the full prototype overlay for broader changes. The September 12 normal copy stalled for over three minutes under shared-host load; the linked layer completed in one second. Native import/worker checks still precede replacement. Cancel only the task-owned stalled build; preserve other builds, containers and volumes.
+
+After an API container replacement, syntax-check and reload the native nginx
+gateway once the API is healthy. Static upstream resolution can retain the old
+container IP and return 502 even while native API health passes. Preserve the
+gateway configuration and authentication boundary.
+
 The host deployment lives at `/opt/burn/app`; `burn2.service` starts the native services after Docker and the isolated execution daemon. The external `burn2_db_volume`, `burn2_minio_data` and `burn2_opensearch-data` volumes survive Compose removal. Never remove the original desktop volumes during QA.
 
 `burn-backup.timer` runs daily at 08:15 UTC, with a five-minute jitter. The backup pauses native API/background writers while capturing Postgres and source objects, resumes writers, then encrypts and uploads the archive. Failed jobs resume writers via `ExecStopPost`; inspect `journalctl -u burn-backup.service` for the upload receipt. Backups are private and separately encrypted. Archive decryption requires the recovery key retained outside the AWS disk.
@@ -61,6 +117,20 @@ The full restart check exposed native Redis-backed login sessions on disposable 
 Final restart proof: the same native Postgres-backed login cookie authenticated after a full `burn2.service` restart, and the saved model brief remained present. All five authenticated gateway checks pass afterward. Desktop Onyx containers are stopped and the old port-10000 Funnel is disabled. The resolved Compose graph includes every required service, external data volumes and only the isolated executor socket.
 
 The native Onyx MCP call now returns a successful GPT Researcher receipt with five source URLs in 26.1 seconds. The earlier private-hostname refusal was a tool error, despite a successful outer chat HTTP response; inspect `custom_tool_delta.error` and the nested research receipt, not only HTTP 200.
+
+## Beca voice routing, September 11
+
+Vercel cannot forward the native live-audio WebSocket through the HTTP catch-all. The frontend uses the public AWS voice gateway plus a native single-use token. The gateway allows only the stable review origin and Beca branch origin, then normalizes Origin to the native WEB_DOMAIN. Tokens, provider secrets and cookies are never logged or sent to another origin. HTTP authentication and public-enrollment restrictions remain unchanged.
+
+The first gateway reload inspected an old bind-mounted inode. Recreating only the gateway loaded the candidate and exposed nginx's default 64-byte map bucket limit for long Vercel hostnames. `map_hash_bucket_size 128` corrected startup; backend health, five original gateway checks and two voice authentication checks pass afterward. For future changes, syntax-check a candidate in a disposable nginx container with the actual mount before replacement. Verify the live container configuration after reload. No database or worker restart is needed for gateway configuration.
+
+Native ElevenLabs provider validation rejected the supplied API key IDs. Provider creation rolled back and voice remains disabled. Configure a valid secret through native administration, select the existing Beca voice ID, then test speech and read-aloud. `test_voice_gateway.py` proves transport authentication only, not working speech.
+
+### September 11 runtime repair
+
+Mount the rootless daemon directory `/run/burn-executor` at `/var/run:ro` in the native code interpreter, and retain `RuntimeDirectoryPreserve=yes`. A socket-file bind holds a stale inode after a daemon restart. Mounting the directory at another path also fails: the native entrypoint checks `/var/run/docker.sock` before honoring Docker client configuration. Native execution passed before and after a daemon restart with the directory mount; no privileged container or host Docker socket is involved.
+
+`hosting/Dockerfile.beca` is a five-module overlay on the current executive-proof image. Supply the verified current image explicitly with `--build-arg BURN_BASE_IMAGE=<verified-image>` and preserve concurrent Burn extraction changes. The build intentionally has no guessed base image. Vercel publication does not deploy backend code. Coordinate shared API restarts; do not replace the entire live compose file from a divergent worktree. The offline backend check runs as `python /tmp/test_beca_providers.py` inside the candidate image.
 
 ### Executor restart regression
 

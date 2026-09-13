@@ -32,7 +32,11 @@ def _notification_filters(
     min_severity: NotificationSeverity | None = None,
 ) -> list[ColumnElement[bool]]:
     filters = [
-        Notification.user_id == user.id if user else Notification.user_id.is_(None)
+        Notification.user_id == user.id if user else Notification.user_id.is_(None),
+        # Vendor promotions are not product notifications. Keep operational alerts.
+        Notification.notif_type.not_in(
+            [NotificationType.RELEASE_NOTES, NotificationType.FEATURE_ANNOUNCEMENT]
+        ),
     ]
     if not include_dismissed:
         filters.append(Notification.dismissed.is_(False))

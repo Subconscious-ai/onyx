@@ -9,6 +9,8 @@ import {
   useRef,
 } from "react";
 import useNotifications from "@/hooks/useNotifications";
+import ConsultingAgents from "@/sections/executive/ConsultingAgents";
+import { consultingRole } from "@/lib/agents/consulting";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useSettings } from "@/lib/settings/hooks";
@@ -73,10 +75,10 @@ import {
   SvgEditBig,
   SvgFolderPlus,
   SvgMoreHorizontal,
-  SvgOnyxOctagon,
   SvgSearchMenu,
   SvgSettings,
 } from "@opal/icons";
+import { SubconsciousIcon as SvgOnyxOctagon } from "@/sections/brand/SubconsciousIcon";
 import SidebarTabSkeleton from "@/refresh-components/skeletons/SidebarTabSkeleton";
 import BuildModeIntroBackground from "@/app/craft/components/IntroBackground";
 import BuildModeIntroContent from "@/app/craft/components/IntroContent";
@@ -234,7 +236,7 @@ export default function AppSidebar() {
     refreshProjects,
     isLoading: isLoadingProjects,
   } = useProjects();
-  const { isLoading: isLoadingAgents } = useAgents();
+  const { agents, isLoading: isLoadingAgents } = useAgents();
   const activeAgent = useActiveAgent();
   const {
     pinnedAgents,
@@ -324,7 +326,11 @@ export default function AppSidebar() {
   }, [buildModeNotification, mutateNotifications]);
 
   const [visibleAgents, currentAgentIsPinned] = useMemo(
-    () => buildVisibleAgents(pinnedAgents, activeAgent),
+    () =>
+      buildVisibleAgents(
+        pinnedAgents.filter((agent) => !consultingRole(agent)),
+        consultingRole(activeAgent) ? undefined : activeAgent
+      ),
     [pinnedAgents, activeAgent]
   );
   const visibleAgentIds = useMemo(
@@ -638,6 +644,7 @@ export default function AppSidebar() {
           )}
           {folded && moreAgentsButton}
           {folded && <FoldedProjectsPopover />}
+          <ConsultingAgents agents={agents} activeId={activeAgent?.id} />
         </SidebarLayouts.Header>
 
         <SidebarLayouts.Body scrollKey="app-sidebar">

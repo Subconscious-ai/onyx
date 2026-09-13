@@ -6,6 +6,7 @@ import tempfile
 import unittest
 import urllib.error
 from pathlib import Path
+from unittest.mock import patch
 
 from eval_interview import (
     Turn,
@@ -19,6 +20,97 @@ from eval_interview import (
 
 
 class EvaluationChecks(unittest.TestCase):
+    def test_prototype_cases_detect_declared_unknowns_and_assistant_company_confusion(
+        self,
+    ):
+        cases = json.loads(Path(__file__).with_name("prototype_cases.json").read_text())
+        checks = [
+            (
+                "services",
+                "How many discovery meetings happen each quarter?",
+                "Meeting volume remains unknown.",
+            ),
+            (
+                "separate_greeting",
+                "What is the revenue target for Beca this quarter?",
+                "What business objective should the interview address?",
+            ),
+        ]
+        for case, rejected, accepted in checks:
+            with self.subTest(case=case):
+                turn = Turn(**cases[case][0])
+                self.assertTrue(assess(turn, rejected, ""))
+                self.assertEqual(assess(turn, accepted, ""), [])
+
+    def test_prototype_scenario_claim_requires_actual_calculation_evidence(self):
+        cases = json.loads(Path(__file__).with_name("prototype_cases.json").read_text())
+        turn = Turn(**cases["software"][2])
+        self.assertTrue(assess_tools(turn, [], "The 12% scenario gives $12,000."))
+        self.assertEqual(
+            assess_tools(turn, [], "Preview the proposed 12% scenario in Brief."), []
+        )
+        self.assertEqual(
+            assess_tools(
+                turn,
+                [{"type": "python_tool_delta", "stdout": "12000"}],
+                "The 12% scenario gives $12,000.",
+            ),
+            [],
+        )
+
+    def test_background_checkpoint_waits_for_saved_source_without_manual_preparation(
+        self,
+    ):
+        source = [
+            {"message_type": "user", "message": "Baseline unknown"},
+            {"message_type": "assistant", "message": "Unknown recorded"},
+        ]
+        brief = {
+            "version": 2,
+            "objective": {"text": "Goal"},
+            "horizon": "",
+            "keyResults": [],
+            "model": {"inputs": []},
+        }
+        saved = (
+            "Unknown recorded\n<interview-brief>"
+            + json.dumps(brief)
+            + "</interview-brief>"
+        )
+        reads = 0
+
+        def api(path, body=None):
+            nonlocal reads
+            self.assertIsNone(body)
+            if path.startswith("/chat/executive-brief?"):
+                reads += 1
+                return io.StringIO(
+                    json.dumps(
+                        {"saved": False}
+                        if reads == 1
+                        else {"saved": True, "message": saved, "message_id": 2}
+                    )
+                )
+            return io.StringIO(
+                json.dumps(
+                    {
+                        "messages": source
+                        if reads == 0
+                        else [source[0], {**source[1], "message": saved}]
+                    }
+                )
+            )
+
+        with patch("eval_interview.time.sleep"):
+            result = checkpoint(
+                api,
+                "synthetic",
+                Turn("Baseline unknown", background_brief=True),
+                ["Baseline unknown"],
+            )
+        self.assertEqual(result["failures"], [])
+        self.assertEqual(reads, 2)
+
     def test_saved_brief_must_preserve_explicit_behavior_before_model_handoff(self):
         turn = Turn("Prepare", sourced_journey_required=True)
         brief = {

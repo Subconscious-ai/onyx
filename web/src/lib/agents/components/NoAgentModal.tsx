@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Modal, Button, Text } from "@opal/components";
-import { SvgOnyxOctagon } from "@opal/icons";
+import { SubconsciousIcon as SvgOnyxOctagon } from "@/sections/brand/SubconsciousIcon";
 import { useUser } from "@/providers/UserProvider";
 import { ADMIN_ROUTES } from "@/lib/admin-routes";
 

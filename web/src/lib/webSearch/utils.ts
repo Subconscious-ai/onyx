@@ -225,11 +225,11 @@ export function getSingleConfigFieldValueForForm(
 
 export const CONTENT_PROVIDER_DETAILS: Record<string, ContentProviderDetail> = {
   onyx_web_crawler: {
-    label: "Onyx Web Crawler",
+    label: "Built-in Web Crawler",
     subtitle:
       "Built-in web crawler. Works for most pages but less performant in edge cases.",
     description:
-      "Onyx's built-in crawler processes URLs returned by your search engine.",
+      "The built-in crawler processes URLs returned by your search engine.",
   },
   firecrawl: {
     label: "Firecrawl",

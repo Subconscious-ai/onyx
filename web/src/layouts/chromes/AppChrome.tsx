@@ -617,6 +617,7 @@ function Header() {
 function Footer() {
   const appPosition = useAppPosition();
   const customFooterContent = useCustomFooterContent();
+  if (!customFooterContent) return null;
 
   return (
     <RootLayout.Footer>

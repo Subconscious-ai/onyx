@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 
-import { INTERNAL_URL, IS_DEV } from "@/lib/constants";
+import { getVoiceWebSocketUrl } from "@/lib/voice/websocket";
 
 // Target format for OpenAI Realtime API
 const TARGET_SAMPLE_RATE = 24000;
@@ -243,22 +243,7 @@ class VoiceRecorderSession {
   }
 
   private async getWebSocketUrl(): Promise<string> {
-    // Fetch short-lived WS token
-    const tokenResponse = await fetch("/api/voice/ws-token", {
-      method: "POST",
-      credentials: "include",
-    });
-    if (!tokenResponse.ok) {
-      throw new Error("Failed to get WebSocket authentication token");
-    }
-    const { token } = await tokenResponse.json();
-
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = IS_DEV ? new URL(INTERNAL_URL).host : window.location.host;
-    const path = IS_DEV
-      ? "/voice/transcribe/stream"
-      : "/api/voice/transcribe/stream";
-    return `${protocol}//${host}${path}?token=${encodeURIComponent(token)}`;
+    return getVoiceWebSocketUrl("transcribe");
   }
 
   private waitForConnection(): Promise<void> {

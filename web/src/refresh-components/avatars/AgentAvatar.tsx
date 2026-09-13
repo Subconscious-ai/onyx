@@ -1,8 +1,10 @@
 "use client";
 
+import { DagMark } from "@/sections/brand/dag-mark";
+import { isExecutiveAgent } from "@/lib/executive/brief";
+import { consultingRole } from "@/lib/agents/consulting";
 import { MinimalAgent } from "@/lib/agents/types";
 import { buildAgentAvatarUrl } from "@/lib/agents/utils";
-import { SvgOnyxLogo } from "@opal/logos";
 import { useSettings } from "@/lib/settings/hooks";
 import { DEFAULT_AVATAR_SIZE_PX, DEFAULT_AGENT_ID } from "@/lib/constants";
 import CustomAgentAvatar from "@/refresh-components/avatars/CustomAgentAvatar";
@@ -22,6 +24,9 @@ export default function AgentAvatar({
   const t = useTranslations("common.agentAvatar");
   const { enterprise: enterpriseSettings } = useSettings();
 
+  if (isExecutiveAgent(agent) || consultingRole(agent))
+    return <DagMark style={{ width: size, height: size }} />;
+
   if (agent.id === DEFAULT_AGENT_ID) {
     return enterpriseSettings?.use_custom_logo ? (
       <div
@@ -37,7 +42,7 @@ export default function AgentAvatar({
         />
       </div>
     ) : (
-      <SvgOnyxLogo size={size} className="shrink-0" />
+      <DagMark style={{ width: size, height: size }} />
     );
   }
 

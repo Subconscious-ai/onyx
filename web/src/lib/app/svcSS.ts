@@ -9,11 +9,11 @@ async function fetchAppName(): Promise<string> {
       return enterprise.application_name.trim();
     }
   }
-  return "Onyx";
+  return "Subconscious";
 }
 
 export async function generateFaviconMetadata(): Promise<Metadata["icons"]> {
-  let iconSrc = "/onyx.ico";
+  let iconSrc = "/subconscious.svg";
 
   if (SERVER_SIDE_ONLY__PAID_ENTERPRISE_FEATURES_ENABLED) {
     const enterprise = await fetchEnterpriseSettingsSS();

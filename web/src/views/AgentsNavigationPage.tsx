@@ -14,7 +14,8 @@ import Text from "@/refresh-components/texts/Text";
 import { SettingsLayouts } from "@opal/layouts";
 import TextSeparator from "@/refresh-components/TextSeparator";
 import { Button, InputTypeIn, Tabs } from "@opal/components";
-import { SvgOnyxOctagon, SvgPlus } from "@opal/icons";
+import { SvgPlus } from "@opal/icons";
+import { SubconsciousIcon as SvgOnyxOctagon } from "@/sections/brand/SubconsciousIcon";
 import useOnMount from "@/hooks/useOnMount";
 import { useAgentsFilters } from "@/sections/agents/AgentsFilters";
 

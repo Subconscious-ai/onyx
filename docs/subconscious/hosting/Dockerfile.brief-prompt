@@ -1,0 +1,4 @@
+# Only for an api.py-only change over a verified, fully configured native image.
+ARG BURN_BASE_IMAGE
+FROM ${BURN_BASE_IMAGE}
+COPY --link backend/onyx/server/query_and_chat/burn2/api.py /app/onyx/server/query_and_chat/burn2/api.py

@@ -18,6 +18,8 @@ from onyx.db.enums import Permission
 from onyx.db.llm import fetch_model_configuration_by_id
 from onyx.db.models import User
 from onyx.db.persona import get_persona_by_id
+from onyx.error_handling.error_codes import OnyxErrorCode
+from onyx.error_handling.exceptions import OnyxError
 from onyx.llm.factory import get_llm_for_persona, get_llm_token_counter
 from onyx.llm.models import (
     ReasoningEffort,
@@ -148,9 +150,14 @@ Capture the actual customer journey and measurable OKRs: metric, unit, target, d
 Preserve latest corrections. Quote exact contiguous executive text for executive claims.
 Read every source message. A correction replaces only the corrected information, not earlier uncorrected customer behavior or unknown inputs.
 Extract each explicitly stated actor/action as a journey stage using the original action wording. Unknown operating numbers never justify dropping an established journey or relabeling explicit actions as assumptions.
-Use a concrete symbolic count/rate relationship with every operand declared in model.inputs. Avoid unexplained coefficients, subjective drivers and placeholder functions such as f(x).
+Use a concrete symbolic count/rate relationship with every independent operand declared in model.inputs. Avoid unexplained coefficients, subjective drivers and placeholder functions such as f(x).
+model.inputs contains independent operating quantities only. Inline quantities computable from other inputs in the proposed equation; never declare a derived intermediate as another independent unknown. The same customer cohort must remain the same cohort through the calculation. Keep observed objective outcomes in keyResults.baseline rather than adding outcome values as operating drivers.
 Never promote a target, hypothetical scenario, benchmark or public case into an observed input.
 Propose a free symbolic driver equation and meaningful behavior transitions; label structure assumptions.
+Check the proposed equation against the scope of the objective and zero-event boundary cases before returning. Journey order is not a requirement to multiply every transition into the total outcome.
+An outcome already earned at an earlier customer state must survive a zero probability of a later optional action. For total sales or revenue, zero repeat purchases must preserve initial-purchase revenue. Keep initial and subsequent contributions distinct. A repeat-only outcome may depend on repeat conversion; never label repeat-only revenue as total revenue.
+Do not assume that every repeat buyer makes exactly one additional purchase. Leave repeat frequency, period and purchase value unknown when unspecified; list each required operand as an unknown input or a material gap.
+Repair an invalid proposed equation from a previous draft while preserving executive facts, targets, journey states and original source indices. Previous algebra is a revisable assumption, never authoritative evidence. No industry template is mandatory.
 Missing operating numbers remain unknown. Never put missing values at zero. Park previously unknown gaps.
 Business jokes, sales boasts, heroic confidence and spreadsheet metaphors are not measured model inputs. Never turn those phrases into factors in the equation.
 Customer states describe human behavior, not department tasks. One complaint does not establish a journey or causal effect.
@@ -236,6 +243,24 @@ Use "Unknown" for an unidentified company. No unsupported quotes or invented ide
 def prepare_profile(
     user: User = Depends(require_permission(Permission.WRITE_CHAT)),
 ) -> dict:
+    from onyx.server.query_and_chat.burn2.background import ensure_research
+
+    profile = _prepare_profile(user)
+    return {**profile, "research": ensure_research(user.id)}
+
+
+@router.get("/executive-research")
+def read_executive_research(
+    user: User = Depends(require_permission(Permission.WRITE_CHAT)),
+) -> dict:
+    from onyx.db.burn2_research import read_research
+
+    if os.environ.get("BURN2_ENABLED") != "true":
+        raise OnyxError(OnyxErrorCode.NOT_FOUND, "Not found")
+    return read_research(user.id) or {"status": "unavailable"}
+
+
+def _prepare_profile(user: User) -> dict:
     import requests
 
     from onyx.db.burn2_profile import read_profile, save_profile
@@ -282,6 +307,47 @@ def prepare_profile(
     finally:
         if lock.owned():
             lock.release()
+
+
+@router.get("/executive-brief")
+def read_executive_brief(
+    chat_id: UUID,
+    user: User = Depends(require_permission(Permission.WRITE_CHAT)),
+    db: Session = Depends(get_session),
+) -> dict:
+    if os.environ.get("BURN2_ENABLED") != "true":
+        raise OnyxError(OnyxErrorCode.NOT_FOUND, "Not found")
+    try:
+        snapshot = owned_snapshot(chat_id, user.id, db)
+        persona = get_persona_by_id(snapshot["persona_id"], user, db, is_for_edit=False)
+        if persona.name not in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}:
+            raise ValueError("Executive conversation required")
+    except ValueError:
+        raise OnyxError(
+            OnyxErrorCode.NOT_FOUND, "Saved executive conversation not available"
+        ) from None
+    if "</interview-brief>" in snapshot["last_text"]:
+        try:
+            brief = validate_brief(
+                json.loads(
+                    snapshot["last_text"]
+                    .split("<interview-brief>", 1)[1]
+                    .split("</interview-brief>", 1)[0]
+                ),
+                snapshot["statements"],
+            )
+            if not needs_completion(brief):
+                return {
+                    "saved": True,
+                    "message": snapshot["last_text"],
+                    "message_id": snapshot["last_id"],
+                }
+        except (ValueError, IndexError):
+            pass
+    return {
+        "saved": False,
+        "background": os.environ.get("BURN2_BACKGROUND_PREPARATION") == "true",
+    }
 
 
 @router.post("/executive-brief")

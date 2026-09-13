@@ -4,6 +4,7 @@
  * of the English text while the registry stays a plain module.
  */
 export type ImageProviderDescriptionKey =
+  | "providers.bedrockCanvas.description"
   | "providers.openaiGptImage2.description"
   | "providers.openaiGptImage15.description"
   | "providers.openaiGptImage1.description"
@@ -30,6 +31,18 @@ export interface ProviderGroup {
 }
 
 export const IMAGE_PROVIDER_GROUPS: ProviderGroup[] = [
+  {
+    name: "Amazon Web Services",
+    providers: [
+      {
+        image_provider_id: "bedrock_nova_canvas",
+        model_name: "amazon.nova-canvas-v1:0",
+        provider_name: "bedrock",
+        title: "Amazon Nova Canvas",
+        descriptionKey: "providers.bedrockCanvas.description",
+      },
+    ],
+  },
   {
     name: "OpenAI",
     providers: [

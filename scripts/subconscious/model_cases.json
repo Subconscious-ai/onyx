@@ -80,5 +80,23 @@
       "max_words": 200,
       "scenario_guard": true
     }
+  ],
+  "initial_and_repeat_revenue": [
+    {
+      "message": "Synthetic QA: Cedar Cream sells tubs through independent grocery stores. The goal is $12 million total annual sales. Shoppers compare tubs, buy a tub and later decide whether to buy again. Shopper volume, conversion, price, repeat probability and repeat frequency are unknown. Propose a symbolic model without invented operating inputs.",
+      "max_words": 150,
+      "model_ready": true
+    },
+    {
+      "message": "Counterfactual QA only, never observed operating inputs: 1,000 shoppers, 10 percent initial conversion, $100 per initial purchase and zero repeat purchases. Use Python to calculate total revenue from initial and repeat purchases. A later repeat decision cannot erase an initial sale.",
+      "max_words": 200,
+      "tools_required": [
+        "run_python"
+      ],
+      "expected_numbers": [
+        10000
+      ],
+      "scenario_guard": true
+    }
   ]
 }

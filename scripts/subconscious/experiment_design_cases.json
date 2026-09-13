@@ -1,0 +1,36 @@
+{
+  "design_economics_and_correction": [
+    {
+      "message": "Synthetic QA business: Cedar Software. Executive-reported model inputs: 1,000 qualified leads per month, 10% paid conversion and $100 contribution per new customer. The target is $15,000 monthly contribution, not an observed result. Proposed intervention: show a clearer onboarding commitment before purchase. Design a concise experiment around the lead-to-paid customer decision, the metric and a decision rule. Use the existing Rehoboam design tools if useful. Preserve missing variance, sample-size and uplift evidence as unknown. Digital twins may suggest a direction but cannot establish actual customer lift. Keep the proposal in this conversation; do not create a stored draft or launch an experiment.",
+      "brief_required": false,
+      "max_words": 170,
+      "tools_required": [
+        "run_python"
+      ],
+      "expected_numbers": [
+        10000,
+        0.15
+      ],
+      "forbidden": [
+        "ready to schedule within|guided setup included|free trial|```mermaid",
+        "monthly revenue gap",
+        "1,?000[\\s\u2011-]*lead denominator",
+        "Northstar|scheduling software"
+      ]
+    },
+    {
+      "message": "No 24-hour service promise is available. The intervention changes clarity, not actual offer terms. Test duration, costs and sample-size evidence remain unknown. Preserve those unknowns and give the concise corrected proposal without another question. No experiment execution.",
+      "brief_required": false,
+      "max_words": 170,
+      "questions_allowed": true,
+      "spoken_requires": "unknown|missing|unconfirmed|pending",
+      "forbidden": [
+        "ready to schedule within|guided setup included|free trial|50[\\s\u202f]*k customers|```mermaid",
+        "monthly revenue gap",
+        "1,?000[\\s\u2011-]*lead denominator",
+        "Northstar|scheduling software",
+        "(?:what|how many|how much|when)[^?\\n]{0,100}(?:cost|variance|sample|duration|lead|budget)[^?\\n]*\\?"
+      ]
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import React from "react";
+import { BedrockImageGenForm } from "@/views/admin/ImageGenerationPage/forms/BedrockImageGenForm";
 import { ImageGenFormBaseProps } from "@/views/admin/ImageGenerationPage/forms/types";
 import { OpenAIImageGenForm } from "@/views/admin/ImageGenerationPage/forms/OpenAIImageGenForm";
 import { AzureImageGenForm } from "@/views/admin/ImageGenerationPage/forms/AzureImageGenForm";
@@ -12,6 +13,8 @@ export function getImageGenForm(props: ImageGenFormBaseProps): React.ReactNode {
   const providerName = props.imageProvider.provider_name;
 
   switch (providerName) {
+    case "bedrock":
+      return <BedrockImageGenForm {...props} />;
     case "openai":
       return <OpenAIImageGenForm {...props} />;
     case "azure":
