@@ -65,3 +65,17 @@ Private synthetic receipts: `~/.local/share/causl-uat/beca-prototype18`. Final b
 Rollback: `/opt/burn/private/prototype18-20260912T181848Z/compose-before-model-review.yml` restores preceding `3d1b45aaab` API/worker pins. After API replacement: verify health, run `nginx -t`, reload the gateway, then finish the graceful worker replacement. Preserve the 5 GiB indexer cap. Shared-host disk pressure delayed replacement and briefly approached capacity; no broad cache/container/volume prune was used.
 
 Retain worktrees, paired previews and synthetic showcase models for executive QA. Issue #18 and draft #20 remain open, paired with causl-kb draft #559. No feature merge or production-readiness claim follows from prototype publication.
+
+## Active closeout, September 13
+
+The causl-kb coordinator supplied the current user authorization to merge completed cross-chat work. Scope: reconcile existing Onyx branches and the #550 documentation family; no features, credential changes or production promotion. Shared QA access remains on HOLD. The coordinator owns KB runtime merges and must clear the #553 merge.
+
+1. Reconcile Onyx #20 with fork main. Current #10 is already an ancestor of #20. Close #10 and #19 as incorporated only after verified publication to fork main.
+2. Review the final integration, preserve valid artifact proof, obtain current-base CI and verify the merged tree. Preserve QA branches/aliases while review access remains required.
+3. Resolve existing documentation conflicts in causl-kb #553, incorporate the requested #548 publication-status clarification, then publish dependent documentation pointers after canonical merge clearance.
+
+Initial reconciliation: main `2dff1663ff10d55178dfcac3f2e8fc1a97427bbb` merges cleanly into #20. Added content is the already-published Helm scope check and indexer recovery notes. The application tree remains unchanged. Runtime evidence still describes the September 12 serving artifacts; a repository merge alone does not establish new deployment or fresh-login proof. The saved administrator password no longer matches the live account; reset authorization remains pending.
+
+Both independent Standards and Outcome reviews found no actionable findings in the main integration and closeout plan. Application files remain unchanged. Shared AWS runner storage is full again; fresh CI triggers and publication remain paused until observed recovery. No host cleanup or credential change follows from source reconciliation.
+
+Recovery: continue from `codex/18-beca-prototype` in `worktrees/onyx-prototype`. After coordinator clearance for runner capacity, publish the reviewed reconciliation and retarget #20 to main. Require current-base CI and merged-tree verification before closing incorporated work. Onyx publishes through `subconscious`, because local `origin` points to upstream Onyx.
