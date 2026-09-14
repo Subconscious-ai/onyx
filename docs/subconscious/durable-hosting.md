@@ -183,3 +183,18 @@ The Helm workflow now checks changed chart paths before requesting the chart run
 The preflight reuses the existing pinned path-filter action and standard runner.
 Hosting-only changes skip chart allocation; chart changes retain the existing test steps.
 Tag and manual releases retain the full chart workflow.
+
+### Shared Subconscious sign-in
+
+The native `auth0` OIDC provider uses verified email and PKCE. Workspace admission remains invitation-only. Existing account IDs and resource permissions remain authoritative.
+
+The gateway permits only this provider's authorize and callback routes. Native Onyx validates callback state and identity. Other authentication routes and private APIs retain their existing guards.
+
+Run the configured-provider check after changing the provider or gateway:
+
+```sh
+PREVIEW_GATEWAY_URL=https://api.dev.subconscious.ai/burn2 \
+  python3 scripts/subconscious/test_auth0_gateway.py
+```
+
+This checks login transport and denial boundaries. It does not prove completed user sign-in, account recovery, or enterprise data isolation. Those remain separate acceptance checks in #21.
