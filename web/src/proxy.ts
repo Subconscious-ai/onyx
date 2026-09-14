@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getDomain } from "@/lib/redirectSS";
 import {
   SERVER_SIDE_ONLY__PAID_ENTERPRISE_FEATURES_ENABLED,
   SERVER_SIDE_ONLY__AUTH_COOKIE_NAME,
@@ -122,6 +123,15 @@ function withSecurityHeaders(response: NextResponse): NextResponse {
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  // Host-only OAuth cookies must originate on the configured callback host.
+  if (pathname === "/auth/login") {
+    const loginUrl = new URL("/auth/login", getDomain(request));
+    if (loginUrl.origin !== request.nextUrl.origin) {
+      loginUrl.search = request.nextUrl.search;
+      return withSecurityHeaders(NextResponse.redirect(loginUrl));
+    }
+  }
 
   // Auth Check: Fast-fail at edge if no cookie (defense in depth)
   // Note: Layouts still do full verification (token validity, roles, etc.)
