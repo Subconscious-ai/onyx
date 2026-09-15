@@ -12,6 +12,27 @@ Vercel hosts the existing frontend and API forwarding. The native Onyx stack run
 
 Existing service routes remain unchanged. Native authentication and the existing restrictive gateway remain active. Databases bind only inside Docker. Code execution must not receive the production host Docker socket. Retain the current feature PRs as drafts; hosting authorization does not imply a feature merge.
 
+## Auth0 callback origin
+
+Set frontend `WEB_DOMAIN` to the same canonical origin as native Onyx `WEB_DOMAIN`.
+Register the exact native Auth0 callback on that origin. Use no wildcard callback.
+The frontend redirects `/auth/login` to that origin before creating OAuth cookies.
+Keep callback validation, host-only cookies, PKCE and private-route guards unchanged.
+
+The September 14 failure started login on the Beca prototype branch alias.
+Auth0 returned to the older shared alias. Host-only cookies stayed on the first host.
+Native Onyx rejected the return with `OAUTH_INVALID_STATE`.
+Gateway HTTP success and a rendered Auth0 screen missed the complete browser boundary.
+
+Run `scripts/subconscious/test_login_origin.py` against the actual frontend.
+Set `LOGIN_FRONTEND_URL`, `LOGIN_CANONICAL_ORIGIN` and the existing preview access secret when required.
+The checks cover the redirect, cookie/callback origin, PKCE and unauthenticated denials.
+
+Before sharing a UAT link, verify the serving frontend on the canonical alias.
+Start without an Onyx session. Complete Auth0 login and verify the original account and saved history.
+Then complete an interview turn, review/save a model and reopen the saved result.
+Record unavailable credentials as blocked proof. Never substitute a restored session for fresh-login evidence.
+
 ## Milestones
 
 1. Pin running images and private configuration. Prepare isolated services and restart policies on AWS. Provide bounded resource limits and an isolated execution daemon.
@@ -183,3 +204,18 @@ The Helm workflow now checks changed chart paths before requesting the chart run
 The preflight reuses the existing pinned path-filter action and standard runner.
 Hosting-only changes skip chart allocation; chart changes retain the existing test steps.
 Tag and manual releases retain the full chart workflow.
+
+### Shared Subconscious sign-in
+
+The native `auth0` OIDC provider uses verified email and PKCE. Workspace admission remains invitation-only. Existing account IDs and resource permissions remain authoritative.
+
+The gateway permits only this provider's authorize and callback routes. Native Onyx validates callback state and identity. Other authentication routes and private APIs retain their existing guards.
+
+Run the configured-provider check after changing the provider or gateway:
+
+```sh
+PREVIEW_GATEWAY_URL=https://api.dev.subconscious.ai/burn2 \
+  python3 scripts/subconscious/test_auth0_gateway.py
+```
+
+This checks login transport and denial boundaries. It does not prove completed user sign-in, account recovery, or enterprise data isolation. Those remain separate acceptance checks in #21.
