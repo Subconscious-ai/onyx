@@ -121,3 +121,6 @@ Run `b5bdf31f-d927-4251-bdf4-7fd4e5ca553d` remains failed. Three interviews comp
 The serving canonical preview was deployment `dpl_Hsdhxe2ZfyEkpCuaeSeGGFtUWbuW`, source `de422c4b8f6d020d98d38324fb82c74b1c9dd25e`.
 Its model destination is `https://causl-scenarios-558-subconcious.vercel.app/dashboard/burn-import`.
 This is paired preview evidence, not a causl-kb production release.
+
+The native background container was restarted after this failure. Its configuration was preserved; no API restart occurred.
+A fresh worker process could prepare a settled synthetic conversation. That does not establish queued-worker completion under rapid turns.
