@@ -6,7 +6,8 @@ It does not mock routes, replace agents, create accounts, or change authenticati
 
 ## What the suite checks
 
-1. Restore two authorized browser sessions and verify their native account IDs.
+1. Start fresh native SSO for two authorized browser sessions and verify their account IDs.
+   Remove only the test context’s native cookie, click the existing provider button, and require a successful callback.
 2. Inspect phone and desktop entry pages for Beca and unwanted workflow controls.
 3. Interview software, grocery and consulting executives through the real composer.
    Check known repeated-question failures, corrected goals, sourced journeys and unknown inputs.
@@ -91,11 +92,16 @@ The reading/answer-time proxy uses 40 words/minute for answers, 200 for reading,
 per turn. It is not observed executive time. Latency reports total turn time, not first-token latency.
 Known-pattern checks are not comprehensive factuality or materiality judgments; inspect the saved answers.
 Unknown inputs are expected in grocery and consulting models; do not fill them to make tests pass.
-Session restoration does not prove a fresh password or Auth0 roundtrip.
+Fresh native SSO reuses an authorized Auth0 browser session. It does not test password entry, password reset, MFA recovery or new-account onboarding. The test never revokes the user’s original session.
 
 ## Initial execution
 
-The September 17 run reached the real hosted login boundary. The retained account-A state
-required sign-in, and no account-B state was supplied. All dependent checks were blocked;
+The initial September 17 restoration run reached the real hosted login boundary. The retained account-A state
+could not reach an authenticated app, and no account-B state was supplied. All dependent checks were blocked;
 no live interview, model or enterprise-isolation pass was claimed. Guard tests passed.
-Supply current authorized sessions and fixture coverage, then rerun the same command.
+A direct browser inspection confirmed a redirect to Vercel’s login page before native sign-in.
+Supply authorized preview access, current sessions and fixture coverage, then rerun the same command.
+
+The final runner additionally requires a fresh native OIDC callback. Configure `ssoButtonName`,
+`identityHost` or `nativeSessionCookie` only when the deployed native configuration differs.
+An expired Auth0 session blocks the run instead of bypassing sign-in.

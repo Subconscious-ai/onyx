@@ -97,7 +97,7 @@ async function main() {
     cases: [],
     isolation: [],
     limits: [
-      "Existing storage-state recovery is not a fresh password/SSO roundtrip.",
+      "Fresh native SSO uses the existing Auth0 browser session; password entry itself is not tested.",
       "Scripted reading/answer time is a proxy, not measured executive minutes.",
       "Pattern checks detect known interview defects; they are not exhaustive factuality review.",
       "Read/search denial matrix is not complete enterprise authorization certification.",
@@ -182,12 +182,56 @@ async function main() {
         });
         const page = await context.newPage();
         accounts[name] = { context, page };
-        await page.goto(
-          config.burnOrigin + "/app?agentId=" + (config.agentId || 5),
-          { waitUntil: "domcontentloaded" },
+        // Drop only this browser copy of the native cookie. Do not revoke a real user's session.
+        await context.clearCookies({
+          name: config.nativeSessionCookie || "fastapiusersauth",
+        });
+        const callbacks = [];
+        page.on("response", (response) => {
+          const url = new URL(response.url());
+          if (
+            url.pathname.includes("/auth/oidc/") &&
+            url.pathname.endsWith("/callback")
+          )
+            callbacks.push({ origin: url.origin, status: response.status() });
+        });
+        const allowed = [config.burnOrigin, ...(config.callbackOrigins || [])];
+        await page.goto(config.burnOrigin + "/auth/login", {
+          waitUntil: "domcontentloaded",
+        });
+        if (new URL(page.url()).hostname === "vercel.com")
+          throw blocked(
+            `Account ${name} requires authorized Vercel preview access before native sign-in`,
+          );
+        await page
+          .getByRole("button", {
+            name: config.ssoButtonName || "Subconscious account",
+            exact: true,
+          })
+          .click({ timeout: 20000 });
+        try {
+          await page.waitForURL(
+            (url) => allowed.includes(url.origin) && url.pathname === "/app",
+            { timeout: 30000 },
+          );
+        } catch (error) {
+          if (
+            new URL(page.url()).hostname ===
+            (config.identityHost || "auth.subconscious.ai")
+          )
+            throw blocked(
+              `Account ${name} requires an interactive Auth0 sign-in`,
+            );
+          throw error;
+        }
+        assert(
+          callbacks.some(
+            (r) =>
+              allowed.includes(r.origin) && r.status >= 200 && r.status < 400,
+          ),
+          "A fresh native OIDC callback must complete",
         );
         const actualOrigin = new URL(page.url()).origin;
-        const allowed = [config.burnOrigin, ...(config.callbackOrigins || [])];
         assert(allowed.includes(actualOrigin), "Unexpected callback origin");
         const response = await context.request.get(actualOrigin + "/api/me", {
           maxRedirects: 0,
@@ -211,7 +255,12 @@ async function main() {
           origin: actualOrigin,
           authenticated: true,
         });
-        return { userId: identity.id, origin: actualOrigin };
+        return {
+          userId: identity.id,
+          origin: actualOrigin,
+          freshNativeSso: true,
+          callbacks,
+        };
       });
     }
     const a = accounts.A;
