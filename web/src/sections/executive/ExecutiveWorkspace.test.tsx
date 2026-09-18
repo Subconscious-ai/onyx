@@ -46,6 +46,17 @@ jest.mock("@opal/icons", () => ({
 }));
 
 describe("conversation-first brief access", () => {
+  it("does not ask the executive to select a capability", () => {
+    render(
+      <ExecutiveWorkspace active messages={[]}>
+        <textarea aria-label="Message" />
+      </ExecutiveWorkspace>
+    );
+    expect(
+      screen.queryByRole("button", { name: "actions.open" })
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Message")).toBeVisible();
+  });
   const retry = jest.fn();
   beforeEach(() => {
     jest.clearAllMocks();
