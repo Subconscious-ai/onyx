@@ -92,7 +92,9 @@ The reading/answer-time proxy uses 40 words/minute for answers, 200 for reading,
 per turn. It is not observed executive time. Latency reports total turn time, not first-token latency.
 Known-pattern checks are not comprehensive factuality or materiality judgments; inspect the saved answers.
 Unknown inputs are expected in grocery and consulting models; do not fill them to make tests pass.
-Fresh native SSO reuses an authorized Auth0 browser session. It does not test password entry, password reset, MFA recovery or new-account onboarding. The test never revokes the user’s original session.
+Fresh native SSO reuses an authorized Auth0 session or enters dedicated synthetic credentials. It does not test customer password reset, MFA recovery or onboarding. The test never revokes the original session.
+
+For unattended synthetic login, set `accounts.A.credentialsFile` and `accounts.B.credentialsFile` to a private JSON file. Each named entry contains `email` and `password`. Only reserved `burn-qa-a-<hex>@example.com` and `burn-qa-b-<hex>@example.com` addresses are accepted. Keep this file outside Git with mode 0600. Updated browser state is saved to the configured private state path.
 
 ## Initial execution
 
@@ -105,3 +107,17 @@ Supply authorized preview access, current sessions and fixture coverage, then re
 The final runner additionally requires a fresh native OIDC callback. Configure `ssoButtonName`,
 `identityHost` or `nativeSessionCookie` only when the deployed native configuration differs.
 An expired Auth0 session blocks the run instead of bypassing sign-in.
+
+## September 17 live follow-up
+
+Removed the Vercel team-login gate on `onyx-executive` and `causl-kb`. Native authentication remains enabled.
+Fresh Auth0 sign-in passed for two dedicated synthetic accounts. Each has viewer access to Beca only.
+Separate native Clerk organizations and sessions were provisioned for the paired model preview.
+Unauthenticated Burn identity requests still return 403. Native chat reads return 200 for owners and 403 for the other account, in both directions.
+
+Run `b5bdf31f-d927-4251-bdf4-7fd4e5ca553d` remains failed. Three interviews completed, with 2–5 second replies and no known-pattern rubric failures. Automatic saved briefs timed out. Manual preparation succeeded as a diagnostic; it is not an automatic-preparation pass. Model save/reopen remains unverified. The full isolation fixture matrix is absent. Default `/app` opens the generic assistant.
+
+[Open Beca directly](https://onyx-executive.vercel.app/app?agentId=5) for exploratory UAT.
+The serving canonical preview was deployment `dpl_Hsdhxe2ZfyEkpCuaeSeGGFtUWbuW`, source `de422c4b8f6d020d98d38324fb82c74b1c9dd25e`.
+Its model destination is `https://causl-scenarios-558-subconcious.vercel.app/dashboard/burn-import`.
+This is paired preview evidence, not a causl-kb production release.

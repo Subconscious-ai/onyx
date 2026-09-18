@@ -97,7 +97,7 @@ async function main() {
     cases: [],
     isolation: [],
     limits: [
-      "Fresh native SSO uses the existing Auth0 browser session; password entry itself is not tested.",
+      "Fresh native SSO uses an existing Auth0 session or dedicated synthetic credentials; customer password recovery is not tested.",
       "Scripted reading/answer time is a proxy, not measured executive minutes.",
       "Pattern checks detect known interview defects; they are not exhaustive factuality review.",
       "Read/search denial matrix is not complete enterprise authorization certification.",
@@ -209,6 +209,43 @@ async function main() {
             exact: true,
           })
           .click({ timeout: 20000 });
+        if (account.credentialsFile) {
+          const credentials = JSON.parse(
+            fs.readFileSync(account.credentialsFile, "utf8"),
+          )[name];
+          assert(
+            /^burn-qa-[ab]-[a-f0-9]+@example\.com$/.test(credentials.email),
+            "Only dedicated synthetic credentials are accepted",
+          );
+          try {
+            await page.waitForURL(
+              (url) =>
+                (allowed.includes(url.origin) && url.pathname === "/app") ||
+                url.hostname ===
+                  (config.identityHost || "auth.subconscious.ai"),
+            );
+            if (!allowed.includes(new URL(page.url()).origin)) {
+              await page
+                .locator('input[name="username"]')
+                .fill(credentials.email, { timeout: 10000 });
+              await page
+                .getByRole("button", { name: "Continue", exact: true })
+                .click();
+              await page
+                .locator('input[type="password"]:visible')
+                .fill(credentials.password);
+              await page
+                .getByRole("button", { name: "Continue", exact: true })
+                .click();
+            }
+          } catch {
+            // Do not retain credential-bearing Playwright call logs.
+            if (!allowed.includes(new URL(page.url()).origin))
+              throw blocked(
+                `Account ${name} synthetic Auth0 sign-in needs attention`,
+              );
+          }
+        }
         try {
           await page.waitForURL(
             (url) => allowed.includes(url.origin) && url.pathname === "/app",
@@ -255,6 +292,7 @@ async function main() {
           origin: actualOrigin,
           authenticated: true,
         });
+        await context.storageState({ path: account.state });
         return {
           userId: identity.id,
           origin: actualOrigin,
@@ -289,6 +327,10 @@ async function main() {
           "Specialist routing must be absent",
         );
         assert(
+          await a.page.locator(".executive-workspace").isVisible(),
+          "Default entry must select the executive workspace",
+        );
+        assert(
           await a.page.getByText("Beca", { exact: true }).first().isVisible(),
           "Beca must be identifiable",
         );
@@ -315,6 +357,7 @@ async function main() {
         await p.goto(a.origin + "/app?agentId=" + (config.agentId || 5), {
           waitUntil: "domcontentloaded",
         });
+        await p.locator(".executive-workspace").waitFor({ timeout: 30000 });
         let previous = "",
           words = 0;
         for (const [index, turn] of cases[name].entries()) {
