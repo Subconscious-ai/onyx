@@ -3,6 +3,9 @@ from typing import Type, Union
 from onyx.tools.tool_implementations.coding_agent.coding_agent_tool import (
     CodingAgentTool,
 )
+from onyx.tools.tool_implementations.company_profile.company_profile_tool import (
+    CompanyProfileTool,
+)
 from onyx.tools.tool_implementations.file_reader.file_reader_tool import FileReaderTool
 from onyx.tools.tool_implementations.images.image_generation_tool import (
     ImageGenerationTool,
@@ -21,6 +24,7 @@ logger = setup_logger()
 
 
 BUILT_IN_TOOL_TYPES = Union[
+    CompanyProfileTool,
     SearchTool,
     ImageGenerationTool,
     WebSearchTool,
@@ -33,6 +37,7 @@ BUILT_IN_TOOL_TYPES = Union[
 ]
 
 BUILT_IN_TOOL_MAP: dict[str, Type[BUILT_IN_TOOL_TYPES]] = {
+    CompanyProfileTool.__name__: CompanyProfileTool,
     SearchTool.__name__: SearchTool,
     ImageGenerationTool.__name__: ImageGenerationTool,
     WebSearchTool.__name__: WebSearchTool,
