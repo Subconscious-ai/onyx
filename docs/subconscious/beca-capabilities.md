@@ -2,6 +2,8 @@
 
 ## Current delivery
 
+The September 17 product decision is one assistant with native tool selection. [Issue #24](https://github.com/Subconscious-ai/onyx/issues/24) replaces action-card development and executive-facing persona selection. The menu and persona descriptions below document existing behavior, not the target interface. Runtime capability receipts retain their original validation dates.
+
 Beca uses the existing Onyx conversation, native files, source search, citations, Python execution and tool administration. The native persona remains named `Burn 2.0` because profile and brief guards use that identity. The interface displays Beca. AWS Bedrock remains the reasoning provider.
 
 The compact Actions menu prepares a request for review in the native composer. Existing text and attachments remain present. Actions cover customer evidence, public market research, model review, experiment design, experiment analysis and dataset analysis. Brief opens the journey, OKRs, evidence and model handoff. No permanent roster, provider selector or draft footer competes with chat.

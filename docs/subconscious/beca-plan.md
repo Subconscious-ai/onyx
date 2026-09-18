@@ -1,3 +1,7 @@
+# Historical Beca interface plan
+
+PR #10 is merged. The September 17 [one-assistant plan](https://github.com/Subconscious-ai/onyx/issues/24) supersedes the workflow-selection direction below. Preserve earlier proof and failure records. Use [the Burn entry point](README.md) for current status.
+
 ## Problem
 Mobile Burn chat loses most screen space to specialist tabs, profile status, model selectors, and a permanent draft footer. Customers need a single Beca conversation with Subconscious branding.
 
