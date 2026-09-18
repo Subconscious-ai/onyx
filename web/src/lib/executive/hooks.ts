@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { ExecutiveProfile } from "@/lib/executive/profile";
 import {
   interviewMessageText,
   projectBrief,
@@ -15,6 +16,8 @@ interface PublicResearch {
 }
 
 export function useExecutiveContext(active: boolean) {
+  const [profile, setProfile] = useState<ExecutiveProfile | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [profileStatus, setProfileStatus] = useState(
     "Checking professional context…"
   );
@@ -38,9 +41,18 @@ export function useExecutiveContext(active: boolean) {
         const value = await response.json();
         if (cancelled) return;
         if (profile) {
+          setProfile(
+            Number.isInteger(value.correction?.revision)
+              ? {
+                  profile: value.profile ?? {},
+                  provider_profile: value.provider_profile,
+                  correction: value.correction,
+                }
+              : null
+          );
           setProfileStatus(
             value.status === "ready"
-              ? `PDL professional match loaded${value.profile?.company ? ` · ${value.profile.company}` : ""}`
+              ? `${value.correction?.revision ? "Your company context" : "PDL professional match loaded"}${value.profile?.company ? ` · ${value.profile.company}` : ""}`
               : value.status === "not_found"
                 ? "PDL: no confident match"
                 : value.status === "updating"
@@ -71,8 +83,13 @@ export function useExecutiveContext(active: boolean) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [active]);
-  return { profileStatus, research };
+  }, [active, refreshKey]);
+  return {
+    profileStatus,
+    profile,
+    research,
+    reload: () => setRefreshKey((value) => value + 1),
+  };
 }
 
 /** Coalesce completed turns; never wait for extraction before accepting another answer. */

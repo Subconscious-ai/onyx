@@ -10,7 +10,11 @@ The customer-facing interview is Beca. The current interface still exposes an Ac
 
 The September 17 decision is one assistant and one conversation. The assistant selects research, retrieval, calculation, model and experiment tools through native Onyx. Executives should not select workflow cards or specialist agents. Results remain reviewable artifacts in the conversation.
 
-[Issue #24](https://github.com/Subconscious-ai/onyx/issues/24) is the active plan for this simplification and editable company context. The earlier action-card proposal is superseded. Implementation has not started. PDL corrections must survive enrichment refresh and inform subsequent turns. Preserve native permissions and explicit approval for paid experiment execution.
+[Issue #24](https://github.com/Subconscious-ai/onyx/issues/24) is the active plan for this simplification and editable company context. The earlier action-card proposal is superseded. [Draft PR #26](https://github.com/Subconscious-ai/onyx/pull/26) removes the Actions menu and specialist navigation. It also adds a revision-checked profile editor and separate provider/correction records. These changes are not a production release. Chat-based profile correction and hosted acceptance remain outstanding. Preserve native permissions and explicit approval for paid experiment execution.
+
+Profile edits use authenticated `PATCH /chat/executive-profile`; native authentication supplies the caller and `WRITE_CHAT` permission. The request cannot select another owner. Enrichment writes only the provider record. Explicit corrections and each edit revision use the existing native key-value store. A company change drops unrelated company fields and excludes old research. Accepted shared company records still belong in causl-kb.
+
+The September 18 runtime probe found that the native encryption helper returns plaintext bytes unchanged. The storage class name does not establish encryption. Disk encryption was not checked. Issue #21 tracks this deployment boundary alongside caller-scoped access. Do not claim application-level encryption from the table name.
 
 ## Verified release boundary, September 17
 

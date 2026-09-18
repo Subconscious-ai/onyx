@@ -13838,6 +13838,27 @@
     }
   },
   "executive": {
+    "companyProfile": {
+      "title": "会社プロフィール",
+      "description": "あなたの修正はPDLより優先されます。これは個人用の作業プロフィールであり、会社の共有記録ではありません。",
+      "corrected": "あなたの修正",
+      "provider": "PDLの提案",
+      "missing": "未入力",
+      "save": "修正を保存",
+      "saving": "保存中…",
+      "cancel": "キャンセル",
+      "conflict": "プロフィールが別の場所で変更されました。キャンセルして開き直してください。修正は保存されていません。",
+      "failed": "修正を保存できませんでした。入力内容は残っています。再試行してください。",
+      "fields": {
+        "name": "名前",
+        "role": "役職",
+        "company": "会社",
+        "industry": "業界",
+        "website": "会社の公開ウェブサイト",
+        "product": "製品またはサービス",
+        "customer_segment": "顧客"
+      }
+    },
     "modelSavedOpen": "保存済みモデルを開く",
     "modelScenarioPreview": "モデル変更を確認",
     "modelScenarioConnected": "モデル接続済み。会話で新しい仮定を指定。",

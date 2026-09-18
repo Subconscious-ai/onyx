@@ -13838,6 +13838,27 @@
     }
   },
   "executive": {
+    "companyProfile": {
+      "title": "Unternehmensprofil",
+      "description": "Ihre Korrekturen haben Vorrang vor PDL. Dies ist Ihr privates Arbeitsprofil, kein gemeinsamer Unternehmensdatensatz.",
+      "corrected": "Ihre Korrektur",
+      "provider": "PDL-Vorschlag",
+      "missing": "Nicht angegeben",
+      "save": "Korrekturen speichern",
+      "saving": "Wird gespeichert…",
+      "cancel": "Abbrechen",
+      "conflict": "Das Profil wurde andernorts geändert. Brechen Sie ab und öffnen Sie es erneut. Ihre Änderungen wurden nicht gespeichert.",
+      "failed": "Korrekturen konnten nicht gespeichert werden. Ihre Änderungen sind noch vorhanden; versuchen Sie es erneut.",
+      "fields": {
+        "name": "Name",
+        "role": "Position",
+        "company": "Unternehmen",
+        "industry": "Branche",
+        "website": "Öffentliche Unternehmenswebsite",
+        "product": "Produkt oder Dienstleistung",
+        "customer_segment": "Kunden"
+      }
+    },
     "modelSavedOpen": "Gespeichertes Modell öffnen",
     "modelScenarioPreview": "Modelländerung prüfen",
     "modelScenarioConnected": "Modell verbunden. Eine neue Annahme im Gespräch anfordern.",

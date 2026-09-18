@@ -126,6 +126,11 @@ def research_matches_company(profile: dict | None, company: str | None) -> bool:
     names = [fields.get("company", "")]
     website = fields.get("website", "")
     if website:
-        host = urlsplit(website if "://" in website else f"https://{website}").hostname
+        try:
+            host = urlsplit(
+                website if "://" in website else f"https://{website}"
+            ).hostname
+        except ValueError:
+            host = None
         names.append((host or "").removeprefix("www."))
     return expected in {identity(name) for name in names if isinstance(name, str)}

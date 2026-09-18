@@ -193,6 +193,7 @@ describe("automatic saved evidence", () => {
       await Promise.resolve();
     });
     expect(result.current.research.status).toBe("queued");
+    expect(result.current.profile).toBeNull(); // Older APIs cannot save corrections.
     await act(async () => {
       jest.advanceTimersByTime(2000);
     });
@@ -207,6 +208,23 @@ describe("automatic saved evidence", () => {
       jest.advanceTimersByTime(10000);
     });
     expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+  it("exposes the editable profile when the API supports correction revisions", async () => {
+    jest.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: "ready",
+        profile: { company: "Corrected" },
+        correction: { revision: 2, fields: { company: "Corrected" } },
+        research: { status: "needs_company" },
+      }),
+    } as Response);
+    const { result } = renderHook(() => useExecutiveContext(true));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.profile?.correction.revision).toBe(2);
+    expect(result.current.profileStatus).toContain("Your company context");
   });
 });
 

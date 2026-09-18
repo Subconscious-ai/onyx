@@ -13838,6 +13838,27 @@
     }
   },
   "executive": {
+    "companyProfile": {
+      "title": "Company profile",
+      "description": "Your corrections take precedence over PDL. This is your private working profile, not a shared company record.",
+      "corrected": "Your correction",
+      "provider": "PDL suggestion",
+      "missing": "Not supplied",
+      "save": "Save corrections",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "conflict": "The profile changed elsewhere. Cancel and reopen before saving. Your edits have not been saved.",
+      "failed": "Could not save corrections. Your edits are still here; try again.",
+      "fields": {
+        "name": "Name",
+        "role": "Role",
+        "company": "Company",
+        "industry": "Industry",
+        "website": "Public company website",
+        "product": "Product or service",
+        "customer_segment": "Customers"
+      }
+    },
     "modelSavedOpen": "Open saved model",
     "modelScenarioPreview": "Preview model change",
     "modelScenarioConnected": "Model connected. Request a new assumption in the conversation.",

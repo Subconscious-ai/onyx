@@ -1,4 +1,5 @@
 "use client";
+import CompanyProfile from "@/sections/executive/CompanyProfile";
 
 import { Wordmark } from "@/sections/brand/wordmark";
 import { useTranslations } from "next-intl";
@@ -190,7 +191,9 @@ export default function ExecutiveWorkspace({
       modelHandoff.current = null;
     };
   }, [active, preview, chatId, t, onModelContext]);
-  const { profileStatus, research } = useExecutiveContext(active && !preview);
+  const { profileStatus, profile, research, reload } = useExecutiveContext(
+    active && !preview
+  );
 
   const [view, setView] = useState<
     "journey" | "evidence" | "decisions" | "model"
@@ -347,6 +350,9 @@ export default function ExecutiveWorkspace({
             )}
             <details className="executive-context">
               <summary>{t("researchContextAndLenses")}</summary>
+              {!preview && profile && (
+                <CompanyProfile profile={profile} onRefresh={reload} />
+              )}
               {!preview && (
                 <Text as="p" font="secondary-body">
                   {profileStatus}

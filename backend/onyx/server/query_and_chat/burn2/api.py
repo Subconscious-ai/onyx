@@ -28,6 +28,7 @@ from onyx.llm.models import (
     UserMessage,
 )
 from onyx.llm.override_models import LLMOverride
+from onyx.server.query_and_chat.burn2.models import ProfileCorrection
 from onyx.server.query_and_chat.burn2.validation import (
     extraction_schema,
     latest_saved_brief,
@@ -253,11 +254,43 @@ def prepare_profile(
 def read_executive_research(
     user: User = Depends(require_permission(Permission.WRITE_CHAT)),
 ) -> dict:
+    from onyx.db.burn2_profile import read_profile
     from onyx.db.burn2_research import read_research
+    from onyx.server.query_and_chat.burn2.research import (
+        public_research_query,
+        research_reusable,
+    )
 
     if os.environ.get("BURN2_ENABLED") != "true":
         raise OnyxError(OnyxErrorCode.NOT_FOUND, "Not found")
-    return read_research(user.id) or {"status": "unavailable"}
+    query = public_research_query(read_profile(user.id))
+    if not query:
+        return {"status": "needs_company"}
+    research = read_research(user.id)
+    return (
+        research
+        if research and research_reusable(research, query)
+        else {"status": "unavailable"}
+    )
+
+
+@router.patch("/executive-profile")
+def correct_executive_profile(
+    body: ProfileCorrection,
+    user: User = Depends(require_permission(Permission.WRITE_CHAT)),
+) -> dict:
+    from onyx.db.burn2_profile import correct_profile
+    from onyx.server.query_and_chat.burn2.background import ensure_research
+
+    if os.environ.get("BURN2_ENABLED") != "true":
+        raise OnyxError(OnyxErrorCode.NOT_FOUND)
+    try:
+        profile = correct_profile(user.id, body)
+    except ValueError:
+        raise OnyxError(
+            OnyxErrorCode.CONFLICT, "Company profile changed. Reload before saving."
+        ) from None
+    return {**profile, "research": ensure_research(user.id)}
 
 
 def _prepare_profile(user: User) -> dict:
@@ -273,7 +306,7 @@ def _prepare_profile(user: User) -> dict:
         return current
     key = os.environ.get("PDL_API_KEY")
     if not key:
-        return {"status": "unavailable"}
+        return current
     lock = get_cache_backend().lock(f"burn2:profile:{user.id}", timeout=30)
     if not lock.acquire(blocking=False):
         return {"status": "updating"}
@@ -301,9 +334,9 @@ def _prepare_profile(user: User) -> dict:
             "source": "People Data Labs",
         }
         save_profile(user.id, value)
-        return value
+        return read_profile(user.id)
     except requests.RequestException:
-        return {"status": "unavailable"}
+        return read_profile(user.id)
     finally:
         if lock.owned():
             lock.release()

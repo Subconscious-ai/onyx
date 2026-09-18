@@ -13838,6 +13838,27 @@
     }
   },
   "executive": {
+    "companyProfile": {
+      "title": "Profil de l’entreprise",
+      "description": "Vos corrections priment sur PDL. Il s’agit de votre profil de travail privé, pas d’un dossier partagé de l’entreprise.",
+      "corrected": "Votre correction",
+      "provider": "Suggestion PDL",
+      "missing": "Non renseigné",
+      "save": "Enregistrer les corrections",
+      "saving": "Enregistrement…",
+      "cancel": "Annuler",
+      "conflict": "Le profil a été modifié ailleurs. Annulez et rouvrez-le avant d’enregistrer. Vos modifications n’ont pas été enregistrées.",
+      "failed": "Impossible d’enregistrer les corrections. Vos modifications sont conservées ici ; réessayez.",
+      "fields": {
+        "name": "Nom",
+        "role": "Fonction",
+        "company": "Entreprise",
+        "industry": "Secteur",
+        "website": "Site public de l’entreprise",
+        "product": "Produit ou service",
+        "customer_segment": "Clients"
+      }
+    },
     "modelSavedOpen": "Ouvrir le modèle enregistré",
     "modelScenarioPreview": "Aperçu du changement",
     "modelScenarioConnected": "Modèle connecté. Demander une nouvelle hypothèse dans la conversation.",
