@@ -1,0 +1,26 @@
+{
+  "syntheticApproved": true,
+  "output": "/absolute/private/burn-acceptance",
+  "burnOrigin": "https://onyx-executive.vercel.app",
+  "callbackOrigins": [
+    "https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app"
+  ],
+  "kbOrigin": "https://YOUR-APP.vercel.app",
+  "agentId": 5,
+  "deployment": "record-the-exact-tested-deployment-id",
+  "maxScriptedMinutes": 10,
+  "accounts": {
+    "A": {
+      "state": "/private/company-a.json",
+      "expectedUserId": "native-user-a",
+      "expectedOrgId": "org_a"
+    },
+    "B": {
+      "state": "/private/company-b.json",
+      "expectedUserId": "native-user-b",
+      "expectedOrgId": "org_b"
+    }
+  },
+  "resourceOrigins": [],
+  "resources": []
+}
