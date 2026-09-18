@@ -1,6 +1,6 @@
 # Burn 2.0 on native Onyx
 
-[Open Burn](https://onyx-executive.vercel.app/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Login redirects to the existing registered review hostname before OAuth starts.
+[Open Burn](https://burn.subconscious.ai/app). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Login uses the canonical Burn hostname and existing Subconscious Auth0 account.
 
 Onyx PRs #10, #20 and #23 are merged. The [prototype record](prototype-plan.md) preserves earlier paired model evidence and generation limits. Onyx source publication does not establish the merge or deployment of a causl-kb counterpart.
 
@@ -20,11 +20,14 @@ The September 18 candidate check used real Bedrock GPT OSS and synthetic Postgre
 
 The September 18 runtime probe found that the native encryption helper returns plaintext bytes unchanged. The storage class name does not establish encryption. Disk encryption was not checked. Issue #21 tracks this deployment boundary alongside caller-scoped access. Do not claim application-level encryption from the table name.
 
-## Verified release boundary, September 17
+## Verified release boundary, September 18
 
-Production deployment `dpl_FdNmDXw9UPnsPiSRqhiSRRC3Lgcy` is Ready from main `fc9c911eb9708d0ef6706f61f7a6981690fc88f1`. The issue #21 receipt records fresh Auth0 sign-in, recovery of the original account, and a saved interview surviving reload. Login continues on the registered review origin.
+Production deployment `dpl_6K4cZtUowRRPyWxFaLjRWrTyQxKr` is Ready from unchanged source `fc9c911eb9708d0ef6706f61f7a6981690fc88f1`. The issue #21 receipt records fresh canonical-domain Auth0 sign-in and recovery of the saved Coffee Delivery Frequency Decision conversation. The Auth0 client now permits Refresh Token alongside Authorization Code; actual token renewal still needs proof.
 
-[Issue #21](https://github.com/Subconscious-ai/onyx/issues/21) remains open for canonical-domain rollout, cross-account isolation, caller-scoped MCP authorization and monitoring evidence. A complete current interview-to-model save/reopen run remains outstanding. Existing-account success is not enterprise-isolation proof.
+The existing pinned backend image now runs its native MCP service behind `/api/mcp/`. Use a native personal access token for the signed-in user, created in Settings → Accounts & Access. This endpoint uses native Onyx permissions; it is not a new Auth0 OAuth server. Local gateway checks proved health and rejection of missing/invalid tokens on both slash variants. Positive public initialize/list/tool-call and cross-user denial remain outstanding.
+
+[Issue #21](https://github.com/Subconscious-ai/onyx/issues/21) remains open for refresh execution, cross-account isolation, positive MCP acceptance and monitoring evidence. A complete interview-to-model save/reopen run also remains outstanding. Existing-account success is not enterprise-isolation proof.
+
 
 ## Architecture
 
@@ -74,7 +77,7 @@ Use the branch URL from the Vercel deployment record. A failed build leaves the 
 Production backend routing and `WEB_DOMAIN` were configured and deployed on September 17. The checked-in configuration still disables automatic `main` builds. The production deployment was a separate redeploy; a merge alone does not publish the next version.
 Verify the serving source and environment after publication. Full model-handoff acceptance remains separate from frontend build success.
 
-The `burn.subconscious.ai` cutover remains tracked in #21. Use the verified Vercel entry above until domain rollout is complete.
+The `burn.subconscious.ai` cutover is live. Use the canonical entry above; #21 retains the remaining acceptance evidence.
 The registered review origin is `https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app`; alias promotion remains manual.
 Native Git builds update branch aliases, not the manually assigned shared review alias.
 
