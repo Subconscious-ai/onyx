@@ -124,3 +124,5 @@ This is paired preview evidence, not a causl-kb production release.
 
 The native background container was restarted after this failure. Its configuration was preserved; no API restart occurred.
 A fresh worker process could prepare a settled synthetic conversation. That does not establish queued-worker completion under rapid turns.
+The recovery run also timed out on automatic software brief preparation after 135 seconds.
+Remaining duplicate cases were stopped after this same failure. The original complete three-case failure receipt remains authoritative.
