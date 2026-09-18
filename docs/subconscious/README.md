@@ -1,10 +1,22 @@
 # Burn 2.0 on native Onyx
 
-[Open Burn](https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app/app?agentId=5). The stable Vercel address serves the native executive interview. The backend runs on AWS at `https://api.dev.subconscious.ai/burn2`; desktop services are no longer the serving backend.
+[Open Burn](https://onyx-executive.vercel.app/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Login redirects to the existing registered review hostname before OAuth starts.
 
-The integrated interview/model prototype is available in the [Beca QA preview](https://onyx-executive-git-codex-18-beca-prototype-subconcious.vercel.app/app?agentId=5). Exact serving artifacts, successful checks and retained generation limits live in the [prototype plan](prototype-plan.md). Draft #20 and the paired model draft remain unmerged for executive review.
+Onyx PRs #10, #20 and #23 are merged. The [prototype record](prototype-plan.md) preserves earlier paired model evidence and generation limits. Onyx source publication does not establish the merge or deployment of a causl-kb counterpart.
 
-The customer-facing interview is Beca. The review sidebar also exposes Experiment design and Experiment analytics, backed by the existing Rehoboam MCP. See [the capability review](beca-capabilities.md) for current MCP access, MBB sourcing, voice prerequisites and the compact conversation layout.
+The customer-facing interview is Beca. The current interface still exposes an Actions menu and separate experiment personas. See [the capability review](beca-capabilities.md) for the existing integration.
+
+## Product decision and next work
+
+The September 17 decision is one assistant and one conversation. The assistant selects research, retrieval, calculation, model and experiment tools through native Onyx. Executives should not select workflow cards or specialist agents. Results remain reviewable artifacts in the conversation.
+
+[Issue #24](https://github.com/Subconscious-ai/onyx/issues/24) is the active plan for this simplification and editable company context. The earlier action-card proposal is superseded. Implementation has not started. PDL corrections must survive enrichment refresh and inform subsequent turns. Preserve native permissions and explicit approval for paid experiment execution.
+
+## Verified release boundary, September 17
+
+Production deployment `dpl_FdNmDXw9UPnsPiSRqhiSRRC3Lgcy` is Ready from main `fc9c911eb9708d0ef6706f61f7a6981690fc88f1`. The issue #21 receipt records fresh Auth0 sign-in, recovery of the original account, and a saved interview surviving reload. Login continues on the registered review origin.
+
+[Issue #21](https://github.com/Subconscious-ai/onyx/issues/21) remains open for canonical-domain rollout, cross-account isolation, caller-scoped MCP authorization and monitoring evidence. A complete current interview-to-model save/reopen run remains outstanding. Existing-account success is not enterprise-isolation proof.
 
 ## Architecture
 
@@ -18,7 +30,7 @@ The customer-facing interview is Beca. The review sidebar also exposes Experimen
 
 ## Start here
 
-- [Beca prototype and current paired QA](prototype-plan.md): automatic public research, background briefs, saved-model recovery and experiment-analysis proof. Draft #20 remains unmerged pending executive QA.
+- [Historical Beca prototype QA](prototype-plan.md): public research, background briefs, saved-model recovery and retained failures on the recorded artifacts.
 
 - [Hosting, recovery and deployment lessons](durable-hosting.md): native Compose, rootless execution, encrypted Vercel Blob backups, restart and restore evidence.
 - [Interview operation and QA](burn2-operations.md): source ownership, model handoff, configuration and acceptance checks.
@@ -29,7 +41,7 @@ The active Burn agent is `5`, conversation model `8` (GPT OSS 120B), preparation
 
 ## Remaining product work
 
-[Issue #6](https://github.com/Subconscious-ai/onyx/issues/6) records intermittent structured-brief validation failures and provider timeouts. A retry produced a persisted reviewable brief during hosting QA; a successful retry does not establish reliable first-attempt generation.
+The historical [issue #6](https://github.com/Subconscious-ai/onyx/issues/6) and prototype record describe intermittent structured-brief failures. Closing a historical ticket does not establish reliable first-attempt generation. The active product plan is #24; access and release acceptance remain in #21.
 
 Cross-application SSO remains causl-kb #450. Community Edition is not evidence of shared-instance enterprise isolation. Rehoboam execution, measured operating outcomes, and multi-host failover are outside the hosted release. Native Onyx and causl-kb still require separate authenticated sessions.
 
@@ -47,14 +59,23 @@ The rules apply after the configuration reaches each branch. No extra GitHub dep
 
 Push reviewed frontend changes to a Burn branch. Vercel builds the commit and updates the branch preview after success.
 Use the branch URL from the Vercel deployment record. A failed build leaves the last successful branch preview available.
-Before enabling `main`, configure production backend and model-handoff settings, then complete executive acceptance checks.
-The current project has preview connection settings only; enabling production releases now would publish an unconfigured application.
-Automatic builds do not authorize feature merges or establish executive readiness.
+Production backend routing and `WEB_DOMAIN` were configured and deployed on September 17. The checked-in configuration still disables automatic `main` builds. The production deployment was a separate redeploy; a merge alone does not publish the next version.
+Verify the serving source and environment after publication. Full model-handoff acceptance remains separate from frontend build success.
 
-The existing `burn.subconscious.ai` domain serves causl-kb. Domain replacement requires explicit approval.
-The shared review alias is `https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app/app?agentId=5`; alias promotion remains manual.
+The `burn.subconscious.ai` cutover remains tracked in #21. Use the verified Vercel entry above until domain rollout is complete.
+The registered review origin is `https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app`; alias promotion remains manual.
 Native Git builds update branch aliases, not the manually assigned shared review alias.
 
 Vercel releases only the frontend and API forwarding. AWS backend images, data, backups and service restarts remain separate.
 Use [the hosting procedure](durable-hosting.md) for backend changes. Never restart desktop writers after the AWS migration.
 Preserve the exact handoff origins, authenticated access and private configuration during release.
+
+## Lessons for the next change
+
+- Inspect native tool assignments and prompts before adding routing code. Prompts live in Postgres; frontend releases do not update prompts.
+- Start OAuth on the registered callback origin. Host-only state and PKCE cookies cannot follow a different hostname.
+- An existing member can pass invite-only admission without an invitation. Identify the actual Auth0 identity before changing admission.
+- Native API health, a rendered login page and a Vercel Ready state prove different boundaries. Test the customer path separately.
+- PR #23 browser CI never started: three image jobs lacked runners for 24 hours. Preserve that limitation; skipped tests are not passes.
+- Native Onyx owns conversations and draft context. causl-kb owns accepted ontology and models. Preserve sources and executive corrections.
+- Old plans below are historical evidence. Start new work from fork main and the active issue, not a retired worktree.

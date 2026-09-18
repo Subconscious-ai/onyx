@@ -1,6 +1,6 @@
 # Beca prototype, issue 18
 
-Updated September 12, 2026. The integrated prototype is available for executive QA. Feature PRs remain drafts and unmerged. Preview verification does not establish production readiness or reliable generation for every business.
+Historical record, superseded for execution on September 17, 2026. Onyx PR #20 is merged; helper PR #19 is closed. Dates, deployment IDs, draft status and worktree instructions below describe earlier work. Preserve the evidence without resuming the old closeout. Read [the Burn entry point](README.md) for current delivery and issues #21/#24. Paired causl-kb work requires independent release verification.
 
 ## Scope and ownership
 
@@ -66,7 +66,7 @@ Rollback: `/opt/burn/private/prototype18-20260912T181848Z/compose-before-model-r
 
 Retain worktrees, paired previews and synthetic showcase models for executive QA. Issue #18 and draft #20 remain open, paired with causl-kb draft #559. No feature merge or production-readiness claim follows from prototype publication.
 
-## Active closeout, September 13
+## Historical closeout, September 13
 
 The causl-kb coordinator supplied the current user authorization to merge completed cross-chat work. Scope: reconcile existing Onyx branches and the #550 documentation family; no features, credential changes or production promotion. Shared QA access remains on HOLD. The coordinator owns KB runtime merges and must clear the #553 merge.
 
