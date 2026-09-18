@@ -1,7 +1,7 @@
 import { render, screen } from "@tests/setup/test-utils";
 import ConsultingAgents from "@/sections/executive/ConsultingAgents";
 
-it("exposes the authorized interview, design, and analytics agents with actual native IDs", () => {
+it("offers one assistant instead of asking executives to choose a specialist", () => {
   render(
     <ConsultingAgents
       agents={[
@@ -16,11 +16,11 @@ it("exposes the authorized interview, design, and analytics agents with actual n
     screen.getByRole("link", { name: "Executive interview" })
   ).toHaveAttribute("href", "/app?agentId=5");
   expect(
-    screen.getByRole("link", { name: "Experiment design" })
-  ).toHaveAttribute("href", "/app?agentId=41");
+    screen.queryByRole("link", { name: "Experiment design" })
+  ).not.toBeInTheDocument();
   expect(
-    screen.getByRole("link", { name: "Experiment analytics" })
-  ).toHaveAttribute("href", "/app?agentId=42");
+    screen.queryByRole("link", { name: "Experiment analytics" })
+  ).not.toBeInTheDocument();
   expect(screen.queryByText("Legacy interview")).not.toBeInTheDocument();
 });
 

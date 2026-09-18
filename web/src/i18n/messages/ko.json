@@ -13838,6 +13838,27 @@
     }
   },
   "executive": {
+    "companyProfile": {
+      "title": "회사 프로필",
+      "description": "사용자의 수정 사항이 PDL보다 우선합니다. 이 프로필은 개인 작업용이며 회사의 공유 기록이 아닙니다.",
+      "corrected": "사용자 수정",
+      "provider": "PDL 제안",
+      "missing": "미입력",
+      "save": "수정 사항 저장",
+      "saving": "저장 중…",
+      "cancel": "취소",
+      "conflict": "다른 곳에서 프로필이 변경되었습니다. 취소한 후 다시 열어 저장하세요. 수정 사항은 저장되지 않았습니다.",
+      "failed": "수정 사항을 저장하지 못했습니다. 입력 내용은 그대로 있습니다. 다시 시도하세요.",
+      "fields": {
+        "name": "이름",
+        "role": "직책",
+        "company": "회사",
+        "industry": "산업",
+        "website": "회사 공개 웹사이트",
+        "product": "제품 또는 서비스",
+        "customer_segment": "고객"
+      }
+    },
     "modelSavedOpen": "저장된 모델 열기",
     "modelScenarioPreview": "모델 변경 미리 보기",
     "modelScenarioConnected": "모델 연결 완료. 대화에서 새로운 가정을 요청.",

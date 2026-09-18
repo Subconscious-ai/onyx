@@ -13838,6 +13838,27 @@
     }
   },
   "executive": {
+    "companyProfile": {
+      "title": "公司资料",
+      "description": "您的更正优先于PDL建议。这是您的私人工作资料，并非公司的共享记录。",
+      "corrected": "您的更正",
+      "provider": "PDL建议",
+      "missing": "未提供",
+      "save": "保存更正",
+      "saving": "正在保存…",
+      "cancel": "取消",
+      "conflict": "资料已在其他位置更改。请取消并重新打开后再保存。您的更改尚未保存。",
+      "failed": "无法保存更正。您的输入仍保留在此处，请重试。",
+      "fields": {
+        "name": "姓名",
+        "role": "职务",
+        "company": "公司",
+        "industry": "行业",
+        "website": "公司公开网站",
+        "product": "产品或服务",
+        "customer_segment": "客户"
+      }
+    },
     "modelSavedOpen": "打开已保存的模型",
     "modelScenarioPreview": "预览模型变更",
     "modelScenarioConnected": "模型已连接。请在对话中提出新假设。",

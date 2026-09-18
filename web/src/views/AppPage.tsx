@@ -808,7 +808,6 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
 
       <ExecutiveWorkspace
         onModelContext={receiveModelContext}
-        onDraft={(message) => chatInputBarRef.current?.appendDraft(message)}
         active={isExecutiveAgent(activeAgent)}
         messages={messageHistory}
         chatId={currentChatSessionId}

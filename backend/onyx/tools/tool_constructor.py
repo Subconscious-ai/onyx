@@ -35,6 +35,9 @@ from onyx.tools.models import DynamicSchemaInfo, SearchToolUsage
 from onyx.tools.tool_implementations.coding_agent.coding_agent_tool import (
     CodingAgentTool,
 )
+from onyx.tools.tool_implementations.company_profile.company_profile_tool import (
+    CompanyProfileTool,
+)
 from onyx.tools.tool_implementations.custom.custom_tool import (
     build_custom_tools_from_openapi_schema_and_headers,
 )
@@ -334,6 +337,15 @@ def _construct_tools_impl(
                     raise ValueError(
                         "Open URL tool requires a web content provider, please contact your Onyx admin to get it configured!"
                     )
+
+            elif tool_cls.__name__ == CompanyProfileTool.__name__:
+                if user.is_anonymous:
+                    continue
+                tool_dict[db_tool_model.id] = [
+                    CompanyProfileTool(
+                        tool_id=db_tool_model.id, user_id=user.id, emitter=emitter
+                    )
+                ]
 
             # Handle Python/Code Interpreter Tool
             elif tool_cls.__name__ == PythonTool.__name__:

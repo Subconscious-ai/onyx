@@ -13838,6 +13838,27 @@
     }
   },
   "executive": {
+    "companyProfile": {
+      "title": "Perfil da empresa",
+      "description": "Suas correções têm prioridade sobre o PDL. Este é seu perfil privado de trabalho, não um registro compartilhado da empresa.",
+      "corrected": "Sua correção",
+      "provider": "Sugestão do PDL",
+      "missing": "Não informado",
+      "save": "Salvar correções",
+      "saving": "Salvando…",
+      "cancel": "Cancelar",
+      "conflict": "O perfil mudou em outra sessão. Cancele e reabra antes de salvar. Suas alterações não foram salvas.",
+      "failed": "Não foi possível salvar as correções. Suas alterações continuam aqui; tente novamente.",
+      "fields": {
+        "name": "Nome",
+        "role": "Cargo",
+        "company": "Empresa",
+        "industry": "Setor",
+        "website": "Site público da empresa",
+        "product": "Produto ou serviço",
+        "customer_segment": "Clientes"
+      }
+    },
     "modelSavedOpen": "Abrir modelo salvo",
     "modelScenarioPreview": "Ver alteração do modelo",
     "modelScenarioConnected": "Modelo conectado. Solicitar uma nova hipótese na conversa.",

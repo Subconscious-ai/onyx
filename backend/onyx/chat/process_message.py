@@ -1050,7 +1050,13 @@ def build_chat_turn(
             filter(
                 None,
                 [
-                    profile_context(profile) if not draft or matching_company else "",
+                    profile_context(profile)
+                    if (
+                        not draft
+                        or matching_company
+                        or profile.get("correction", {}).get("revision", 0)
+                    )
+                    else "",
                     research_context(research)
                     if matching_company
                     and public_query

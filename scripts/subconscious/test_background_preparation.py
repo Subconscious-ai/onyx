@@ -71,6 +71,18 @@ class BackgroundPreparationTests(unittest.TestCase):
         self.assertEqual(self.queue.call_args.kwargs["kwargs"]["tenant_id"], "public")
         self.assertEqual(self.queue.call_args.kwargs["expires"], 300)
 
+    def test_busy_research_lock_never_returns_the_previous_company_receipt(self):
+        self.state = {
+            "status": "ready",
+            "query": "old company",
+            "source_urls": ["https://old.example.com"],
+            "checked_at": time.time(),
+        }
+        self.cache.lock.return_value.acquire.return_value = False
+        result = background.ensure_research(self.user)
+        self.assertEqual(result["status"], "queued")
+        self.assertNotIn("source_urls", result)
+
     def test_denied_tool_access_never_queues_or_saves(self):
         self.connection.side_effect = ValueError("No access")
         self.assertEqual(background.ensure_research(self.user)["status"], "unavailable")

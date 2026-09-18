@@ -3,6 +3,10 @@ ARG BURN_BASE_IMAGE
 FROM ${BURN_BASE_IMAGE}
 COPY backend/onyx/server/query_and_chat/burn2/ /app/onyx/server/query_and_chat/burn2/
 COPY backend/onyx/db/burn2_research.py /app/onyx/db/burn2_research.py
+COPY backend/onyx/db/burn2_profile.py /app/onyx/db/burn2_profile.py
+COPY backend/onyx/tools/tool_implementations/company_profile/ /app/onyx/tools/tool_implementations/company_profile/
+COPY backend/onyx/tools/built_in_tools.py /app/onyx/tools/built_in_tools.py
+COPY backend/onyx/tools/tool_constructor.py /app/onyx/tools/tool_constructor.py
 COPY backend/onyx/background/celery/tasks/burn2/ /app/onyx/background/celery/tasks/burn2/
 COPY backend/onyx/chat/process_message.py /app/onyx/chat/process_message.py
 # Runtime primary.py predates two unrelated upstream tasks. Register only Burn.
