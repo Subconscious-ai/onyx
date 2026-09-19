@@ -147,3 +147,24 @@ PDL professional context uses the authenticated account email, one daily provide
 The existing indexed mbb-casebook corpus is reachable through native internal_search. A live query returned original McKinsey and BCG sources. analyst-agent contributes the existing Onyx retrieval/setup pattern, not another running agent. Search permissions remain native. Explicit internal-case requests use the enabled native search tool. The GitHub corpus connector reports completed-with-errors; the four existing file corpus connectors report success.
 
 Single sign-on remains blocked on the existing Auth0 organization cutover in causl-kb #450. Onyx and causl-kb authentication remain separate. No email-derived organization mapping, shared administrator bridge, or fabricated email verification was added. Market acceptance still requires an authenticated organization review. Journey/OKR drafts are saved in native Onyx Postgres; accepted market records remain causl-kb-owned.
+
+### Visible interview progress
+
+The chat now exposes three saved-brief milestones: executive goal, a target with
+its deadline, and a customer journey with a transition. These are coverage
+checks, not elapsed-time estimates or acceptance of proposed assumptions.
+Unknown numeric inputs and unmeasured experiment effects do not block a first
+symbolic model. The existing model-readiness validator still checks the proposed
+equation, inputs and conflicts before opening the model handoff.
+
+A missing milestone asks the existing Beca chat for focused help; a captured one
+opens the corresponding brief view. The persistent action distinguishes build,
+updating, retry and open-model states. The first newly saved goal after an active
+turn receives a small canvas-confetti celebration, disabled for reduced motion;
+loading an old conversation does not trigger it. New copy is in all nine message
+catalogs. No new agent, persistence store or handoff protocol was added.
+
+Focused proof: InterviewProgress, ExecutiveWorkspace and catalog tests (20 tests)
+and the web TypeScript check pass. For visual verification use the actual chat on
+mobile and desktop; the standalone executive preview contains a partial fixture,
+so it is not evidence of a ready business model.

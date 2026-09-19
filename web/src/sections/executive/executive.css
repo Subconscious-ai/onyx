@@ -759,9 +759,6 @@
 .interview-progress progress::-moz-progress-bar { background: var(--red); }
 .interview-progress ol { display: flex; flex-wrap: wrap; gap: 4px 16px; list-style: none; padding: 0; margin: 0; }
 .interview-progress li { font-size: 12px; }
-.interview-progress-check { display: inline-flex; flex: 0 0 auto; width: 14px; height: 14px; border: 1px solid var(--grey-300); align-items: center; justify-content: center; }
-.interview-progress-check svg { width: 12px; height: 12px; }
-.interview-progress [data-complete="true"] .interview-progress-check { background: var(--color); color: var(--backgroundColor); border-color: var(--color); }
 .interview-progress p { margin: 0; padding-block-start: 6px; font-size: 13px; line-height: 1.35; color: var(--grey-500); }
 .interview-progress[data-ready="true"] p { color: var(--color); }
 .interview-progress-action { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; align-items: center; }
