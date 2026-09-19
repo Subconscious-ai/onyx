@@ -8,6 +8,7 @@ import { modelReadiness, type InterviewBrief } from "@/lib/executive/brief";
 
 interface InterviewProgressProps {
   brief: InterviewBrief | null;
+  email?: string;
   stale: boolean;
   phase: string;
   busy: boolean;
@@ -21,6 +22,7 @@ interface InterviewProgressProps {
 
 export default function InterviewProgress({
   brief,
+  email,
   stale,
   phase,
   busy,
@@ -122,6 +124,7 @@ export default function InterviewProgress({
           <strong>{t("title")}</strong>
           <span>{t("count", { count })}</span>
         </div>
+        {!hasAnswer && email && <p>{t("email", { email })}</p>}
         <progress max={3} value={count} aria-label={t("count", { count })} />
         <ol aria-label={t("essentials")}>
           {items.map(({ id, complete }) => (

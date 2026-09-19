@@ -13971,7 +13971,8 @@
       "conflictAsk": "Hilf mir, widersprüchliche Aussagen in der gespeicherten Zusammenfassung zu klären. Stelle eine klare Frage und wähle nicht die Antwort für mich.",
       "buildAsk": "Erstelle ein erstes Modell aus meinen Angaben. Fehlende Zahlen und ungemessene Effekte bleiben unbekannt. Falls wesentlicher Kundenkontext fehlt, frage nur danach.",
       "hint": "Unbekannte Zahlen können warten.",
-      "readyHint": "Entwurf prüfen und anschließend verfeinern."
+      "readyHint": "Entwurf prüfen und anschließend verfeinern.",
+      "email": "Die Recherche beginnt mit {email}"
     }
   }
 }

@@ -807,6 +807,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
         ))}
 
       <ExecutiveWorkspace
+        email={user?.email}
         onModelContext={receiveModelContext}
         active={isExecutiveAgent(activeAgent)}
         messages={messageHistory}

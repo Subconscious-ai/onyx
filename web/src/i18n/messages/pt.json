@@ -13971,7 +13971,8 @@
       "conflictAsk": "Ajude-me a resolver as contradições no resumo salvo. Faça uma pergunta clara; não escolha a resposta por mim.",
       "buildAsk": "Crie um primeiro modelo com o que compartilhei. Mantenha desconhecidos os números ausentes e os efeitos não medidos. Se faltar contexto essencial do cliente, pergunte apenas isso.",
       "hint": "Números desconhecidos podem esperar.",
-      "readyHint": "Revise o rascunho e depois refine."
+      "readyHint": "Revise o rascunho e depois refine.",
+      "email": "A pesquisa começa com {email}"
     }
   }
 }

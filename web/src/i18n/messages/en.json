@@ -13971,7 +13971,8 @@
       "conflictAsk": "Help me resolve the conflicting statements in the saved brief. Ask one clear question; do not choose an answer for me.",
       "buildAsk": "Build a first business model from what I have shared. Keep missing numbers and unmeasured experiment effects unknown. If a critical piece of customer context is missing, ask only that next question.",
       "hint": "Unknown numbers can wait.",
-      "readyHint": "Review your draft, then refine it."
+      "readyHint": "Review your draft, then refine it.",
+      "email": "Research starts from {email}"
     }
   }
 }

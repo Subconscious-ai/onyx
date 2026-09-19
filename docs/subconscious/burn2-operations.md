@@ -168,3 +168,28 @@ Focused proof: InterviewProgress, ExecutiveWorkspace and catalog tests (20 tests
 and the web TypeScript check pass. For visual verification use the actual chat on
 mobile and desktop; the standalone executive preview contains a partial fixture,
 so it is not evidence of a ready business model.
+
+
+### Adversarial UAT recovery (September 19)
+
+Use the existing `burn2` Compose project explicitly (`docker compose -p burn2`)
+when updating native services. Omitting the project name creates a separate stack
+with empty volumes. Keep the existing persistence volumes. After replacing the API,
+wait for its `/health` response before reloading the gateway so its upstream DNS
+resolves the new container address. Vercel frontend readiness does not deploy Python.
+
+The signed-in email starts PDL. An unmatched email needs an explicit public company
+website before research can run; it must never receive a fabricated match. The
+native CompanyProfileTool must both exist in the tool table and be attached to Beca.
+Preserve the existing persona model, document sets and tools when activating it.
+Company corrections are revisioned; a scheduling failure cannot undo or misreport
+the already committed correction. Research work locks belong to jobs, not people,
+so an obsolete company request cannot hold a corrected company's work hostage.
+
+Run `scripts/subconscious/adversarial_uat.py` with a dedicated QA cookie jar.
+Its six adaptive fact sheets are rule-based testers, not LLM executives. Brief
+persistence and sub-60-second coverage are separate from correct calculations,
+fresh provider evidence, authenticated model review and causal-KB readback. Keep
+failed receipts. The companion causal-KB handoff runner verifies the actual model.
+The native background queue coalesces queued brief generations; it does not cancel
+an already running provider request or guarantee a sixty-second deadline.

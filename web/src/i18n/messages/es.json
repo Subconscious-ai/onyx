@@ -13971,7 +13971,8 @@
       "conflictAsk": "Ayúdame a resolver las contradicciones del borrador guardado. Haz una pregunta clara; no elijas una respuesta por mí.",
       "buildAsk": "Crea un primer modelo con lo que he compartido. Mantén desconocidos los números que faltan y los efectos no medidos. Si falta contexto esencial del cliente, pregunta solo por eso.",
       "hint": "Los números desconocidos pueden esperar.",
-      "readyHint": "Revisa el borrador y luego ajústalo."
+      "readyHint": "Revisa el borrador y luego ajústalo.",
+      "email": "La investigación parte de {email}"
     }
   }
 }

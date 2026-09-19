@@ -13971,7 +13971,8 @@
       "conflictAsk": "Aide-moi à résoudre les contradictions dans la synthèse enregistrée. Pose une question claire sans choisir la réponse à ma place.",
       "buildAsk": "Crée un premier modèle avec mes informations. Laisse inconnus les chiffres manquants et les effets non mesurés. Si un contexte client essentiel manque, demande uniquement ce point.",
       "hint": "Les chiffres inconnus peuvent attendre.",
-      "readyHint": "Examinez le brouillon, puis affinez-le."
+      "readyHint": "Examinez le brouillon, puis affinez-le.",
+      "email": "La recherche commence avec {email}"
     }
   }
 }

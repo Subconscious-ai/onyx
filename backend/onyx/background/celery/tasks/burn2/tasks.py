@@ -23,21 +23,62 @@ from shared_configs.contextvars import get_current_tenant_id
 logger = setup_logger()
 
 
-@shared_task(ignore_result=True, trail=False)
+@shared_task(bind=True, max_retries=12, ignore_result=True, trail=False)
 def research_company(
-    *, user_id: str, persona_id: int, job_id: str, tenant_id: str
+    self: Task, *, user_id: str, persona_id: int, job_id: str, tenant_id: str
 ) -> None:
     if tenant_id != get_current_tenant_id():
         raise ValueError("Research tenant context mismatch")
     if os.environ.get("BURN2_ENABLED") != "true":
         return
     user_uuid = UUID(user_id)
-    lock = get_cache_backend().lock(f"burn2:research-work:{user_id}", timeout=180)
-    if not lock.acquire(blocking=False):
+    state = read_research(user_uuid)
+    if not state or state.get("job_id") != job_id or state.get("status") != "queued":
         return
+    query = public_research_query(read_profile(user_uuid))
+    if not query or query != state.get("query"):
+        return
+    remaining = 300 - (time.time() - state["checked_at"])
+    if remaining <= 0:
+        save_research(
+            user_uuid,
+            {
+                **state,
+                "status": "unavailable",
+                "checked_at": time.time(),
+                "reason": "Research queue wait expired",
+            },
+        )
+        return
+    lock = get_cache_backend().lock(f"burn2:research-work:{tenant_id}:{user_id}:{job_id}", timeout=180)
+    if not lock.acquire(blocking=False):
+        # Deduplicate this job without blocking a corrected company behind an
+        # obsolete provider request. Its result still checks current job/query.
+        if self.request.retries >= self.max_retries or remaining <= 5:
+            current = read_research(user_uuid)
+            if (
+                current
+                and current.get("job_id") == job_id
+                and current.get("status") == "queued"
+            ):
+                save_research(
+                    user_uuid,
+                    {
+                        **current,
+                        "status": "unavailable",
+                        "checked_at": time.time(),
+                        "reason": "Research worker remained busy",
+                    },
+                )
+            return
+        raise self.retry(countdown=5, expires=int(remaining))
     try:
         state = read_research(user_uuid)
-        if not state or state.get("job_id") != job_id or state.get("status") == "ready":
+        if (
+            not state
+            or state.get("job_id") != job_id
+            or state.get("status") != "queued"
+        ):
             return
         query = public_research_query(read_profile(user_uuid))
         if query != state.get("query"):
@@ -76,13 +117,27 @@ def research_company(
             lock.release()
 
 
-@shared_task(bind=True, max_retries=3, ignore_result=True, trail=False)
+@shared_task(bind=True, max_retries=4, ignore_result=True, trail=False)
 def prepare_saved_brief(
-    self: Task, *, user_id: str, chat_id: str, tenant_id: str
+    self: Task,
+    *,
+    user_id: str,
+    chat_id: str,
+    tenant_id: str,
+    generation: str | None = None,
 ) -> None:
     if tenant_id != get_current_tenant_id():
         raise ValueError("Brief tenant context mismatch")
     if os.environ.get("BURN2_BACKGROUND_PREPARATION") != "true":
+        return
+
+    def superseded() -> bool:
+        if generation is None:
+            return False
+        key = f"burn2:brief-generation:{tenant_id}:{user_id}:{chat_id}"
+        return get_cache_backend().get(key) != generation.encode()
+
+    if superseded():
         return
     from onyx.auth.permissions import has_global_permission
     from onyx.db.enums import Permission
@@ -102,7 +157,7 @@ def prepare_saved_brief(
             logger.warning(
                 "Burn background brief unavailable: HTTP %s", error.status_code
             )
-            if error.status_code in (409, 502):
+            if error.status_code in (409, 502) and not superseded():
                 # Another turn or preparation can hold the lock. Retry the latest
                 # owned transcript through the existing validation and save guard.
                 raise self.retry(

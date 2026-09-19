@@ -47,7 +47,7 @@ class BriefBackgroundTests(unittest.TestCase):
                 retry.assert_called_once()
                 self.assertEqual(retry.call_args.kwargs["countdown"], 5)
                 self.assertEqual(retry.call_args.kwargs["expires"], 120)
-        self.assertEqual(prepare_saved_brief.max_retries, 3)
+        self.assertEqual(prepare_saved_brief.max_retries, 4)
 
     def test_permission_failure_does_not_retry_or_prepare(self):
         prepare, retry = self.invoke(allowed=False)

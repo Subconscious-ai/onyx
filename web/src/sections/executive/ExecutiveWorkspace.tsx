@@ -120,6 +120,7 @@ export default function ExecutiveWorkspace({
   active,
   messages,
   chatId = null,
+  email,
   busy = false,
   onAsk,
   onModelContext,
@@ -129,6 +130,7 @@ export default function ExecutiveWorkspace({
   active: boolean;
   messages: readonly InterviewMessage[];
   chatId?: string | null;
+  email?: string;
   busy?: boolean;
   onAsk?: (message: string) => void;
   onModelContext?: (context: ModelContext | null) => void;
@@ -288,6 +290,7 @@ export default function ExecutiveWorkspace({
 
       {!mobileBrief && (
         <InterviewProgress
+          email={email}
           brief={brief}
           stale={projection.stale}
           phase={preparation.phase}

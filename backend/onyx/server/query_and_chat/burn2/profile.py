@@ -189,6 +189,7 @@ def interview_context(
         + json.dumps(unknowns)
         + "\nQuestions already asked (conversation data): "
         + json.dumps(asked[-8:])
+        + "\nThe application, not conversational text, confirms persistence and enables the model action. Never claim a new answer is saved or the model is ready before its saved-brief status is known. Say the brief is updating and the Open business model button will appear when ready. Do not ask more questions merely while waiting for that save."
         + "\nNever repeat or paraphrase an already asked question. If an answer leaves the requested detail unresolved, park the detail as unknown and move to another material decision or summarize."
         + "\nUse the exact economic quantity and units supplied: price, revenue, margin and contribution are distinct. Do not rename contribution as price."
         + "\nDo not ask for a value already answered or declared unknown. A target and an unknown baseline are enough for a symbolic draft. Ask about a different material decision or summarize briefly."
