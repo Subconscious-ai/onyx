@@ -4,7 +4,8 @@ import os
 import time
 from uuid import UUID
 
-from celery import shared_task
+from celery import Task, shared_task
+from fastapi import HTTPException
 
 from onyx.cache.factory import get_cache_backend
 from onyx.db.burn2_profile import read_profile
@@ -75,8 +76,10 @@ def research_company(
             lock.release()
 
 
-@shared_task(ignore_result=True, trail=False)
-def prepare_saved_brief(*, user_id: str, chat_id: str, tenant_id: str) -> None:
+@shared_task(bind=True, max_retries=3, ignore_result=True, trail=False)
+def prepare_saved_brief(
+    self: Task, *, user_id: str, chat_id: str, tenant_id: str
+) -> None:
     if tenant_id != get_current_tenant_id():
         raise ValueError("Brief tenant context mismatch")
     if os.environ.get("BURN2_BACKGROUND_PREPARATION") != "true":
@@ -95,6 +98,16 @@ def prepare_saved_brief(*, user_id: str, chat_id: str, tenant_id: str) -> None:
             return
         try:
             prepare_brief(PrepareBrief(chat_id=UUID(chat_id)), user, db)
+        except HTTPException as error:
+            logger.warning(
+                "Burn background brief unavailable: HTTP %s", error.status_code
+            )
+            if error.status_code in (409, 502):
+                # Another turn or preparation can hold the lock. Retry the latest
+                # owned transcript through the existing validation and save guard.
+                raise self.retry(
+                    exc=error, countdown=5 * (2**self.request.retries), expires=120
+                ) from error
         except Exception as error:
             logger.warning(
                 "Burn background brief unavailable: %s", type(error).__name__
