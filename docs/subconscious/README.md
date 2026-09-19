@@ -91,3 +91,12 @@ Preserve the exact handoff origins, authenticated access and private configurati
 - PR #23 browser CI never started: three image jobs lacked runners for 24 hours. Preserve that limitation; skipped tests are not passes.
 - Native Onyx owns conversations and draft context. causl-kb owns accepted ontology and models. Preserve sources and executive corrections.
 - Old plans below are historical evidence. Start new work from fork main and the active issue, not a retired worktree.
+
+## Organization library
+
+Company agents use the [Hermes material library](https://github.com/Subconscious-ai/hermes/blob/main/library/LIBRARY.md) through native internal_search.
+The existing executive rubric contains the retrieval and freshness instructions.
+Follow the [agent contract](https://github.com/Subconscious-ai/hermes/blob/main/library/README.md#agent-contract); do not copy the inventory into persona prompts.
+After a reviewed rubric change, apply it through the existing native persona configuration
+and verify the saved prompt and a cited library search. A merged Markdown change alone
+does not update a stored persona. The Hermes Onyx receipt proves indexing separately.
