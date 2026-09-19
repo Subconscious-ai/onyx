@@ -60,6 +60,41 @@ Cross-application SSO remains causl-kb #450. Community Edition is not evidence o
 
 ## Development
 
+### Fresh discovery acceptance
+
+Use `scripts/subconscious/check_fresh_discovery.py` inside the running native API
+environment with `--user-id UUID --output-dir PRIVATE_DIRECTORY
+--reset-retained-context`. This is an opt-in live provider test: it backs up and
+clears only that account's retained profile/research keys, then calls the existing
+PDL preparation handler, Celery research job and research read handler. It leaves
+the new results available to the application. Never use it to interrupt an active
+interview or research job. Backups and full dossiers remain private, outside Git.
+
+The gate requires empty starting caches, a new PDL timestamp, a new research ID
+and timestamp, ready results, at least two source URLs and substantive report
+content within 60 seconds. Run its rejection checks locally with
+`PYTHONPATH=scripts/subconscious python3 -m unittest scripts/subconscious/test_fresh_discovery.py`.
+
+Three consecutive live runs on September 19, 2026 UTC took **22.997, 21.176 and
+13.810 seconds**, with **8, 7 and 7 sources** respectively. The last run uses the
+checked-in probe and the existing browser's two-second polling interval. Both
+source records were newly fetched, not retained from an earlier interview. The
+fresh results also passed the actual `modelBusinessContext` producer and
+causl-kb `parseOnyxHandoff` receiver with the synthetic interview's three journey
+states and two transitions. The live browser model acceptance then passed AWS
+generation, exact Postgres model readback, replay rejection, grid reopening,
+all seven public URLs, and five canonical journey-source readbacks. It used the
+actual producer function and a reviewed file import, not a fresh native chat
+button click. See [#430 — deliver interview context to the first model](https://github.com/Subconscious-ai/causl-kb/issues/430),
+[#575 — preserve that evidence in the model](https://github.com/Subconscious-ai/causl-kb/pull/575)
+and [#31 — carry dossier and research from Beca](https://github.com/Subconscious-ai/onyx/pull/31).
+
+This measures warm-service, cold-data discovery from the native preparation
+handler until the research read handler returns complete context. It excludes
+login, server boot, browser transport and model generation. Three successful runs
+prove the exercised path; they are not a provider latency SLA. The existing
+runtime met the target without new queues, orchestration or provider tuning.
+
 The Subconscious fork is `Subconscious-ai/onyx`. The existing local `origin` remote points upstream; publish Burn changes through `subconscious`. Never push Burn-specific changes to `onyx-dot-app/onyx`.
 
 Reuse `scripts/subconscious/test_*.py`, the executive Jest tests and `eval_interview.py` for focused proof. Use synthetic sessions for writes and preserve customer transcripts. Credentials, corpus files, browser state, database dumps and encryption keys stay outside Git.
