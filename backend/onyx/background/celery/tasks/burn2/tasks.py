@@ -9,7 +9,11 @@ from fastapi import HTTPException
 
 from onyx.cache.factory import get_cache_backend
 from onyx.db.burn2_profile import read_profile
-from onyx.db.burn2_research import read_research, research_connection, save_research
+from onyx.db.burn2_research import (
+    read_research,
+    research_connection,
+    update_research_if_current,
+)
 from onyx.db.engine.sql_engine import get_session_with_current_tenant
 from onyx.db.models import User
 from onyx.server.features.mcp.client import call_mcp_tool
@@ -40,7 +44,7 @@ def research_company(
         return
     remaining = 300 - (time.time() - state["checked_at"])
     if remaining <= 0:
-        save_research(
+        update_research_if_current(
             user_uuid,
             {
                 **state,
@@ -48,9 +52,13 @@ def research_company(
                 "checked_at": time.time(),
                 "reason": "Research queue wait expired",
             },
+            job_id=job_id,
+            status="queued",
         )
         return
-    lock = get_cache_backend().lock(f"burn2:research-work:{tenant_id}:{user_id}:{job_id}", timeout=180)
+    lock = get_cache_backend().lock(
+        f"burn2:research-work:{tenant_id}:{user_id}:{job_id}", timeout=180
+    )
     if not lock.acquire(blocking=False):
         # Deduplicate this job without blocking a corrected company behind an
         # obsolete provider request. Its result still checks current job/query.
@@ -61,7 +69,7 @@ def research_company(
                 and current.get("job_id") == job_id
                 and current.get("status") == "queued"
             ):
-                save_research(
+                update_research_if_current(
                     user_uuid,
                     {
                         **current,
@@ -69,6 +77,8 @@ def research_company(
                         "checked_at": time.time(),
                         "reason": "Research worker remained busy",
                     },
+                    job_id=job_id,
+                    status="queued",
                 )
             return
         raise self.retry(countdown=5, expires=int(remaining))
@@ -84,7 +94,10 @@ def research_company(
         if query != state.get("query"):
             return
         state = {**state, "status": "running", "checked_at": time.time()}
-        save_research(user_uuid, state)
+        if not update_research_if_current(
+            user_uuid, state, job_id=job_id, status="queued"
+        ):
+            return
         try:
             url, headers, transport = research_connection(user_uuid, persona_id)
             receipt = research_receipt(
@@ -111,7 +124,9 @@ def research_company(
             and current.get("job_id") == job_id
             and public_research_query(read_profile(user_uuid)) == query
         ):
-            save_research(user_uuid, result)
+            update_research_if_current(
+                user_uuid, result, job_id=job_id, status="running"
+            )
     finally:
         if lock.owned():
             lock.release()

@@ -213,3 +213,29 @@ matching source dossier atomically when a model is saved and repairs known-numbe
 citations. It still does not continuously mirror research during the interview.
 Keep both PRs draft. Do not claim the combined 60-second objective until native
 login, real enrichment, interview, calculation and KB readback pass together.
+
+
+Final-candidate changes and demonstrated results:
+- v2 interviews: all six saved/reopened under 49 seconds. Energy preserves its
+  5.5% aggregate baseline; services now retains the supplied journey. Conservative
+  downgrading of mixed factual/scenario messages and dropped hypothetical inputs
+  remain useful adversarial findings, not evidence of invented facts.
+- A genuine agent-led services interview was also run. Including tester reasoning
+  and tool round trips, its saved brief was observed at 123 seconds, not 60 seconds.
+- Corrected-company GPT Researcher completed in 17.1 seconds with nine sources
+  and a new research ID. Positive PDL remains a separately measured provider probe.
+- Real model UAT: energy 550→700 contracts (+150); SaaS $2.1M→$2.4M retained ARR;
+  home services $120K→$160K revenue. Each used real model calculations and saved,
+  reopened native models. These are synthetic QA operating numbers, not customer
+  business performance or experiment validation.
+- v3 adds conditional research row updates under Postgres SELECT FOR UPDATE.
+  Four deterministic stale-write interleavings failed before the fix; 16 research
+  tests pass after. It also marks explicitly unavailable nonnumeric operating
+  notes unknown and aligns interview handoff guidance with target/timeframe checks.
+  Combined candidate: 55 native-runtime tests and 65 dependency-light contracts.
+- Frontend `aec816041d` deployed on the canonical domain; authenticated mobile
+  check sees the signed-in email and opens the intended paired model workspace.
+
+Do not merge. Full acceptance still needs the final v3 receipts and honest source
+storage boundaries. Source research is retained in causal-KB at explicit model
+save, not continuously during interview; native Onyx owns working chat context.

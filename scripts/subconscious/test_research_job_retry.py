@@ -31,7 +31,7 @@ class ResearchJobRetryTests(unittest.TestCase):
             patch(f"{MODULE}.read_research", side_effect=lambda _: dict(self.state)),
             patch(f"{MODULE}.read_profile", return_value={}),
             patch(f"{MODULE}.public_research_query", return_value="Client query"),
-            patch(f"{MODULE}.save_research"),
+            patch(f"{MODULE}.save_research", create=True),
             patch(
                 f"{MODULE}.research_connection",
                 return_value=("https://example.com", {}, None),
@@ -59,6 +59,23 @@ class ResearchJobRetryTests(unittest.TestCase):
             self.receipt,
         ) = started[3:]
         self.cache.return_value.lock.return_value = self.lock
+
+        def save(_owner, value):
+            self.state = dict(value)
+
+        self.save.side_effect = save
+
+        def update(owner, value, *, job_id, status):
+            if self.state["job_id"] != job_id or self.state["status"] != status:
+                return False
+            self.save(owner, value)
+            return True
+
+        conditional = patch(
+            f"{MODULE}.update_research_if_current", side_effect=update, create=True
+        )
+        conditional.start()
+        self.addCleanup(conditional.stop)
 
     def invoke(self):
         research_company.run(
@@ -119,7 +136,7 @@ class ResearchJobRetryTests(unittest.TestCase):
         self.lock.acquire.return_value = False
         self.assertEqual(research_company.max_retries, 12)
         for retries, checked_at in ((12, 1000), (0, 600)):
-            self.state["checked_at"] = checked_at
+            self.state.update(status="queued", checked_at=checked_at)
             research_company.push_request(retries=retries)
             try:
                 with patch.object(
@@ -133,6 +150,60 @@ class ResearchJobRetryTests(unittest.TestCase):
             finally:
                 research_company.pop_request()
         self.call.assert_not_called()
+
+    def test_replacement_between_profile_check_and_write_preserves_new_job(self):
+        for boundary in ("expiry", "running", "result"):
+            with self.subTest(boundary=boundary):
+                self.state = {
+                    "job_id": "client-job",
+                    "query": "Client query",
+                    "status": "queued",
+                    "checked_at": 1000,
+                }
+                if boundary == "expiry":
+                    self.state["checked_at"] = 600
+                replacement = {
+                    **self.state,
+                    "job_id": "newer-job",
+                    "query": "Another client",
+                    "checked_at": 1001,
+                }
+                calls = 0
+                replace_at = {"expiry": 1, "running": 2, "result": 3}[boundary]
+
+                def replace_after_snapshot(
+                    _owner, replace_at=replace_at, replacement=replacement
+                ):
+                    nonlocal calls
+                    calls += 1
+                    if calls == replace_at:
+                        self.state = dict(replacement)
+                    return {}
+
+                self.profile.side_effect = replace_after_snapshot
+                self.invoke()
+                self.assertEqual(self.state, replacement)
+
+    def test_replacement_between_retry_exhaustion_check_and_write_is_preserved(self):
+        self.lock.acquire.return_value = False
+        replacement = {**self.state, "job_id": "newer-job", "query": "Another client"}
+        calls = 0
+
+        def replace_after_snapshot(_owner):
+            nonlocal calls
+            snapshot = dict(self.state)
+            calls += 1
+            if calls == 2:
+                self.state = dict(replacement)
+            return snapshot
+
+        self.read.side_effect = replace_after_snapshot
+        research_company.push_request(retries=12)
+        try:
+            self.invoke()
+        finally:
+            research_company.pop_request()
+        self.assertEqual(self.state, replacement)
 
     def test_new_company_replacing_job_during_provider_call_keeps_newer_state(self):
         def replace(*_args, **_kwargs):

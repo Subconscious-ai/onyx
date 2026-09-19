@@ -54,7 +54,7 @@ def turn_guidance(turn: int, text: str) -> str:
     question_guidance = (
         "Question budget: zero. The latest executive request explicitly disallows questions. Acknowledge the update or give the requested synthesis and stop. Do not ask for permission, another input or a next step."
         if conclude
-        else "One concise answer, at most one material question. If outcome meaning, customer population and journey are known, offer Open business model now instead of more discovery. Otherwise ask the next material unanswered question; thanks or great does not end discovery. Keep unavailable numbers unknown. When the executive requests a conclusion, summarize without any question."
+        else "One concise answer, at most one material question. If the objective, desired target, timeframe, customer population and journey are known, offer Open business model now instead of more discovery. Otherwise ask the next material unanswered question; thanks or great does not end discovery. Keep unavailable numbers unknown. When the executive requests a conclusion, summarize without any question."
     )
     return (
         attention_budget

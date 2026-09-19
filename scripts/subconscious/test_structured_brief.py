@@ -52,6 +52,34 @@ class StructuredBriefTest(unittest.TestCase):
             "unknown",
         )
 
+    def test_stated_unknown_rate_is_not_an_observed_operating_value(self):
+        brief = self.brief()
+        source = "We have 10,000 monthly visitors. Intermediate step rates are unknown."
+        brief["model"]["inputs"] = [
+            {
+                "id": "quote_rate",
+                "name": "Quote rate",
+                "unit": "fraction",
+                "value": {
+                    "text": "Intermediate step rates are unknown",
+                    "status": "executive",
+                    "quote": source,
+                },
+            }
+        ]
+        note = validate_brief(brief, [source])["model"]["inputs"][0]["value"]
+        self.assertEqual(note["status"], "unknown")
+        self.assertNotIn("quote", note)
+        brief["model"]["inputs"][0]["value"] = {
+            "text": "5.5% overall; intermediate rates unknown",
+            "status": "executive",
+            "quote": "Overall conversion is 5.5%; intermediate rates are unknown.",
+        }
+        note = validate_brief(brief, [brief["model"]["inputs"][0]["value"]["quote"]])[
+            "model"
+        ]["inputs"][0]["value"]
+        self.assertEqual(note["status"], "executive")
+
     def test_invalid_generated_links_get_one_repair_before_persistence(self):
         from onyx.server.query_and_chat.burn2.validation import prepare_validated_brief
 

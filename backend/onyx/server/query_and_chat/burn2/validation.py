@@ -49,6 +49,14 @@ def attach_source(item: Any, statements: list[str]) -> None:
 
 def validate_input_purpose(item: dict[str, Any]) -> None:
     """Keep explicitly desired outcomes separate from operating observations."""
+    note = item["value"]
+    if not re.search(r"\d", note["text"]) and re.search(
+        r"\b(?:unknown|not measured|not known|unavailable)\b", note["text"], re.I
+    ):
+        # Testimony that a quantity is unavailable is not an observed value.
+        note["status"] = "unknown"
+        note.pop("quote", None)
+        note.pop("url", None)
     purpose = re.sub(r"([a-z])([A-Z])", r"\1 \2", item["name"])
     purpose = re.sub(r"[_-]", " ", purpose)
     if (
