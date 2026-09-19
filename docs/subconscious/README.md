@@ -10,18 +10,28 @@ The model receiver is the paired
 [PR #575 — populate and retain the business model](https://github.com/Subconscious-ai/causl-kb/pull/575)
 at `https://causl-interview-model-subconcious.vercel.app/dashboard/burn-import`.
 Its allowed Beca origin is `https://burn.subconscious.ai`. Keep both settings paired.
-The ready model action is visible directly in the conversation. Review and save
-remain explicit. These feature branches remain drafts. AWS native runtime updates and their proof
+The ready **Build business model** action is visible directly in the conversation.
+That click creates and saves a private model draft, then opens `/dashboard/model`.
+It does not accept inferred journey records into the shared ontology. Returning to
+`/dashboard/model` lists saved models for the signed-in organization. These feature
+branches remain drafts. AWS native runtime updates and their proof
 are recorded in executive-proof-plan.md.
 
-Fresh native Auth0 login, a new interview, automatic saved brief, the actual model
-button/window handshake, AWS proposal, Postgres save/readback, grid reload, and
-five canonical journey-source readbacks passed. No handoff file was uploaded in
-that browser run. The synthetic account has no PDL match; real PDL/research success
-is covered separately by the cold-discovery runs below. causl-kb still has a
-separate Clerk login. Its synthetic QA sign-in used the supported Clerk ticket
-flow after ordinary fresh-device login requested an email code. This does not
-establish one-login SSO or a 60-second login-to-saved-model guarantee.
+Latest fresh browser proof: email-based Auth0 login triggered a fresh PDL lookup
+(no match for the synthetic account). Beca saved the supplied company through its
+native profile tool and started GPT Researcher while interviewing. Eight fresh
+research sources reached the actual Build handoff. Postgres save completed in
+55.8 seconds from login; the grid opened at 56.182 seconds and survived reload.
+Its calculated values matched independent expectations: 55 baseline contracts,
+70 target contracts and 15 incremental contracts. Original executive messages
+were retained exactly, and the saved model was listed at `/dashboard/model`.
+
+This was a warm-service, cold-provider-cache, automated two-turn run. It used an
+existing authorized causl-kb Clerk session. It establishes neither cross-app SSO
+nor a latency guarantee. Positive PDL matches are covered by the separate discovery
+proof below; a no-match must remain explicit. The original list-selector failure
+(two QA models with the same name) and its read-only exact-URL correction are
+preserved in the proof record. See [current evidence](executive-proof-plan.md).
 
 Onyx PRs #10, #20 and #23 are merged. The [prototype record](prototype-plan.md) preserves earlier paired model evidence and generation limits. Onyx source publication does not establish the merge or deployment of a causl-kb counterpart.
 
@@ -34,6 +44,12 @@ The September 17 decision is one assistant and one conversation. The assistant s
 [Issue #24](https://github.com/Subconscious-ai/onyx/issues/24) is the active plan for this simplification and editable company context. The earlier action-card proposal is superseded. [Draft PR #26](https://github.com/Subconscious-ai/onyx/pull/26) removes the Actions menu and specialist navigation. It also adds a revision-checked profile editor, a native profile tool, and separate provider/correction records. These changes are not a production release. Hosted acceptance remains outstanding. Preserve native permissions and explicit approval for paid experiment execution.
 
 Profile edits use authenticated `PATCH /chat/executive-profile`; native authentication supplies the caller and `WRITE_CHAT` permission. The request cannot select another owner. Enrichment writes only the provider record. Explicit corrections and each edit revision use the existing native key-value store. A company change drops unrelated company fields and excludes old research. Accepted shared company records still belong in causl-kb.
+
+A persistent Burn interview with no working company uses native REQUIRED tool
+selection for its assigned `company_profile` tool on the first loop cycle. The
+following cycles restore all available tools. Explicit tool choices and incognito
+restrictions remain intact. The tool still owns validation and the revision check;
+forcing a call alone is not proof that research succeeded.
 
 The `company_profile` tool uses that same correction function. Native construction supplies the caller; model arguments cannot select an owner. Incognito writes are refused. Research failure does not erase a successful correction. The tool needs its native database seed, explicit persona assignment, and the stored prompt update before use. The deployed database is behind this checkout's migration graph. Do not run all upstream migrations to seed one tool.
 

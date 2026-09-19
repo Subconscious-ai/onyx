@@ -320,3 +320,85 @@ Final compiler candidate `df07604` (causl-kb):
   verification on this candidate remains the delivery gate.
 - Delayed-agent browser regression passed on Onyx `b0f7af465f`: no submit while
   unresolved, one submit after loading, persisted persona 5.
+
+Live-stream and company setup corrections, September 19:
+- `3ea5bfd7d6` fixes the original no-reload Build failure. Earlier live assistant
+  replies can have empty `message` fields and text only in packets. Use existing
+  `interviewMessageText` for handoff serialization, as the chat projection does.
+  Reloading materializes stored text and can hide this defect. The distinguishing
+  regression checks streamed text, excludes reasoning and retains the saved brief.
+- Company setup must use `company_profile`; general `add_memory` does not start
+  research. `e601d8eaab` clarifies initial setup and field meanings, and lets the
+  tool read an omitted revision before the existing checked update. Explicit
+  revisions, owner identity, incognito refusal and concurrent-edit rejection stay
+  intact. Eight tool boundary tests and three real Bedrock selection/persistence
+  canaries pass with general memory also available.
+- Serving native image: `onyx-burn2:profile-routing-v6-20260919`. Its profile tool
+  matches the committed source hash. API health and gateway reload passed after
+  activation; this image does not change interview extraction or model providers.
+- Receiver `5d880a6` preserves independently verified citations for a repeated
+  fact. A KR and operating input can cite different real answers for the same
+  value. Requiring one identical excerpt rejects valid evidence. Forty-nine
+  focused tests, lint and types pass; the repeated-source manufacturing canary
+  calculates $300K baseline, $360K target and $60K gap.
+
+Final source and startup guards, September 19:
+- `ff9d41ddde` corrects the packet serialization boundary: user messages must
+  retain their exact original `message`; only assistant messages are reconstructed
+  from streamed packets. User objects can carry paired assistant packets. The
+  adversarial exact-transcript assertion caught this before acceptance. The failed
+  manufacturing QA save is retained as a failed artifact, not counted as a pass.
+- `ccd5079bdf` uses Onyx's existing one-cycle REQUIRED tool selection when an
+  authenticated persistent Burn interview has no working company and the real
+  company-profile tool is assigned. Explicit tool choices remain authoritative;
+  incognito, other agents, and deep research are excluded. Later cycles restore
+  the full tool set. No new orchestration service or permission path was added.
+- Prompt-only routing and isolated tool canaries were insufficient: the full
+  native conversation could narrate a profile update with zero tool calls. Live
+  proof must inspect actual profile/research results, not the assistant's claim.
+- Sender preview `ff9d41ddde` was verified Ready and assigned to the canonical
+  Burn QA host. The receiver remains `5d880a6`. Final cold-provider journey and
+  sixth saved-model verification are still pending; this is not a completion claim.
+
+Fresh single-journey browser proof, September 19 16:06 UTC:
+- Canonical frontend `ff9d41ddde`, native image
+  `onyx-burn2:profile-routing-v7-20260919` (`ccd5079bdf`), paired receiver `5d880a6`.
+- Fresh Auth0 login, email-triggered PDL lookup (legitimate no-match), native
+  company-profile correction and GPT Researcher queue all occurred. Eight fresh
+  public source URLs were ready at 40.4 seconds while the interview completed.
+- Actual Build clicked at 43.5 seconds; Postgres model save completed at 55.8
+  seconds; model grid opened at 56.182 seconds; reload succeeded at 57.7 seconds.
+  Exact original executive messages survived the handoff. No page reload was used
+  before Build. No accepted ontology rows were silently created.
+- Independent expected outputs and real UI values agree: 1,000 visitors times
+  5.5% gives 55 contracts; 7% gives 70; incremental monthly contracts is 15.
+- The final list check initially failed because two QA models shared a display
+  name. The harness now selects the exact market URL. A read-only follow-up proved
+  that link and the calculated grid without regenerating or altering the model.
+  The original failure receipt is retained alongside `completed-proof.json`.
+- Timing covers an automated two-turn executive, warm services, cold provider
+  caches and an existing authorized causl-kb Clerk session. It is a measured
+  successful run, not a latency guarantee or proof of cross-app SSO. A positive
+  PDL match was not invented; earlier cold-discovery evidence covers that path.
+- Private receipts, captured source messages, model readback, screenshots and
+  browser video remain outside Git under the acceptance artifact store's
+  `single-journey-v8` directory.
+
+Six-case adversarial closure on the paired candidate:
+
+| Case | Independent saved-model / UI proof |
+| --- | --- |
+| Energy | 550 baseline contracts to 700 target contracts |
+| SaaS | $2.1M baseline to $2.4M target; corrected 80% retained, superseded 75% excluded |
+| Retail | Four unknown operating inputs stay unknown; unsaved scenario computes $5M from 200 stores × 50 weeks × 100 pints × $5 |
+| Services | 40-project capacity and $40K margin imply $1.6M ceiling; $2M target remains a target |
+| Home services | $120K baseline; unsaved 40% booking scenario computes $160K, 400 bookings and 320 completions; reload restores saved baseline |
+| Manufacturing | $300K baseline to $360K target; injected 50% rejected, actual 25% and target 30% preserved |
+
+Each has actual Build, source-equality, persistence and reload evidence. The final
+manufacturing interview took 54.2 seconds; its separate Build/save/reopen flow
+36.2 seconds. Do not add a false claim that all six full journeys took 60 seconds.
+The earlier five model proofs remain valid; their mathematical compiler and
+receiver content did not change. Manufacturing was repeated after the exact-text
+sender correction. Failed earlier receipts remain available. All changes remain
+in draft PRs for user QA; this closure does not imply merge or production release.
