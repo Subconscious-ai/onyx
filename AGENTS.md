@@ -130,3 +130,10 @@ Before writing your plan, make sure to do research. Explore the relevant section
 In addition to the other content in this file, best practices for contributing
 to the codebase can be found in the "Engineering Best Practices" section of
 `CONTRIBUTING.md`. Understand its contents and follow them.
+
+## Organization material library
+
+Before finding, saving, or updating research, PDFs, datasets, human-baseline designs,
+or replication results, fetch the current [organization library](https://github.com/Subconscious-ai/hermes/blob/main/library/LIBRARY.md) and follow
+its [agent contract](https://github.com/Subconscious-ai/hermes/blob/main/library/README.md#agent-contract). Keep the inventory in Hermes and update the
+collection's owner manifest. Record the catalog revision used for an experiment.
