@@ -277,3 +277,16 @@ providers + adaptive interview → calculable model → KB readback clock. Conti
 KB evidence ingestion remains unimplemented; do not describe save-time retention
 as that capability. Private receipts live in the existing burn-acceptance artifact
 store; keep credentials and full transcripts out of public GitHub comments.
+
+Build-button follow-up, September 19:
+- User-observed failure reproduced with the real button: it opened a manual import
+  review and did not save a model. The incomplete-state label also promised a build
+  while merely sending another chat message.
+- Reuse the existing authenticated origin/nonce handoff with explicit build intent.
+  The paired receiver creates/reuses a chat-bound workspace, proposes and evaluates
+  through the native compiler, saves a private draft with no ontology promotions,
+  and navigates only after durable save. Manual import stays available separately.
+- Refresh company/research context after a saved brief so a profile-tool correction
+  made during this conversation reaches the handoff without reloading the page.
+- Six adversarial cases remain the final regression boundary; fixing the actual
+  button-to-grid path and showing a single continuous browser journey takes priority.

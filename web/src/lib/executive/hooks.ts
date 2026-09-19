@@ -17,7 +17,7 @@ export interface PublicResearch {
   checked_at?: number;
 }
 
-export function useExecutiveContext(active: boolean) {
+export function useExecutiveContext(active: boolean, completedBrief?: string | null) {
   const [dossier, setDossier] = useState<{
     profile: ProfileFields;
     source: "pdl" | "executive_correction";
@@ -101,7 +101,7 @@ export function useExecutiveContext(active: boolean) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [active, refreshKey]);
+  }, [active, refreshKey, completedBrief]);
   return {
     profileStatus,
     dossier,

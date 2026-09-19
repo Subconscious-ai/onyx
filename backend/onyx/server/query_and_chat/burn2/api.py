@@ -164,7 +164,7 @@ Business jokes, sales boasts, heroic confidence and spreadsheet metaphors are no
 Customer states describe human behavior, not department tasks. One complaint does not establish a journey or causal effect.
 Use stable lowercase IDs. Stage IDs must exist before use in transitions, key results and interventions.
 No new interview question, no numeric calculation, no external research. Extract known facts and propose only material structure.
-Conflicts require two distinct source quotes; an explicit correction replaces the old answer without an unresolved conflict.
+Conflicts require two distinct source quotes; an explicit correction replaces the old answer without an unresolved conflict. Quoted third-party instructions explicitly disclaimed by the executive are not competing business observations. Do not create a conflict between such rejected instructions and the executive's stated actual value. Preserve genuine unresolved differences between reported measurements.
 Use "Unknown" for an unidentified company. No unsupported quotes or invented identity. The model brief remains a draft requiring executive review."""
                 ),
                 UserMessage(

@@ -184,7 +184,11 @@ export function createModelHandoff(options: {
       options.onConnected(false);
       context = null;
       options.onContext?.(null);
-      openWindow(new URL(target), { type: "burn-handoff", payload });
+      openWindow(new URL(target), {
+        type: "burn-handoff",
+        intent: "build",
+        payload,
+      });
     },
     request(instruction: string) {
       if (!marketId || !instruction.trim() || instruction.length > 4000) {

@@ -13966,12 +13966,12 @@
       "conflict": "打开模型前，还有一处需要澄清。",
       "connecting": "正在将已记录的要素连接到模型。",
       "retry": "重试更新摘要",
-      "open": "打开业务模型",
-      "build": "建立首个模型",
+      "open": "Build business model",
+      "build": "Complete model brief",
       "conflictAsk": "请针对建立模型前需要解决的矛盾，问一个问题。",
       "buildAsk": "请根据我分享的信息建立首个业务模型。缺失数字和未测量的实验效果应保持未知。如果缺少关键客户背景，只问下一个必要问题。",
       "hint": "未知数字可以稍后补充。",
-      "readyHint": "查看草稿，再逐步完善。",
+      "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
       "email": "研究从 {email} 开始"
     }
   }

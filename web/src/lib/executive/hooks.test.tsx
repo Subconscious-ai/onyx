@@ -170,6 +170,44 @@ describe("automatic saved evidence", () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(schedule).toHaveBeenCalledTimes(allocations);
   });
+  it("refreshes agent-corrected company context after a newly saved brief", async () => {
+    jest
+      .spyOn(global, "fetch")
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: "not_found",
+          research: { status: "needs_company" },
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: "ready",
+          profile: { company: "Confirmed company" },
+          correction: { revision: 1 },
+          research: {
+            status: "ready",
+            report: "Fresh research",
+            source_urls: ["https://example.com"],
+          },
+        }),
+      } as Response);
+    const { result, rerender } = renderHook(
+      ({ brief }) => useExecutiveContext(true, brief),
+      { initialProps: { brief: "" } }
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.dossier).toBeNull();
+    rerender({ brief: "newly saved brief after company tool" });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.dossier?.profile.company).toBe("Confirmed company");
+    expect(result.current.research.report).toBe("Fresh research");
+  });
   it("loads persisted public sources after profile startup without repeating enrichment", async () => {
     const fetcher = jest
       .spyOn(global, "fetch")

@@ -11,7 +11,8 @@ The model receiver is the paired
 at `https://causl-interview-model-subconcious.vercel.app/dashboard/burn-import`.
 Its allowed Beca origin is `https://burn.subconscious.ai`. Keep both settings paired.
 The ready model action is visible directly in the conversation. Review and save
-remain explicit. These feature branches remain drafts; the AWS backend was not changed.
+remain explicit. These feature branches remain drafts. AWS native runtime updates and their proof
+are recorded in executive-proof-plan.md.
 
 Fresh native Auth0 login, a new interview, automatic saved brief, the actual model
 button/window handshake, AWS proposal, Postgres save/readback, grid reload, and

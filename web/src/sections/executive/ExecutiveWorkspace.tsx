@@ -198,7 +198,7 @@ export default function ExecutiveWorkspace({
     };
   }, [active, preview, chatId, t, onModelContext]);
   const { profileStatus, profile, dossier, research, reload } =
-    useExecutiveContext(active && !preview);
+    useExecutiveContext(active && !preview, preparation.savedMessage);
 
   const [view, setView] = useState<
     "journey" | "evidence" | "decisions" | "model"

@@ -13966,12 +13966,12 @@
       "conflict": "One point needs clarification before the model.",
       "connecting": "Your essentials are captured. Connect them into a first model.",
       "retry": "Retry brief update",
-      "open": "Open business model",
-      "build": "Build first model",
+      "open": "Build business model",
+      "build": "Complete model brief",
       "conflictAsk": "Help me resolve the conflicting statements in the saved brief. Ask one clear question; do not choose an answer for me.",
       "buildAsk": "Build a first business model from what I have shared. Keep missing numbers and unmeasured experiment effects unknown. If a critical piece of customer context is missing, ask only that next question.",
       "hint": "Unknown numbers can wait.",
-      "readyHint": "Review your draft, then refine it.",
+      "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
       "email": "Research starts from {email}"
     }
   }

@@ -224,7 +224,7 @@ test("transfers a brief only to the expected authenticated review window", () =>
   expect(child.postMessage).not.toHaveBeenCalled();
   receive({ type: "burn-ready", nonce: "proof-nonce" });
   expect(child.postMessage).toHaveBeenCalledWith(
-    { type: "burn-handoff", nonce: "proof-nonce", payload },
+    { type: "burn-handoff", intent: "build", nonce: "proof-nonce", payload },
     "https://causl.example"
   );
   handoff.dispose();
@@ -329,6 +329,27 @@ test("an old review heartbeat cannot consume a request before navigation finishe
       type: "burn-scenario-request",
       nonce: currentNonce,
       instruction: "Try 15% conversion.",
+    },
+    "https://causl.example"
+  );
+  handoff.dispose();
+});
+
+test("explicit model action requests a private build through the authenticated handshake", () => {
+  const handoff = createModelHandoff({
+    destination,
+    onStatus: jest.fn(),
+    onConnected: jest.fn(),
+  });
+  handoff.open({ chatId: "chat-a" });
+  expect(child.postMessage).not.toHaveBeenCalled();
+  receive({ type: "burn-ready", nonce: "proof-nonce" });
+  expect(child.postMessage).toHaveBeenCalledWith(
+    {
+      type: "burn-handoff",
+      intent: "build",
+      payload: { chatId: "chat-a" },
+      nonce: "proof-nonce",
     },
     "https://causl.example"
   );

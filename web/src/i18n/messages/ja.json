@@ -13966,12 +13966,12 @@
       "conflict": "モデルを開く前に、1点確認が必要です。",
       "connecting": "記録した情報をモデルにつなげています。",
       "retry": "概要の更新を再試行",
-      "open": "ビジネスモデルを開く",
-      "build": "最初のモデルを作成",
+      "open": "Build business model",
+      "build": "Complete model brief",
       "conflictAsk": "モデルを作成するために解決すべき矛盾について、1つ質問してください。",
       "buildAsk": "共有した情報から最初のビジネスモデルを作成してください。不明な数値や未測定の実験効果は不明のままにしてください。顧客について重要な情報が不足している場合は、次の質問を1つだけしてください。",
       "hint": "不明な数値は後で補えます。",
-      "readyHint": "下書きを確認し、改善しましょう。",
+      "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
       "email": "{email} をもとに調査を開始します"
     }
   }

@@ -116,19 +116,19 @@ it("shows missing work and routes help to the existing chat", () => {
     expect.stringContaining("customer journey")
   );
   expect(
-    screen.getByRole("button", { name: "Build first model" })
+    screen.getByRole("button", { name: "Complete model brief" })
   ).toBeEnabled();
 });
 it("opens the model without requiring unknown inputs", () => {
   render(<InterviewProgress {...props} brief={brief} />);
-  fireEvent.click(screen.getByRole("button", { name: "Open business model" }));
+  fireEvent.click(screen.getByRole("button", { name: "Build business model" }));
   expect(props.onOpen).toHaveBeenCalledTimes(1);
   expect(screen.getByText("Enough for a first model.")).toBeVisible();
 });
 it("does not offer stale work while saving corrections", () => {
   render(<InterviewProgress {...props} brief={brief} stale phase="updating" />);
   expect(
-    screen.queryByRole("button", { name: "Open business model" })
+    screen.queryByRole("button", { name: "Build business model" })
   ).not.toBeInTheDocument();
   expect(
     screen.getByRole("button", { name: "Updating your brief…" })

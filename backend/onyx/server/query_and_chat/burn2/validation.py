@@ -16,6 +16,15 @@ _HYPOTHETICAL = re.compile(
     re.I,
 )
 
+# A quote's presence is not evidence that the executive endorsed its commands.
+# Exclude only explicitly disclaimed instruction spans, not all third-party
+# reports or the trusted observations elsewhere in the same source message.
+_UNTRUSTED_INSTRUCTION_SPAN = re.compile(
+    r"\b(?:not (?:my|our) instructions?|untrusted[^\n:]{0,120}\binstructions?)\s*:\s*"
+    r"(?:'(?:[^'\n]|(?<=\w)'(?=\w))*'|\"[^\"\n]*\"|“[^”\n]*”|‘[^’\n]*’)",
+    re.I,
+)
+
 
 def optional_evidence(item: Any) -> Any:
     if isinstance(item, dict):
@@ -200,12 +209,15 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
     equation.pop("url", None)
     if any(item["journeyId"] not in ids for item in result["interventions"]):
         raise ValueError("Unknown intervention journey reference")
+    conflict_sources = [
+        normal(_UNTRUSTED_INSTRUCTION_SPAN.sub(" ", text)) for text in statements
+    ]
     result["conflicts"] = [
         item
         for item in result["conflicts"]
         if len(set(item["quotes"])) == 2
         and all(
-            any(normal(quote) in source for source in sources)
+            any(normal(quote) in source for source in conflict_sources)
             for quote in item["quotes"]
         )
     ]

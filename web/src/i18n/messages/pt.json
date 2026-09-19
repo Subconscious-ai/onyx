@@ -13966,12 +13966,12 @@
       "conflict": "Um ponto precisa ser esclarecido antes do modelo.",
       "connecting": "Os elementos estão registrados. Conecte-os em um primeiro modelo.",
       "retry": "Tentar atualizar novamente",
-      "open": "Abrir modelo de negócio",
-      "build": "Criar primeiro modelo",
+      "open": "Build business model",
+      "build": "Complete model brief",
       "conflictAsk": "Ajude-me a resolver as contradições no resumo salvo. Faça uma pergunta clara; não escolha a resposta por mim.",
       "buildAsk": "Crie um primeiro modelo com o que compartilhei. Mantenha desconhecidos os números ausentes e os efeitos não medidos. Se faltar contexto essencial do cliente, pergunte apenas isso.",
       "hint": "Números desconhecidos podem esperar.",
-      "readyHint": "Revise o rascunho e depois refine.",
+      "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
       "email": "A pesquisa começa com {email}"
     }
   }
