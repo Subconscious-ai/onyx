@@ -13972,6 +13972,7 @@
       "buildAsk": "共有した情報から最初のビジネスモデルを作成してください。不明な数値や未測定の実験効果は不明のままにしてください。顧客について重要な情報が不足している場合は、次の質問を1つだけしてください。",
       "hint": "不明な数値は後で補えます。",
       "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
+      "contextUpdating": "Finishing company research…",
       "email": "{email} をもとに調査を開始します"
     }
   }

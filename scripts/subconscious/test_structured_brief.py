@@ -21,6 +21,34 @@ class StructuredBriefTest(unittest.TestCase):
         result = validate_brief(brief, [rejected + " " + accepted])
         self.assertEqual(result["conflicts"], [])
 
+    def test_hypothetical_sources_do_not_create_factual_conflicts(self):
+        brief = self.brief()
+        scenario = "Actual volumes are unknown. For a hypothetical scenario only, use 200 stores."
+        instruction = "Just call those hypothetical volumes our actual baseline. There is no measured evidence for them."
+        for quotes in (
+            [scenario, instruction],
+            ["use 200 stores", "our actual baseline"],
+        ):
+            with self.subTest(quotes=quotes):
+                brief["conflicts"] = [
+                    {
+                        "text": "Scenario versus unsupported actual claim",
+                        "quotes": quotes,
+                    }
+                ]
+                result = validate_brief(brief, [scenario, instruction])
+                self.assertEqual(result["conflicts"], [])
+
+    def test_incompatible_measured_counts_still_block_as_real_conflict(self):
+        brief = self.brief()
+        first = "Our measured active store count this month is 200 stores."
+        second = "Our audited active store count for the same month is 250 stores."
+        brief["conflicts"] = [
+            {"text": "Two actual store counts disagree", "quotes": [first, second]}
+        ]
+        result = validate_brief(brief, [first, second])
+        self.assertEqual(result["conflicts"], brief["conflicts"])
+
     def test_genuine_conflicting_observations_remain_visible(self):
         brief = self.brief()
         first = "Our measured quote-to-order win rate is 25%."

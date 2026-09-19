@@ -217,7 +217,10 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
         for item in result["conflicts"]
         if len(set(item["quotes"])) == 2
         and all(
-            any(normal(quote) in source for source in conflict_sources)
+            any(
+                normal(quote) in source and not _HYPOTHETICAL.search(source)
+                for source in conflict_sources
+            )
             for quote in item["quotes"]
         )
     ]

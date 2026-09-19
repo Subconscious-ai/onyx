@@ -13972,6 +13972,7 @@
       "buildAsk": "请根据我分享的信息建立首个业务模型。缺失数字和未测量的实验效果应保持未知。如果缺少关键客户背景，只问下一个必要问题。",
       "hint": "未知数字可以稍后补充。",
       "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
+      "contextUpdating": "Finishing company research…",
       "email": "研究从 {email} 开始"
     }
   }

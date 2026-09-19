@@ -17,13 +17,20 @@ export interface PublicResearch {
   checked_at?: number;
 }
 
-export function useExecutiveContext(active: boolean, completedBrief?: string | null) {
+export function useExecutiveContext(
+  active: boolean,
+  completedBrief?: string | null
+) {
   const [dossier, setDossier] = useState<{
     profile: ProfileFields;
     source: "pdl" | "executive_correction";
   } | null>(null);
   const [profile, setProfile] = useState<ExecutiveProfile | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [checkedContext, setCheckedContext] = useState<{
+    brief: typeof completedBrief;
+    refresh: number;
+  } | null>(null);
   const [profileStatus, setProfileStatus] = useState(
     "Checking professional context…"
   );
@@ -82,6 +89,8 @@ export function useExecutiveContext(active: boolean, completedBrief?: string | n
             return;
           }
         }
+        if (profile)
+          setCheckedContext({ brief: completedBrief, refresh: refreshKey });
         const current = profile ? value.research : value;
         setResearch(current ?? { status: "unavailable" });
         if (["queued", "running"].includes(current?.status)) {
@@ -91,7 +100,10 @@ export function useExecutiveContext(active: boolean, completedBrief?: string | n
         }
       } catch {
         if (!cancelled) {
-          if (profile) setProfileStatus("PDL context unavailable");
+          if (profile) {
+            setProfileStatus("PDL context unavailable");
+            setCheckedContext({ brief: completedBrief, refresh: refreshKey });
+          }
           setResearch({ status: "unavailable" });
         }
       }
@@ -103,6 +115,10 @@ export function useExecutiveContext(active: boolean, completedBrief?: string | n
     };
   }, [active, refreshKey, completedBrief]);
   return {
+    refreshing:
+      !checkedContext ||
+      checkedContext.brief !== completedBrief ||
+      checkedContext.refresh !== refreshKey,
     profileStatus,
     dossier,
     profile,

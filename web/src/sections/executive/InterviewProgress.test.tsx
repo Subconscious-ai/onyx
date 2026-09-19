@@ -156,3 +156,20 @@ it("does not celebrate a loaded conversation", () => {
   render(<InterviewProgress {...props} brief={brief} />);
   expect(confetti).not.toHaveBeenCalled();
 });
+
+it("waits for current company context before handing off a ready brief", () => {
+  const view = render(
+    <InterviewProgress {...props} brief={brief} contextPending />
+  );
+  const button = screen.getByRole("button", {
+    name: "Finishing company research…",
+  });
+  expect(button).toBeDisabled();
+  fireEvent.click(button);
+  expect(props.onOpen).not.toHaveBeenCalled();
+  view.rerender(
+    <InterviewProgress {...props} brief={brief} contextPending={false} />
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Build business model" }));
+  expect(props.onOpen).toHaveBeenCalledTimes(1);
+});

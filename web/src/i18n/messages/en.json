@@ -13972,6 +13972,7 @@
       "buildAsk": "Build a first business model from what I have shared. Keep missing numbers and unmeasured experiment effects unknown. If a critical piece of customer context is missing, ask only that next question.",
       "hint": "Unknown numbers can wait.",
       "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
+      "contextUpdating": "Finishing company research…",
       "email": "Research starts from {email}"
     }
   }

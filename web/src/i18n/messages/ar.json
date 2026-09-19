@@ -13972,6 +13972,7 @@
       "buildAsk": "أنشئ نموذج أعمال أولياً مما شاركته. أبقِ الأرقام المفقودة وآثار التجارب غير المقاسة مجهولة. إذا غابت معلومة أساسية عن العميل، اطرح السؤال الضروري التالي فقط.",
       "hint": "يمكن إضافة الأرقام المجهولة لاحقاً.",
       "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
+      "contextUpdating": "Finishing company research…",
       "email": "يبدأ البحث من {email}"
     }
   }

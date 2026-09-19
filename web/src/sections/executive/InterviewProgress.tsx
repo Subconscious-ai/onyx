@@ -14,6 +14,7 @@ interface InterviewProgressProps {
   busy: boolean;
   chatId: string | null;
   hasAnswer: boolean;
+  contextPending?: boolean;
   onOpen: () => void;
   onRetry: () => void;
   onAsk?: (message: string) => void;
@@ -28,6 +29,7 @@ export default function InterviewProgress({
   busy,
   chatId,
   hasAnswer,
+  contextPending = false,
   onOpen,
   onRetry,
   onAsk,
@@ -49,7 +51,10 @@ export default function InterviewProgress({
   const count = items.filter((item) => item.complete).length;
   const updating = busy || phase === "updating" || phase === "waiting";
   const failed = phase === "error";
-  const ready = !stale && !updating && !failed && modelReadiness(brief).ready;
+  const briefReady =
+    !stale && !updating && !failed && modelReadiness(brief).ready;
+  const waitingContext = briefReady && contextPending;
+  const ready = briefReady && !contextPending;
   const conflict = !!brief?.conflicts.length;
   const next = items.find((item) => !item.complete)?.id;
   const milestone = useRef({ chatId, celebrated: goal, interacted: false });
@@ -93,20 +98,24 @@ export default function InterviewProgress({
     ? t("failed")
     : updating
       ? t("updating")
-      : ready
-        ? t("ready")
-        : conflict
-          ? t("conflict")
-          : next
-            ? t(`${next}Next`)
-            : t("connecting");
+      : waitingContext
+        ? t("contextUpdating")
+        : ready
+          ? t("ready")
+          : conflict
+            ? t("conflict")
+            : next
+              ? t(`${next}Next`)
+              : t("connecting");
   const action = failed
     ? t("retry")
     : updating
       ? t("updating")
-      : ready
-        ? t("open")
-        : t("build");
+      : waitingContext
+        ? t("contextUpdating")
+        : ready
+          ? t("open")
+          : t("build");
   function advance() {
     if (failed) onRetry();
     else if (ready) onOpen();
@@ -153,7 +162,7 @@ export default function InterviewProgress({
           size="lg"
           prominence="primary"
           rightIcon={SvgArrowUpRight}
-          disabled={updating || (!hasAnswer && !failed)}
+          disabled={updating || waitingContext || (!hasAnswer && !failed)}
           onClick={advance}
         >
           {action}

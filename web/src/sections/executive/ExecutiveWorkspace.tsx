@@ -197,7 +197,7 @@ export default function ExecutiveWorkspace({
       modelHandoff.current = null;
     };
   }, [active, preview, chatId, t, onModelContext]);
-  const { profileStatus, profile, dossier, research, reload } =
+  const { profileStatus, profile, dossier, research, reload, refreshing } =
     useExecutiveContext(active && !preview, preparation.savedMessage);
 
   const [view, setView] = useState<
@@ -221,6 +221,13 @@ export default function ExecutiveWorkspace({
         .reverse()
         .find((message) => message.type === "user" && message.message.trim());
       if (request) modelHandoff.current?.request(request.message);
+      return;
+    }
+    if (
+      refreshing ||
+      ["pending", "queued", "running"].includes(research.status)
+    ) {
+      setHandoffStatus(t("progress.contextUpdating"));
       return;
     }
     const chatId = new URL(window.location.href).searchParams.get("chatId");
@@ -299,6 +306,10 @@ export default function ExecutiveWorkspace({
           hasAnswer={messages.some(
             (message) => message.type === "user" && !!message.message.trim()
           )}
+          contextPending={
+            refreshing ||
+            ["pending", "queued", "running"].includes(research.status)
+          }
           onOpen={openModel}
           onRetry={preparation.retry}
           onAsk={onAsk}

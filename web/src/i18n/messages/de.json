@@ -13972,6 +13972,7 @@
       "buildAsk": "Erstelle ein erstes Modell aus meinen Angaben. Fehlende Zahlen und ungemessene Effekte bleiben unbekannt. Falls wesentlicher Kundenkontext fehlt, frage nur danach.",
       "hint": "Unbekannte Zahlen können warten.",
       "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
+      "contextUpdating": "Finishing company research…",
       "email": "Die Recherche beginnt mit {email}"
     }
   }

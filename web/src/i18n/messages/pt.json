@@ -13972,6 +13972,7 @@
       "buildAsk": "Crie um primeiro modelo com o que compartilhei. Mantenha desconhecidos os números ausentes e os efeitos não medidos. Se faltar contexto essencial do cliente, pergunte apenas isso.",
       "hint": "Números desconhecidos podem esperar.",
       "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
+      "contextUpdating": "Finishing company research…",
       "email": "A pesquisa começa com {email}"
     }
   }
