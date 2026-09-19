@@ -194,6 +194,7 @@ describe("automatic saved evidence", () => {
     });
     expect(result.current.research.status).toBe("queued");
     expect(result.current.profile).toBeNull(); // Older APIs cannot save corrections.
+    expect(result.current.dossier).toEqual({ profile: { company: "Example" }, source: "pdl" });
     await act(async () => {
       jest.advanceTimersByTime(2000);
     });

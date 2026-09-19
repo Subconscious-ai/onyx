@@ -4,6 +4,7 @@ import { useAutomaticBrief } from "@/lib/executive/hooks";
 import { createModelHandoff } from "@/lib/executive/model-handoff";
 
 jest.mock("@/lib/executive/model-handoff", () => ({
+  ...jest.requireActual("@/lib/executive/model-handoff"),
   createModelHandoff: jest.fn(),
 }));
 

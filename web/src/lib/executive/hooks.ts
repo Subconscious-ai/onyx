@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ExecutiveProfile } from "@/lib/executive/profile";
+import type { ExecutiveProfile, ProfileFields } from "@/lib/executive/profile";
 import {
   interviewMessageText,
   projectBrief,
@@ -9,23 +9,31 @@ import {
   type InterviewMessage,
 } from "./brief";
 
-interface PublicResearch {
+export interface PublicResearch {
+  report?: string;
+  truncated?: boolean;
   status: string;
   source_urls?: string[];
   checked_at?: number;
 }
 
 export function useExecutiveContext(active: boolean) {
+  const [dossier, setDossier] = useState<{
+    profile: ProfileFields;
+    source: "pdl" | "executive_correction";
+  } | null>(null);
   const [profile, setProfile] = useState<ExecutiveProfile | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [profileStatus, setProfileStatus] = useState(
-    "Checking professional context…"
+    "Checking professional context…",
   );
   const [research, setResearch] = useState<PublicResearch>({
     status: "pending",
   });
   useEffect(() => {
     if (!active) return;
+    setDossier(null);
+    setResearch({ status: "pending" });
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout>;
     const started = Date.now();
@@ -35,12 +43,22 @@ export function useExecutiveContext(active: boolean) {
           profile
             ? "/api/chat/executive-profile"
             : "/api/chat/executive-research",
-          { method: profile ? "POST" : "GET" }
+          { method: profile ? "POST" : "GET" },
         );
         if (!response.ok) throw new Error("Context unavailable");
         const value = await response.json();
         if (cancelled) return;
         if (profile) {
+          setDossier(
+            value.status === "ready" && value.profile
+              ? {
+                  profile: value.profile,
+                  source: value.correction?.revision
+                    ? "executive_correction"
+                    : "pdl",
+                }
+              : null,
+          );
           setProfile(
             Number.isInteger(value.correction?.revision)
               ? {
@@ -48,7 +66,7 @@ export function useExecutiveContext(active: boolean) {
                   provider_profile: value.provider_profile,
                   correction: value.correction,
                 }
-              : null
+              : null,
           );
           setProfileStatus(
             value.status === "ready"
@@ -57,7 +75,7 @@ export function useExecutiveContext(active: boolean) {
                 ? "PDL: no confident match"
                 : value.status === "updating"
                   ? "Checking professional context…"
-                  : "PDL context unavailable"
+                  : "PDL context unavailable",
           );
           if (value.status === "updating" && Date.now() - started < 30000) {
             timer = setTimeout(() => refresh(true), 2000);
@@ -86,6 +104,7 @@ export function useExecutiveContext(active: boolean) {
   }, [active, refreshKey]);
   return {
     profileStatus,
+    dossier,
     profile,
     research,
     reload: () => setRefreshKey((value) => value + 1),
@@ -152,7 +171,7 @@ export function useAutomaticBrief({
             })
           : fetch(
               `/api/chat/executive-brief?chat_id=${encodeURIComponent(chatId!)}`,
-              { method: "GET" }
+              { method: "GET" },
             );
         flight.current = request;
         const response = await request;

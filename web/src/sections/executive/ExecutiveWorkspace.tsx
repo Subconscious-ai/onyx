@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAutomaticBrief, useExecutiveContext } from "@/lib/executive/hooks";
-import { createModelHandoff } from "@/lib/executive/model-handoff";
+import { createModelHandoff, modelBusinessContext } from "@/lib/executive/model-handoff";
 import type { ModelContext } from "@/lib/executive/model-context";
 import { Button, Text } from "@opal/components";
 import { Interactive } from "@opal/core";
@@ -191,7 +191,7 @@ export default function ExecutiveWorkspace({
       modelHandoff.current = null;
     };
   }, [active, preview, chatId, t, onModelContext]);
-  const { profileStatus, profile, research, reload } = useExecutiveContext(
+  const { profileStatus, profile, dossier, research, reload } = useExecutiveContext(
     active && !preview
   );
 
@@ -227,6 +227,7 @@ export default function ExecutiveWorkspace({
       format: "burn/onyx-interview",
       version: 1,
       chatId,
+      businessContext: modelBusinessContext(dossier, research),
       messages: savedMessages
         .filter((message) => ["user", "assistant"].includes(message.type))
         .map((message) => ({
