@@ -16,6 +16,15 @@ _HYPOTHETICAL = re.compile(
     re.I,
 )
 
+# A quote's presence is not evidence that the executive endorsed its commands.
+# Exclude only explicitly disclaimed instruction spans, not all third-party
+# reports or the trusted observations elsewhere in the same source message.
+_UNTRUSTED_INSTRUCTION_SPAN = re.compile(
+    r"\b(?:not (?:my|our) instructions?|untrusted[^\n:]{0,120}\binstructions?)\s*:\s*"
+    r"(?:'(?:[^'\n]|(?<=\w)'(?=\w))*'|\"[^\"\n]*\"|“[^”\n]*”|‘[^’\n]*’)",
+    re.I,
+)
+
 
 def optional_evidence(item: Any) -> Any:
     if isinstance(item, dict):
@@ -49,6 +58,14 @@ def attach_source(item: Any, statements: list[str]) -> None:
 
 def validate_input_purpose(item: dict[str, Any]) -> None:
     """Keep explicitly desired outcomes separate from operating observations."""
+    note = item["value"]
+    if not re.search(r"\d", note["text"]) and re.search(
+        r"\b(?:unknown|not measured|not known|unavailable)\b", note["text"], re.I
+    ):
+        # Testimony that a quantity is unavailable is not an observed value.
+        note["status"] = "unknown"
+        note.pop("quote", None)
+        note.pop("url", None)
     purpose = re.sub(r"([a-z])([A-Z])", r"\1 \2", item["name"])
     purpose = re.sub(r"[_-]", " ", purpose)
     if (
@@ -59,6 +76,32 @@ def validate_input_purpose(item: dict[str, Any]) -> None:
         raise ValueError(
             "A target cannot become an observed operating input. Keep baseline inputs unknown; label desired targets explicitly and use only the current corrected target."
         )
+
+
+def ground_journey_actors(journey: list[dict], transitions: list[dict]) -> None:
+    """Retain unsupported participants as proposed structure, not testimony."""
+
+    def normal(text: str) -> str:
+        return " ".join(text.lower().split())
+
+    def demote(note: dict) -> None:
+        note["status"] = "assumption"
+        note.pop("quote", None)
+        note.pop("url", None)
+
+    for stage in journey:
+        # A genuine quote does not establish an invented participant. This
+        # lexical guard is conservative, not full semantic entailment.
+        actor = normal(stage["actor"])
+        supported = bool(actor) and re.search(
+            r"(?<!\w)" + re.escape(actor) + r"(?!\w)", normal(stage.get("quote", ""))
+        )
+        if stage["status"] == "executive" and not supported:
+            demote(stage)
+    assumed = {stage["id"] for stage in journey if stage["status"] == "assumption"}
+    for edge in transitions:
+        if edge["from"] in assumed or edge["to"] in assumed:
+            demote(edge["behavior"])
 
 
 def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
@@ -156,6 +199,7 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
         ):
             raise ValueError("Unknown behavior transition endpoint")
         ground(edge["behavior"])
+    ground_journey_actors(result["journey"], result["transitions"])
     for item in result["model"]["inputs"]:
         ground(item["value"])
         validate_input_purpose(item)
@@ -165,12 +209,18 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
     equation.pop("url", None)
     if any(item["journeyId"] not in ids for item in result["interventions"]):
         raise ValueError("Unknown intervention journey reference")
+    conflict_sources = [
+        normal(_UNTRUSTED_INSTRUCTION_SPAN.sub(" ", text)) for text in statements
+    ]
     result["conflicts"] = [
         item
         for item in result["conflicts"]
         if len(set(item["quotes"])) == 2
         and all(
-            any(normal(quote) in source for source in sources)
+            any(
+                normal(quote) in source and not _HYPOTHETICAL.search(source)
+                for source in conflict_sources
+            )
             for quote in item["quotes"]
         )
     ]

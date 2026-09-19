@@ -147,3 +147,146 @@ Ubuntu 24.04; test commands, pinned validator, read-only permissions and disable
 checkout credential persistence remain unchanged. Shared AWS runner security
 and unrelated upstream workflows remain unchanged. Verify the actual hosted
 job before removing the runner-access blocker or making a publication claim.
+
+## Active September 19: adversarial email-to-model UAT
+
+This checkpoint supersedes the old fixed-turn humor and completion requirements above.
+Use existing draft Onyx #31 and causl-kb #575, with worktrees `worktrees/onyx-interview-model`
+and `worktrees/causl-interview-model`. Keep both PRs unmerged for user QA.
+
+Outcome: six adaptive synthetic executives across energy, software renewals,
+retail, consulting capacity, home services and manufacturing. Test incomplete
+knowledge, corrections, incompatible units, infeasible objectives, hostile source
+instructions and employer/client mismatch. The requested target is 60 seconds
+from accepted email to a usable first model, with real provider evidence and
+causl-kb readback. Measure rather than assume that target.
+
+Reuse native login, profile/research handlers, Celery extraction, existing browser
+handoff and model save/reload. Extend the existing evaluator; do not create a new
+agent runtime. Distinguish real fresh discovery, cached discovery and PDL no-match.
+An independent tester owns adaptive scenarios and does not mutate shared profiles.
+
+Milestones:
+1. Record six baseline transcripts, saved-brief receipts and independent arithmetic
+   oracles. Preserve failures; don't retry until a lucky pass conceals instability.
+2. Repair demonstrated shared defects through existing handlers/storage. Research
+   and PDL are unaccepted evidence; never infer organization access from an email.
+3. Verify affected cases, then one final unchanged-candidate sweep, browser handoff,
+   actual calculated model cells and Postgres readback. Publish an honest outcome
+   matrix including unproven or failed timing/storage boundaries.
+
+Current discovery: Onyx persists discovery in its own Postgres. The existing KB
+handoff only persists a reviewed model and selected supported journey statements;
+it does not prove continuous KB ingestion. KB's inherited bootstrap already owns
+burn_dossiers and research jobs and must be inspected before adding any bridge.
+Separate Auth0/Clerk sessions remain, and issue #450 was closed as deferred, not
+completed. A component-test pass or HTTP 200 cannot stand in for these boundaries.
+
+Recovery: continue six-case harness and examine existing KB bootstrap. Preserve
+private transcripts and credentials outside Git under the existing acceptance
+artifact directory. No new production identity/permission changes are authorized
+by a desire for a faster demo.
+
+
+September 19 iteration receipts (private acceptance artifacts, `adversarial/`):
+- Fresh native PDL provider probe: 0.93s; fresh GPT Researcher: 15.98s, eight
+  original sources. Separate real-email handler proof, not a combined model clock.
+- Fresh QA email login: 6.4s; email matched `/me`; automatic enrichment started
+  at 8.7s, returned an honest no-match at 9.2s. Public company is then required.
+- Initial six-case sweep: 6/6 saved, only 3/6 under 60s; three model defects.
+- Candidate sweep: 6/6 saved in 30–48s, 5/6 complete structured coverage,
+  4/6 passed independent semantics. Energy emitted an uncalculated 140 instead
+  of 150 and lost a known rate; services omitted an explicitly stated journey.
+  Retain these failures; candidate timing alone is not success.
+- Native v2 fixes research locks to belong to jobs (a live company-change test
+  had otherwise exhausted 60 seconds behind obsolete research). It clarifies
+  latest-answer extraction and aggregate-rate evidence. Existing AWS model
+  configuration is unchanged. Canonical turn reminder defers unsolicited benefit
+  arithmetic to the model and requires a calculator for requested arithmetic.
+- Focused proof: 64 dependency-light contract tests, 34 native-runtime worker/
+  profile regressions, 20 UI/catalog tests and web types. The scoped research-lock
+  regression failed before the fix. These are not provider or full-stack proof.
+
+Recovery: native v2 is being activated; run the unchanged six-case sweep and
+company-correction canary after health/gateway verification. KB PR575 retains the
+matching source dossier atomically when a model is saved and repairs known-number
+citations. It still does not continuously mirror research during the interview.
+Keep both PRs draft. Do not claim the combined 60-second objective until native
+login, real enrichment, interview, calculation and KB readback pass together.
+
+
+Final-candidate changes and demonstrated results:
+- v2 interviews: all six saved/reopened under 49 seconds. Energy preserves its
+  5.5% aggregate baseline; services now retains the supplied journey. Conservative
+  downgrading of mixed factual/scenario messages and dropped hypothetical inputs
+  remain useful adversarial findings, not evidence of invented facts.
+- A genuine agent-led services interview was also run. Including tester reasoning
+  and tool round trips, its saved brief was observed at 123 seconds, not 60 seconds.
+- Corrected-company GPT Researcher completed in 17.1 seconds with nine sources
+  and a new research ID. Positive PDL remains a separately measured provider probe.
+- Real model UAT: energy 550→700 contracts (+150); SaaS $2.1M→$2.4M retained ARR;
+  home services $120K→$160K revenue. Each used real model calculations and saved,
+  reopened native models. These are synthetic QA operating numbers, not customer
+  business performance or experiment validation.
+- v3 adds conditional research row updates under Postgres SELECT FOR UPDATE.
+  Four deterministic stale-write interleavings failed before the fix; 16 research
+  tests pass after. It also marks explicitly unavailable nonnumeric operating
+  notes unknown and aligns interview handoff guidance with target/timeframe checks.
+  Combined candidate: 55 native-runtime tests and 65 dependency-light contracts.
+- Frontend `aec816041d` deployed on the canonical domain; authenticated mobile
+  check sees the signed-in email and opens the intended paired model workspace.
+
+Do not merge. Full acceptance still needs the final v3 receipts and honest source
+storage boundaries. Source research is retained in causal-KB at explicit model
+save, not continuously during interview; native Onyx owns working chat context.
+
+September 19 frozen v3 acceptance and recovery:
+- All six briefs saved and reopened: energy 34.490s, SaaS 34.993s, retail
+  32.648s, services 40.667s, home services 48.389s, manufacturing 24.229s.
+  Only five were ready. Manufacturing incorrectly treats explicitly untrusted
+  supplier text as an unresolved conflict. These are interview-to-brief clocks,
+  not a combined login/enrichment/model clock. The six-case driver is adaptive
+  rule-based automation; independent agents reviewed the actual outputs.
+- Fresh corrected-company research completed in 18.409s with eight sources.
+  A real Postgres lock-contention canary proved that an old job cannot overwrite
+  a committed replacement job. Test rows were removed and absence verified.
+- KB receiver 6564a3d is deployed on the paired model-workspace preview. Actual
+  calculated models passed energy, SaaS, home-services and manufacturing oracles;
+  retail preserved hypothetical inputs as hypotheses. Model save/reopen and
+  increasing tenant-scoped dossier row counts were independently observed.
+- Positive research handoff retained nine source URLs and saved/reopened a model,
+  but its aggregate baseline remained uncomputable. Services returned 502 before
+  model save. Neither result passes the usable-model gate.
+- Bounded alternate-extractor probes are retained, not retried to a lucky pass.
+  AWS configuration 8 with LOW reasoning and source-only extraction still failed:
+  retail schema invalid, energy omitted the observed rate from operating inputs,
+  SaaS restored a superseded objective. Do not activate this configuration change.
+- An additional draft-only grounding guard demotes invented journey actors and
+  connected behaviors to assumptions. Red-to-green regressions plus 67 contracts
+  and Ruff pass. It can conservatively demote paraphrases; it is not full semantic
+  entailment validation. This guard has NOT been deployed or live-swept.
+- Live native image remains onyx-burn2:adversarial-v3-20260919; extractor remains
+  configuration 5. Latest frontend code change after aec816041d is formatting only.
+  Quality CI now passes; inherited AnyIO dependency audit remains failing. Other
+  heavyweight checks were still pending at this checkpoint. Neither PR is merged.
+
+Resume with manufacturing conflict classification and the two model-generation
+failures. Reuse retained failing handoffs and arithmetic oracles, then run one
+unchanged-candidate six-case sweep. Prove a single combined email/login → fresh
+providers + adaptive interview → calculable model → KB readback clock. Continuous
+KB evidence ingestion remains unimplemented; do not describe save-time retention
+as that capability. Private receipts live in the existing burn-acceptance artifact
+store; keep credentials and full transcripts out of public GitHub comments.
+
+Build-button follow-up, September 19:
+- User-observed failure reproduced with the real button: it opened a manual import
+  review and did not save a model. The incomplete-state label also promised a build
+  while merely sending another chat message.
+- Reuse the existing authenticated origin/nonce handoff with explicit build intent.
+  The paired receiver creates/reuses a chat-bound workspace, proposes and evaluates
+  through the native compiler, saves a private draft with no ontology promotions,
+  and navigates only after durable save. Manual import stays available separately.
+- Refresh company/research context after a saved brief so a profile-tool correction
+  made during this conversation reaches the handoff without reloading the page.
+- Six adversarial cases remain the final regression boundary; fixing the actual
+  button-to-grid path and showing a single continuous browser journey takes priority.

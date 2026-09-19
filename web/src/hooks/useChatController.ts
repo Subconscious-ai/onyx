@@ -394,6 +394,8 @@ export default function useChatController({
     }: OnSubmitProps) => {
       // Read at submit time so no caller can capture a stale value.
       const incognito = incognitoEnabledRef.current ?? false;
+      // Wait before touching input or session state; unresolved is not agent 0.
+      if (!incognito && !activeAgent) return;
       const isMultiModel =
         !regenerationRequest && (selectedModels?.length ?? 0) >= 2;
       const projectId = searchParams.get(SEARCH_PARAM_NAMES.PROJECT_ID);

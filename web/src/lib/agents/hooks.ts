@@ -269,8 +269,8 @@ export function usePinChatAgent() {
  * is what stops a stale `?agentId=0`, or a session created before the setting
  * was enabled, from routing back to it.
  *
- * An id that matches no eligible agent falls through, which is how a deleted,
- * inaccessible, or disabled agent degrades.
+ * An explicit id never falls through to another agent. Missing or inaccessible
+ * agents remain unresolved, so a first send cannot silently change its tools.
  *
  * This is a derivation, not state, so it re-resolves on navigation rather than
  * latching. Its inputs are shared — the URL, the open session, the SWR-backed
@@ -299,7 +299,7 @@ export function useActiveAgent(): MinimalAgent | undefined {
     const namedId =
       sessionAgentId ?? (urlAgentIdRaw ? parseInt(urlAgentIdRaw) : undefined);
     const named = eligible.find((agent) => agent.id === namedId);
-    if (named) return named;
+    if (namedId !== undefined) return named;
 
     const assistant = eligible.find((agent) => agent.id === DEFAULT_AGENT_ID);
     if (assistant) return assistant;

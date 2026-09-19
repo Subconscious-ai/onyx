@@ -1,6 +1,27 @@
 # Burn 2.0 on native Onyx
 
-[Open Burn](https://onyx-executive.vercel.app/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Login redirects to the existing registered review hostname before OAuth starts.
+[Open Burn](https://burn.subconscious.ai/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Start login on this canonical address. Branch previews redirect to the registered login origin and do not prove their own authenticated customer path.
+
+## Current interview-to-model UAT, September 19 UTC
+
+The canonical Burn address serves the interview-to-model candidate from draft
+[PR #31 — carry interview and research into the model](https://github.com/Subconscious-ai/onyx/pull/31).
+The model receiver is the paired
+[PR #575 — populate and retain the business model](https://github.com/Subconscious-ai/causl-kb/pull/575)
+at `https://causl-interview-model-subconcious.vercel.app/dashboard/burn-import`.
+Its allowed Beca origin is `https://burn.subconscious.ai`. Keep both settings paired.
+The ready model action is visible directly in the conversation. Review and save
+remain explicit. These feature branches remain drafts. AWS native runtime updates and their proof
+are recorded in executive-proof-plan.md.
+
+Fresh native Auth0 login, a new interview, automatic saved brief, the actual model
+button/window handshake, AWS proposal, Postgres save/readback, grid reload, and
+five canonical journey-source readbacks passed. No handoff file was uploaded in
+that browser run. The synthetic account has no PDL match; real PDL/research success
+is covered separately by the cold-discovery runs below. causl-kb still has a
+separate Clerk login. Its synthetic QA sign-in used the supported Clerk ticket
+flow after ordinary fresh-device login requested an email code. This does not
+establish one-login SSO or a 60-second login-to-saved-model guarantee.
 
 Onyx PRs #10, #20 and #23 are merged. The [prototype record](prototype-plan.md) preserves earlier paired model evidence and generation limits. Onyx source publication does not establish the merge or deployment of a causl-kb counterpart.
 
@@ -20,11 +41,11 @@ The September 18 candidate check used real Bedrock GPT OSS and synthetic Postgre
 
 The September 18 runtime probe found that the native encryption helper returns plaintext bytes unchanged. The storage class name does not establish encryption. Disk encryption was not checked. Issue #21 tracks this deployment boundary alongside caller-scoped access. Do not claim application-level encryption from the table name.
 
-## Verified release boundary, September 17
+## Historical release boundary, September 17
 
 Production deployment `dpl_FdNmDXw9UPnsPiSRqhiSRRC3Lgcy` is Ready from main `fc9c911eb9708d0ef6706f61f7a6981690fc88f1`. The issue #21 receipt records fresh Auth0 sign-in, recovery of the original account, and a saved interview surviving reload. Login continues on the registered review origin.
 
-[Issue #21](https://github.com/Subconscious-ai/onyx/issues/21) remains open for canonical-domain rollout, cross-account isolation, caller-scoped MCP authorization and monitoring evidence. A complete current interview-to-model save/reopen run remains outstanding. Existing-account success is not enterprise-isolation proof.
+[Issue #21](https://github.com/Subconscious-ai/onyx/issues/21) tracks access and hosting acceptance. The current paired model evidence is above. Existing-account success is not enterprise-isolation proof.
 
 ## Architecture
 
@@ -34,6 +55,7 @@ Production deployment `dpl_FdNmDXw9UPnsPiSRqhiSRRC3Lgcy` is Ready from main `fc9
 - PDL context comes from the authenticated account and remains an unconfirmed professional match. Enrichment never grants company access.
 - Background extraction validates journey, OKR and model structure against saved executive messages. Unknown inputs remain unknown. Public references and hypotheses never silently become executive facts.
 - causl-kb owns accepted market ontology and organization-scoped model persistence. The browser handoff binds the exact origin and nonce; Onyx holds no causl-kb administrator credential.
+- The interview-to-model candidate sends the dossier and public research in optional `businessContext`, separate from executive messages. It excludes worker identifiers and bounds report size. Incomplete research carries status only. Deploy the matching causl-kb receiver first; older receivers reject this field. Pair the receiver's `BURN_ONYX_ORIGIN` with Beca and Beca's `NEXT_PUBLIC_BURN_MODEL_WORKSPACE` with the review page. Model previews require their existing AWS configuration too.
 - The existing model compiler owns executable algebra. Interview equations are advisory; additional required quantities stay explicit unknowns. The paired model window returns bounded saved-model context and actual calculation receipts through native chat's `additional_context`, scoped to the current Beca conversation. Preview and saved scenario states never imply an experiment launch.
 
 ## Start here
@@ -59,6 +81,41 @@ Cross-application SSO remains causl-kb #450. Community Edition is not evidence o
 
 ## Development
 
+### Fresh discovery acceptance
+
+Use `scripts/subconscious/check_fresh_discovery.py` inside the running native API
+environment with `--user-id UUID --output-dir PRIVATE_DIRECTORY
+--reset-retained-context`. This is an opt-in live provider test: it backs up and
+clears only that account's retained profile/research keys, then calls the existing
+PDL preparation handler, Celery research job and research read handler. It leaves
+the new results available to the application. Never use it to interrupt an active
+interview or research job. Backups and full dossiers remain private, outside Git.
+
+The gate requires empty starting caches, a new PDL timestamp, a new research ID
+and timestamp, ready results, at least two source URLs and substantive report
+content within 60 seconds. Run its rejection checks locally with
+`PYTHONPATH=scripts/subconscious python3 -m unittest scripts/subconscious/test_fresh_discovery.py`.
+
+Three consecutive live runs on September 19, 2026 UTC took **22.997, 21.176 and
+13.810 seconds**, with **8, 7 and 7 sources** respectively. The last run uses the
+checked-in probe and the existing browser's two-second polling interval. Both
+source records were newly fetched, not retained from an earlier interview. The
+fresh results also passed the actual `modelBusinessContext` producer and
+causl-kb `parseOnyxHandoff` receiver with the synthetic interview's three journey
+states and two transitions. The live browser model acceptance then passed AWS
+generation, exact Postgres model readback, replay rejection, grid reopening,
+all seven public URLs, and five canonical journey-source readbacks. It used the
+actual producer function and a reviewed file import, not a fresh native chat
+button click. See [#430 — deliver interview context to the first model](https://github.com/Subconscious-ai/causl-kb/issues/430),
+[#575 — preserve that evidence in the model](https://github.com/Subconscious-ai/causl-kb/pull/575)
+and [#31 — carry dossier and research from Beca](https://github.com/Subconscious-ai/onyx/pull/31).
+
+This measures warm-service, cold-data discovery from the native preparation
+handler until the research read handler returns complete context. It excludes
+login, server boot, browser transport and model generation. Three successful runs
+prove the exercised path; they are not a provider latency SLA. The existing
+runtime met the target without new queues, orchestration or provider tuning.
+
 The Subconscious fork is `Subconscious-ai/onyx`. The existing local `origin` remote points upstream; publish Burn changes through `subconscious`. Never push Burn-specific changes to `onyx-dot-app/onyx`.
 
 Reuse `scripts/subconscious/test_*.py`, the executive Jest tests and `eval_interview.py` for focused proof. Use synthetic sessions for writes and preserve customer transcripts. Credentials, corpus files, browser state, database dumps and encryption keys stay outside Git.
@@ -75,7 +132,7 @@ Production backend routing and `WEB_DOMAIN` were configured and deployed on Sept
 Verify the serving source and environment after publication. Full model-handoff acceptance remains separate from frontend build success.
 
 The `burn.subconscious.ai` cutover remains tracked in #21. Use the verified Vercel entry above until domain rollout is complete.
-The registered review origin is `https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app`; alias promotion remains manual.
+The current registered customer origin is `https://burn.subconscious.ai`; alias promotion remains manual. Older branch aliases in historical receipts are not the current UAT entry point.
 Native Git builds update branch aliases, not the manually assigned shared review alias.
 
 Vercel releases only the frontend and API forwarding. AWS backend images, data, backups and service restarts remain separate.

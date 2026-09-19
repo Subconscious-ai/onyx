@@ -13944,6 +13944,36 @@
       "interview": "Führungskräfteinterview",
       "design": "Experimentplanung",
       "analytics": "Experimentanalyse"
+    },
+    "progress": {
+      "title": "Ihr erstes Modell",
+      "count": "{count} von 3 Grundlagen erfasst",
+      "essentials": "Modellgrundlagen",
+      "goal": "Ziel",
+      "measure": "Erfolgsmaß",
+      "journey": "Kundenreise",
+      "captured": "Erfasst",
+      "missing": "Details fehlen",
+      "goalNext": "Was möchten Sie verbessern?",
+      "measureNext": "Welches Ergebnis und welcher Zeitraum bedeuten Erfolg?",
+      "journeyNext": "Wer ist der Kunde und wie gelangt er zur Entscheidung?",
+      "goalAsk": "Hilf mir, das Geschäftsziel zu klären. Nutze meine Antworten und stelle nur die wichtigste noch offene Frage.",
+      "measureAsk": "Hilf mir, Erfolgsmaß und Zeitraum anhand meiner bisherigen Angaben festzulegen.",
+      "journeyAsk": "Hilf mir, die Kundenreise zu beschreiben. Nutze meine Antworten und stelle nur die wichtigste noch offene Frage.",
+      "failed": "Ihre Antworten sind gespeichert. Die Zusammenfassung benötigt einen neuen Versuch.",
+      "updating": "Zusammenfassung wird aktualisiert…",
+      "ready": "Genug für ein erstes Modell.",
+      "conflict": "Ein Punkt muss vor dem Modell geklärt werden.",
+      "connecting": "Die Grundlagen sind erfasst. Verbinden Sie sie zu einem ersten Modell.",
+      "retry": "Aktualisierung erneut versuchen",
+      "open": "Build business model",
+      "build": "Complete model brief",
+      "conflictAsk": "Hilf mir, widersprüchliche Aussagen in der gespeicherten Zusammenfassung zu klären. Stelle eine klare Frage und wähle nicht die Antwort für mich.",
+      "buildAsk": "Erstelle ein erstes Modell aus meinen Angaben. Fehlende Zahlen und ungemessene Effekte bleiben unbekannt. Falls wesentlicher Kundenkontext fehlt, frage nur danach.",
+      "hint": "Unbekannte Zahlen können warten.",
+      "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
+      "contextUpdating": "Finishing company research…",
+      "email": "Die Recherche beginnt mit {email}"
     }
   }
 }

@@ -29,25 +29,32 @@ def select_profile(payload: dict) -> dict[str, Any] | None:
 
 def turn_guidance(turn: int, text: str) -> str:
     attention_budget = "Maximum 60 spoken words. Summarize only the material update; no unsolicited KPI lists, invented target placeholders or full repeated brief. "
-    if turn == 4 and not re.search(
-        r"\b(stop|frustrat\w*|annoy\w*|awful|angry|repeating the same|"
-        r"roast me not|no jokes|no humo[u]?r|don.t roast|do not roast|"
-        r"keep (?:this|it) serious|losing their jobs|layoffs|company is closing)\b",
-        text,
-        re.I,
-    ):
-        return (
-            attention_budget
-            + "Executive answer four: Jerry contributes exactly one sharp, funny business roast, prefixed 'Jerry:'. Maximum 15 words for the punchline. Skewer a volunteered boast, business contradiction or unsupported grand ambition; aim for a cutting observation, not encouragement. Use only executive-supplied business context, never invent facts. Never mock identity, personal data, customers, job losses or an honest unknown. Omit humor after a humor opt-out or distress anywhere in the conversation. The regular interviewer then continues briefly, with no extra question. A joke is not evidence and must never enter the model brief."
-        )
-    question_guidance = (
-        "Question budget: zero. The latest executive request explicitly disallows questions. Acknowledge the update or give the requested synthesis and stop. Do not ask for permission, another input or a next step."
-        if re.search(
-            r"\b(?:no(?: extra| more| further)? questions?|without (?:another |a |any )?questions?|conclude)\b",
+    conclude = bool(
+        re.search(
+            r"\b(?:no(?: extra| more| further)? questions?|without (?:another |a |any )?questions?|conclude|summari[sz]e|print)\b",
             text,
             re.I,
         )
-        else "One concise answer, at most one material question. When the executive requests a conclusion, summarize without any question."
+    )
+    if (
+        turn == 4
+        and not conclude
+        and not re.search(
+            r"\b(stop|frustrat\w*|annoy\w*|awful|angry|repeating the same|"
+            r"roast me not|no jokes|no humo[u]?r|don.t roast|do not roast|"
+            r"keep (?:this|it) serious|losing their jobs|layoffs|company is closing)\b",
+            text,
+            re.I,
+        )
+    ):
+        return (
+            attention_budget
+            + "Executive answer four: an optional Jerry punchline may highlight a volunteered contradiction. Skip it if it interrupts discovery or the model handoff. Maximum 15 words for the punchline. Never ridicule the target or an honest unknown. Use only executive-supplied business context, never invent facts. Never mock identity, personal data, customers, job losses or an honest unknown. Omit humor after a humor opt-out or distress anywhere in the conversation. Continue with one material unanswered question if core model structure is missing. Otherwise offer Open business model with unknown inputs left symbolic. Humor must not replace this next step. A joke is not evidence and must never enter the model brief."
+        )
+    question_guidance = (
+        "Question budget: zero. The latest executive request explicitly disallows questions. Acknowledge the update or give the requested synthesis and stop. Do not ask for permission, another input or a next step."
+        if conclude
+        else "One concise answer, at most one material question. If the objective, desired target, timeframe, customer population and journey are known, offer Open business model now instead of more discovery. Otherwise ask the next material unanswered question; thanks or great does not end discovery. Keep unavailable numbers unknown. When the executive requests a conclusion, summarize without any question."
     )
     return (
         attention_budget
@@ -182,6 +189,7 @@ def interview_context(
         + json.dumps(unknowns)
         + "\nQuestions already asked (conversation data): "
         + json.dumps(asked[-8:])
+        + "\nThe application, not conversational text, confirms persistence and enables the model action. Never claim a new answer is saved or the model is ready before its saved-brief status is known. Say the brief is updating and the Open business model button will appear when ready. Do not ask more questions merely while waiting for that save."
         + "\nNever repeat or paraphrase an already asked question. If an answer leaves the requested detail unresolved, park the detail as unknown and move to another material decision or summarize."
         + "\nUse the exact economic quantity and units supplied: price, revenue, margin and contribution are distinct. Do not rename contribution as price."
         + "\nDo not ask for a value already answered or declared unknown. A target and an unknown baseline are enough for a symbolic draft. Ask about a different material decision or summarize briefly."

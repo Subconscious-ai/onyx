@@ -27,9 +27,70 @@ Install the rubric with `scripts/subconscious/configure_executive.py`, selecting
 
 Set the Onyx frontend build variable `NEXT_PUBLIC_BURN_MODEL_WORKSPACE` to the paired causl-kb preview's `/dashboard/burn-import` URL. Configure the causl-kb server's `BURN_ONYX_ORIGIN` with the exact Onyx origin. No wildcard origins. Authentication remains required in both applications.
 
+## Interview progress correction, September 19
+
+The energy-company replay exposed two failures: acknowledgements ended discovery,
+and the fourth-answer joke overrode requests to conclude. The live native persona
+now distinguishes missing model structure from a usable symbolic model. A target
+alone is insufficient. Once the outcome meaning, customer population and journey
+are known, offer **Open business model**. Unknown operating quantities do not block
+that first model. Explicit synthesis requests take priority over humor.
+
+Native `turn_guidance` now checks synthesis requests before the fourth-answer branch.
+That branch no longer prevents a follow-up question. Persona changes are stored in
+Postgres; a frontend deployment alone does not install them. Update only the relevant
+prompt sections when the checked-in rubric includes other unreleased tool changes.
+Preserve the model, tools, document sets and permissions.
+
+The API runs `onyx-burn2:energy-guidance-20260919`, layered on the verified live image.
+Only `turn_guidance` changed in the live `profile.py`; unrelated live functions were
+preserved. Source is commit `0631912134`. Compose retains the previous configuration
+beside the current one. Workers and databases were not replaced. The existing signed-in
+QA session remained valid after the API replacement.
+
+Replay `scripts/subconscious/energy_progress_cases.json` with the existing native
+`eval_interview.py` runner. All 11 deployed turns passed their scoped checks across three conversations:
+acknowledgement continues discovery, known structure leads to the real model action,
+and requested synthesis contains no extra question or joke. The original opening
+sequence also reached a model handoff after the journey answer. That scripted replay
+gives numbers and time while Beca asks about the segment; it does not prove that
+semantic question repetition is eliminated. These are conversation checks, not a
+new proof of model arithmetic, PDL or research. The 57 offline contract checks pass.
+The question parser also retains topics before abbreviations such as "e.g.".
+
+## Background brief recovery, September 19
+
+A real energy interview retained its messages and earlier briefs, but its final
+assistant turn lacked an updated brief. The GET endpoint reported `saved: false`
+with background mode enabled. The worker logged failures without retrying.
+The historical log recorded only the exception class, so it does not prove the
+original HTTP status. Explicit preparation recovered the current brief from the
+owned transcript without changing the executive's answers.
+
+Commit `cd033cf52c` adds native Celery retries for HTTP 409 conflicts and HTTP 502
+preparation failures. Retries are limited to three, with delays of 5, 10 and 20
+seconds and a 120-second task expiry. The existing owner, permission, validation
+and optimistic save checks remain in force. HTTP status is now logged without
+transcript content. Nontransient errors do not retry.
+
+Only the background service uses `onyx-burn2:brief-retry-20260919`; the API retains
+the interview-guidance image. The worker image extends that verified image and
+changes only the Burn task module. Compose and the build context are retained on
+the hosting machine. The frontend alias, database and authentication are unchanged.
+
+Run `scripts/subconscious/test_brief_background.py` in the native backend environment.
+Its four tests first failed for missing retry calls, then passed on the candidate.
+The existing 57 offline checks also passed. A hosted synthetic canary held only its
+own preparation lock: the worker reported HTTP 409, retried, and automatically saved
+the brief. GET-only readback passed in 19.3 seconds from the chat request; no manual
+preparation POST was used. The recovered real transcript also passed the actual
+frontend `projectBrief` and `modelReadiness` functions: not stale, no parse failure,
+three journey stages, one key result, ready with no missing requirements. This is
+not evidence that every provider or malformed-extraction failure will recover.
+
 ## QA path
 
-The #13 candidate schedules Jerry on the **fourth nonempty executive answer**, replacing the previous fifth-answer rule. A short `Jerry:` punchline targets a volunteered business boast or contradiction. Opt-out and distress suppress humor. Jokes never become accepted evidence. Backend image and native persona reminder must both be released before hosted timing changes; a Vercel frontend build alone cannot change server guidance.
+Historically, the #13 candidate scheduled Jerry on the **fourth nonempty executive answer**, replacing the previous fifth-answer rule. Current guidance makes humor optional and prioritizes discovery or the model handoff. A short `Jerry:` punchline targets a volunteered business boast or contradiction. Opt-out and distress suppress humor. Jokes never become accepted evidence. Backend image and native persona reminder must both be released before hosted timing changes; a Vercel frontend build alone cannot change server guidance.
 
 1. Open `/app/executive` and select Burn 2.0. State a product, business objective, target, deadline and known customer decisions. Mark unavailable operating values unknown.
 2. Correct a target or state an unknown answer. Verify that the interview incorporates the correction without repeating the same question or inventing a baseline.
@@ -86,3 +147,49 @@ PDL professional context uses the authenticated account email, one daily provide
 The existing indexed mbb-casebook corpus is reachable through native internal_search. A live query returned original McKinsey and BCG sources. analyst-agent contributes the existing Onyx retrieval/setup pattern, not another running agent. Search permissions remain native. Explicit internal-case requests use the enabled native search tool. The GitHub corpus connector reports completed-with-errors; the four existing file corpus connectors report success.
 
 Single sign-on remains blocked on the existing Auth0 organization cutover in causl-kb #450. Onyx and causl-kb authentication remain separate. No email-derived organization mapping, shared administrator bridge, or fabricated email verification was added. Market acceptance still requires an authenticated organization review. Journey/OKR drafts are saved in native Onyx Postgres; accepted market records remain causl-kb-owned.
+
+### Visible interview progress
+
+The chat now exposes three saved-brief milestones: executive goal, a target with
+its deadline, and a customer journey with a transition. These are coverage
+checks, not elapsed-time estimates or acceptance of proposed assumptions.
+Unknown numeric inputs and unmeasured experiment effects do not block a first
+symbolic model. The existing model-readiness validator still checks the proposed
+equation, inputs and conflicts before opening the model handoff.
+
+A missing milestone asks the existing Beca chat for focused help; a captured one
+opens the corresponding brief view. The persistent action distinguishes build,
+updating, retry and open-model states. The first newly saved goal after an active
+turn receives a small canvas-confetti celebration, disabled for reduced motion;
+loading an old conversation does not trigger it. New copy is in all nine message
+catalogs. No new agent, persistence store or handoff protocol was added.
+
+Focused proof: InterviewProgress, ExecutiveWorkspace and catalog tests (20 tests)
+and the web TypeScript check pass. For visual verification use the actual chat on
+mobile and desktop; the standalone executive preview contains a partial fixture,
+so it is not evidence of a ready business model.
+
+
+### Adversarial UAT recovery (September 19)
+
+Use the existing `burn2` Compose project explicitly (`docker compose -p burn2`)
+when updating native services. Omitting the project name creates a separate stack
+with empty volumes. Keep the existing persistence volumes. After replacing the API,
+wait for its `/health` response before reloading the gateway so its upstream DNS
+resolves the new container address. Vercel frontend readiness does not deploy Python.
+
+The signed-in email starts PDL. An unmatched email needs an explicit public company
+website before research can run; it must never receive a fabricated match. The
+native CompanyProfileTool must both exist in the tool table and be attached to Beca.
+Preserve the existing persona model, document sets and tools when activating it.
+Company corrections are revisioned; a scheduling failure cannot undo or misreport
+the already committed correction. Research work locks belong to jobs, not people,
+so an obsolete company request cannot hold a corrected company's work hostage.
+
+Run `scripts/subconscious/adversarial_uat.py` with a dedicated QA cookie jar.
+Its six adaptive fact sheets are rule-based testers, not LLM executives. Brief
+persistence and sub-60-second coverage are separate from correct calculations,
+fresh provider evidence, authenticated model review and causal-KB readback. Keep
+failed receipts. The companion causal-KB handoff runner verifies the actual model.
+The native background queue coalesces queued brief generations; it does not cancel
+an already running provider request or guarantee a sixty-second deadline.

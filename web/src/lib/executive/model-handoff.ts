@@ -1,3 +1,55 @@
+import { profileFields, type ProfileFields } from "./profile";
+import type { PublicResearch } from "./hooks";
+
+/** Transfer only bounded, attributed background; never worker credentials or authority. */
+export function modelBusinessContext(
+  dossier:
+    | { profile: ProfileFields; source: "pdl" | "executive_correction" }
+    | null
+    | undefined,
+  research: PublicResearch
+) {
+  if (!dossier) return undefined;
+  const profile: ProfileFields = {};
+  for (const key of profileFields) {
+    const value = dossier.profile[key];
+    if (typeof value === "string")
+      profile[key] = value.slice(0, key === "website" ? 2048 : 500);
+  }
+  const status = [
+    "pending",
+    "queued",
+    "running",
+    "ready",
+    "unavailable",
+    "needs_company",
+  ].includes(research.status)
+    ? research.status
+    : "unavailable";
+  const sources = (research.source_urls ?? [])
+    .filter((url) => /^https?:\/\//.test(url))
+    .slice(0, 12);
+  const ready =
+    status === "ready" && research.report?.trim() && sources.length > 0;
+  return {
+    profile,
+    profileSource: dossier.source,
+    research: ready
+      ? {
+          status: "ready",
+          report: research.report!.slice(0, 16000),
+          source_urls: sources,
+          checked_at: research.checked_at,
+          truncated:
+            research.truncated ||
+            research.report!.length > 16000 ||
+            (research.source_urls?.length ?? 0) > 12 ||
+            undefined,
+        }
+      : { status: status === "ready" ? "unavailable" : status },
+  };
+}
+
 import {
   parseModelContext,
   type ModelContext,
@@ -132,7 +184,11 @@ export function createModelHandoff(options: {
       options.onConnected(false);
       context = null;
       options.onContext?.(null);
-      openWindow(new URL(target), { type: "burn-handoff", payload });
+      openWindow(new URL(target), {
+        type: "burn-handoff",
+        intent: "build",
+        payload,
+      });
     },
     request(instruction: string) {
       if (!marketId || !instruction.trim() || instruction.length > 4000) {

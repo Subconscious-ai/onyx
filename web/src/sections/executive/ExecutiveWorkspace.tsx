@@ -1,12 +1,16 @@
 "use client";
 import CompanyProfile from "@/sections/executive/CompanyProfile";
+import InterviewProgress from "@/sections/executive/InterviewProgress";
 
 import { Wordmark } from "@/sections/brand/wordmark";
 import { useTranslations } from "next-intl";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAutomaticBrief, useExecutiveContext } from "@/lib/executive/hooks";
-import { createModelHandoff } from "@/lib/executive/model-handoff";
+import {
+  createModelHandoff,
+  modelBusinessContext,
+} from "@/lib/executive/model-handoff";
 import type { ModelContext } from "@/lib/executive/model-context";
 import { Button, Text } from "@opal/components";
 import { Interactive } from "@opal/core";
@@ -116,6 +120,7 @@ export default function ExecutiveWorkspace({
   active,
   messages,
   chatId = null,
+  email,
   busy = false,
   onAsk,
   onModelContext,
@@ -125,6 +130,7 @@ export default function ExecutiveWorkspace({
   active: boolean;
   messages: readonly InterviewMessage[];
   chatId?: string | null;
+  email?: string;
   busy?: boolean;
   onAsk?: (message: string) => void;
   onModelContext?: (context: ModelContext | null) => void;
@@ -191,9 +197,8 @@ export default function ExecutiveWorkspace({
       modelHandoff.current = null;
     };
   }, [active, preview, chatId, t, onModelContext]);
-  const { profileStatus, profile, research, reload } = useExecutiveContext(
-    active && !preview
-  );
+  const { profileStatus, profile, dossier, research, reload, refreshing } =
+    useExecutiveContext(active && !preview, preparation.savedMessage);
 
   const [view, setView] = useState<
     "journey" | "evidence" | "decisions" | "model"
@@ -218,6 +223,13 @@ export default function ExecutiveWorkspace({
       if (request) modelHandoff.current?.request(request.message);
       return;
     }
+    if (
+      refreshing ||
+      ["pending", "queued", "running"].includes(research.status)
+    ) {
+      setHandoffStatus(t("progress.contextUpdating"));
+      return;
+    }
     const chatId = new URL(window.location.href).searchParams.get("chatId");
     if (!chatId) {
       setHandoffStatus(t("saveBeforeHandoff"));
@@ -227,6 +239,7 @@ export default function ExecutiveWorkspace({
       format: "burn/onyx-interview",
       version: 1,
       chatId,
+      businessContext: modelBusinessContext(dossier, research),
       messages: savedMessages
         .filter((message) => ["user", "assistant"].includes(message.type))
         .map((message) => ({
@@ -281,6 +294,31 @@ export default function ExecutiveWorkspace({
           </Button>
         </div>
       </header>
+
+      {!mobileBrief && (
+        <InterviewProgress
+          email={email}
+          brief={brief}
+          stale={projection.stale}
+          phase={preparation.phase}
+          busy={busy}
+          chatId={chatId}
+          hasAnswer={messages.some(
+            (message) => message.type === "user" && !!message.message.trim()
+          )}
+          contextPending={
+            refreshing ||
+            ["pending", "queued", "running"].includes(research.status)
+          }
+          onOpen={openModel}
+          onRetry={preparation.retry}
+          onAsk={onAsk}
+          onReview={(item) => {
+            setView(item === "journey" ? "journey" : "model");
+            setMobileBrief(true);
+          }}
+        />
+      )}
 
       <div className="executive-main">
         <div className="executive-conversation" hidden={mobileBrief}>
