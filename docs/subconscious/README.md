@@ -1,6 +1,26 @@
 # Burn 2.0 on native Onyx
 
-[Open Burn](https://onyx-executive.vercel.app/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Login redirects to the existing registered review hostname before OAuth starts.
+[Open Burn](https://burn.subconscious.ai/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Start login on this canonical address. Branch previews redirect to the registered login origin and do not prove their own authenticated customer path.
+
+## Current interview-to-model UAT, September 19 UTC
+
+The canonical Burn address serves the interview-to-model candidate from draft
+[PR #31 — carry interview and research into the model](https://github.com/Subconscious-ai/onyx/pull/31).
+The model receiver is the paired
+[PR #575 — populate and retain the business model](https://github.com/Subconscious-ai/causl-kb/pull/575)
+at `https://causl-interview-model-subconcious.vercel.app/dashboard/burn-import`.
+Its allowed Beca origin is `https://burn.subconscious.ai`. Keep both settings paired.
+The ready model action is visible directly in the conversation. Review and save
+remain explicit. These feature branches remain drafts; the AWS backend was not changed.
+
+Fresh native Auth0 login, a new interview, automatic saved brief, the actual model
+button/window handshake, AWS proposal, Postgres save/readback, grid reload, and
+five canonical journey-source readbacks passed. No handoff file was uploaded in
+that browser run. The synthetic account has no PDL match; real PDL/research success
+is covered separately by the cold-discovery runs below. causl-kb still has a
+separate Clerk login. Its synthetic QA sign-in used the supported Clerk ticket
+flow after ordinary fresh-device login requested an email code. This does not
+establish one-login SSO or a 60-second login-to-saved-model guarantee.
 
 Onyx PRs #10, #20 and #23 are merged. The [prototype record](prototype-plan.md) preserves earlier paired model evidence and generation limits. Onyx source publication does not establish the merge or deployment of a causl-kb counterpart.
 
@@ -20,11 +40,11 @@ The September 18 candidate check used real Bedrock GPT OSS and synthetic Postgre
 
 The September 18 runtime probe found that the native encryption helper returns plaintext bytes unchanged. The storage class name does not establish encryption. Disk encryption was not checked. Issue #21 tracks this deployment boundary alongside caller-scoped access. Do not claim application-level encryption from the table name.
 
-## Verified release boundary, September 17
+## Historical release boundary, September 17
 
 Production deployment `dpl_FdNmDXw9UPnsPiSRqhiSRRC3Lgcy` is Ready from main `fc9c911eb9708d0ef6706f61f7a6981690fc88f1`. The issue #21 receipt records fresh Auth0 sign-in, recovery of the original account, and a saved interview surviving reload. Login continues on the registered review origin.
 
-[Issue #21](https://github.com/Subconscious-ai/onyx/issues/21) remains open for canonical-domain rollout, cross-account isolation, caller-scoped MCP authorization and monitoring evidence. A complete current interview-to-model save/reopen run remains outstanding. Existing-account success is not enterprise-isolation proof.
+[Issue #21](https://github.com/Subconscious-ai/onyx/issues/21) tracks access and hosting acceptance. The current paired model evidence is above. Existing-account success is not enterprise-isolation proof.
 
 ## Architecture
 
@@ -111,7 +131,7 @@ Production backend routing and `WEB_DOMAIN` were configured and deployed on Sept
 Verify the serving source and environment after publication. Full model-handoff acceptance remains separate from frontend build success.
 
 The `burn.subconscious.ai` cutover remains tracked in #21. Use the verified Vercel entry above until domain rollout is complete.
-The registered review origin is `https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app`; alias promotion remains manual.
+The current registered customer origin is `https://burn.subconscious.ai`; alias promotion remains manual. Older branch aliases in historical receipts are not the current UAT entry point.
 Native Git builds update branch aliases, not the manually assigned shared review alias.
 
 Vercel releases only the frontend and API forwarding. AWS backend images, data, backups and service restarts remain separate.
