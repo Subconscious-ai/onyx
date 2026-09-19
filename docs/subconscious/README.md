@@ -10,7 +10,7 @@ The customer-facing interview is Beca. The current interface still exposes an Ac
 
 The September 17 decision is one assistant and one conversation. The assistant selects research, retrieval, calculation, model and experiment tools through native Onyx. Executives should not select workflow cards or specialist agents. Results remain reviewable artifacts in the conversation.
 
-[Issue #24](https://github.com/Subconscious-ai/onyx/issues/24) is the active plan for this simplification and editable company context. The earlier action-card proposal is superseded. [Draft PR #26](https://github.com/Subconscious-ai/onyx/pull/26) removes the Actions menu and specialist navigation. It also adds a revision-checked profile editor, a native profile tool, and separate provider/correction records. These changes are not a production release. Hosted acceptance remains outstanding. Preserve native permissions and explicit approval for paid experiment execution.
+[Issue #24](https://github.com/Subconscious-ai/onyx/issues/24) records the completed source-level simplification and editable company context. The earlier action-card proposal is superseded. [Merged PR #26](https://github.com/Subconscious-ai/onyx/pull/26) removes the Actions menu and specialist navigation. It also adds a revision-checked profile editor, a native profile tool, and separate provider/correction records. These changes are not a production release. Hosted acceptance remains outstanding. Preserve native permissions and explicit approval for paid experiment execution.
 
 Profile edits use authenticated `PATCH /chat/executive-profile`; native authentication supplies the caller and `WRITE_CHAT` permission. The request cannot select another owner. Enrichment writes only the provider record. Explicit corrections and each edit revision use the existing native key-value store. A company change drops unrelated company fields and excludes old research. Accepted shared company records still belong in causl-kb.
 
@@ -49,13 +49,13 @@ The active Burn agent is `5`, conversation model `8` (GPT OSS 120B), preparation
 
 ## Remaining product work
 
-The historical [issue #6](https://github.com/Subconscious-ai/onyx/issues/6) and prototype record describe intermittent structured-brief failures. Closing a historical ticket does not establish reliable first-attempt generation. The active product plan is #24; access and release acceptance remain in #21.
+The historical [issue #6](https://github.com/Subconscious-ai/onyx/issues/6) and prototype record describe intermittent structured-brief failures. Closing a historical ticket does not establish reliable first-attempt generation. Current scope and status live in the open issues; access and release acceptance remain in #21.
 
 Cross-application SSO remains causl-kb #450. Community Edition is not evidence of shared-instance enterprise isolation. Rehoboam execution, measured operating outcomes, and multi-host failover are outside the hosted release. Native Onyx and causl-kb still require separate authenticated sessions.
 
 ## End-to-end acceptance
 
-[Run the real-browser acceptance suite](end-to-end-acceptance.md) for three executive businesses, model persistence, the Beca entry point and cross-company read/search checks. Missing sessions or fixtures block acceptance; they never count as passes. See [issue #27](https://github.com/Subconscious-ai/onyx/issues/27) for current execution evidence.
+[Run the real-browser acceptance suite](end-to-end-acceptance.md) for three executive businesses, model persistence, the Beca entry point and cross-company read/search checks. Missing sessions or fixtures block acceptance; they never count as passes. See [issue #27](https://github.com/Subconscious-ai/onyx/issues/27) for historical execution evidence; read open #21 for remaining release requirements.
 
 ## Development
 
@@ -96,7 +96,7 @@ Preserve the exact handoff origins, authenticated access and private configurati
 
 Company agents use the [Hermes material library](https://github.com/Subconscious-ai/hermes/blob/main/library/LIBRARY.md) through native internal_search.
 The existing executive rubric contains the retrieval and freshness instructions.
-Follow the [agent contract](https://github.com/Subconscious-ai/hermes/blob/main/library/README.md#agent-contract); do not copy the inventory into persona prompts.
-After a reviewed rubric change, apply it through the existing native persona configuration
-and verify the saved prompt and a cited library search. A merged Markdown change alone
-does not update a stored persona. The Hermes Onyx receipt proves indexing separately.
+Read the current owner records linked from the library. Update materials at their owner;
+use existing native connectors and search. The previous file-upload catalog is a
+historical snapshot, not current source authority. Live prompt/connector verification
+remains [#32 — use the shared library](https://github.com/Subconscious-ai/onyx/issues/32).

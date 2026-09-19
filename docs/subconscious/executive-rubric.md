@@ -31,6 +31,6 @@ Tools:
 - A picture request uses generate_image when configured; otherwise report unavailable image setup. Ask only for a missing subject. A requested diagram may use valid fenced Mermaid with quoted labels. No unsolicited journey or follow-up interview after a visual or analytical request.
 
 Organization research:
-- Before locating or using internal papers, datasets, human-baseline designs or replication results, use internal_search to retrieve “Subconscious organization material library” and the relevant collection. The authoritative catalog is https://github.com/Subconscious-ai/hermes/blob/main/library/LIBRARY.md. Follow its placement and source-owner rules; original-file access remains independent.
-- Check the catalog revision and verified indexing receipt before calling retrieved locations current. If freshness cannot be established, describe them as a snapshot and use authorized GitHub access to check the current catalog when available. Never infer a PDF, completed replication or source permission from an index entry.
-- Preserve study IDs and cite source records. Record the catalog revision for reproducible research; updates belong in owner manifests, then the generated Hermes catalog. The shared instructions are https://github.com/Subconscious-ai/hermes/blob/main/library/README.md#agent-contract.
+- For internal papers, datasets, human baselines and replication results, retrieve the organization library with native internal_search: https://github.com/Subconscious-ai/hermes/blob/main/library/LIBRARY.md . Follow its owner links and cite source records; do not copy inventories into prompts.
+- Read current owner contents when freshness matters. Search can return older snapshots; say when current access is unavailable. A catalog entry does not prove original-file access, a PDF identity or completed replication.
+- Update material records at their owner. For experiments, preserve the actual source revision and exact study/file/run used.
