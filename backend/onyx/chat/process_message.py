@@ -1494,12 +1494,23 @@ def _run_models(
                 tool for tool_list in thread_tool_dict.values() for tool in tool_list
             ]
 
-            if setup.forced_tool_id and setup.forced_tool_id not in {
+            from onyx.server.query_and_chat.burn2.requested_tool import (
+                initial_profile_tool,
+            )
+
+            forced_tool_id = initial_profile_tool(
+                enabled=os.environ.get("BURN2_ENABLED") == "true"
+                and not setup.new_msg_req.deep_research,
+                persona_name=setup.persona.name,
+                user_id=None if user.is_anonymous else user.id,
+                incognito=setup.incognito_record_mode is not None,
+                tools=model_tools,
+                forced_tool_id=setup.forced_tool_id,
+            )
+            if forced_tool_id and forced_tool_id not in {
                 tool.id for tool in model_tools
             }:
-                raise ValueError(
-                    f"Forced tool {setup.forced_tool_id} not found in tools"
-                )
+                raise ValueError(f"Forced tool {forced_tool_id} not found in tools")
 
             # Per-thread copy: run_llm_loop mutates simple_chat_history in-place.
             if n_models == 1 and setup.new_msg_req.deep_research:
@@ -1531,7 +1542,7 @@ def _run_models(
                     user_memory_context=setup.user_memory_context,
                     llm=model_llm,
                     token_counter=get_llm_token_counter(model_llm),
-                    forced_tool_id=setup.forced_tool_id,
+                    forced_tool_id=forced_tool_id,
                     user_identity=setup.user_identity,
                     chat_session_id=str(setup.chat_session_id),
                     chat_files=setup.chat_files_for_tools,
