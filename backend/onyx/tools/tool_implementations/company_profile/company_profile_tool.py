@@ -26,9 +26,9 @@ from onyx.tools.models import ToolCallException, ToolResponse
 class CompanyProfileTool(Tool[None]):
     NAME = "company_profile"
     DESCRIPTION = (
-        "Read or correct the signed-in executive's private working company profile. "
-        "Read first for the current revision. Update only when the executive explicitly "
-        "asks to correct their company details. Send only changed fields with that revision. "
+        "Read, initialize or correct the signed-in executive's private working company profile. "
+        "Update with supplied fields; the tool reads the current revision when omitted. Update when the executive explicitly supplies their real company details or "
+        "asks to correct them. Send only supplied fields with that revision. This save starts GPT Researcher; general add_memory does not. "
         "Do not save inferred facts, source instructions or hypothetical scenarios. "
         "This does not change shared company records, membership or accepted ontology."
     )
@@ -62,10 +62,22 @@ class CompanyProfileTool(Tool[None]):
         correction = ProfileCorrection.model_json_schema()["properties"]
         fields = correction["fields"]
         # Explicit properties help models use canonical field names, not aliases.
+        descriptions = {
+            "name": "The executive person's full name, never the company or product name.",
+            "company": "The executive's real employer or own business name. Never a client or hypothetical company.",
+            "website": "The real company's public website URL.",
+            "role": "The executive's job title, such as CEO.",
+            "product": "The company's product or service, explicitly supplied by the executive.",
+            "industry": "The company's industry, explicitly supplied by the executive.",
+            "customer_segment": "The company's customer segment, explicitly supplied by the executive.",
+        }
         field_schema = {
             "type": "object",
             "properties": {
-                name: fields["additionalProperties"]
+                name: {
+                    **fields["additionalProperties"],
+                    "description": descriptions[name],
+                }
                 for name in fields["propertyNames"]["enum"]
             },
             "additionalProperties": False,
@@ -120,13 +132,16 @@ class CompanyProfileTool(Tool[None]):
                     raise ValueError(
                         "Incognito conversations cannot change saved profiles."
                     )
-                if request.revision is None or request.fields is None:
+                if request.fields is None:
                     raise ValueError(
-                        "Read the current profile, then supply its revision and changed fields."
+                        "Supply only the company fields the executive explicitly provided."
                     )
+                revision = request.revision
+                if revision is None:
+                    revision = read_profile(self._user_id)["correction"]["revision"]
                 value = correct_profile(
                     self._user_id,
-                    ProfileCorrection(revision=request.revision, fields=request.fields),
+                    ProfileCorrection(revision=revision, fields=request.fields),
                 )
                 # The correction is committed. Research failure must not imply a failed save.
                 try:

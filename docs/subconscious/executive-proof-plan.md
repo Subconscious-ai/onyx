@@ -310,3 +310,13 @@ September 19 actual Build acceptance, active follow-up:
   failure. The private synthetic QA fixture was repaired; do not change customer
   revision semantics to accommodate a broken test reset.
 - All work remains in draft PRs #31 and causl-kb #575 for user QA.
+
+Final compiler candidate `df07604` (causl-kb):
+- Reuses the validated interview brief to bind source-backed numeric inputs.
+  The model selects structure; application code carries the original value and
+  exact source. Unknown IDs, conflicting values and changed target purpose fail.
+- All 46 focused compiler tests, lint and full TypeScript checks passed. Live
+  generation checks passed for retail, services and manufacturing. Saved browser
+  verification on this candidate remains the delivery gate.
+- Delayed-agent browser regression passed on Onyx `b0f7af465f`: no submit while
+  unresolved, one submit after loading, persisted persona 5.
