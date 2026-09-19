@@ -1,5 +1,8 @@
 /** @jest-environment jsdom */
-import { createModelHandoff } from "@/lib/executive/model-handoff";
+import {
+  createModelHandoff,
+  modelHandoffMessages,
+} from "@/lib/executive/model-handoff";
 
 const destination = "https://causl.example/dashboard/burn-import";
 let listener: ((event: MessageEvent) => void) | undefined;
@@ -354,4 +357,36 @@ test("explicit model action requests a private build through the authenticated h
     "https://causl.example"
   );
   handoff.dispose();
+});
+
+test("retains earlier packet-only assistant turns and the persisted final brief", () => {
+  const savedBrief =
+    'Final answer<interview-brief>{"version":2}</interview-brief>';
+  const messages = modelHandoffMessages([
+    { type: "user", message: "Build a capacity model." },
+    {
+      type: "assistant",
+      message: "",
+      packets: [
+        { obj: { type: "message_start", content: "What is " } },
+        { obj: { type: "message_delta", content: "your delivery capacity?" } },
+        { obj: { type: "reasoning_delta", content: "Private reasoning" } },
+      ],
+    },
+    { type: "user", message: "We have ten consultants." },
+    {
+      type: "assistant",
+      message: savedBrief,
+      packets: [
+        { obj: { type: "message_delta", content: "Earlier unsaved answer" } },
+      ],
+    },
+  ]);
+
+  expect(messages).toEqual([
+    { type: "user", message: "Build a capacity model." },
+    { type: "assistant", message: "What is your delivery capacity?" },
+    { type: "user", message: "We have ten consultants." },
+    { type: "assistant", message: savedBrief },
+  ]);
 });

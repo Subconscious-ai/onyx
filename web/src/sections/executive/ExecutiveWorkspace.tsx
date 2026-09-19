@@ -10,6 +10,7 @@ import { useAutomaticBrief, useExecutiveContext } from "@/lib/executive/hooks";
 import {
   createModelHandoff,
   modelBusinessContext,
+  modelHandoffMessages,
 } from "@/lib/executive/model-handoff";
 import type { ModelContext } from "@/lib/executive/model-context";
 import { Button, Text } from "@opal/components";
@@ -240,12 +241,7 @@ export default function ExecutiveWorkspace({
       version: 1,
       chatId,
       businessContext: modelBusinessContext(dossier, research),
-      messages: savedMessages
-        .filter((message) => ["user", "assistant"].includes(message.type))
-        .map((message) => ({
-          type: message.type,
-          message: message.message,
-        })),
+      messages: modelHandoffMessages(savedMessages),
     };
     if (modelHandoff.current) {
       modelHandoff.current.open(payload);

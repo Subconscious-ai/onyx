@@ -1,5 +1,16 @@
+import { interviewMessageText, type InterviewMessage } from "./brief";
 import { profileFields, type ProfileFields } from "./profile";
 import type { PublicResearch } from "./hooks";
+
+/** Serialize the same interview turns shown by the executive workspace. */
+export function modelHandoffMessages(messages: readonly InterviewMessage[]) {
+  return messages
+    .filter((message) => ["user", "assistant"].includes(message.type))
+    .map((message) => ({
+      type: message.type,
+      message: interviewMessageText(message),
+    }));
+}
 
 /** Transfer only bounded, attributed background; never worker credentials or authority. */
 export function modelBusinessContext(
