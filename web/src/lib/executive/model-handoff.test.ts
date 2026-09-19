@@ -390,3 +390,20 @@ test("retains earlier packet-only assistant turns and the persisted final brief"
     { type: "assistant", message: savedBrief },
   ]);
 });
+
+test("preserves executive user text when its row carries paired assistant packets", () => {
+  const executiveText =
+    "  Our observed win rate is 25%, not 50%.\nTarget: 30%.  ";
+  const messages = modelHandoffMessages([
+    {
+      type: "user",
+      message: executiveText,
+      packets: [
+        { obj: { type: "message_start", content: "Assistant summary: " } },
+        { obj: { type: "message_delta", content: "a different claim." } },
+      ],
+    },
+  ]);
+
+  expect(messages).toEqual([{ type: "user", message: executiveText }]);
+});

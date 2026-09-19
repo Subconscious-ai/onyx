@@ -8,7 +8,10 @@ export function modelHandoffMessages(messages: readonly InterviewMessage[]) {
     .filter((message) => ["user", "assistant"].includes(message.type))
     .map((message) => ({
       type: message.type,
-      message: interviewMessageText(message),
+      message:
+        message.type === "assistant"
+          ? interviewMessageText(message)
+          : message.message,
     }));
 }
 
