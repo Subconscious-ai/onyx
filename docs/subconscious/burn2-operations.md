@@ -58,6 +58,36 @@ semantic question repetition is eliminated. These are conversation checks, not a
 new proof of model arithmetic, PDL or research. The 57 offline contract checks pass.
 The question parser also retains topics before abbreviations such as "e.g.".
 
+## Background brief recovery, September 19
+
+A real energy interview retained its messages and earlier briefs, but its final
+assistant turn lacked an updated brief. The GET endpoint reported `saved: false`
+with background mode enabled. The worker logged failures without retrying.
+The historical log recorded only the exception class, so it does not prove the
+original HTTP status. Explicit preparation recovered the current brief from the
+owned transcript without changing the executive's answers.
+
+Commit `cd033cf52c` adds native Celery retries for HTTP 409 conflicts and HTTP 502
+preparation failures. Retries are limited to three, with delays of 5, 10 and 20
+seconds and a 120-second task expiry. The existing owner, permission, validation
+and optimistic save checks remain in force. HTTP status is now logged without
+transcript content. Nontransient errors do not retry.
+
+Only the background service uses `onyx-burn2:brief-retry-20260919`; the API retains
+the interview-guidance image. The worker image extends that verified image and
+changes only the Burn task module. Compose and the build context are retained on
+the hosting machine. The frontend alias, database and authentication are unchanged.
+
+Run `scripts/subconscious/test_brief_background.py` in the native backend environment.
+Its four tests first failed for missing retry calls, then passed on the candidate.
+The existing 57 offline checks also passed. A hosted synthetic canary held only its
+own preparation lock: the worker reported HTTP 409, retried, and automatically saved
+the brief. GET-only readback passed in 19.3 seconds from the chat request; no manual
+preparation POST was used. The recovered real transcript also passed the actual
+frontend `projectBrief` and `modelReadiness` functions: not stale, no parse failure,
+three journey stages, one key result, ready with no missing requirements. This is
+not evidence that every provider or malformed-extraction failure will recover.
+
 ## QA path
 
 Historically, the #13 candidate scheduled Jerry on the **fourth nonempty executive answer**, replacing the previous fifth-answer rule. Current guidance makes humor optional and prioritizes discovery or the model handoff. A short `Jerry:` punchline targets a volunteered business boast or contradiction. Opt-out and distress suppress humor. Jokes never become accepted evidence. Backend image and native persona reminder must both be released before hosted timing changes; a Vercel frontend build alone cannot change server guidance.
