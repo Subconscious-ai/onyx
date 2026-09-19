@@ -20,6 +20,49 @@ from eval_interview import (
 
 
 class EvaluationChecks(unittest.TestCase):
+    def test_question_examples_do_not_hide_the_question_topic(self):
+        turn = Turn("Thanks", asks_about="channel", brief_required=False)
+        self.assertEqual(
+            assess(
+                turn,
+                "Which channel carries the message (e.g., email, TV or radio)?",
+                "",
+            ),
+            [],
+        )
+
+    def test_energy_acknowledgement_must_advance_discovery(self):
+        cases = json.loads(
+            Path(__file__).with_name("energy_progress_cases.json").read_text()
+        )
+        turn = Turn(**cases["energy_progress"][1])
+        self.assertTrue(
+            assess(
+                turn,
+                "Your goal is to raise conversion from 5.5% to 7% within three months.",
+                "Which customer segment does the campaign target?",
+            )
+        )
+        self.assertEqual(
+            assess(
+                turn,
+                "What customer action counts as a conversion?",
+                "Which customer segment does the campaign target?",
+            ),
+            [],
+        )
+        handoff = Turn(**cases["energy_progress"][3])
+        self.assertTrue(assess(handoff, 'View "Model Draft 1" in Brief.', ""))
+        self.assertEqual(
+            assess(
+                handoff,
+                "The draft connects tariff-page visits to signed contracts. "
+                "Traffic remains unknown. Select Open business model when it appears.",
+                "",
+            ),
+            [],
+        )
+
     def test_prototype_cases_detect_declared_unknowns_and_assistant_company_confusion(
         self,
     ):

@@ -63,6 +63,19 @@ class ProfileTests(unittest.TestCase):
         self.assertIn("contribution", result)
         self.assertIn("price", result)
 
+    def test_fourth_answer_does_not_override_model_or_stop_requests(self):
+        for request in (
+            "Print a concise first model. No more questions.",
+            "Summarize without another question.",
+        ):
+            with self.subTest(request=request):
+                guidance = turn_guidance(4, request)
+                self.assertIn("Question budget: zero", guidance)
+                self.assertNotIn("Jerry", guidance)
+        self.assertNotIn(
+            "with no extra question", turn_guidance(4, "Over the next three months")
+        )
+
     def test_every_turn_has_an_executive_attention_budget(self):
         for turn in (1, 2, 3, 4, 5):
             with self.subTest(turn=turn):

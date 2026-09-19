@@ -129,6 +129,7 @@ def questions(text: str) -> list[str]:
     # Jerry's single-line rhetorical punchline is not an interview question.
     prose = re.sub(r"(?im)^\s*\*{0,2}Jerry\s*\*{0,2}:.*$", "", text)
     prose = re.sub(r"https?://[^\s)]+", "", prose)
+    prose = re.sub(r"\b(?:e\.g\.|i\.e\.)", "for example", prose, flags=re.I)
     prose = re.sub(r"(?<=\|)\s*\?\s*(?=\|)", " unknown ", prose)
     return [
         part.strip().lower()
