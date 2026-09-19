@@ -34,6 +34,7 @@ Production deployment `dpl_FdNmDXw9UPnsPiSRqhiSRRC3Lgcy` is Ready from main `fc9
 - PDL context comes from the authenticated account and remains an unconfirmed professional match. Enrichment never grants company access.
 - Background extraction validates journey, OKR and model structure against saved executive messages. Unknown inputs remain unknown. Public references and hypotheses never silently become executive facts.
 - causl-kb owns accepted market ontology and organization-scoped model persistence. The browser handoff binds the exact origin and nonce; Onyx holds no causl-kb administrator credential.
+- The interview-to-model candidate sends the dossier and public research in optional `businessContext`, separate from executive messages. It excludes worker identifiers and bounds report size. Incomplete research carries status only. Deploy the matching causl-kb receiver first; older receivers reject this field. Pair the receiver's `BURN_ONYX_ORIGIN` with Beca and Beca's `NEXT_PUBLIC_BURN_MODEL_WORKSPACE` with the review page. Model previews require their existing AWS configuration too.
 - The existing model compiler owns executable algebra. Interview equations are advisory; additional required quantities stay explicit unknowns. The paired model window returns bounded saved-model context and actual calculation receipts through native chat's `additional_context`, scoped to the current Beca conversation. Preview and saved scenario states never imply an experiment launch.
 
 ## Start here
