@@ -218,7 +218,7 @@ describe("conversation-first brief access", () => {
         <textarea aria-label="Message" />
       </ExecutiveWorkspace>
     );
-    fireEvent.click(screen.getByRole("button", { name: "Brief" }));
+    // A ready model must be reachable directly from the conversation.
     fireEvent.click(
       screen.getByRole("button", { name: "Open business model" })
     );

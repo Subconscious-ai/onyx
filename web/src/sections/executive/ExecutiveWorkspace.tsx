@@ -266,6 +266,16 @@ export default function ExecutiveWorkspace({
           <Text font="main-ui-action">{t("becaName")}</Text>
         </div>
         <div className="flex items-center gap-1">
+          {!preview && !mobileBrief && readiness.ready && (
+            <Button
+              prominence="primary"
+              size="sm"
+              onClick={openModel}
+              icon={SvgArrowUpRight}
+            >
+              Open business model
+            </Button>
+          )}
           <Button
             prominence="secondary"
             size="sm"
