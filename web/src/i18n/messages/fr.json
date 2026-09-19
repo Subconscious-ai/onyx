@@ -13944,6 +13944,34 @@
       "interview": "Entretien de direction",
       "design": "Conception d’expériences",
       "analytics": "Analyse d’expériences"
+    },
+    "progress": {
+      "title": "Votre premier modèle",
+      "count": "{count} éléments sur 3 recueillis",
+      "essentials": "Éléments du modèle",
+      "goal": "Objectif",
+      "measure": "Mesure de réussite",
+      "journey": "Parcours client",
+      "captured": "Recueilli",
+      "missing": "À préciser",
+      "goalNext": "Que souhaitez-vous améliorer ?",
+      "measureNext": "Quel résultat et quel délai définiraient la réussite ?",
+      "journeyNext": "Qui est le client et comment arrive-t-il à sa décision ?",
+      "goalAsk": "Aide-moi à clarifier l’objectif. Utilise mes réponses et pose uniquement la question manquante la plus utile.",
+      "measureAsk": "Aide-moi à définir la mesure de réussite et le délai avec les informations déjà fournies.",
+      "journeyAsk": "Aide-moi à décrire le parcours client. Utilise mes réponses et pose uniquement la question manquante la plus utile.",
+      "failed": "Vos réponses sont enregistrées. La synthèse doit être réessayée.",
+      "updating": "Mise à jour de votre synthèse…",
+      "ready": "Nous avons de quoi créer un premier modèle.",
+      "conflict": "Un point doit être clarifié avant le modèle.",
+      "connecting": "Les éléments sont recueillis. Reliez-les dans un premier modèle.",
+      "retry": "Réessayer la mise à jour",
+      "open": "Ouvrir le modèle économique",
+      "build": "Créer le premier modèle",
+      "conflictAsk": "Aide-moi à résoudre les contradictions dans la synthèse enregistrée. Pose une question claire sans choisir la réponse à ma place.",
+      "buildAsk": "Crée un premier modèle avec mes informations. Laisse inconnus les chiffres manquants et les effets non mesurés. Si un contexte client essentiel manque, demande uniquement ce point.",
+      "hint": "Les chiffres inconnus peuvent attendre.",
+      "readyHint": "Examinez le brouillon, puis affinez-le."
     }
   }
 }

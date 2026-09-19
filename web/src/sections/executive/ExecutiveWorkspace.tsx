@@ -1,5 +1,6 @@
 "use client";
 import CompanyProfile from "@/sections/executive/CompanyProfile";
+import InterviewProgress from "@/sections/executive/InterviewProgress";
 
 import { Wordmark } from "@/sections/brand/wordmark";
 import { useTranslations } from "next-intl";
@@ -266,16 +267,6 @@ export default function ExecutiveWorkspace({
           <Text font="main-ui-action">{t("becaName")}</Text>
         </div>
         <div className="flex items-center gap-1">
-          {!preview && !mobileBrief && readiness.ready && (
-            <Button
-              prominence="primary"
-              size="sm"
-              onClick={openModel}
-              icon={SvgArrowUpRight}
-            >
-              {t("reviewInGuesstimate")}
-            </Button>
-          )}
           <Button
             prominence="secondary"
             size="sm"
@@ -294,6 +285,26 @@ export default function ExecutiveWorkspace({
           </Button>
         </div>
       </header>
+
+      {!mobileBrief && (
+        <InterviewProgress
+          brief={brief}
+          stale={projection.stale}
+          phase={preparation.phase}
+          busy={busy}
+          chatId={chatId}
+          hasAnswer={messages.some(
+            (message) => message.type === "user" && !!message.message.trim()
+          )}
+          onOpen={openModel}
+          onRetry={preparation.retry}
+          onAsk={onAsk}
+          onReview={(item) => {
+            setView(item === "journey" ? "journey" : "model");
+            setMobileBrief(true);
+          }}
+        />
+      )}
 
       <div className="executive-main">
         <div className="executive-conversation" hidden={mobileBrief}>

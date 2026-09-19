@@ -219,9 +219,7 @@ describe("conversation-first brief access", () => {
       </ExecutiveWorkspace>
     );
     // A ready model must be reachable directly from the conversation.
-    fireEvent.click(
-      screen.getByRole("button", { name: "reviewInGuesstimate" })
-    );
+    fireEvent.click(screen.getByRole("button", { name: "open" }));
     expect(open).toHaveBeenCalledWith(
       expect.objectContaining({
         messages,

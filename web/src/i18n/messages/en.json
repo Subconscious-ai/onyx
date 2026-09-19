@@ -13944,6 +13944,34 @@
       "interview": "Executive interview",
       "design": "Experiment design",
       "analytics": "Experiment analytics"
+    },
+    "progress": {
+      "title": "Your first model",
+      "count": "{count} of 3 essentials captured",
+      "essentials": "Model essentials",
+      "goal": "Goal",
+      "measure": "Success measure",
+      "journey": "Customer journey",
+      "captured": "Captured",
+      "missing": "Needs detail",
+      "goalNext": "What would you like to improve?",
+      "measureNext": "What outcome and timeframe would make this a success?",
+      "journeyNext": "Who is the customer, and how do they reach the decision?",
+      "goalAsk": "Help me clarify the business goal. Use my answers and ask only the most useful missing question.",
+      "measureAsk": "Help me define the success measure and timeframe. Use what I have already told you.",
+      "journeyAsk": "Help me outline the customer journey. Use my answers and ask only the most useful missing question.",
+      "failed": "Your answers are saved. The brief needs another attempt.",
+      "updating": "Updating your brief…",
+      "ready": "Enough for a first model.",
+      "conflict": "One point needs clarification before the model.",
+      "connecting": "Your essentials are captured. Connect them into a first model.",
+      "retry": "Retry brief update",
+      "open": "Open business model",
+      "build": "Build first model",
+      "conflictAsk": "Help me resolve the conflicting statements in the saved brief. Ask one clear question; do not choose an answer for me.",
+      "buildAsk": "Build a first business model from what I have shared. Keep missing numbers and unmeasured experiment effects unknown. If a critical piece of customer context is missing, ask only that next question.",
+      "hint": "Unknown numbers can wait.",
+      "readyHint": "Review your draft, then refine it."
     }
   }
 }

@@ -734,3 +734,45 @@
 .executive-native-chat [data-testid="onyx-chat-input"] {
   box-shadow: none;
 }
+
+/* A compact finish line; the native conversation keeps the remaining space. */
+.interview-progress {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--hair);
+  background: var(--bg-2);
+}
+.interview-progress-content { flex: 1; min-width: 0; max-width: 720px; }
+.interview-progress-heading { display: flex; align-items: baseline; gap: 16px; }
+.interview-progress-heading strong { font-size: 15px; font-weight: 600; }
+.interview-progress-heading > span { color: var(--grey-500); font-size: 12px; }
+.interview-progress progress {
+  display: block; width: 100%; height: 3px; margin-block: 8px;
+  border: 0; appearance: none; background: var(--hair); color: var(--red);
+}
+.interview-progress progress::-webkit-progress-bar { background: var(--hair); }
+.interview-progress progress::-webkit-progress-value { background: var(--red); transition: width 220ms ease-out; }
+.interview-progress progress::-moz-progress-bar { background: var(--red); }
+.interview-progress ol { display: flex; flex-wrap: wrap; gap: 4px 16px; list-style: none; padding: 0; margin: 0; }
+.interview-progress li { font-size: 12px; }
+.interview-progress-check { display: inline-flex; flex: 0 0 auto; width: 14px; height: 14px; border: 1px solid var(--grey-300); align-items: center; justify-content: center; }
+.interview-progress-check svg { width: 12px; height: 12px; }
+.interview-progress [data-complete="true"] .interview-progress-check { background: var(--color); color: var(--backgroundColor); border-color: var(--color); }
+.interview-progress p { margin: 0; padding-block-start: 6px; font-size: 13px; line-height: 1.35; color: var(--grey-500); }
+.interview-progress[data-ready="true"] p { color: var(--color); }
+.interview-progress-action { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.interview-progress-action > span { font-size: 11px; color: var(--grey-500); }
+@media (max-width: 640px) {
+  .interview-progress { padding: 10px 16px; gap: 8px; flex-direction: column; align-items: stretch; }
+  .interview-progress-heading { justify-content: space-between; gap: 8px; }
+  .interview-progress ol { justify-content: space-between; gap: 2px; }
+  .interview-progress-action { flex-direction: row; justify-content: space-between; gap: 8px; }
+  .interview-progress-action > span { max-width: 110px; text-align: end; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .interview-progress progress::-webkit-progress-value { transition: none; }
+}
