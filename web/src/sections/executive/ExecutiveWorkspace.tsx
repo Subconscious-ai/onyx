@@ -6,7 +6,10 @@ import { useTranslations } from "next-intl";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAutomaticBrief, useExecutiveContext } from "@/lib/executive/hooks";
-import { createModelHandoff, modelBusinessContext } from "@/lib/executive/model-handoff";
+import {
+  createModelHandoff,
+  modelBusinessContext,
+} from "@/lib/executive/model-handoff";
 import type { ModelContext } from "@/lib/executive/model-context";
 import { Button, Text } from "@opal/components";
 import { Interactive } from "@opal/core";
@@ -191,9 +194,8 @@ export default function ExecutiveWorkspace({
       modelHandoff.current = null;
     };
   }, [active, preview, chatId, t, onModelContext]);
-  const { profileStatus, profile, dossier, research, reload } = useExecutiveContext(
-    active && !preview
-  );
+  const { profileStatus, profile, dossier, research, reload } =
+    useExecutiveContext(active && !preview);
 
   const [view, setView] = useState<
     "journey" | "evidence" | "decisions" | "model"

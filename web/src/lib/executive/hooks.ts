@@ -25,7 +25,7 @@ export function useExecutiveContext(active: boolean) {
   const [profile, setProfile] = useState<ExecutiveProfile | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [profileStatus, setProfileStatus] = useState(
-    "Checking professional context…",
+    "Checking professional context…"
   );
   const [research, setResearch] = useState<PublicResearch>({
     status: "pending",
@@ -43,7 +43,7 @@ export function useExecutiveContext(active: boolean) {
           profile
             ? "/api/chat/executive-profile"
             : "/api/chat/executive-research",
-          { method: profile ? "POST" : "GET" },
+          { method: profile ? "POST" : "GET" }
         );
         if (!response.ok) throw new Error("Context unavailable");
         const value = await response.json();
@@ -57,7 +57,7 @@ export function useExecutiveContext(active: boolean) {
                     ? "executive_correction"
                     : "pdl",
                 }
-              : null,
+              : null
           );
           setProfile(
             Number.isInteger(value.correction?.revision)
@@ -66,7 +66,7 @@ export function useExecutiveContext(active: boolean) {
                   provider_profile: value.provider_profile,
                   correction: value.correction,
                 }
-              : null,
+              : null
           );
           setProfileStatus(
             value.status === "ready"
@@ -75,7 +75,7 @@ export function useExecutiveContext(active: boolean) {
                 ? "PDL: no confident match"
                 : value.status === "updating"
                   ? "Checking professional context…"
-                  : "PDL context unavailable",
+                  : "PDL context unavailable"
           );
           if (value.status === "updating" && Date.now() - started < 30000) {
             timer = setTimeout(() => refresh(true), 2000);
@@ -171,7 +171,7 @@ export function useAutomaticBrief({
             })
           : fetch(
               `/api/chat/executive-brief?chat_id=${encodeURIComponent(chatId!)}`,
-              { method: "GET" },
+              { method: "GET" }
             );
         flight.current = request;
         const response = await request;

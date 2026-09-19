@@ -7,7 +7,7 @@ export function modelBusinessContext(
     | { profile: ProfileFields; source: "pdl" | "executive_correction" }
     | null
     | undefined,
-  research: PublicResearch,
+  research: PublicResearch
 ) {
   if (!dossier) return undefined;
   const profile: ProfileFields = {};

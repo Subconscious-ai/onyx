@@ -13,7 +13,7 @@ test("exports PDL and sourced research without worker or authority fields", () =
       source_urls: ["https://example.com/products"],
       checked_at: 123,
       job_id: "private-worker",
-    } as PublicResearch,
+    } as PublicResearch
   );
   expect(context).toEqual({
     profile: { company: "Acme", website: "https://example.com" },
@@ -34,8 +34,8 @@ test("never exports stale findings from incomplete research", () => {
         status: "running",
         report: "Old findings",
         source_urls: ["https://old.example"],
-      },
-    )?.research,
+      }
+    )?.research
   ).toEqual({ status: "running" });
   expect(modelBusinessContext(null, { status: "ready" })).toBeUndefined();
 });
