@@ -160,6 +160,68 @@ class StructuredBriefTest(unittest.TestCase):
             "conflicts": [],
         }
 
+    def test_invented_actor_and_connected_behavior_remain_assumptions(self):
+        brief = self.brief()
+        source = (
+            "Industrial procurement teams send a qualified RFQ, receive a quote, "
+            "then place an order."
+        )
+        brief["journey"] = [
+            {
+                "id": "rfq",
+                "actor": "Industrial procurement teams",
+                "text": "Send a qualified RFQ",
+                "status": "executive",
+                "quote": source,
+            },
+            {
+                "id": "quote",
+                "actor": "Client sales team",
+                "text": "Issue a quote",
+                "status": "executive",
+                "quote": source,
+            },
+        ]
+        brief["transitions"] = [
+            {
+                "id": "rfq_to_quote",
+                "from": "rfq",
+                "to": "quote",
+                "behavior": {
+                    "text": "Sales issues the quote",
+                    "status": "executive",
+                    "quote": source,
+                },
+                "metric": "Quote rate",
+            }
+        ]
+        result = validate_brief(
+            brief, [source, "Our client sales team has ten people."]
+        )
+        self.assertEqual(result["journey"][0]["status"], "executive")
+        for note in [result["journey"][1], result["transitions"][0]["behavior"]]:
+            self.assertEqual(note["status"], "assumption")
+            self.assertNotIn("quote", note)
+
+    def test_actor_requires_a_nonempty_whole_phrase_in_its_source(self):
+        source = "Customers paid for the completed order and received a receipt."
+        for actor in ["AI", "   "]:
+            with self.subTest(actor=actor):
+                brief = self.brief()
+                brief["journey"] = [
+                    {
+                        "id": "pay",
+                        "actor": actor,
+                        "text": "Pay for the order",
+                        "status": "executive",
+                        "quote": source,
+                    }
+                ]
+                self.assertEqual(
+                    validate_brief(brief, [source])["journey"][0]["status"],
+                    "assumption",
+                )
+
     def test_blank_horizon_is_rejected_before_frontend_readback(self):
         value = self.brief()
         value["horizon"] = ""

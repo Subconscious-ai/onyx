@@ -69,6 +69,32 @@ def validate_input_purpose(item: dict[str, Any]) -> None:
         )
 
 
+def ground_journey_actors(journey: list[dict], transitions: list[dict]) -> None:
+    """Retain unsupported participants as proposed structure, not testimony."""
+
+    def normal(text: str) -> str:
+        return " ".join(text.lower().split())
+
+    def demote(note: dict) -> None:
+        note["status"] = "assumption"
+        note.pop("quote", None)
+        note.pop("url", None)
+
+    for stage in journey:
+        # A genuine quote does not establish an invented participant. This
+        # lexical guard is conservative, not full semantic entailment.
+        actor = normal(stage["actor"])
+        supported = bool(actor) and re.search(
+            r"(?<!\w)" + re.escape(actor) + r"(?!\w)", normal(stage.get("quote", ""))
+        )
+        if stage["status"] == "executive" and not supported:
+            demote(stage)
+    assumed = {stage["id"] for stage in journey if stage["status"] == "assumption"}
+    for edge in transitions:
+        if edge["from"] in assumed or edge["to"] in assumed:
+            demote(edge["behavior"])
+
+
 def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
     value = optional_evidence(value)
 
@@ -164,6 +190,7 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
         ):
             raise ValueError("Unknown behavior transition endpoint")
         ground(edge["behavior"])
+    ground_journey_actors(result["journey"], result["transitions"])
     for item in result["model"]["inputs"]:
         ground(item["value"])
         validate_input_purpose(item)

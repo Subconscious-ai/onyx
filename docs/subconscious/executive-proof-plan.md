@@ -239,3 +239,41 @@ Final-candidate changes and demonstrated results:
 Do not merge. Full acceptance still needs the final v3 receipts and honest source
 storage boundaries. Source research is retained in causal-KB at explicit model
 save, not continuously during interview; native Onyx owns working chat context.
+
+September 19 frozen v3 acceptance and recovery:
+- All six briefs saved and reopened: energy 34.490s, SaaS 34.993s, retail
+  32.648s, services 40.667s, home services 48.389s, manufacturing 24.229s.
+  Only five were ready. Manufacturing incorrectly treats explicitly untrusted
+  supplier text as an unresolved conflict. These are interview-to-brief clocks,
+  not a combined login/enrichment/model clock. The six-case driver is adaptive
+  rule-based automation; independent agents reviewed the actual outputs.
+- Fresh corrected-company research completed in 18.409s with eight sources.
+  A real Postgres lock-contention canary proved that an old job cannot overwrite
+  a committed replacement job. Test rows were removed and absence verified.
+- KB receiver 6564a3d is deployed on the paired model-workspace preview. Actual
+  calculated models passed energy, SaaS, home-services and manufacturing oracles;
+  retail preserved hypothetical inputs as hypotheses. Model save/reopen and
+  increasing tenant-scoped dossier row counts were independently observed.
+- Positive research handoff retained nine source URLs and saved/reopened a model,
+  but its aggregate baseline remained uncomputable. Services returned 502 before
+  model save. Neither result passes the usable-model gate.
+- Bounded alternate-extractor probes are retained, not retried to a lucky pass.
+  AWS configuration 8 with LOW reasoning and source-only extraction still failed:
+  retail schema invalid, energy omitted the observed rate from operating inputs,
+  SaaS restored a superseded objective. Do not activate this configuration change.
+- An additional draft-only grounding guard demotes invented journey actors and
+  connected behaviors to assumptions. Red-to-green regressions plus 67 contracts
+  and Ruff pass. It can conservatively demote paraphrases; it is not full semantic
+  entailment validation. This guard has NOT been deployed or live-swept.
+- Live native image remains onyx-burn2:adversarial-v3-20260919; extractor remains
+  configuration 5. Latest frontend code change after aec816041d is formatting only.
+  Quality CI now passes; inherited AnyIO dependency audit remains failing. Other
+  heavyweight checks were still pending at this checkpoint. Neither PR is merged.
+
+Resume with manufacturing conflict classification and the two model-generation
+failures. Reuse retained failing handoffs and arithmetic oracles, then run one
+unchanged-candidate six-case sweep. Prove a single combined email/login → fresh
+providers + adaptive interview → calculable model → KB readback clock. Continuous
+KB evidence ingestion remains unimplemented; do not describe save-time retention
+as that capability. Private receipts live in the existing burn-acceptance artifact
+store; keep credentials and full transcripts out of public GitHub comments.
