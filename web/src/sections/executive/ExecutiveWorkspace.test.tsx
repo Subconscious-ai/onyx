@@ -220,7 +220,7 @@ describe("conversation-first brief access", () => {
     );
     // A ready model must be reachable directly from the conversation.
     fireEvent.click(
-      screen.getByRole("button", { name: "Open business model" })
+      screen.getByRole("button", { name: "reviewInGuesstimate" })
     );
     expect(open).toHaveBeenCalledWith(
       expect.objectContaining({

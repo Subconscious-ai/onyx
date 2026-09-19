@@ -273,7 +273,7 @@ export default function ExecutiveWorkspace({
               onClick={openModel}
               icon={SvgArrowUpRight}
             >
-              Open business model
+              {t("reviewInGuesstimate")}
             </Button>
           )}
           <Button
