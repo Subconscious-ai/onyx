@@ -27,9 +27,40 @@ Install the rubric with `scripts/subconscious/configure_executive.py`, selecting
 
 Set the Onyx frontend build variable `NEXT_PUBLIC_BURN_MODEL_WORKSPACE` to the paired causl-kb preview's `/dashboard/burn-import` URL. Configure the causl-kb server's `BURN_ONYX_ORIGIN` with the exact Onyx origin. No wildcard origins. Authentication remains required in both applications.
 
+## Interview progress correction, September 19
+
+The energy-company replay exposed two failures: acknowledgements ended discovery,
+and the fourth-answer joke overrode requests to conclude. The live native persona
+now distinguishes missing model structure from a usable symbolic model. A target
+alone is insufficient. Once the outcome meaning, customer population and journey
+are known, offer **Open business model**. Unknown operating quantities do not block
+that first model. Explicit synthesis requests take priority over humor.
+
+Native `turn_guidance` now checks synthesis requests before the fourth-answer branch.
+That branch no longer prevents a follow-up question. Persona changes are stored in
+Postgres; a frontend deployment alone does not install them. Update only the relevant
+prompt sections when the checked-in rubric includes other unreleased tool changes.
+Preserve the model, tools, document sets and permissions.
+
+The API runs `onyx-burn2:energy-guidance-20260919`, layered on the verified live image.
+Only `turn_guidance` changed in the live `profile.py`; unrelated live functions were
+preserved. Source is commit `0631912134`. Compose retains the previous configuration
+beside the current one. Workers and databases were not replaced. The existing signed-in
+QA session remained valid after the API replacement.
+
+Replay `scripts/subconscious/energy_progress_cases.json` with the existing native
+`eval_interview.py` runner. All 11 deployed turns passed their scoped checks across three conversations:
+acknowledgement continues discovery, known structure leads to the real model action,
+and requested synthesis contains no extra question or joke. The original opening
+sequence also reached a model handoff after the journey answer. That scripted replay
+gives numbers and time while Beca asks about the segment; it does not prove that
+semantic question repetition is eliminated. These are conversation checks, not a
+new proof of model arithmetic, PDL or research. The 57 offline contract checks pass.
+The question parser also retains topics before abbreviations such as "e.g.".
+
 ## QA path
 
-The #13 candidate schedules Jerry on the **fourth nonempty executive answer**, replacing the previous fifth-answer rule. A short `Jerry:` punchline targets a volunteered business boast or contradiction. Opt-out and distress suppress humor. Jokes never become accepted evidence. Backend image and native persona reminder must both be released before hosted timing changes; a Vercel frontend build alone cannot change server guidance.
+Historically, the #13 candidate scheduled Jerry on the **fourth nonempty executive answer**, replacing the previous fifth-answer rule. Current guidance makes humor optional and prioritizes discovery or the model handoff. A short `Jerry:` punchline targets a volunteered business boast or contradiction. Opt-out and distress suppress humor. Jokes never become accepted evidence. Backend image and native persona reminder must both be released before hosted timing changes; a Vercel frontend build alone cannot change server guidance.
 
 1. Open `/app/executive` and select Burn 2.0. State a product, business objective, target, deadline and known customer decisions. Mark unavailable operating values unknown.
 2. Correct a target or state an unknown answer. Verify that the interview incorporates the correction without repeating the same question or inventing a baseline.
