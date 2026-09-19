@@ -32,12 +32,10 @@ test("explicit interviewer never resolves to generic assistant while its data is
     .mockReturnValue({ data: [assistant], mutate: jest.fn() } as any);
   const { result, rerender } = renderHook(() => useActiveAgent());
   expect(result.current).toBeUndefined();
-  jest
-    .mocked(useSWR)
-    .mockReturnValue({
-      data: [assistant, interviewer],
-      mutate: jest.fn(),
-    } as any);
+  jest.mocked(useSWR).mockReturnValue({
+    data: [assistant, interviewer],
+    mutate: jest.fn(),
+  } as any);
   rerender();
   expect(result.current?.id).toBe(5);
 });
@@ -48,12 +46,10 @@ test("initial loading leaves agent unresolved until the selected interviewer arr
     .mockReturnValue({ data: undefined, mutate: jest.fn() } as any);
   const { result, rerender } = renderHook(() => useActiveAgent());
   expect(result.current).toBeUndefined();
-  jest
-    .mocked(useSWR)
-    .mockReturnValue({
-      data: [assistant, interviewer],
-      mutate: jest.fn(),
-    } as any);
+  jest.mocked(useSWR).mockReturnValue({
+    data: [assistant, interviewer],
+    mutate: jest.fn(),
+  } as any);
   rerender();
   expect(result.current?.id).toBe(5);
 });

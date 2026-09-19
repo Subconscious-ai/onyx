@@ -290,3 +290,23 @@ Build-button follow-up, September 19:
   made during this conversation reaches the handoff without reloading the page.
 - Six adversarial cases remain the final regression boundary; fixing the actual
   button-to-grid path and showing a single continuous browser journey takes priority.
+
+September 19 actual Build acceptance, active follow-up:
+- Native image `onyx-burn2:build-model-v5-20260919` completed one frozen
+  six-case sweep. Saved and reopened briefs: energy 55.5s, SaaS 45.2s,
+  retail 37.3s, services 52.8s, home services 34.6s, manufacturing 51.5s.
+  These timings exclude login, fresh discovery and model compilation.
+- Actual button tests saved, reopened and listed energy, SaaS and home-services
+  models. Executed arithmetic matched 550→700, $2.1M→$2.4M and $120K→$160K.
+  Repeated Build recovered the existing model without overwriting it.
+- The same sweep exposed retail unit validation failure, and omitted numerical
+  inputs in services and manufacturing. Compiler fixes and repeat proof remain
+  required; a successful save alone is not a successful business model.
+- Fresh browser testing exposed selected-agent loading falling back to agent 0.
+  Commit `b0f7af465f` prevents that fallback and blocks submission before input
+  clearing until the selected agent resolves. Focused regression and types pass.
+- Test setup must preserve the profile correction revision counter. Clearing its
+  current key while retaining revision history causes an artificial duplicate-key
+  failure. The private synthetic QA fixture was repaired; do not change customer
+  revision semantics to accommodate a broken test reset.
+- All work remains in draft PRs #31 and causl-kb #575 for user QA.
