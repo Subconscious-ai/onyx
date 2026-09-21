@@ -921,6 +921,9 @@ class GithubConnector(
         checkpoint.curr_page += 1
 
         for path in batch:
+            # A resumed checkpoint may predate a narrower configured selection.
+            if self.file_paths is not None and path not in self.file_paths:
+                continue
             html_url = f"{repo.html_url}/blob/{branch}/{path}"
             if is_slim:
                 yield Document(

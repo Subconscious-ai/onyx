@@ -594,3 +594,30 @@ def test_explicit_files_limit_full_and_slim_indexing(
         ]
     connector.file_paths = []
     assert connector._list_indexable_files(repo)[0] == []
+
+
+def test_explicit_files_apply_to_resumed_checkpoint(
+    mock_github_client: MagicMock,
+    create_mock_repo: Callable[..., MagicMock],
+) -> None:
+    connector = _build_connector(mock_github_client)
+    connector.file_paths = ["library/LIBRARY.md"]
+    repo = create_mock_repo(
+        {"library/LIBRARY.md": b"# Library", "private.md": b"Private"}
+    )
+    for slim in (False, True):
+        checkpoint = connector.build_dummy_checkpoint()
+        checkpoint.file_paths = ["library/LIBRARY.md", "private.md"]
+        checkpoint.file_paths_branch = "main"
+        items = list(
+            connector._fetch_repo_files(
+                repo,
+                checkpoint,
+                start=None,
+                is_slim=slim,
+                repo_external_access=None,
+            )
+        )
+        assert [item.id for item in items if isinstance(item, Document)] == [
+            "https://github.com/test-org/test-repo/blob/main/library/LIBRARY.md"
+        ]
