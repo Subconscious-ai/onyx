@@ -98,5 +98,25 @@ Company agents use the [Hermes material library](https://github.com/Subconscious
 The existing executive rubric contains the retrieval and freshness instructions.
 Read the current owner records linked from the library. Update materials at their owner;
 use existing native connectors and search. The previous file-upload catalog is a
-historical snapshot, not current source authority. Live prompt/connector verification
-remains [#32 — use the shared library](https://github.com/Subconscious-ai/onyx/issues/32).
+historical snapshot, not current source authority.
+
+The GitHub connector accepts optional `file_paths`: exact repository-relative files
+instead of all prose files. An empty list selects nothing. Selected text manifests
+can use JSON, JSONL or CSV; size and directory safeguards still apply. Omit the option
+to retain normal prose indexing. Keep PR and issue indexing disabled for a library-only
+connector. Full indexing and native pruning use the same file selection.
+
+Use the existing GitHub credential and daily native refresh for the Hermes library
+page and its Ditto owner manifests. Keep the existing broad Ditto/MBB connectors.
+Do not index the entire private Hermes repository. Configure source access explicitly;
+file selection does not replace native permissions. There is no configured Google
+Drive connector in the verified deployment; indexed Drive links are file references,
+not PDF-content retrieval. Mounted archives also require separate authorized access.
+
+Apply only the organization-research section to the saved company persona; preserve
+its other instructions, tools and permissions. Verify an ordinary user's native
+search returns the library, owner records and original-file references. Hide the
+superseded uploaded catalog through native administration after that check; preserve
+its files and historical evidence. Indexing is periodic, not instant. Check the owner
+revision before experiments. Live activation evidence belongs in
+[#32 — use the shared library](https://github.com/Subconscious-ai/onyx/issues/32).

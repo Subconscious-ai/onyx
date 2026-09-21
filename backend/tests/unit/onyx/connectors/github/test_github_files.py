@@ -11,12 +11,13 @@ from github.Requester import Requester
 
 from onyx.connectors.exceptions import ConnectorValidationError
 from onyx.connectors.github.connector import (
+    GITHUB_MAX_FILE_SIZE_BYTES,
     GithubConnector,
     GithubConnectorStage,
     _is_indexable_path,
 )
 from onyx.connectors.github.models import SerializedRepository
-from onyx.connectors.models import ConnectorFailure, Document
+from onyx.connectors.models import ConnectorFailure, Document, SlimDocument
 from tests.unit.onyx.connectors.utils import load_everything_from_checkpoint_connector
 
 
@@ -546,3 +547,50 @@ def test_files_paginated_with_issues_enabled_no_stage_regression(
     assert len(ids) == 250
     assert len(set(ids)) == 250  # no duplicates from re-indexing page 0
     assert outputs[-1].next_checkpoint.has_more is False
+
+
+def test_explicit_files_limit_full_and_slim_indexing(
+    mock_github_client: MagicMock,
+    create_mock_repo: Callable[..., MagicMock],
+) -> None:
+    connector = GithubConnector(
+        repo_owner="test-org",
+        repositories="test-repo",
+        include_prs=False,
+        include_issues=False,
+        include_files=True,
+        file_paths=[
+            "library/LIBRARY.md",
+            "records.jsonl",
+            "large.json",
+            ".git/private.txt",
+        ],
+    )
+    connector.github_client = mock_github_client
+    repo = create_mock_repo(
+        {
+            "library/LIBRARY.md": b"# Library",
+            "records.jsonl": b'{"source":"original.pdf"}',
+            "private.md": b"Not selected",
+            "large.json": b"x" * (GITHUB_MAX_FILE_SIZE_BYTES + 1),
+            ".git/private.txt": b"Never index",
+        }
+    )
+    for slim in (False, True):
+        items = list(
+            connector._fetch_repo_files(
+                repo,
+                connector.build_dummy_checkpoint(),
+                start=None,
+                is_slim=slim,
+                repo_external_access=None,
+            )
+        )
+        assert sorted(
+            item.id for item in items if isinstance(item, (Document, SlimDocument))
+        ) == [
+            "https://github.com/test-org/test-repo/blob/main/library/LIBRARY.md",
+            "https://github.com/test-org/test-repo/blob/main/records.jsonl",
+        ]
+    connector.file_paths = []
+    assert connector._list_indexable_files(repo)[0] == []

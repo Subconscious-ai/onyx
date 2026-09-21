@@ -114,7 +114,9 @@ _GITHUB_EMPTY_REPOSITORY_TREE_STATUS = 409
 _GITHUB_EMPTY_REPOSITORY_TREE_MESSAGE = "Git Repository is empty."
 
 
-def _is_indexable_path(path: str, size: int | None) -> bool:
+def _is_indexable_path(
+    path: str, size: int | None, file_paths: list[str] | None = None
+) -> bool:
     """Pure predicate: should this repo file be indexed?
 
     Filters on a max size and path-segment denylist, then matches either a
@@ -127,6 +129,11 @@ def _is_indexable_path(path: str, size: int | None) -> bool:
     segments = set(path.split("/"))
     if segments & GITHUB_PATH_DENYLIST:
         return False
+
+    # An explicit list selects only these files, including text manifests.
+    # Size, denied directories and the downstream text check still apply.
+    if file_paths is not None:
+        return path in file_paths
 
     basename = path.rsplit("/", 1)[-1]
     _, extension = os.path.splitext(basename)
@@ -619,6 +626,7 @@ class GithubConnector(
         include_issues: bool = False,
         include_files: bool = False,
         branch: str | None = None,
+        file_paths: list[str] | None = None,
     ) -> None:
         self.repo_owner = repo_owner
         self.repositories = repositories
@@ -626,6 +634,7 @@ class GithubConnector(
         self.include_prs = include_prs
         self.include_issues = include_issues
         self.include_files = include_files
+        self.file_paths = file_paths
         # Branch to index files from; None means each repo's default branch.
         self.branch = (branch or "").strip() or None
         self.github_client: Github | None = None
@@ -788,7 +797,7 @@ class GithubConnector(
                 element.path
                 for element in git_tree.tree
                 if element.type == "blob"
-                and _is_indexable_path(element.path, element.size)
+                and _is_indexable_path(element.path, element.size, self.file_paths)
             ]
             paths.sort()
             return paths, truncated
