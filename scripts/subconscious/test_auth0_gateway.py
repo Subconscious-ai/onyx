@@ -1,6 +1,7 @@
 """Prove configured native Auth0 login reaches Onyx through its gateway."""
 
 import json
+import os
 import unittest
 from urllib.parse import parse_qs, urlsplit
 
@@ -29,8 +30,8 @@ class Auth0GatewayTest(unittest.TestCase):
         self.assertEqual(
             query["redirect_uri"],
             [
-                "https://onyx-executive-git-codex-1-executive-interviewer-"
-                "subconcious.vercel.app/api/auth/oidc/auth0/callback"
+                os.environ.get("BURN_WEB_ORIGIN", "https://burn.subconscious.ai")
+                + "/api/auth/oidc/auth0/callback"
             ],
         )
 
