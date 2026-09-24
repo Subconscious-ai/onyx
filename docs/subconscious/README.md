@@ -41,7 +41,7 @@ The customer-facing interview is Beca. The current interface still exposes an Ac
 
 The September 17 decision is one assistant and one conversation. The assistant selects research, retrieval, calculation, model and experiment tools through native Onyx. Executives should not select workflow cards or specialist agents. Results remain reviewable artifacts in the conversation.
 
-[Issue #24](https://github.com/Subconscious-ai/onyx/issues/24) is the active plan for this simplification and editable company context. The earlier action-card proposal is superseded. [Draft PR #26](https://github.com/Subconscious-ai/onyx/pull/26) removes the Actions menu and specialist navigation. It also adds a revision-checked profile editor, a native profile tool, and separate provider/correction records. These changes are not a production release. Hosted acceptance remains outstanding. Preserve native permissions and explicit approval for paid experiment execution.
+[Issue #24](https://github.com/Subconscious-ai/onyx/issues/24) records the completed source-level simplification and editable company context. The earlier action-card proposal is superseded. [Merged PR #26](https://github.com/Subconscious-ai/onyx/pull/26) removes the Actions menu and specialist navigation. It also adds a revision-checked profile editor, a native profile tool, and separate provider/correction records. These changes are not a production release. Hosted acceptance remains outstanding. Preserve native permissions and explicit approval for paid experiment execution.
 
 Profile edits use authenticated `PATCH /chat/executive-profile`; native authentication supplies the caller and `WRITE_CHAT` permission. The request cannot select another owner. Enrichment writes only the provider record. Explicit corrections and each edit revision use the existing native key-value store. A company change drops unrelated company fields and excludes old research. Accepted shared company records still belong in causl-kb.
 
@@ -87,13 +87,13 @@ The active Burn agent is `5`, conversation model `8` (GPT OSS 120B), preparation
 
 ## Remaining product work
 
-The historical [issue #6](https://github.com/Subconscious-ai/onyx/issues/6) and prototype record describe intermittent structured-brief failures. Closing a historical ticket does not establish reliable first-attempt generation. The active product plan is #24; access and release acceptance remain in #21.
+The historical [issue #6](https://github.com/Subconscious-ai/onyx/issues/6) and prototype record describe intermittent structured-brief failures. Closing a historical ticket does not establish reliable first-attempt generation. Current scope and status live in the open issues; access and release acceptance remain in #21.
 
 Cross-application SSO remains causl-kb #450. Community Edition is not evidence of shared-instance enterprise isolation. Rehoboam execution, measured operating outcomes, and multi-host failover are outside the hosted release. Native Onyx and causl-kb still require separate authenticated sessions.
 
 ## End-to-end acceptance
 
-[Run the real-browser acceptance suite](end-to-end-acceptance.md) for three executive businesses, model persistence, the Beca entry point and cross-company read/search checks. Missing sessions or fixtures block acceptance; they never count as passes. See [issue #27](https://github.com/Subconscious-ai/onyx/issues/27) for current execution evidence.
+[Run the real-browser acceptance suite](end-to-end-acceptance.md) for three executive businesses, model persistence, the Beca entry point and cross-company read/search checks. Missing sessions or fixtures block acceptance; they never count as passes. See [issue #27](https://github.com/Subconscious-ai/onyx/issues/27) for historical execution evidence; read open #21 for remaining release requirements.
 
 ## Development
 
@@ -164,3 +164,32 @@ Preserve the exact handoff origins, authenticated access and private configurati
 - PR #23 browser CI never started: three image jobs lacked runners for 24 hours. Preserve that limitation; skipped tests are not passes.
 - Native Onyx owns conversations and draft context. causl-kb owns accepted ontology and models. Preserve sources and executive corrections.
 - Old plans below are historical evidence. Start new work from fork main and the active issue, not a retired worktree.
+
+## Organization library
+
+Company agents use the [Hermes material library](https://github.com/Subconscious-ai/hermes/blob/main/library/LIBRARY.md) through native internal_search.
+The existing executive rubric contains the retrieval and freshness instructions.
+Read the current owner records linked from the library. Update materials at their owner;
+use existing native connectors and search. The previous file-upload catalog is a
+historical snapshot, not current source authority.
+
+The GitHub connector accepts optional `file_paths`: exact repository-relative files
+instead of all prose files. An empty list selects nothing. Selected text manifests
+can use JSON, JSONL or CSV; size and directory safeguards still apply. Omit the option
+to retain normal prose indexing. Keep PR and issue indexing disabled for a library-only
+connector. Full indexing and native pruning use the same file selection.
+
+Use the existing GitHub credential and daily native refresh for the Hermes library
+page and its Ditto owner manifests. Keep the existing broad Ditto/MBB connectors.
+Do not index the entire private Hermes repository. Configure source access explicitly;
+file selection does not replace native permissions. There is no configured Google
+Drive connector in the verified deployment; indexed Drive links are file references,
+not PDF-content retrieval. Mounted archives also require separate authorized access.
+
+Apply only the organization-research section to the saved company persona; preserve
+its other instructions, tools and permissions. Verify an ordinary user's native
+search returns the library, owner records and original-file references. Hide the
+superseded uploaded catalog through native administration after that check; preserve
+its files and historical evidence. Indexing is periodic, not instant. Check the owner
+revision before experiments. Live activation evidence belongs in
+[#32 — use the shared library](https://github.com/Subconscious-ai/onyx/issues/32).

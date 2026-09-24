@@ -1,6 +1,11 @@
 # Executive interview acceptance proof
 
-Active: Onyx #13, paired causl-kb #544. Baselines: Onyx `abce3f30af`, causl-kb `c51c546`.
+Historical reference; current execution belongs to [current operations](README.md), [acceptance procedure](end-to-end-acceptance.md), and [open work](https://github.com/Subconscious-ai/onyx/issues?q=is%3Aissue+is%3Aopen).
+
+[Original plan, decisions and evidence at the retained revision](https://github.com/Subconscious-ai/onyx/blob/bc77893dc381ea776b5e3027b71507a682a16680/docs/subconscious/executive-proof-plan.md).
+Consult it for historical context, not current status, credentials, deployment state or authorization.
+
+## Interview-to-model branch evidence
 
 ## Outcome and boundaries
 
@@ -402,3 +407,4 @@ The earlier five model proofs remain valid; their mathematical compiler and
 receiver content did not change. Manufacturing was repeated after the exact-text
 sender correction. Failed earlier receipts remain available. All changes remain
 in draft PRs for user QA; this closure does not imply merge or production release.
+
