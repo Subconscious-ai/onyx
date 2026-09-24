@@ -218,3 +218,30 @@ superseded uploaded catalog through native administration after that check; pres
 its files and historical evidence. Indexing is periodic, not instant. Check the owner
 revision before experiments. Live activation evidence belongs in
 [#32 — use the shared library](https://github.com/Subconscious-ai/onyx/issues/32).
+
+## September 24 interview QA boundary
+
+The interview opens with Beca's question, exposes four specialist perspectives,
+retains completed progress while extraction runs, shows the desktop brief alongside
+chat, and renders the model action in the conversation. These are perspectives in
+one assistant, not four independently executing agents. Update both saved persona
+prompts when changing conversation policy: the older rubric and task reminder
+contradicted the new inline-navigation guidance. Preserve tools, model and permissions.
+
+Live browser QA proved a four-answer brief, a grounded fourth-turn Jerry roast,
+and the inline action. A separate resumed test with an existing Clerk session
+saved the exact interview plus six retained research sources, opened the specific
+model, reloaded it and found it in the model list. This proves retained-context
+handoff, not a fresh provider lookup or universal single sign-on. The post-prompt
+four-turn check removed button narration, but synthesis requests can suppress
+humor and model-generated readiness language still needs observation.
+
+The clean-browser password-account test failed before model persistence: Burn's
+Auth0 client accepts password login without an organization hint, whereas the
+existing Clerk custom Auth0 client requires the shared organization, configured
+for Google. Removing that organization hint is rejected by Auth0. PR605 preserves
+handoff destinations and uses this existing connection; it does not change account
+eligibility. Prove the full callback with an existing eligible Google identity
+before claiming one-login completion. Never infer membership or link identities
+by email to bypass this test. Working context remains in native Onyx Postgres;
+causl-kb receives interview/profile/research on successful model save, not each turn.
