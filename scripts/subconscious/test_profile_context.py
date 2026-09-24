@@ -84,7 +84,9 @@ class ProfileTests(unittest.TestCase):
         self.assertIn("Sarah · Journey", guidance)
         self.assertIn("Frankie · Business model", guidance)
         self.assertIn("Mei · Market challenge", guidance)
-        self.assertIn("Jerry contributes", turn_guidance(4, "Our forecasts run on optimism."))
+        self.assertIn(
+            "Jerry contributes", turn_guidance(4, "Our forecasts run on optimism.")
+        )
 
     def test_every_turn_has_an_executive_attention_budget(self):
         for turn in (1, 2, 3, 4, 5):
