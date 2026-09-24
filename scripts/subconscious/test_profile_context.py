@@ -76,6 +76,16 @@ class ProfileTests(unittest.TestCase):
             "with no extra question", turn_guidance(4, "Over the next three months")
         )
 
+    def test_navigation_is_owned_by_inline_ui_and_speakers_have_intentions(self):
+        context = interview_context(["Improve conversion."])
+        self.assertIn("Do not narrate navigation", context)
+        self.assertNotIn("Say the brief is updating and the Open", context)
+        guidance = turn_guidance(2, "Our customer visits then buys.")
+        self.assertIn("Sarah · Journey", guidance)
+        self.assertIn("Frankie · Business model", guidance)
+        self.assertIn("Mei · Market challenge", guidance)
+        self.assertIn("Jerry contributes", turn_guidance(4, "Our forecasts run on optimism."))
+
     def test_every_turn_has_an_executive_attention_budget(self):
         for turn in (1, 2, 3, 4, 5):
             with self.subTest(turn=turn):

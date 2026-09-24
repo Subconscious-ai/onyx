@@ -116,8 +116,8 @@ it("shows missing work and routes help to the existing chat", () => {
     expect.stringContaining("customer journey")
   );
   expect(
-    screen.getByRole("button", { name: "Complete model brief" })
-  ).toBeEnabled();
+    screen.queryByRole("button", { name: "Complete model brief" })
+  ).not.toBeInTheDocument();
 });
 it("opens the model without requiring unknown inputs", () => {
   render(<InterviewProgress {...props} brief={brief} />);
@@ -131,8 +131,8 @@ it("does not offer stale work while saving corrections", () => {
     screen.queryByRole("button", { name: "Build business model" })
   ).not.toBeInTheDocument();
   expect(
-    screen.getByRole("button", { name: "Updating your brief…" })
-  ).toBeDisabled();
+    screen.queryByRole("button", { name: "Updating your brief…" })
+  ).not.toBeInTheDocument();
 });
 it("exposes retry while preserving captured progress", () => {
   render(<InterviewProgress {...props} brief={brief} phase="error" />);
@@ -172,4 +172,13 @@ it("waits for current company context before handing off a ready brief", () => {
   );
   fireEvent.click(screen.getByRole("button", { name: "Build business model" }));
   expect(props.onOpen).toHaveBeenCalledTimes(1);
+});
+
+it("retains captured progress while a new turn is being extracted, but resets for another chat", () => {
+  const { rerender } = render(<InterviewProgress {...props} brief={brief} />);
+  expect(screen.getByRole("progressbar")).toHaveAttribute("value", "3");
+  rerender(<InterviewProgress {...props} brief={null} busy phase="updating" />);
+  expect(screen.getByRole("progressbar")).toHaveAttribute("value", "3");
+  rerender(<InterviewProgress {...props} brief={null} chatId="other" />);
+  expect(screen.getByRole("progressbar")).toHaveAttribute("value", "0");
 });

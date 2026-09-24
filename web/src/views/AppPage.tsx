@@ -91,6 +91,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useTranslations } from "next-intl";
 import ExecutiveWorkspace, {
   ExecutiveWelcome,
+  ExecutiveModelAction,
 } from "@/sections/executive/ExecutiveWorkspace";
 import { isExecutiveAgent } from "@/lib/executive/brief";
 import { consultingRole } from "@/lib/agents/consulting";
@@ -879,6 +880,9 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                           selectedModels={multiModel.selectedModels}
                           fullWidthChat={fullWidthActive}
                         />
+                        {isExecutiveAgent(activeAgent) && (
+                          <ExecutiveModelAction />
+                        )}
                       </ChatScrollContainer>
                     </Fade>
 

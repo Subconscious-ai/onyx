@@ -846,3 +846,37 @@
     transition: none;
   }
 }
+
+/* The conversation and extracted evidence share one desktop workspace. */
+.executive-team {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  padding: 6px 16px;
+  font-size: 11px;
+  border-bottom: 1px solid var(--hair);
+}
+.executive-team span {
+  color: var(--grey-500);
+}
+.executive-team strong {
+  color: var(--color);
+}
+.executive-native-chat .interview-progress {
+  margin: 12px 0;
+  border: 1px solid var(--hair);
+  border-radius: 8px;
+  padding: 12px;
+}
+@media (min-width: 861px) {
+  .executive-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 32%);
+  }
+  .executive-brief {
+    border-left: 1px solid var(--hair);
+  }
+  [data-executive~="executive-mobile-toggle"] {
+    display: none;
+  }
+}

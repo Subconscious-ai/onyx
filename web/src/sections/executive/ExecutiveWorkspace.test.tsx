@@ -1,5 +1,8 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import ExecutiveWorkspace from "./ExecutiveWorkspace";
+import ExecutiveWorkspace, {
+  ExecutiveModelAction,
+  ExecutiveWelcome,
+} from "./ExecutiveWorkspace";
 import { useAutomaticBrief, useExecutiveContext } from "@/lib/executive/hooks";
 import { createModelHandoff } from "@/lib/executive/model-handoff";
 
@@ -48,6 +51,7 @@ describe("conversation-first brief access", () => {
     render(
       <ExecutiveWorkspace active messages={[]}>
         <textarea aria-label="Message" />
+        <ExecutiveModelAction />
       </ExecutiveWorkspace>
     );
     expect(
@@ -68,15 +72,13 @@ describe("conversation-first brief access", () => {
       json: async () => ({ status: "not_found" }),
     });
   });
-  it("keeps the draft out of chat until requested and preserves composer text on return", async () => {
+  it("shows extracted evidence alongside chat and preserves composer text on mobile return", async () => {
     render(
       <ExecutiveWorkspace active messages={[]}>
         <textarea aria-label="Message" defaultValue="Retain this draft" />
       </ExecutiveWorkspace>
     );
-    expect(
-      screen.queryByLabelText("workingBusinessBrief")
-    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("workingBusinessBrief")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Brief" }));
     expect(screen.getByLabelText("workingBusinessBrief")).toBeVisible();
     await waitFor(() =>
@@ -91,13 +93,14 @@ describe("conversation-first brief access", () => {
     render(
       <ExecutiveWorkspace active messages={[]}>
         <textarea aria-label="Message" />
+        <ExecutiveModelAction />
       </ExecutiveWorkspace>
     );
     expect(
-      screen.queryByRole("button", { name: "Retry draft update" })
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: "retryDraft" })
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Brief · retry" }));
-    fireEvent.click(screen.getByRole("button", { name: "Retry draft update" }));
+    fireEvent.click(screen.getByRole("button", { name: "retryDraft" }));
     expect(retry).toHaveBeenCalledTimes(1);
     await waitFor(() =>
       expect(screen.getByText("PDL: no confident match")).toBeInTheDocument()
@@ -118,6 +121,7 @@ describe("conversation-first brief access", () => {
     const result = render(
       <ExecutiveWorkspace active chatId="saved-chat" messages={[]}>
         <textarea aria-label="Message" />
+        <ExecutiveModelAction />
       </ExecutiveWorkspace>
     );
     fireEvent.click(screen.getByRole("button", { name: "Brief · retry" }));
@@ -216,6 +220,7 @@ describe("conversation-first brief access", () => {
     const result = render(
       <ExecutiveWorkspace active chatId="saved-chat" messages={messages}>
         <textarea aria-label="Message" />
+        <ExecutiveModelAction />
       </ExecutiveWorkspace>
     );
     // A ready model must be reachable directly from the conversation.
@@ -234,4 +239,9 @@ describe("conversation-first brief access", () => {
     window.history.replaceState({}, "", "/");
     delete process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE;
   });
+});
+
+it("opens with the interviewer question without a customer start command", () => {
+  render(<ExecutiveWelcome />);
+  expect(screen.getByText("openingQuestion")).toBeVisible();
 });

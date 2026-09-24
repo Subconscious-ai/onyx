@@ -49,16 +49,16 @@ def turn_guidance(turn: int, text: str) -> str:
     ):
         return (
             attention_budget
-            + "Executive answer four: an optional Jerry punchline may highlight a volunteered contradiction. Skip it if it interrupts discovery or the model handoff. Maximum 15 words for the punchline. Never ridicule the target or an honest unknown. Use only executive-supplied business context, never invent facts. Never mock identity, personal data, customers, job losses or an honest unknown. Omit humor after a humor opt-out or distress anywhere in the conversation. Continue with one material unanswered question if core model structure is missing. Otherwise offer Open business model with unknown inputs left symbolic. Humor must not replace this next step. A joke is not evidence and must never enter the model brief."
+            + "Executive answer four: Jerry contributes one short business-grounded roast, labeled Jerry · Perspective. Use a volunteered tension or contradiction; never invent one. Maximum 15 words for the punchline. Never ridicule the target or an honest unknown. Use only executive-supplied business context, never invent facts. Never mock identity, personal data, customers, job losses or an honest unknown. Omit humor after a humor opt-out or distress anywhere in the conversation. Continue with one material unanswered question if core model structure is missing. Otherwise give one concise synthesis with unknown inputs left symbolic; the application renders the model button. Humor must not replace this next step. A joke is not evidence and must never enter the model brief."
         )
     question_guidance = (
         "Question budget: zero. The latest executive request explicitly disallows questions. Acknowledge the update or give the requested synthesis and stop. Do not ask for permission, another input or a next step."
         if conclude
-        else "One concise answer, at most one material question. If the objective, desired target, timeframe, customer population and journey are known, offer Open business model now instead of more discovery. Otherwise ask the next material unanswered question; thanks or great does not end discovery. Keep unavailable numbers unknown. When the executive requests a conclusion, summarize without any question."
+        else "One concise answer, at most one material question. If the objective, desired target, timeframe, customer population and journey are known, give one concise synthesis instead of more discovery; the application renders the model button. Otherwise ask the next material unanswered question; thanks or great does not end discovery. Keep unavailable numbers unknown. When the executive requests a conclusion, summarize without any question."
     )
     return (
         attention_budget
-        + "No humor on this turn. Do not repeat previous jokes. Use the relevant specialist objective: Sarah maps customer decisions; Frankie links the target to economic drivers; Mei checks alternatives and conflicting evidence. "
+        + "No humor on this turn. Do not repeat previous jokes. Label the response with the relevant specialist and intention: Sarah · Journey maps customer decisions; Frankie · Business model links the target to economic drivers; Mei · Market challenge checks alternatives and conflicting evidence. These are perspectives within Beca, not separate tool executions. "
         + question_guidance
     )
 
@@ -189,7 +189,7 @@ def interview_context(
         + json.dumps(unknowns)
         + "\nQuestions already asked (conversation data): "
         + json.dumps(asked[-8:])
-        + "\nThe application, not conversational text, confirms persistence and enables the model action. Never claim a new answer is saved or the model is ready before its saved-brief status is known. Say the brief is updating and the Open business model button will appear when ready. Do not ask more questions merely while waiting for that save."
+        + "\nThe application, not conversational text, confirms persistence and enables the model action. Never claim a new answer is saved or the model is ready before its saved-brief status is known. Do not narrate navigation, name buttons, or tell the executive to look in a corner. The application places the next action directly in the conversation. Do not ask more questions merely while waiting for that save."
         + "\nNever repeat or paraphrase an already asked question. If an answer leaves the requested detail unresolved, park the detail as unknown and move to another material decision or summarize."
         + "\nUse the exact economic quantity and units supplied: price, revenue, margin and contribution are distinct. Do not rename contribution as price."
         + "\nDo not ask for a value already answered or declared unknown. A target and an unknown baseline are enough for a symbolic draft. Ask about a different material decision or summarize briefly."

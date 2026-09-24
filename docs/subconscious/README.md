@@ -2,6 +2,31 @@
 
 [Open Burn](https://burn.subconscious.ai/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Start login on this canonical address. Branch previews redirect to the registered login origin and do not prove their own authenticated customer path.
 
+## September 24 customer walkthrough correction
+
+The September 19 canary reused a causl-kb session. It did not establish the fresh
+customer journey or shared sign-in. The customer reported a second login, lost
+handoff destination, hidden extracted facts, reversing progress, and no saved
+model in their workspace. Do not report this experience as complete from that
+canary alone.
+
+Current repair acceptance:
+1. Beca presents the opening question without asking the executive to start.
+2. Sarah, Frankie, Mei and Jerry have visible purposes. The grounded roast keeps
+   opt-out and distress safeguards. These remain perspectives within Beca.
+3. Desktop chat shows extracted evidence beside it; mobile keeps one clear toggle.
+   Captured progress remains visible during extraction. Confirmed corrections can
+   still change readiness; do not fake completion with a permanent maximum.
+4. The native chat contains the model action. Conversational output does not
+   instruct the executive to find a corner button.
+5. Preserve the exact model handoff destination through authentication and
+   organization selection. Complete existing Auth0 integration before claiming
+   one sign-in. Never infer organization ownership from email or a PDL dossier.
+6. Prove the actual customer's authorized handoff saves the model and attributed
+   interview/dossier/research in causl-kb. Working Onyx briefs alone do not prove
+   Library persistence. The existing receiver retains the dossier on model save;
+   automatic per-turn causl-kb persistence is not established by this change.
+
 ## Current interview-to-model UAT, September 19 UTC
 
 The canonical Burn address serves the interview-to-model candidate from draft

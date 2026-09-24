@@ -36,20 +36,33 @@ export default function InterviewProgress({
   onReview,
 }: InterviewProgressProps) {
   const t = useTranslations("executive.progress");
-  const goal = brief?.objective.status === "executive";
-  const measure = !!brief?.keyResults?.some(
+  const retained = useRef<{
+    chatId: string | null;
+    brief: InterviewBrief | null;
+  }>({ chatId, brief });
+  const updating = busy || phase === "updating" || phase === "waiting";
+  const visibleBrief =
+    updating && retained.current.chatId === chatId
+      ? (retained.current.brief ?? brief)
+      : brief;
+  useEffect(() => {
+    if (!updating || retained.current.chatId !== chatId)
+      retained.current = { chatId, brief };
+  }, [brief, chatId, updating]);
+  const goal = visibleBrief?.objective.status === "executive";
+  const measure = !!visibleBrief?.keyResults?.some(
     (item) =>
       item.target.status === "executive" && item.deadline.status === "executive"
   );
   const journey =
-    (brief?.journey.length ?? 0) >= 2 && !!brief?.transitions?.length;
+    (visibleBrief?.journey.length ?? 0) >= 2 &&
+    !!visibleBrief?.transitions?.length;
   const items = [
     { id: "goal", complete: goal },
     { id: "measure", complete: measure },
     { id: "journey", complete: journey },
   ] as const;
   const count = items.filter((item) => item.complete).length;
-  const updating = busy || phase === "updating" || phase === "waiting";
   const failed = phase === "error";
   const briefReady =
     !stale && !updating && !failed && modelReadiness(brief).ready;
@@ -157,18 +170,20 @@ export default function InterviewProgress({
           {status}
         </p>
       </div>
-      <div className="interview-progress-action">
-        <Button
-          size="lg"
-          prominence="primary"
-          rightIcon={SvgArrowUpRight}
-          disabled={updating || waitingContext || (!hasAnswer && !failed)}
-          onClick={advance}
-        >
-          {action}
-        </Button>
-        <span>{ready ? t("readyHint") : t("hint")}</span>
-      </div>
+      {(ready || waitingContext || failed) && (
+        <div className="interview-progress-action">
+          <Button
+            size="lg"
+            prominence="primary"
+            rightIcon={SvgArrowUpRight}
+            disabled={updating || waitingContext || (!hasAnswer && !failed)}
+            onClick={advance}
+          >
+            {action}
+          </Button>
+          <span>{ready ? t("readyHint") : t("hint")}</span>
+        </div>
+      )}
     </section>
   );
 }
