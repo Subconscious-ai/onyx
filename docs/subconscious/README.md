@@ -257,25 +257,49 @@ This is retained-context proof, not fresh PDL/research within60seconds. Independ
 review confirmed only the intended login settings changed. Host credential recovery
 instructions are in private machine configuration, not this repository.
 
-### September 25: current persona context repair
+### September 25: interview audit and corrected diagnosis
 
-The stored persona was renamed to `Executive interview`, but five native chat
-hooks still required `Burn 2.0`. Consequently, available PDL/research context was
-not injected into the interview, executive history was not preserved through the
-specialized path, and native post-turn preparation was skipped. Accept the current
-and retained legacy names consistently, including the initial profile tool.
-The regression suite reproduced two failures before the fix and passes all seven
-tests afterward. Runtime image: `onyx-burn2:context-gate-sep25`.
+The compatibility patch accepts `Executive interview` and legacy persona names
+in five native chat hooks and initial profile selection. Seven regression tests
+pass. Runtime image: `onyx-burn2:context-gate-sep25`.
 
-Live synthetic-account testing exercised sparse revenue/CPG/three-meeting answers.
-The five-answer run completed in 23.7 seconds, used retained company/role context,
-asked for actual buyer commitments instead of inventing meeting meanings, and left
-unknown conversion rates symbolic. Reloading the saved conversation showed the
-model action. This run reused PDL/research; it does not prove fresh discovery speed.
-The affected real conversation already had a ready PDL dossier and nine research
-sources: missing injection, not missing provider output, caused its context loss.
+Correction: the earlier explanation that a stored persona rename caused the live
+failure was not established. Direct database readback shows persona 5 remains
+`Burn 2.0`; `Executive interview` is the frontend display label. The rename tests
+protect compatibility but do not reproduce the customer's actual context failure.
+Do not cite that patch as proof the live root cause is resolved.
 
-Jerry did not appear in the observed test despite fourth-answer guidance. Humor
-and timing remain an unproven quality requirement. This proof covers interview
-context and readiness, not a new model-save test or continuous per-turn acceptance
-into the causl-kb ontology. Keep this distinction when reporting release readiness.
+Live synthetic-account testing completed five answers in 23.7 seconds, recognized
+retained company/role context, asked for buyer commitments, preserved unknown
+rates and showed the model action after reload. That account is not equivalent to
+the affected executive: all three latest executive briefs have company `Unknown`,
+while the retained PDL company is available. The exact company-match predicate
+returns false. With profile correction revision zero, both profile and research
+are consequently excluded once such a brief exists. The dossier and research are
+present; their availability does not prove they entered the model prompt.
+
+Read-only runtime audit also found:
+- PDL retains five professional fields, not a full executive dossier.
+- The current research record has nine source URLs and 8,590 report characters.
+  The chat injection bounds the report to 4,000 characters and requires company
+  matching. It is not the complete research record or full ontology.
+- Native user memories are disabled for the inspected executive. Saved transcripts
+  remain durable, but this is not automatic cross-chat memory.
+- Persona 5 has native internal/web search, Python, company-profile, Rehoboam and
+  World tools; no causl-kb Library read tools are assigned.
+- `deep_research` resolves to the private Burn research MCP. The running service
+  uses GPT Researcher 0.14.8. This is distinct from the maintained research
+  producer's source extraction and progressive KB admission path.
+- Native working briefs/profile/research write to Onyx Postgres. The reviewed model
+  save transfers context and selected supported journey records to causl-kb. No
+  per-turn accepted ontology write or full cross-chat KB retrieval is proven here.
+- Jerry appeared in one of the three inspected real conversations but did not
+  appear in the latest synthetic replay. Prompt guidance is not timing or humor
+  acceptance.
+
+History matters: issues #6 and #12 closed as deferred, #17 closed as not planned,
+and #28 explicitly distinguished user prototype acceptance from failed automated
+acceptance. #31 remains draft; causl-kb #430 owns the unfinished integrated journey.
+The source/library work in #35 is real retrieval capability, not proof that every
+interview used MBB evidence. Keep behavior proof separate from configured tools,
+source merges, deployment health and narrow synthetic passes.
