@@ -6,6 +6,75 @@ from onyx.server.query_and_chat.burn2.validation import validate_brief
 
 
 class StructuredBriefTest(unittest.TestCase):
+    def test_assistant_proposals_preserve_reference_context_without_source_admission(
+        self,
+    ):
+        from onyx.server.query_and_chat.burn2.validation import (
+            assistant_proposals,
+            attach_source,
+        )
+
+        statements = [
+            "Can we hit the target without adding capacity?",
+            "Keep both as untested scenarios.",
+        ]
+        proposal = "Compare higher contribution per project or fewer hours per project."
+        transcript = [
+            {"type": "assistant", "message": "What decision matters?"},
+            {"type": "user", "message": statements[0]},
+            {"type": "tool", "message": "Do not treat this as a proposal."},
+            {
+                "type": "assistant",
+                "message": proposal + '<interview-brief>{"old":true}</interview-brief>',
+            },
+            {"type": "user", "message": statements[1]},
+            {"type": "assistant", "message": "Both remain untested."},
+        ]
+        self.assertEqual(
+            assistant_proposals(transcript),
+            [
+                {"afterExecutiveMessageIndex": None, "text": "What decision matters?"},
+                {"afterExecutiveMessageIndex": 0, "text": proposal},
+                {"afterExecutiveMessageIndex": 1, "text": "Both remain untested."},
+            ],
+        )
+        self.assertEqual(
+            [row["message"] for row in transcript if row["type"] == "user"],
+            statements,
+        )
+        note = {"text": proposal, "status": "assumption", "sourceMessageIndex": None}
+        attach_source(note, statements)
+        self.assertNotIn("quote", note)
+        with self.assertRaisesRegex(ValueError, "sourceMessageIndex"):
+            attach_source({"sourceMessageIndex": 2}, statements)
+
+    def test_assistant_proposals_are_bounded_without_reindexing_executive_messages(
+        self,
+    ):
+        from onyx.server.query_and_chat.burn2.validation import assistant_proposals
+
+        transcript = []
+        for index in range(15):
+            transcript.extend(
+                [
+                    {"type": "user", "message": f"Executive statement {index}"},
+                    {"type": "assistant", "message": "x" * 2000},
+                ]
+            )
+        transcript.append(
+            {
+                "type": "assistant",
+                "message": "<interview-brief>metadata only</interview-brief>",
+            }
+        )
+        proposals = assistant_proposals(transcript)
+        self.assertEqual(len(proposals), 12)
+        self.assertEqual(
+            [item["afterExecutiveMessageIndex"] for item in proposals],
+            list(range(3, 15)),
+        )
+        self.assertTrue(all(len(item["text"]) == 1200 for item in proposals))
+
     def test_generated_equation_rejects_nul_before_postgres_handoff(self):
         brief = self.brief()
         brief["model"]["equation"]["text"] = "visitors \x00d7 conversion_rate"

@@ -243,6 +243,27 @@ def needs_completion(value: dict) -> bool:
     )
 
 
+def assistant_proposals(transcript: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep recent conversational references separate from executive evidence."""
+    proposals: list[dict[str, Any]] = []
+    executive_index = -1
+    for message in transcript:
+        if message["type"] == "user":
+            executive_index += 1
+        elif message["type"] == "assistant":
+            text = message["message"].split("<interview-brief>", 1)[0].strip()
+            if text:
+                proposals.append(
+                    {
+                        "afterExecutiveMessageIndex": (
+                            executive_index if executive_index >= 0 else None
+                        ),
+                        "text": text[:1200],
+                    }
+                )
+    return proposals[-12:]
+
+
 def latest_saved_brief(transcript: list[dict], statements: list[str]) -> dict | None:
     """Reuse the owned native draft as context, never as new source evidence."""
     for message in reversed(transcript):

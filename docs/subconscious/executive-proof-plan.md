@@ -29,7 +29,7 @@ chat, memory database, swarm runtime or evaluation platform. Simulated panel app
 is not a claim of measured human executive satisfaction. Scripted timing, provider
 freshness and actual saved Monte Carlo calculation have separate receipts.
 
-Recovery, September 25 at 09:32 UTC:
+Recovery, September 25 at 09:50 UTC:
 - Native memory and MemoryTool are enabled for the owner and existing QA users.
   An actual MemoryTool write was recalled in another persona's fresh conversation.
 - Unknown-company drafts no longer suppress established PDL/research context.
@@ -49,8 +49,8 @@ Recovery, September 25 at 09:32 UTC:
 - Native MBB retrieval returned indexed McKinsey energy guidance in a fresh
   interview. The earlier six-case sweep did not retrieve it. Availability alone
   does not prove preparation or justify the latency.
-- Serving API/background image: `onyx-burn2:consulting-native-policy-v7-sep25`
-  (digest `f66e734d5f2d654998fdcfb62949efd6b6e73d2616761ea88f639f31c0ee9bce`).
+- Serving API/background image: `onyx-burn2:consulting-proposal-context-v9-sep25`
+  (digest `da803dc0303f819b4b6f827da82cd82838c69f01cd5fa705cbdc5a684de70d45`).
   Background brief model is 19 (AWS Kimi K3). Persona 5 now defaults to AWS Kimi 19
   through native configuration. Model 19 is visible in the existing provider
   catalog. Other persona defaults and provider scopes did not change. Earlier
@@ -80,7 +80,7 @@ Recovery, September 25 at 09:32 UTC:
   in Onyx; they are unsuitable for noncitable methodology. A concise optional
   method from the same existing reference now uses native persona instructions.
   Corpus search and legitimate citations remain enabled. See `beca-capabilities.md`.
-- All five changed backend source hashes match the serving API image. Gateway
+- Changed backend source hashes match the serving API image. Gateway
   reload and canonical health passed after restart.
 - The default-path energy interview automatically saved a source-grounded brief:
   5.5% observed conversion, 7% target, three months, unknown visitor count and
@@ -111,7 +111,17 @@ Recovery, September 25 at 09:32 UTC:
   word budget and one-time synthesis. Explicit stop and humor opt-out safeguards
   remain. The v7 source hash and canonical health check match the serving runtime.
   The next frozen configuration run is in progress; no panel pass exists.
-- Current local checks: 27 structured-brief, 13 context, 17 evaluator and 9 adaptive
+- The next services interview asked the decisive capacity inputs and calculated
+  them correctly. Its saved brief still lost the names of two assistant-proposed
+  scenarios when the executive selected “both.” The extractor only saw executive
+  messages. A narrow repair passes bounded assistant context separately as
+  hypotheses; executive source indices and ownership checks remain unchanged.
+  Two regressions failed first, then all 29 structured-brief tests passed.
+- The same interview never established customer behavior. The native policy now
+  asks one material private behavior question before concluding, unless unknown
+  or stopped. A fresh run asked that question and retained the answer; AWS then
+  returned a rate-limit error. This incomplete run is not a panel or latency pass.
+- Current local checks: 29 structured-brief, 13 context, 17 evaluator and 9 adaptive
   harness tests pass. The installed worker passed nine focused retry tests. These
   tests do not establish executive quality or a saved Monte Carlo calculation.
 - Browser inspection confirmed only final tool-cycle text is visible after reload.
@@ -119,6 +129,11 @@ Recovery, September 25 at 09:32 UTC:
 - Earlier model 8 default/maximum reasoning remains LOW. It affects that entire
   model configuration, not only extraction. Some native providers strip unsupported
   reasoning parameters; a requested setting is not proof that it was enforced.
+- Model 19 defaults to LOW reasoning, while extraction requests HIGH. Native
+  Kimi/Bedrock retries drop the unsupported reasoning and temperature parameters.
+  The prior LOW-cap extraction still needed 40 seconds. Changing that setting
+  alone is not a demonstrated latency repair; no speculative provider change
+  was made. Final structured generation remains a material latency limitation.
 - All inference used the existing AWS provider. No IAM, subscription, credential
   or billing change was made. No new memory store or orchestration framework exists.
 - PR 31 remains draft. Required upstream CI is not all green: dependency audit
