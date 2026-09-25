@@ -49,6 +49,43 @@ class InitialProfileToolTest(unittest.TestCase):
         self.read_profile.assert_called_once_with(self.arguments["user_id"])
         self.assertEqual(self.arguments["tools"], before)
 
+    def test_current_interview_name_starts_required_profile_tool(self):
+        self.arguments["persona_name"] = "Executive interview"
+        self.assertEqual(initial_profile_tool(**self.arguments), 937)
+
+    def test_current_interview_enters_native_context_and_preparation_gates(self):
+        path = (
+            Path(tool_selection.__file__).resolve().parents[3]
+            / "chat/process_message.py"
+        )
+        gates = [
+            node
+            for node in ast.walk(ast.parse(path.read_text()))
+            if isinstance(node, ast.Compare)
+            and isinstance(node.left, ast.Attribute)
+            and node.left.attr == "name"
+            and "persona" in ast.unparse(node.left)
+            and "Burn 2.0" in ast.unparse(node)
+        ]
+        self.assertEqual(len(gates), 5)
+        for node in gates:
+            predicate = compile(ast.Expression(body=node), str(path), "eval")
+            for name, expected in [
+                ("Executive interview", True),
+                ("Burn 2.0", True),
+                ("Other agent", False),
+            ]:
+                persona = SimpleNamespace(name=name)
+                self.assertEqual(
+                    eval(  # noqa: S307 - evaluate repository-owned persona gate only
+                        predicate,
+                        {},
+                        {"persona": persona, "setup": SimpleNamespace(persona=persona)},
+                    ),
+                    expected,
+                    ast.unparse(node),
+                )
+
     def test_existing_company_keeps_native_auto_selection(self):
         self.read_profile.return_value = {"profile": {"company": "Actual company"}}
         self.assertIsNone(initial_profile_tool(**self.arguments))

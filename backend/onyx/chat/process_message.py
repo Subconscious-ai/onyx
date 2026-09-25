@@ -826,7 +826,7 @@ def build_chat_turn(
     executive_history = (
         tuple(chat_history)
         if os.environ.get("BURN2_ENABLED") == "true"
-        and persona.name == "Burn 2.0"
+        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
         and user is not None
         else ()
     )
@@ -934,7 +934,7 @@ def build_chat_turn(
     forced_tool_id = new_msg_req.forced_tool_id
     if (
         os.environ.get("BURN2_ENABLED") == "true"
-        and persona.name == "Burn 2.0"
+        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
         and forced_tool_id is None
     ):
         from onyx.server.query_and_chat.burn2.requested_tool import requested_tool
@@ -1007,7 +1007,7 @@ def build_chat_turn(
 
     if (
         os.environ.get("BURN2_ENABLED") == "true"
-        and persona.name == "Burn 2.0"
+        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
         and user is not None
     ):
         from onyx.db.burn2_profile import read_profile
@@ -1152,7 +1152,7 @@ def build_chat_turn(
 
     if (
         os.environ.get("BURN2_ENABLED") == "true"
-        and persona.name == "Burn 2.0"
+        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
         and user is not None
     ):
         simple_chat_history = project_chat_history(
@@ -1437,7 +1437,8 @@ def _run_models(
 
         if (
             os.environ.get("BURN2_ENABLED") == "true"
-            and setup.persona.name == "Burn 2.0"
+            and setup.persona.name
+            in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
             and setup.incognito_record_mode is None
             and any(model_succeeded)
         ):

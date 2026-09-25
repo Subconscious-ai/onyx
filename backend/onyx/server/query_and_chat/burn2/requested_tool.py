@@ -43,7 +43,7 @@ def initial_profile_tool(
     """Bootstrap through native REQUIRED selection, never a synthetic tool execution."""
     if (
         not enabled
-        or persona_name != "Burn 2.0"
+        or persona_name not in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
         or user_id is None
         or incognito
         or forced_tool_id is not None
