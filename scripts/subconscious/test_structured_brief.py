@@ -205,6 +205,208 @@ class StructuredBriefTest(unittest.TestCase):
             "unknown",
         )
 
+    def test_target_only_source_cannot_supply_a_numeric_baseline_or_operating_input(
+        self,
+    ):
+        source = "I lead an implementation consultancy. Our target is $2 million annual contribution next year, not revenue."
+        for location in ("baseline", "input"):
+            with self.subTest(location=location):
+                brief = self.brief()
+                note = {
+                    "text": "$2,000,000",
+                    "status": "executive",
+                    "sourceMessageIndex": 0,
+                }
+                if location == "baseline":
+                    brief["keyResults"] = [
+                        {
+                            "id": "contribution",
+                            "metric": "Annual contribution",
+                            "unit": "USD per year",
+                            "direction": "increase",
+                            "journeyIds": [],
+                            "baseline": note,
+                            "target": {
+                                "text": "$2 million",
+                                "status": "executive",
+                                "sourceMessageIndex": 0,
+                            },
+                            "deadline": {
+                                "text": "Next year",
+                                "status": "executive",
+                                "sourceMessageIndex": 0,
+                            },
+                        }
+                    ]
+                else:
+                    brief["model"]["inputs"] = [
+                        {
+                            "id": "contribution",
+                            "name": "Annual contribution",
+                            "unit": "USD per year",
+                            "value": note,
+                        }
+                    ]
+                with self.assertRaisesRegex(ValueError, "target.*observed"):
+                    validate_brief(brief, [source])
+        brief = self.brief()
+        brief["model"]["inputs"] = [
+            {
+                "id": "target_contribution",
+                "name": "Target annual contribution",
+                "unit": "USD per year",
+                "value": {
+                    "text": "$2,000,000",
+                    "status": "executive",
+                    "sourceMessageIndex": 0,
+                },
+            }
+        ]
+        self.assertEqual(
+            validate_brief(brief, [source])["model"]["inputs"][0]["value"]["status"],
+            "executive",
+        )
+
+    def test_target_leak_uses_existing_single_repair(self):
+        from onyx.server.query_and_chat.burn2.validation import prepare_validated_brief
+
+        source = "Our target is $2 million annual contribution."
+        feedback_seen = []
+
+        def generate(feedback):
+            feedback_seen.append(feedback)
+            brief = self.brief()
+            brief["model"]["inputs"] = [
+                {
+                    "id": "contribution",
+                    "name": "Annual contribution",
+                    "unit": "USD per year",
+                    "value": {
+                        "text": "$2,000,000",
+                        "status": "executive",
+                        "sourceMessageIndex": 0,
+                    }
+                    if feedback is None
+                    else {
+                        "text": "Unknown",
+                        "status": "unknown",
+                        "sourceMessageIndex": None,
+                    },
+                }
+            ]
+            return brief
+
+        result = prepare_validated_brief(generate, [source])
+        self.assertEqual(len(feedback_seen), 2)
+        self.assertIn("target cannot become an observed", feedback_seen[1])
+        self.assertEqual(result["model"]["inputs"][0]["value"]["status"], "unknown")
+
+    def test_source_with_observed_baseline_and_target_remains_usable(self):
+        for source in (
+            "Our current renewal rate is 70%; our target is 80%.",
+            "Our target is 80%, up from our current renewal rate of 70%.",
+            "Our renewal rate is 70% and our target is 80%.",
+        ):
+            with self.subTest(source=source):
+                brief = self.brief()
+                brief["keyResults"] = [
+                    {
+                        "id": "renewal",
+                        "metric": "Annual renewal",
+                        "unit": "percent",
+                        "direction": "increase",
+                        "journeyIds": [],
+                        "baseline": {
+                            "text": "70%",
+                            "status": "executive",
+                            "sourceMessageIndex": 0,
+                        },
+                        "target": {
+                            "text": "80%",
+                            "status": "executive",
+                            "sourceMessageIndex": 0,
+                        },
+                        "deadline": {"text": "Unknown", "status": "unknown"},
+                    }
+                ]
+                brief["model"]["inputs"] = [
+                    {
+                        "id": "renewal_rate",
+                        "name": "Annual renewal rate",
+                        "unit": "percent",
+                        "value": {
+                            "text": "70%",
+                            "status": "executive",
+                            "sourceMessageIndex": 0,
+                        },
+                    }
+                ]
+                result = validate_brief(brief, [source])
+                self.assertEqual(
+                    result["keyResults"][0]["baseline"]["status"], "executive"
+                )
+                self.assertEqual(
+                    result["model"]["inputs"][0]["value"]["status"], "executive"
+                )
+
+    def test_target_customer_descriptions_are_observations_not_desired_outcomes(self):
+        for source, number, name, unit in (
+            (
+                "Our target customers have 50 employees.",
+                "50",
+                "Customer size",
+                "employees",
+            ),
+            (
+                "Our target segment contains 200 companies.",
+                "200",
+                "Segment size",
+                "companies",
+            ),
+        ):
+            for text in (number, source):
+                with self.subTest(source=source, text=text):
+                    brief = self.brief()
+                    brief["model"]["inputs"] = [
+                        {
+                            "id": "population_size",
+                            "name": name,
+                            "unit": unit,
+                            "value": {
+                                "text": text,
+                                "status": "executive",
+                                "sourceMessageIndex": 0,
+                            },
+                        }
+                    ]
+                    result = validate_brief(brief, [source])
+                    self.assertEqual(
+                        result["model"]["inputs"][0]["value"]["status"], "executive"
+                    )
+
+    def test_currency_scalar_rejects_non_currency_units_but_allows_currency_and_counts(
+        self,
+    ):
+        from onyx.server.query_and_chat.burn2.validation import validate_input_purpose
+
+        for text, unit, allowed in (
+            ("$2,000,000", "projects per year", False),
+            ("$2,000,000", "USD per year", True),
+            ("40", "projects per year", True),
+            ("Unknown", "projects per year", True),
+        ):
+            with self.subTest(text=text, unit=unit):
+                item = {
+                    "name": "Target annual amount",
+                    "unit": unit,
+                    "value": {"text": text, "status": "assumption"},
+                }
+                if allowed:
+                    validate_input_purpose(item)
+                else:
+                    with self.assertRaisesRegex(ValueError, "currency.*unit"):
+                        validate_input_purpose(item)
+
     def test_stated_unknown_rate_is_not_an_observed_operating_value(self):
         brief = self.brief()
         source = "We have 10,000 monthly visitors. Intermediate step rates are unknown."

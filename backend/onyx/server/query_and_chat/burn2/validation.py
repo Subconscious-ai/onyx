@@ -15,6 +15,10 @@ _HYPOTHETICAL = re.compile(
     r"\b(?:scenario|hypothetical|hypothesis|assume|suppose|public case|case study|benchmark)\b",
     re.I,
 )
+_DESIRED_OUTCOME = re.compile(
+    r"\b(?:target|goal|objective)\s*(?:(?:is|of|equals)\b|[=:])[^.;\n\d]*\d",
+    re.I,
+)
 
 # A quote's presence is not evidence that the executive endorsed its commands.
 # Exclude only explicitly disclaimed instruction spans, not all third-party
@@ -60,6 +64,25 @@ def attach_source(item: Any, statements: list[str]) -> None:
             attach_source(child, statements)
 
 
+def source_only_states_targets(note: dict[str, Any]) -> bool:
+    """Detect clear target-only sources, not general semantic entailment."""
+    numeric_clauses = [
+        clause
+        for clause in re.split(r"(?<=[.!?;])\s+|\n", note.get("quote", ""))
+        if re.search(r"\d", clause)
+    ]
+    return bool(numeric_clauses) and all(
+        _DESIRED_OUTCOME.search(clause)
+        and len(re.findall(r"\d[\d,]*(?:\.\d+)?", clause)) == 1
+        and not re.search(
+            r"\b(?:baseline|current|currently|observed|actual|previous|prior|historical)\b",
+            clause,
+            re.I,
+        )
+        for clause in numeric_clauses
+    )
+
+
 def validate_input_purpose(item: dict[str, Any]) -> None:
     """Keep explicitly desired outcomes separate from operating observations."""
     note = item["value"]
@@ -74,11 +97,23 @@ def validate_input_purpose(item: dict[str, Any]) -> None:
     purpose = re.sub(r"[_-]", " ", purpose)
     if (
         item["value"]["status"] == "executive"
-        and re.search(r"\b(?:target|goal|objective)\b", item["value"]["text"], re.I)
+        and (
+            _DESIRED_OUTCOME.search(item["value"]["text"])
+            or source_only_states_targets(note)
+        )
         and not re.search(r"\b(?:target|goal|objective)\b", purpose, re.I)
     ):
         raise ValueError(
             "A target cannot become an observed operating input. Keep baseline inputs unknown; label desired targets explicitly and use only the current corrected target."
+        )
+    currency = r"[$€£¥]|\b(?:USD|EUR|GBP|CAD|AUD|JPY|INR|dollars?|euros?|pounds?|yen|currency)\b"
+    if re.fullmatch(
+        rf"\s*(?:{currency})\s*\d[\d,]*(?:\.\d+)?\s*(?:thousand|million|billion|[kmb])?\s*",
+        note["text"],
+        re.I,
+    ) and not re.search(currency + r"|\bunknown\b", item["unit"], re.I):
+        raise ValueError(
+            "A scalar currency value cannot use a non-currency unit. Keep counts separate from monetary inputs."
         )
 
 
@@ -195,6 +230,9 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
                     note["quote"] = source
                     note["status"] = "executive"
             ground(note)
+        validate_input_purpose(
+            {"name": "Observed baseline", "unit": kr["unit"], "value": kr["baseline"]}
+        )
     for edge in result["transitions"]:
         if (
             edge["from"] not in ids

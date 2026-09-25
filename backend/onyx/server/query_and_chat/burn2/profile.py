@@ -28,7 +28,7 @@ def select_profile(payload: dict) -> dict[str, Any] | None:
 
 
 def turn_guidance(_turn: int, text: str) -> str:
-    attention_budget = "Summarize only the material update; no unsolicited KPI lists, invented target placeholders or full repeated brief. "
+    attention_budget = "No unsolicited KPI lists, invented target placeholders or full repeated brief. "
     conclude = bool(
         re.search(
             r"\b(?:no(?: extra| more| further)? questions?|without (?:another |a |any )?questions?|conclude|summari[sz]e|print)\b",
@@ -193,7 +193,6 @@ def interview_context(
         + "\nThe application, not conversational text, confirms persistence and enables the model action. Never claim a new answer is saved or the model is ready before its saved-brief status is known. Do not narrate navigation, name buttons, or tell the executive to look in a corner. The application places the next action directly in the conversation. Do not ask more questions merely while waiting for that save."
         + "\nNever re-ask an answered fact or an explicitly unknown detail. A partial answer or acknowledgement does not answer the rest of a question. If an unanswered private decision materially changes model scope or structure, clarify it once; otherwise leave it unknown. Never infer the missing answer from company research or politeness."
         + "\nUse the exact economic quantity and units supplied: price, revenue, margin and contribution are distinct. Do not rename contribution as price."
-        + "\nDo not ask for a value already answered or declared unknown. A target and an unknown baseline are enough for a symbolic draft. Ask about a different material decision or summarize briefly."
         + "\nAnswer the latest request below, not an earlier question or saved brief. A repeated scenario request still needs a new preview; a previous preview is historical."
         + "\nLatest executive request: "
         + json.dumps(recent[-1][:1800] if recent else "")

@@ -29,7 +29,7 @@ chat, memory database, swarm runtime or evaluation platform. Simulated panel app
 is not a claim of measured human executive satisfaction. Scripted timing, provider
 freshness and actual saved Monte Carlo calculation have separate receipts.
 
-Recovery, September 25 at 09:50 UTC:
+Recovery, September 25 at 09:57 UTC:
 - Native memory and MemoryTool are enabled for the owner and existing QA users.
   An actual MemoryTool write was recalled in another persona's fresh conversation.
 - Unknown-company drafts no longer suppress established PDL/research context.
@@ -49,8 +49,8 @@ Recovery, September 25 at 09:50 UTC:
 - Native MBB retrieval returned indexed McKinsey energy guidance in a fresh
   interview. The earlier six-case sweep did not retrieve it. Availability alone
   does not prove preparation or justify the latency.
-- Serving API/background image: `onyx-burn2:consulting-proposal-context-v9-sep25`
-  (digest `da803dc0303f819b4b6f827da82cd82838c69f01cd5fa705cbdc5a684de70d45`).
+- Serving API/background image: `onyx-burn2:consulting-source-purpose-v10-sep25`
+  (digest `e2a4a1997baebe8f04ce22101e83e80cb3ce41dfbce2ddabec771c565f2d6fcd`).
   Background brief model is 19 (AWS Kimi K3). Persona 5 now defaults to AWS Kimi 19
   through native configuration. Model 19 is visible in the existing provider
   catalog. Other persona defaults and provider scopes did not change. Earlier
@@ -121,7 +121,19 @@ Recovery, September 25 at 09:50 UTC:
   asks one material private behavior question before concluding, unless unknown
   or stopped. A fresh run asked that question and retained the answer; AWS then
   returned a rate-limit error. This incomplete run is not a panel or latency pass.
-- Current local checks: 29 structured-brief, 13 context, 17 evaluator and 9 adaptive
+- The next automatic services brief retained both named untested scenarios.
+  Conversation math was correct, but saving promoted the $2M target to an observed
+  baseline and assigned it to a projects-per-year input. This is a hard failure.
+  The saved receipt is preserved. The existing validator now rejects clear
+  target-only sources used as observations and explicit currency/count mismatches.
+  Regression tests also preserve target-customer descriptions, mixed baseline and
+  target sources, and named target inputs. This narrow guard is not semantic proof.
+- Removed two remaining custom instructions that encouraged a summary or declared
+  a target and unknown baseline sufficient. Native persona policy owns progression.
+- Sparse readbacks bracketed the last save between 24.56 and 62.89 seconds after
+  the final reply; 62.89 seconds is not exact generation latency. The next run
+  polls the existing brief endpoint every five seconds to measure this accurately.
+- Current local checks: 34 structured-brief, 13 context, 17 evaluator and 9 adaptive
   harness tests pass. The installed worker passed nine focused retry tests. These
   tests do not establish executive quality or a saved Monte Carlo calculation.
 - Browser inspection confirmed only final tool-cycle text is visible after reload.
