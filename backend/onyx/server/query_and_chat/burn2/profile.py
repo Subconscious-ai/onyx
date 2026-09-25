@@ -27,7 +27,7 @@ def select_profile(payload: dict) -> dict[str, Any] | None:
     }
 
 
-def turn_guidance(turn: int, text: str) -> str:
+def turn_guidance(_turn: int, text: str) -> str:
     attention_budget = "Maximum 60 spoken words. Summarize only the material update; no unsolicited KPI lists, invented target placeholders or full repeated brief. "
     conclude = bool(
         re.search(
@@ -36,21 +36,21 @@ def turn_guidance(turn: int, text: str) -> str:
             re.I,
         )
     )
-    if (
-        turn == 4
-        and not conclude
-        and not re.search(
-            r"\b(stop|frustrat\w*|annoy\w*|awful|angry|repeating the same|"
-            r"roast me not|no jokes|no humo[u]?r|don.t roast|do not roast|"
-            r"keep (?:this|it) serious|losing their jobs|layoffs|company is closing)\b",
-            text,
-            re.I,
-        )
-    ):
-        return (
-            attention_budget
-            + "Executive answer four: Jerry contributes one short business-grounded roast, labeled Jerry · Perspective. Use a volunteered tension or contradiction; never invent one. Maximum 15 words for the punchline. Never ridicule the target or an honest unknown. Use only executive-supplied business context, never invent facts. Never mock identity, personal data, customers, job losses or an honest unknown. Omit humor after a humor opt-out or distress anywhere in the conversation. Continue with one material unanswered question if core model structure is missing. Otherwise give one concise synthesis with unknown inputs left symbolic; the application renders the model button. Humor must not replace this next step. A joke is not evidence and must never enter the model brief."
-        )
+    humor_allowed = not conclude and not re.search(
+        r"\b(stop|frustrat\w*|annoy\w*|awful|angry|repeating the same|"
+        r"roast me not|no jokes|no humo[u]?r|don.t roast|do not roast|"
+        r"keep (?:this|it) serious|losing their jobs|layoffs|company is closing)\b",
+        text,
+        re.I,
+    )
+    humor = (
+        "Jerry contributes once per interview: if no previous Jerry observation exists, "
+        "include one original grounded line of at most 15 words when volunteered context supports it. "
+        "Respect any earlier opt-out or distress. Never invent a tension, mock ambition or an honest unknown, "
+        "or delay progress for humor. Follow with the useful question or model synthesis. "
+        if humor_allowed
+        else "Omit humor. "
+    )
     question_guidance = (
         "Question budget: zero. The latest executive request explicitly disallows questions. Acknowledge the update or give the requested synthesis and stop. Do not ask for permission, another input or a next step."
         if conclude
@@ -58,7 +58,8 @@ def turn_guidance(turn: int, text: str) -> str:
     )
     return (
         attention_budget
-        + "No humor on this turn. Do not repeat previous jokes. Label the response with the relevant specialist and intention: Sarah · Journey maps customer decisions; Frankie · Business model links the target to economic drivers; Mei · Market challenge checks alternatives and conflicting evidence. These are perspectives within Beca, not separate tool executions. "
+        + humor
+        + "Label the response with the relevant specialist and intention: Sarah · Journey maps customer decisions; Frankie · Business model links the target to economic drivers; Mei · Market challenge checks alternatives and conflicting evidence. These are perspectives within Beca, not separate tool executions. "
         + question_guidance
     )
 

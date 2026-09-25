@@ -4,6 +4,13 @@ from adversarial_uat import choose_reply, equation_failures, observed_ready, rea
 
 
 class AdaptiveTesterTests(unittest.TestCase):
+    def test_passive_recap_does_not_get_unsolicited_missing_facts(self):
+        reply, reason = choose_reply(
+            self.case, "Noted. We will use that in the model.", set()
+        )
+        self.assertEqual(reply, "Thanks.")
+        self.assertEqual(reason, "passive_probe")
+
     def setUp(self):
         self.case = {
             "facts": [
@@ -40,14 +47,23 @@ class AdaptiveTesterTests(unittest.TestCase):
         self.assertIn("already", reply)
         self.assertEqual(key, "repeat:journey")
 
+    def test_specific_visitor_segment_is_journey_question(self):
+        reply, key = choose_reply(
+            self.case,
+            "Which specific visitor segment does the baseline conversion rate refer to?",
+            set(),
+        )
+        self.assertEqual(key, "journey")
+
     def test_unknown_question_stays_unknown(self):
         reply, key = choose_reply(self.case, "What is your churn rate?", set())
         self.assertEqual(key, "unknown")
         self.assertIn("unknown", reply)
 
-    def test_idle_recaps_move_to_missing_fact(self):
+    def test_idle_recaps_do_not_rescue_an_unresolved_journey(self):
         reply, key = choose_reply(self.case, "Thanks, noted.", {"goal"})
-        self.assertEqual(key, "journey")
+        self.assertEqual(key, "passive_probe")
+        self.assertEqual(reply, "Thanks.")
 
     def test_sold_units_cannot_be_converted_twice(self):
         case = {

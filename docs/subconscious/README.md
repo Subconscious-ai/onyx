@@ -2,6 +2,20 @@
 
 [Open Burn](https://burn.subconscious.ai/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Start login on this canonical address. Branch previews redirect to the registered login origin and do not prove their own authenticated customer path.
 
+## Current acceptance, September 25
+
+Native memory now works across fresh chats. Beca's existing research context and
+per-user causl-kb Library retrieval are connected. This is not yet an accepted
+executive experience: live panel tests still find unsupported claims and delayed
+brief preparation. Read the current recovery and evidence section in
+[the proof plan](executive-proof-plan.md) before relying on older passes below.
+
+The Library transport is in draft
+[PR #613 — let Beca read accepted organization evidence](https://github.com/Subconscious-ai/causl-kb/pull/613).
+It reuses the installed MCP SDK and existing three Library tools. Native Onyx stores
+each user's scoped credential. The current 24-hour capabilities need renewal;
+the connection is not durable OAuth. It does not perform automatic ontology writes.
+
 ## September 24 customer walkthrough correction
 
 The September 19 canary reused a causl-kb session. It did not establish the fresh
@@ -108,7 +122,10 @@ Production deployment `dpl_FdNmDXw9UPnsPiSRqhiSRRC3Lgcy` is Ready from main `fc9
 - [Executive research and scope](executive-interviewer.md): retained MBB source-use findings and consulting guidance.
 - [Earlier research evaluations](research-model-qa.md): historical failures, not a current release pass.
 
-The active Burn agent is `5`, conversation model `8` (GPT OSS 120B), preparation model `5` (DeepSeek v3.2), all in the migrated native database. Resolve IDs again for another database. Ordinary conversation streaming remains separate from background preparation.
+The active Burn agent is `5`, conversation and preparation model `8` (AWS GPT OSS
+120B), in the migrated native database. Preparation changed from DeepSeek v3.2 after
+repeated provider timeouts. Resolve IDs again for another database. Ordinary
+conversation streaming remains separate from background preparation.
 
 ## Remaining product work
 

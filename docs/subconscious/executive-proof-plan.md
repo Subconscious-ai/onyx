@@ -1,5 +1,65 @@
 # Executive interview acceptance proof
 
+## Active September 25: prepared, proactive executive interview
+
+User-authorized outcome: use native Onyx memory, existing tools and libraries to
+make a short interview worth an executive's attention and produce a source-backed
+business-model brief. Keep the original historical evidence below.
+
+1. Enable native memory and memory-tool preferences for the owner and existing QA
+   accounts; preserve memory records and verify recall in a fresh conversation.
+2. Repair the demonstrated Unknown-company context suppression. Reuse the current
+   profile/research pipeline, native search, stored rubric and background brief.
+   Public evidence may propose structure, never fabricate private goals or rates.
+3. Connect the existing causl-kb Library tools using native per-user MCP credentials
+   and existing tenant capability verification. Reuse accepted evidence admission;
+   never expose raw SQL or substitute a shared admin credential. Establish the
+   smallest required transport adaptation before adding any new custom capability.
+4. Reuse native interview SSE/browser evaluation and six adversarial cases. A tester
+   answers only the actual question: no volunteered facts to rescue passive replies.
+   Independent executive, consulting and model judges inspect actual source packets,
+   spoken turns, tool results and saved briefs. Hard failures override all scores.
+5. Iterate prompt/configuration first. Retain all failures. Require zero avoidable
+   public-information questions, unsupported facts, ignored corrections or wrong
+   calculations; require useful private questions, grounded humor, forward progress
+   and usable model structure. Test reload and KB readback separately from dialogue.
+
+Scope: AWS inference, existing source owners, current draft PR31 and KB430. No new
+chat, memory database, swarm runtime or evaluation platform. Simulated panel approval
+is not a claim of measured human executive satisfaction. Scripted timing, provider
+freshness and actual saved Monte Carlo calculation have separate receipts.
+
+Recovery, September 25 at 07:39 UTC:
+- Native memory and MemoryTool are enabled for the executive and existing QA users.
+  An actual MemoryTool write was recalled in another persona's fresh conversation.
+- Unknown-company context suppression is repaired. Explicit different-company
+  corrections still exclude employer research. Research context retains the existing
+  bounded 16,000-character report, including relevant sections beyond character 4,000.
+- Native workspace behavior uses `executive-workspace-policy.md` before the upstream
+  default prompt. Persona 5 uses `executive-rubric.md` and `executive-turn-reminder.md`.
+  Keep `replace_base_system_prompt=false`: replacing it bypasses native memory injection.
+- The existing three causl-kb Library tools use native MCP server 7, Streamable HTTP,
+  and PER_USER credentials. The public catalog is required by Community Edition;
+  it exposes tool metadata, not a shared database credential. The owner returned 22
+  offerings; QA returned an empty organization. An unconfigured user has no token,
+  and an unauthenticated endpoint call returned 401. Capabilities expire after 24
+  hours; automatic renewal is not implemented. This is a bounded QA connection.
+- API/background image: `onyx-burn2:consulting-context-full-sep25`. Both use brief
+  model configuration 8 (AWS GPT-OSS 120B). DeepSeek configuration 5 timed out and
+  exhausted retries, leaving zero saved briefs. The nominal 50-second deadline can
+  overrun during blocking provider calls. The model switch still requires live proof.
+- The installed backend passed 52 research, profile, history and structured-brief
+  regressions. The adaptive interview harness has nine passing local regressions.
+- Executive acceptance is still failing. GPT-OSS, Nova Pro, DeepSeek, MiniMax and
+  Mistral candidates have retained failures in grounding, brevity, repetition or
+  completion. No six-industry quality pass or current end-to-end release claim exists.
+  Native high-reasoning GPT-OSS is the next comparison. Do not waive fabricated facts.
+
+Use the explicit Compose project `burn2` for runtime changes. Omitting `-p burn2`
+creates a different stack. Reload the existing gateway after API recreation and
+verify the canonical health endpoint. Never print credentials or private source data.
+
+
 Historical reference; current execution belongs to [current operations](README.md), [acceptance procedure](end-to-end-acceptance.md), and [open work](https://github.com/Subconscious-ai/onyx/issues?q=is%3Aissue+is%3Aopen).
 
 [Original plan, decisions and evidence at the retained revision](https://github.com/Subconscious-ai/onyx/blob/bc77893dc381ea776b5e3027b71507a682a16680/docs/subconscious/executive-proof-plan.md).
@@ -407,4 +467,3 @@ The earlier five model proofs remain valid; their mathematical compiler and
 receiver content did not change. Manufacturing was repeated after the exact-text
 sender correction. Failed earlier receipts remain available. All changes remain
 in draft PRs for user QA; this closure does not imply merge or production release.
-

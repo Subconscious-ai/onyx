@@ -142,13 +142,13 @@ class ProfileTests(unittest.TestCase):
             select_profile({"likelihood": 2, "data": {"full_name": "Wrong person"}})
         )
 
-    def test_jerry_is_once_on_fourth_executive_answer(self):
-        self.assertIn("Jerry", turn_guidance(4, "The sales forecast runs on optimism."))
-        for turn in (0, 1, 2, 3, 5, 6, 8):
+    def test_jerry_is_available_before_fourth_turn_without_repetition(self):
+        for turn in (1, 2, 3, 4, 5):
             with self.subTest(turn=turn):
-                self.assertNotIn(
-                    "Jerry", turn_guidance(turn, "The product is ice cream.")
-                )
+                guidance = turn_guidance(turn, "Our forecasts run on optimism.")
+                self.assertIn("Jerry contributes", guidance)
+                self.assertIn("once", guidance)
+                self.assertNotIn("No humor on this turn", guidance)
 
     def test_fourth_answer_respects_humor_opt_out_and_distress(self):
         for answer in (

@@ -1,7 +1,7 @@
 """Bounded, rule-based executive UAT through native frontend APIs.
 
 Not an LLM executive or browser test. Never claims KB persistence/calculation proof.
-Profile POST uses the signed-in QA email; does not correct or reset its profile.
+Profile POST uses the signed-in QA email; optional company fixtures are explicit QA corrections.
 Retains synthetic chats and private receipts for independent browser/model review.
 """
 
@@ -32,7 +32,7 @@ def choose_reply(case: dict, answer: str, revealed: set[str]) -> tuple[str, str]
         # 'Which customer segment should we target?' is not a numeric-goal ask).
         intent = None
         if re.search(
-            r"customer segment|which segment|what segment|audience|who |journey|steps|customer action",
+            r"segment|population|audience|who |journey|steps|customer action",
             asked,
             re.I,
         ):
@@ -60,13 +60,8 @@ def choose_reply(case: dict, answer: str, revealed: set[str]) -> tuple[str, str]
             "unknown_answer",
             "I don't know. Keep it unknown and help me build the first model.",
         ), "unknown"
-    for fact in case["facts"]:
-        if fact["id"] not in revealed:
-            return fact["answer"], fact["id"]
-    return (
-        "Build the first model now. Preserve unknowns and assumptions. Tell me where to open it; no more questions.",
-        "conclude",
-    )
+    # A passive interviewer must not receive facts the executive was never asked for.
+    return "Thanks.", "passive_probe"
 
 
 def read_brief(message: str) -> dict | None:
@@ -109,7 +104,7 @@ def run(args) -> int:  # noqa: C901 - linear UAT receipt orchestration
     jar = http.cookiejar.MozillaCookieJar(args.cookies)
     jar.load(ignore_discard=True)
 
-    def api(path: str, body: dict | None = None):
+    def api(path: str, body: dict | None = None, method: str | None = None):
         # Separate opener per request, immutable read-only cookie jar: profile overlaps chat.
         opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
         return opener.open(
@@ -117,6 +112,7 @@ def run(args) -> int:  # noqa: C901 - linear UAT receipt orchestration
                 args.origin.rstrip("/") + "/api" + path,
                 data=json.dumps(body).encode() if body is not None else None,
                 headers={"Content-Type": "application/json"},
+                method=method,
             ),
             timeout=min(90, args.deadline),
         )
@@ -126,7 +122,7 @@ def run(args) -> int:  # noqa: C901 - linear UAT receipt orchestration
             return json.load(response)
 
     persona = get(f"/persona/{args.agent}")
-    model = persona.get("default_model_configuration_id")
+    model = args.model_configuration or persona.get("default_model_configuration_id")
     if model not in allowed_bedrock_models(get("/llm/provider")["providers"]):
         raise ValueError(
             "Native interviewer must use configured non-Anthropic AWS Bedrock model"
@@ -158,9 +154,25 @@ def run(args) -> int:  # noqa: C901 - linear UAT receipt orchestration
         path = args.output / (name + ".json")
         pool = ThreadPoolExecutor(max_workers=1)
 
-        def profile(clock=stamp):
+        def profile(clock=stamp, case=case):
             result = get("/chat/executive-profile", {})
-            return {"at_seconds": clock(), "result": result}
+            if case.get("company_profile"):
+                with api(
+                    "/chat/executive-profile",
+                    {
+                        "revision": result.get("correction", {}).get("revision", 0),
+                        "fields": case["company_profile"],
+                    },
+                    method="PATCH",
+                ) as response:
+                    result = json.load(response)
+            return {
+                "at_seconds": clock(),
+                "result": result,
+                "company_context_origin": "synthetic QA correction"
+                if case.get("company_profile")
+                else "native profile",
+            }
 
         pending = pool.submit(profile)
         sid = None
@@ -201,19 +213,8 @@ def run(args) -> int:  # noqa: C901 - linear UAT receipt orchestration
                         "chat_session_id": sid,
                         "parent_message_id": -1,
                         "origin": "webapp",
-                        "allowed_tool_ids": [
-                            t["id"]
-                            for t in persona.get("tools", [])
-                            if t["name"]
-                            in {
-                                "run_python",
-                                "web_search",
-                                "internal_search",
-                                "deep_research",
-                                "get_research_context",
-                                "get_research_sources",
-                            }
-                        ],
+                        "llm_override": {"model_configuration_id": model},
+                        "allowed_tool_ids": [t["id"] for t in persona.get("tools", [])],
                     },
                 ) as response:
                     for line in response:
@@ -230,7 +231,10 @@ def run(args) -> int:  # noqa: C901 - linear UAT receipt orchestration
                         if "tool" in obj.get("type", ""):
                             tools.append(obj)
                         if packet.get("error"):
-                            errors.append("Stream error")
+                            errors.append(
+                                "Stream error: "
+                                + str(packet.get("error_code") or packet["error"])[:200]
+                            )
                 answer = "".join(fragments)
                 spoken = answer.split("<interview-brief>", 1)[0]
                 asked = questions(spoken)
@@ -286,13 +290,9 @@ def run(args) -> int:  # noqa: C901 - linear UAT receipt orchestration
                     flush=True,
                 )
                 if (
-                    (
-                        observed_ready(brief)
-                        or re.search(r"Open business model", spoken, re.I)
-                    )
-                    and (not case.get("adversary") or adversary_sent)
-                    and len(revealed) >= len(case["facts"])
-                ):
+                    observed_ready(brief)
+                    or re.search(r"Open business model", spoken, re.I)
+                ) and (not case.get("adversary") or adversary_sent):
                     break
             # Read-only background polling; never manually prepare or repair a brief.
             while stamp() < args.deadline:
@@ -406,6 +406,7 @@ if __name__ == "__main__":
     parser.add_argument("--origin", default="https://burn.subconscious.ai")
     parser.add_argument("--cookies", required=True)
     parser.add_argument("--agent", type=int, default=5)
+    parser.add_argument("--model-configuration", type=int)
     parser.add_argument(
         "--cases",
         type=Path,
