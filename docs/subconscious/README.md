@@ -256,3 +256,26 @@ reloaded it and found it in the model list. Total through list confirmation:87.4
 This is retained-context proof, not fresh PDL/research within60seconds. Independent
 review confirmed only the intended login settings changed. Host credential recovery
 instructions are in private machine configuration, not this repository.
+
+### September 25: current persona context repair
+
+The stored persona was renamed to `Executive interview`, but five native chat
+hooks still required `Burn 2.0`. Consequently, available PDL/research context was
+not injected into the interview, executive history was not preserved through the
+specialized path, and native post-turn preparation was skipped. Accept the current
+and retained legacy names consistently, including the initial profile tool.
+The regression suite reproduced two failures before the fix and passes all seven
+tests afterward. Runtime image: `onyx-burn2:context-gate-sep25`.
+
+Live synthetic-account testing exercised sparse revenue/CPG/three-meeting answers.
+The five-answer run completed in 23.7 seconds, used retained company/role context,
+asked for actual buyer commitments instead of inventing meeting meanings, and left
+unknown conversion rates symbolic. Reloading the saved conversation showed the
+model action. This run reused PDL/research; it does not prove fresh discovery speed.
+The affected real conversation already had a ready PDL dossier and nine research
+sources: missing injection, not missing provider output, caused its context loss.
+
+Jerry did not appear in the observed test despite fourth-answer guidance. Humor
+and timing remain an unproven quality requirement. This proof covers interview
+context and readiness, not a new model-save test or continuous per-turn acceptance
+into the causl-kb ontology. Keep this distinction when reporting release readiness.
