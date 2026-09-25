@@ -123,9 +123,9 @@ Production deployment `dpl_FdNmDXw9UPnsPiSRqhiSRRC3Lgcy` is Ready from main `fc9
 - [Executive research and scope](executive-interviewer.md): retained MBB source-use findings and consulting guidance.
 - [Earlier research evaluations](research-model-qa.md): historical failures, not a current release pass.
 
-The active Burn agent is `5`, conversation and preparation model `8` (AWS GPT OSS
-120B), in the migrated native database. Preparation changed from DeepSeek v3.2 after
-repeated provider timeouts. Resolve IDs again for another database. Ordinary
+The active Burn agent is `5`, conversation and preparation model `19` (AWS Kimi
+K3), in the migrated native database. This replaces the earlier model `8` setting.
+Resolve IDs again for another database. Ordinary
 conversation streaming remains separate from background preparation.
 
 ## Remaining product work

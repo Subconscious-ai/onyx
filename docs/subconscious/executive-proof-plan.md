@@ -29,6 +29,34 @@ chat, memory database, swarm runtime or evaluation platform. Simulated panel app
 is not a claim of measured human executive satisfaction. Scripted timing, provider
 freshness and actual saved Monte Carlo calculation have separate receipts.
 
+Additional native-policy checks, September 25 after 10:30 UTC:
+- Added an endpoint-versus-period rule to the existing rubric. A target by a date
+  does not establish the ramp or cumulative outcome before that date.
+- The first fresh energy interview avoided a quarterly extrapolation and saved
+  a source-grounded symbolic brief. It did not ask for visitor volume, even when
+  asked to size additional contracts. Conditional examples remained hypotheses.
+  The save occurred between 30.184 and 35.294 seconds after the final reply.
+  This does not reproduce the original actual-volume calculation boundary.
+- Independent review identified the reminder's unconditional post-synthesis
+  acknowledgement instruction. Removed that sentence; retained existing policy
+  requiring material private questions. Native configuration read-back passed.
+  A fresh test still stalled and asked the executive to confirm building.
+  Its brief saved 44.794 seconds after the last reply, 86.933 seconds overall.
+  The independent panel scored preparation/private insight/momentum/humor/draft
+  as 4/4/2/3/3. This subtraction alone is not a proactivity repair.
+  A rate-only model can validly leave visitor volume unknown; do not force an
+  extra question unless absolute impact matters. The invented confirmation gate
+  is the clearer workflow failure.
+- One chat-only comparison used existing AWS model 8 without changing the default
+  or extractor. Replies took 1.963, 1.876 and 6.860 seconds. It asked for volume,
+  but asserted that price and site speed were stable without established support.
+  It also exceeded the concise interview format. Do not promote on speed alone.
+  Model 19 remains the conversation and extraction default; acceptance is open.
+- A one-time late readback of the original home-services case found a saved brief
+  at 10:31:39 UTC. The exact save time is unknown. Preserve its original bounded
+  timeout result. Current-chat rates survive; memory-only inquiry volume and
+  economics do not. Native recall is not complete source-backed model transfer.
+
 Recovery, September 25 at 10:22 UTC:
 - Native memory and MemoryTool are enabled for the owner and existing QA users.
   An actual MemoryTool write was recalled in another persona's fresh conversation.
