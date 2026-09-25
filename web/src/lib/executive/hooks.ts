@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ExecutiveProfile } from "@/lib/executive/profile";
+import type { ExecutiveProfile, ProfileFields } from "@/lib/executive/profile";
 import {
   interviewMessageText,
   projectBrief,
@@ -9,15 +9,28 @@ import {
   type InterviewMessage,
 } from "./brief";
 
-interface PublicResearch {
+export interface PublicResearch {
+  report?: string;
+  truncated?: boolean;
   status: string;
   source_urls?: string[];
   checked_at?: number;
 }
 
-export function useExecutiveContext(active: boolean) {
+export function useExecutiveContext(
+  active: boolean,
+  completedBrief?: string | null
+) {
+  const [dossier, setDossier] = useState<{
+    profile: ProfileFields;
+    source: "pdl" | "executive_correction";
+  } | null>(null);
   const [profile, setProfile] = useState<ExecutiveProfile | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [checkedContext, setCheckedContext] = useState<{
+    brief: typeof completedBrief;
+    refresh: number;
+  } | null>(null);
   const [profileStatus, setProfileStatus] = useState(
     "Checking professional context…"
   );
@@ -26,6 +39,8 @@ export function useExecutiveContext(active: boolean) {
   });
   useEffect(() => {
     if (!active) return;
+    setDossier(null);
+    setResearch({ status: "pending" });
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout>;
     const started = Date.now();
@@ -41,6 +56,16 @@ export function useExecutiveContext(active: boolean) {
         const value = await response.json();
         if (cancelled) return;
         if (profile) {
+          setDossier(
+            value.status === "ready" && value.profile
+              ? {
+                  profile: value.profile,
+                  source: value.correction?.revision
+                    ? "executive_correction"
+                    : "pdl",
+                }
+              : null
+          );
           setProfile(
             Number.isInteger(value.correction?.revision)
               ? {
@@ -64,6 +89,8 @@ export function useExecutiveContext(active: boolean) {
             return;
           }
         }
+        if (profile)
+          setCheckedContext({ brief: completedBrief, refresh: refreshKey });
         const current = profile ? value.research : value;
         setResearch(current ?? { status: "unavailable" });
         if (["queued", "running"].includes(current?.status)) {
@@ -73,7 +100,10 @@ export function useExecutiveContext(active: boolean) {
         }
       } catch {
         if (!cancelled) {
-          if (profile) setProfileStatus("PDL context unavailable");
+          if (profile) {
+            setProfileStatus("PDL context unavailable");
+            setCheckedContext({ brief: completedBrief, refresh: refreshKey });
+          }
           setResearch({ status: "unavailable" });
         }
       }
@@ -83,9 +113,14 @@ export function useExecutiveContext(active: boolean) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [active, refreshKey]);
+  }, [active, refreshKey, completedBrief]);
   return {
+    refreshing:
+      !checkedContext ||
+      checkedContext.brief !== completedBrief ||
+      checkedContext.refresh !== refreshKey,
     profileStatus,
+    dossier,
     profile,
     research,
     reload: () => setRefreshKey((value) => value + 1),

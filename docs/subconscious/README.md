@@ -1,6 +1,77 @@
 # Burn 2.0 on native Onyx
 
-[Open Burn](https://onyx-executive.vercel.app/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Login redirects to the existing registered review hostname before OAuth starts.
+[Open Burn](https://burn.subconscious.ai/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Start login on this canonical address. Branch previews redirect to the registered login origin and do not prove their own authenticated customer path.
+
+## Current acceptance, September 25
+
+Native memory now works across fresh chats. Beca's existing research context and
+per-user causl-kb Library retrieval are connected. A six-case live review saved five briefs, but did not pass full acceptance.
+A later native memory-policy check returned ordinary replies in about four to
+five seconds while preserving explicit memory writes. This is a bounded check;
+unsupported claims, delayed preparation and final model verification remain open. Read the current recovery and evidence section in
+[the proof plan](executive-proof-plan.md) before relying on older passes below.
+
+The Library transport is in draft
+[PR #613 — let Beca read accepted organization evidence](https://github.com/Subconscious-ai/causl-kb/pull/613).
+It reuses the installed MCP SDK and existing three Library tools. Native Onyx stores
+each user's scoped credential. The current 24-hour capabilities need renewal;
+the connection is not durable OAuth. It does not perform automatic ontology writes.
+
+## September 24 customer walkthrough correction
+
+The September 19 canary reused a causl-kb session. It did not establish the fresh
+customer journey or shared sign-in. The customer reported a second login, lost
+handoff destination, hidden extracted facts, reversing progress, and no saved
+model in their workspace. Do not report this experience as complete from that
+canary alone.
+
+Current repair acceptance:
+1. Beca presents the opening question without asking the executive to start.
+2. Sarah, Frankie, Mei and Jerry have visible purposes. The grounded roast keeps
+   opt-out and distress safeguards. These remain perspectives within Beca.
+3. Desktop chat shows extracted evidence beside it; mobile keeps one clear toggle.
+   Captured progress remains visible during extraction. Confirmed corrections can
+   still change readiness; do not fake completion with a permanent maximum.
+4. The native chat contains the model action. Conversational output does not
+   instruct the executive to find a corner button.
+5. Preserve the exact model handoff destination through authentication and
+   organization selection. Complete existing Auth0 integration before claiming
+   one sign-in. Never infer organization ownership from email or a PDL dossier.
+6. Prove the actual customer's authorized handoff saves the model and attributed
+   interview/dossier/research in causl-kb. Working Onyx briefs alone do not prove
+   Library persistence. The existing receiver retains the dossier on model save;
+   automatic per-turn causl-kb persistence is not established by this change.
+
+## Current interview-to-model UAT, September 19 UTC
+
+The canonical Burn address serves the interview-to-model candidate from draft
+[PR #31 — carry interview and research into the model](https://github.com/Subconscious-ai/onyx/pull/31).
+The model receiver is the paired
+[PR #575 — populate and retain the business model](https://github.com/Subconscious-ai/causl-kb/pull/575)
+at `https://causl-interview-model-subconcious.vercel.app/dashboard/burn-import`.
+Its allowed Beca origin is `https://burn.subconscious.ai`. Keep both settings paired.
+The ready **Build business model** action is visible directly in the conversation.
+That click creates and saves a private model draft, then opens `/dashboard/model`.
+It does not accept inferred journey records into the shared ontology. Returning to
+`/dashboard/model` lists saved models for the signed-in organization. These feature
+branches remain drafts. AWS native runtime updates and their proof
+are recorded in executive-proof-plan.md.
+
+Latest fresh browser proof: email-based Auth0 login triggered a fresh PDL lookup
+(no match for the synthetic account). Beca saved the supplied company through its
+native profile tool and started GPT Researcher while interviewing. Eight fresh
+research sources reached the actual Build handoff. Postgres save completed in
+55.8 seconds from login; the grid opened at 56.182 seconds and survived reload.
+Its calculated values matched independent expectations: 55 baseline contracts,
+70 target contracts and 15 incremental contracts. Original executive messages
+were retained exactly, and the saved model was listed at `/dashboard/model`.
+
+This was a warm-service, cold-provider-cache, automated two-turn run. It used an
+existing authorized causl-kb Clerk session. It establishes neither cross-app SSO
+nor a latency guarantee. Positive PDL matches are covered by the separate discovery
+proof below; a no-match must remain explicit. The original list-selector failure
+(two QA models with the same name) and its read-only exact-URL correction are
+preserved in the proof record. See [current evidence](executive-proof-plan.md).
 
 Onyx PRs #10, #20 and #23 are merged. The [prototype record](prototype-plan.md) preserves earlier paired model evidence and generation limits. Onyx source publication does not establish the merge or deployment of a causl-kb counterpart.
 
@@ -14,17 +85,23 @@ The September 17 decision is one assistant and one conversation. The assistant s
 
 Profile edits use authenticated `PATCH /chat/executive-profile`; native authentication supplies the caller and `WRITE_CHAT` permission. The request cannot select another owner. Enrichment writes only the provider record. Explicit corrections and each edit revision use the existing native key-value store. A company change drops unrelated company fields and excludes old research. Accepted shared company records still belong in causl-kb.
 
+A persistent Burn interview with no working company uses native REQUIRED tool
+selection for its assigned `company_profile` tool on the first loop cycle. The
+following cycles restore all available tools. Explicit tool choices and incognito
+restrictions remain intact. The tool still owns validation and the revision check;
+forcing a call alone is not proof that research succeeded.
+
 The `company_profile` tool uses that same correction function. Native construction supplies the caller; model arguments cannot select an owner. Incognito writes are refused. Research failure does not erase a successful correction. The tool needs its native database seed, explicit persona assignment, and the stored prompt update before use. The deployed database is behind this checkout's migration graph. Do not run all upstream migrations to seed one tool.
 
 The September 18 candidate check used real Bedrock GPT OSS and synthetic Postgres profiles. Two conversations saved and reloaded exact corrections. One recovered from a missing-revision refusal. Test records were removed. This proves model/tool/storage behavior, not hosted authentication or the model handoff. Re-run `scripts/subconscious/check_profile_tool_bedrock.py` only in the native runtime; it makes paid Bedrock calls and cleans its synthetic keys. The tool boundary tests are in `backend/tests/unit/tools/test_company_profile_tool.py`.
 
 The September 18 runtime probe found that the native encryption helper returns plaintext bytes unchanged. The storage class name does not establish encryption. Disk encryption was not checked. Issue #21 tracks this deployment boundary alongside caller-scoped access. Do not claim application-level encryption from the table name.
 
-## Verified release boundary, September 17
+## Historical release boundary, September 17
 
 Production deployment `dpl_FdNmDXw9UPnsPiSRqhiSRRC3Lgcy` is Ready from main `fc9c911eb9708d0ef6706f61f7a6981690fc88f1`. The issue #21 receipt records fresh Auth0 sign-in, recovery of the original account, and a saved interview surviving reload. Login continues on the registered review origin.
 
-[Issue #21](https://github.com/Subconscious-ai/onyx/issues/21) remains open for canonical-domain rollout, cross-account isolation, caller-scoped MCP authorization and monitoring evidence. A complete current interview-to-model save/reopen run remains outstanding. Existing-account success is not enterprise-isolation proof.
+[Issue #21](https://github.com/Subconscious-ai/onyx/issues/21) tracks access and hosting acceptance. The current paired model evidence is above. Existing-account success is not enterprise-isolation proof.
 
 ## Architecture
 
@@ -34,6 +111,7 @@ Production deployment `dpl_FdNmDXw9UPnsPiSRqhiSRRC3Lgcy` is Ready from main `fc9
 - PDL context comes from the authenticated account and remains an unconfirmed professional match. Enrichment never grants company access.
 - Background extraction validates journey, OKR and model structure against saved executive messages. Unknown inputs remain unknown. Public references and hypotheses never silently become executive facts.
 - causl-kb owns accepted market ontology and organization-scoped model persistence. The browser handoff binds the exact origin and nonce; Onyx holds no causl-kb administrator credential.
+- The interview-to-model candidate sends the dossier and public research in optional `businessContext`, separate from executive messages. It excludes worker identifiers and bounds report size. Incomplete research carries status only. Deploy the matching causl-kb receiver first; older receivers reject this field. Pair the receiver's `BURN_ONYX_ORIGIN` with Beca and Beca's `NEXT_PUBLIC_BURN_MODEL_WORKSPACE` with the review page. Model previews require their existing AWS configuration too.
 - The existing model compiler owns executable algebra. Interview equations are advisory; additional required quantities stay explicit unknowns. The paired model window returns bounded saved-model context and actual calculation receipts through native chat's `additional_context`, scoped to the current Beca conversation. Preview and saved scenario states never imply an experiment launch.
 
 ## Start here
@@ -45,7 +123,10 @@ Production deployment `dpl_FdNmDXw9UPnsPiSRqhiSRRC3Lgcy` is Ready from main `fc9
 - [Executive research and scope](executive-interviewer.md): retained MBB source-use findings and consulting guidance.
 - [Earlier research evaluations](research-model-qa.md): historical failures, not a current release pass.
 
-The active Burn agent is `5`, conversation model `8` (GPT OSS 120B), preparation model `5` (DeepSeek v3.2), all in the migrated native database. Resolve IDs again for another database. Ordinary conversation streaming remains separate from background preparation.
+The active Burn agent is `5`, conversation and preparation model `19` (AWS Kimi
+K3), in the migrated native database. This replaces the earlier model `8` setting.
+Resolve IDs again for another database. Ordinary
+conversation streaming remains separate from background preparation.
 
 ## Remaining product work
 
@@ -58,6 +139,41 @@ Cross-application SSO remains causl-kb #450. Community Edition is not evidence o
 [Run the real-browser acceptance suite](end-to-end-acceptance.md) for three executive businesses, model persistence, the Beca entry point and cross-company read/search checks. Missing sessions or fixtures block acceptance; they never count as passes. See [issue #27](https://github.com/Subconscious-ai/onyx/issues/27) for historical execution evidence; read open #21 for remaining release requirements.
 
 ## Development
+
+### Fresh discovery acceptance
+
+Use `scripts/subconscious/check_fresh_discovery.py` inside the running native API
+environment with `--user-id UUID --output-dir PRIVATE_DIRECTORY
+--reset-retained-context`. This is an opt-in live provider test: it backs up and
+clears only that account's retained profile/research keys, then calls the existing
+PDL preparation handler, Celery research job and research read handler. It leaves
+the new results available to the application. Never use it to interrupt an active
+interview or research job. Backups and full dossiers remain private, outside Git.
+
+The gate requires empty starting caches, a new PDL timestamp, a new research ID
+and timestamp, ready results, at least two source URLs and substantive report
+content within 60 seconds. Run its rejection checks locally with
+`PYTHONPATH=scripts/subconscious python3 -m unittest scripts/subconscious/test_fresh_discovery.py`.
+
+Three consecutive live runs on September 19, 2026 UTC took **22.997, 21.176 and
+13.810 seconds**, with **8, 7 and 7 sources** respectively. The last run uses the
+checked-in probe and the existing browser's two-second polling interval. Both
+source records were newly fetched, not retained from an earlier interview. The
+fresh results also passed the actual `modelBusinessContext` producer and
+causl-kb `parseOnyxHandoff` receiver with the synthetic interview's three journey
+states and two transitions. The live browser model acceptance then passed AWS
+generation, exact Postgres model readback, replay rejection, grid reopening,
+all seven public URLs, and five canonical journey-source readbacks. It used the
+actual producer function and a reviewed file import, not a fresh native chat
+button click. See [#430 — deliver interview context to the first model](https://github.com/Subconscious-ai/causl-kb/issues/430),
+[#575 — preserve that evidence in the model](https://github.com/Subconscious-ai/causl-kb/pull/575)
+and [#31 — carry dossier and research from Beca](https://github.com/Subconscious-ai/onyx/pull/31).
+
+This measures warm-service, cold-data discovery from the native preparation
+handler until the research read handler returns complete context. It excludes
+login, server boot, browser transport and model generation. Three successful runs
+prove the exercised path; they are not a provider latency SLA. The existing
+runtime met the target without new queues, orchestration or provider tuning.
 
 The Subconscious fork is `Subconscious-ai/onyx`. The existing local `origin` remote points upstream; publish Burn changes through `subconscious`. Never push Burn-specific changes to `onyx-dot-app/onyx`.
 
@@ -75,7 +191,7 @@ Production backend routing and `WEB_DOMAIN` were configured and deployed on Sept
 Verify the serving source and environment after publication. Full model-handoff acceptance remains separate from frontend build success.
 
 The `burn.subconscious.ai` cutover remains tracked in #21. Use the verified Vercel entry above until domain rollout is complete.
-The registered review origin is `https://onyx-executive-git-codex-1-executive-interviewer-subconcious.vercel.app`; alias promotion remains manual.
+The current registered customer origin is `https://burn.subconscious.ai`; alias promotion remains manual. Older branch aliases in historical receipts are not the current UAT entry point.
 Native Git builds update branch aliases, not the manually assigned shared review alias.
 
 Vercel releases only the frontend and API forwarding. AWS backend images, data, backups and service restarts remain separate.
@@ -120,3 +236,88 @@ superseded uploaded catalog through native administration after that check; pres
 its files and historical evidence. Indexing is periodic, not instant. Check the owner
 revision before experiments. Live activation evidence belongs in
 [#32 — use the shared library](https://github.com/Subconscious-ai/onyx/issues/32).
+
+## September 24 interview QA boundary
+
+The interview opens with Beca's question, exposes four specialist perspectives,
+retains completed progress while extraction runs, shows the desktop brief alongside
+chat, and renders the model action in the conversation. These are perspectives in
+one assistant, not four independently executing agents. Update both saved persona
+prompts when changing conversation policy: the older rubric and task reminder
+contradicted the new inline-navigation guidance. Preserve tools, model and permissions.
+
+Live browser QA proved a four-answer brief, a grounded fourth-turn Jerry roast,
+and the inline action. A separate resumed test with an existing Clerk session
+saved the exact interview plus six retained research sources, opened the specific
+model, reloaded it and found it in the model list. This proves retained-context
+handoff, not a fresh provider lookup or universal single sign-on. The post-prompt
+four-turn check removed button narration, but synthesis requests can suppress
+humor and model-generated readiness language still needs observation.
+
+The clean-browser password-account test failed before model persistence: Burn's
+Auth0 client accepts password login without an organization hint, whereas the
+existing Clerk custom Auth0 client requires the shared organization, configured
+for Google. Removing that organization hint is rejected by Auth0. PR605 preserves
+handoff destinations and uses this existing connection; it does not change account
+eligibility. Prove the full callback with an existing eligible Google identity
+before claiming one-login completion. Never infer membership or link identities
+by email to bypass this test. Working context remains in native Onyx Postgres;
+causl-kb receives interview/profile/research on successful model save, not each turn.
+
+September25 shared-login acceptance supersedes the login blocker above: the dedicated
+Clerk Auth0 client now permits organization-less authentication, and Clerk's custom
+provider no longer forces the shared Google-only Auth0 organization. Clerk memberships
+and database owner IDs were preserved. A clean browser with no Clerk cookies signed
+into Burn, completed four answers, saved the exact interview and six retained research
+sources through the inline action, opened the specific model without another sign-in,
+reloaded it and found it in the model list. Total through list confirmation:87.4seconds.
+This is retained-context proof, not fresh PDL/research within60seconds. Independent
+review confirmed only the intended login settings changed. Host credential recovery
+instructions are in private machine configuration, not this repository.
+
+### September 25: interview audit and corrected diagnosis
+
+The compatibility patch accepts `Executive interview` and legacy persona names
+in five native chat hooks and initial profile selection. Seven regression tests
+pass. Runtime image: `onyx-burn2:context-gate-sep25`.
+
+Correction: the earlier explanation that a stored persona rename caused the live
+failure was not established. Direct database readback shows persona 5 remains
+`Burn 2.0`; `Executive interview` is the frontend display label. The rename tests
+protect compatibility but do not reproduce the customer's actual context failure.
+Do not cite that patch as proof the live root cause is resolved.
+
+Live synthetic-account testing completed five answers in 23.7 seconds, recognized
+retained company/role context, asked for buyer commitments, preserved unknown
+rates and showed the model action after reload. That account is not equivalent to
+the affected executive: all three latest executive briefs have company `Unknown`,
+while the retained PDL company is available. The exact company-match predicate
+returns false. With profile correction revision zero, both profile and research
+are consequently excluded once such a brief exists. The dossier and research are
+present; their availability does not prove they entered the model prompt.
+
+Read-only runtime audit also found:
+- PDL retains five professional fields, not a full executive dossier.
+- The current research record has nine source URLs and 8,590 report characters.
+  The chat injection bounds the report to 4,000 characters and requires company
+  matching. It is not the complete research record or full ontology.
+- Native user memories are disabled for the inspected executive. Saved transcripts
+  remain durable, but this is not automatic cross-chat memory.
+- Persona 5 has native internal/web search, Python, company-profile, Rehoboam and
+  World tools; no causl-kb Library read tools are assigned.
+- `deep_research` resolves to the private Burn research MCP. The running service
+  uses GPT Researcher 0.14.8. This is distinct from the maintained research
+  producer's source extraction and progressive KB admission path.
+- Native working briefs/profile/research write to Onyx Postgres. The reviewed model
+  save transfers context and selected supported journey records to causl-kb. No
+  per-turn accepted ontology write or full cross-chat KB retrieval is proven here.
+- Jerry appeared in one of the three inspected real conversations but did not
+  appear in the latest synthetic replay. Prompt guidance is not timing or humor
+  acceptance.
+
+History matters: issues #6 and #12 closed as deferred, #17 closed as not planned,
+and #28 explicitly distinguished user prototype acceptance from failed automated
+acceptance. #31 remains draft; causl-kb #430 owns the unfinished integrated journey.
+The source/library work in #35 is real retrieval capability, not proof that every
+interview used MBB evidence. Keep behavior proof separate from configured tools,
+source merges, deployment health and narrow synthetic passes.

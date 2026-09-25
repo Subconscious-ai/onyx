@@ -58,17 +58,38 @@ class ProfileTests(unittest.TestCase):
             ],
         )
         self.assertIn("What average price per tub is targeted?", result)
-        self.assertIn("never repeat or paraphrase", result.lower())
+        self.assertIn(
+            "never re-ask an answered fact or an explicitly unknown detail",
+            result.lower(),
+        )
         self.assertNotIn("Internal?", result)
         self.assertIn("contribution", result)
         self.assertIn("price", result)
 
-    def test_every_turn_has_an_executive_attention_budget(self):
-        for turn in (1, 2, 3, 4, 5):
-            with self.subTest(turn=turn):
-                self.assertIn(
-                    "Maximum 60 spoken words", turn_guidance(turn, "No questions.")
-                )
+    def test_fourth_answer_does_not_override_model_or_stop_requests(self):
+        for request in (
+            "Print a concise first model. No more questions.",
+            "Summarize without another question.",
+        ):
+            with self.subTest(request=request):
+                guidance = turn_guidance(4, request)
+                self.assertIn("Question budget: zero", guidance)
+                self.assertNotIn("Jerry", guidance)
+        self.assertNotIn(
+            "with no extra question", turn_guidance(4, "Over the next three months")
+        )
+
+    def test_navigation_is_owned_by_inline_ui_and_speakers_have_intentions(self):
+        context = interview_context(["Improve conversion."])
+        self.assertIn("Do not narrate navigation", context)
+        self.assertNotIn("Say the brief is updating and the Open", context)
+        guidance = turn_guidance(2, "Our customer visits then buys.")
+        self.assertIn("Sarah · Journey", guidance)
+        self.assertIn("Frankie · Business model", guidance)
+        self.assertIn("Mei · Market challenge", guidance)
+        self.assertIn(
+            "Jerry contributes", turn_guidance(4, "Our forecasts run on optimism.")
+        )
 
     def test_explicit_summary_request_sets_a_zero_question_turn_budget(self):
         for request in (
@@ -117,13 +138,13 @@ class ProfileTests(unittest.TestCase):
             select_profile({"likelihood": 2, "data": {"full_name": "Wrong person"}})
         )
 
-    def test_jerry_is_once_on_fourth_executive_answer(self):
-        self.assertIn("Jerry", turn_guidance(4, "The sales forecast runs on optimism."))
-        for turn in (0, 1, 2, 3, 5, 6, 8):
+    def test_jerry_is_available_before_fourth_turn_without_repetition(self):
+        for turn in (1, 2, 3, 4, 5):
             with self.subTest(turn=turn):
-                self.assertNotIn(
-                    "Jerry", turn_guidance(turn, "The product is ice cream.")
-                )
+                guidance = turn_guidance(turn, "Our forecasts run on optimism.")
+                self.assertIn("Jerry contributes", guidance)
+                self.assertIn("once", guidance)
+                self.assertNotIn("No humor on this turn", guidance)
 
     def test_fourth_answer_respects_humor_opt_out_and_distress(self):
         for answer in (

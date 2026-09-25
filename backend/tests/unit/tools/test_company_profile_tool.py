@@ -48,6 +48,65 @@ class CompanyProfileToolTests(unittest.TestCase):
         self.assertEqual(save.call_args.args[1].revision, 2)
         self.assertIn('"revision": 3', result.llm_facing_response)
 
+    def test_update_reads_current_revision_when_not_supplied(self):
+        with (
+            patch(
+                "onyx.db.burn2_profile.read_profile",
+                return_value={"correction": {"revision": 7}},
+            ) as read,
+            patch(
+                "onyx.db.burn2_profile.correct_profile",
+                return_value={"correction": {"revision": 8}},
+            ) as save,
+            patch(
+                "onyx.chat.incognito.current_turn_persists_content", return_value=True
+            ),
+            patch(
+                "onyx.server.query_and_chat.burn2.background.ensure_research",
+                return_value={"status": "queued"},
+            ),
+        ):
+            result = self.tool.run(
+                self.placement,
+                None,
+                operation="update",
+                fields={"company": "Synthetic"},
+            )
+        read.assert_called_once_with(self.owner)
+        self.assertEqual(save.call_args.args[0], self.owner)
+        self.assertEqual(save.call_args.args[1].revision, 7)
+        self.assertEqual(save.call_args.args[1].fields, {"company": "Synthetic"})
+        self.assertIn('"revision": 8', result.llm_facing_response)
+
+    def test_automatic_revision_still_rejects_a_concurrent_edit(self):
+        with (
+            patch(
+                "onyx.db.burn2_profile.read_profile",
+                return_value={"correction": {"revision": 7}},
+            ),
+            patch(
+                "onyx.db.burn2_profile.correct_profile",
+                side_effect=ValueError(
+                    "Company profile changed. Reload before saving."
+                ),
+            ),
+            patch(
+                "onyx.chat.incognito.current_turn_persists_content", return_value=True
+            ),
+            patch(
+                "onyx.server.query_and_chat.burn2.background.ensure_research"
+            ) as research,
+        ):
+            with self.assertRaises(ToolCallException):
+                self.tool.run(
+                    self.placement,
+                    None,
+                    operation="update",
+                    fields={"company": "Synthetic"},
+                )
+        research.assert_not_called()
+        self.tool.emitter.emit.assert_not_called()
+
     def test_no_identity_override_or_incognito_write(self):
         with (
             patch("onyx.db.burn2_profile.correct_profile") as save,
