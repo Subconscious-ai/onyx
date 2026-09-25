@@ -124,9 +124,7 @@ def run(args) -> int:  # noqa: C901 - linear UAT receipt orchestration
     persona = get(f"/persona/{args.agent}")
     model = args.model_configuration or persona.get("default_model_configuration_id")
     if model not in allowed_bedrock_models(get("/llm/provider")["providers"]):
-        raise ValueError(
-            "Native interviewer must use configured non-Anthropic AWS Bedrock model"
-        )
+        raise ValueError("Native interviewer must use a configured AWS Bedrock model")
     summaries = []
     for name, case in cases.items():
         if args.case and name not in args.case:

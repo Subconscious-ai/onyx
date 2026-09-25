@@ -35,6 +35,10 @@ def optional_evidence(item: Any) -> Any:
         }
     if isinstance(item, list):
         return [optional_evidence(entry) for entry in item]
+    if isinstance(item, str) and "\x00" in item:
+        raise ValueError(
+            "NUL is not valid Postgres text. Use plain ASCII operators in equations."
+        )
     return item
 
 

@@ -140,6 +140,7 @@ def prepare_saved_brief(
     chat_id: str,
     tenant_id: str,
     generation: str | None = None,
+    provider_failures: int = 0,
 ) -> None:
     if tenant_id != get_current_tenant_id():
         raise ValueError("Brief tenant context mismatch")
@@ -175,8 +176,23 @@ def prepare_saved_brief(
             if error.status_code in (409, 502) and not superseded():
                 # Another turn or preparation can hold the lock. Retry the latest
                 # owned transcript through the existing validation and save guard.
+                if error.status_code == 502 and provider_failures >= 4:
+                    raise
                 raise self.retry(
-                    exc=error, countdown=5 * (2**self.request.retries), expires=120
+                    exc=error,
+                    countdown=5
+                    if error.status_code == 409
+                    else 5 * (2**provider_failures),
+                    kwargs={
+                        **self.request.kwargs,
+                        "provider_failures": provider_failures
+                        + int(error.status_code == 502),
+                    },
+                    # Sixteen lock waits cover the 75-second stale-lock lifetime.
+                    max_retries=16 + provider_failures
+                    if error.status_code == 409
+                    else 20,
+                    expires=120,
                 ) from error
         except Exception as error:
             logger.warning(

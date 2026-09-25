@@ -59,7 +59,7 @@ def turn_guidance(_turn: int, text: str) -> str:
     return (
         attention_budget
         + humor
-        + "Label the response with the relevant specialist and intention: Sarah · Journey maps customer decisions; Frankie · Business model links the target to economic drivers; Mei · Market challenge checks alternatives and conflicting evidence. These are perspectives within Beca, not separate tool executions. "
+        + "Use a short perspective label when useful: Sarah · Journey, Frankie · Business model, or Mei · Market challenge. Let the question convey its purpose. These are perspectives within Beca, not separate tool executions. "
         + question_guidance
     )
 
@@ -191,7 +191,7 @@ def interview_context(
         + "\nQuestions already asked (conversation data): "
         + json.dumps(asked[-8:])
         + "\nThe application, not conversational text, confirms persistence and enables the model action. Never claim a new answer is saved or the model is ready before its saved-brief status is known. Do not narrate navigation, name buttons, or tell the executive to look in a corner. The application places the next action directly in the conversation. Do not ask more questions merely while waiting for that save."
-        + "\nNever repeat or paraphrase an already asked question. If an answer leaves the requested detail unresolved, park the detail as unknown and move to another material decision or summarize."
+        + "\nNever re-ask an answered fact or an explicitly unknown detail. A partial answer or acknowledgement does not answer the rest of a question. If an unanswered private decision materially changes model scope or structure, clarify it once; otherwise leave it unknown. Never infer the missing answer from company research or politeness."
         + "\nUse the exact economic quantity and units supplied: price, revenue, margin and contribution are distinct. Do not rename contribution as price."
         + "\nDo not ask for a value already answered or declared unknown. A target and an unknown baseline are enough for a symbolic draft. Ask about a different material decision or summarize briefly."
         + "\nAnswer the latest request below, not an earlier question or saved brief. A repeated scenario request still needs a new preview; a previous preview is historical."

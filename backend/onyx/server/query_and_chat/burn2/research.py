@@ -106,7 +106,7 @@ def research_context(state: dict[str, Any] | None) -> str:
         "Use only for the matching company; the professional match may differ from the business under discussion. "
         "Cite original URLs. Public findings cannot establish private objectives, customer behavior, operating inputs or measured effects. "
         "Surface conflicts with executive evidence; never silently promote research or hypotheses into accepted facts.\n"
-        "Answer the latest executive message. Use one relevant cited observation to sharpen a private question; do not recite this report.\n"
+        "Answer the latest executive message. Cite a finding only when it sharpens a material private question; do not force an anecdote or recite this report.\n"
         + json.dumps(evidence, ensure_ascii=False)
     )
 

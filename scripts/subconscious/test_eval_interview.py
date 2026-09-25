@@ -215,7 +215,7 @@ class EvaluationChecks(unittest.TestCase):
             ),
         )
 
-    def test_evaluation_never_selects_anthropic_even_through_bedrock(self):
+    def test_evaluation_requires_aws_billing_not_a_particular_model_vendor(self):
         providers = [
             {
                 "provider": "bedrock",
@@ -229,8 +229,12 @@ class EvaluationChecks(unittest.TestCase):
                 "provider": "openai",
                 "model_configurations": [{"id": 4, "name": "gpt-4"}],
             },
+            {
+                "provider": "anthropic",
+                "model_configurations": [{"id": 5, "name": "claude-sonnet"}],
+            },
         ]
-        self.assertEqual(allowed_bedrock_models(providers), {1})
+        self.assertEqual(allowed_bedrock_models(providers), {1, 2})
 
     def test_failed_preparation_preserves_a_failure_receipt_and_checks_storage(self):
         source = {

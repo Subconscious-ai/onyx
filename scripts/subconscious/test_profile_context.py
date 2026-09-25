@@ -58,7 +58,10 @@ class ProfileTests(unittest.TestCase):
             ],
         )
         self.assertIn("What average price per tub is targeted?", result)
-        self.assertIn("never repeat or paraphrase", result.lower())
+        self.assertIn(
+            "never re-ask an answered fact or an explicitly unknown detail",
+            result.lower(),
+        )
         self.assertNotIn("Internal?", result)
         self.assertIn("contribution", result)
         self.assertIn("price", result)

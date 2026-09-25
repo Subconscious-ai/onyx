@@ -29,31 +29,70 @@ chat, memory database, swarm runtime or evaluation platform. Simulated panel app
 is not a claim of measured human executive satisfaction. Scripted timing, provider
 freshness and actual saved Monte Carlo calculation have separate receipts.
 
-Recovery, September 25 at 07:39 UTC:
-- Native memory and MemoryTool are enabled for the executive and existing QA users.
+Recovery, September 25 at 09:05 UTC:
+- Native memory and MemoryTool are enabled for the owner and existing QA users.
   An actual MemoryTool write was recalled in another persona's fresh conversation.
-- Unknown-company context suppression is repaired. Explicit different-company
-  corrections still exclude employer research. Research context retains the existing
-  bounded 16,000-character report, including relevant sections beyond character 4,000.
-- Native workspace behavior uses `executive-workspace-policy.md` before the upstream
-  default prompt. Persona 5 uses `executive-rubric.md` and `executive-turn-reminder.md`.
-  Keep `replace_base_system_prompt=false`: replacing it bypasses native memory injection.
-- The existing three causl-kb Library tools use native MCP server 7, Streamable HTTP,
-  and PER_USER credentials. The public catalog is required by Community Edition;
-  it exposes tool metadata, not a shared database credential. The owner returned 22
-  offerings; QA returned an empty organization. An unconfigured user has no token,
-  and an unauthenticated endpoint call returned 401. Capabilities expire after 24
-  hours; automatic renewal is not implemented. This is a bounded QA connection.
-- API/background image: `onyx-burn2:consulting-context-full-sep25`. Both use brief
-  model configuration 8 (AWS GPT-OSS 120B). DeepSeek configuration 5 timed out and
-  exhausted retries, leaving zero saved briefs. The nominal 50-second deadline can
-  overrun during blocking provider calls. The model switch still requires live proof.
-- The installed backend passed 52 research, profile, history and structured-brief
-  regressions. The adaptive interview harness has nine passing local regressions.
-- Executive acceptance is still failing. GPT-OSS, Nova Pro, DeepSeek, MiniMax and
-  Mistral candidates have retained failures in grounding, brevity, repetition or
-  completion. No six-industry quality pass or current end-to-end release claim exists.
-  Native high-reasoning GPT-OSS is the next comparison. Do not waive fabricated facts.
+- Unknown-company drafts no longer suppress established PDL/research context.
+  Explicit different-company corrections still exclude employer research. Research
+  retains the existing bounded 16,000-character report.
+- Native workspace policy uses `executive-rubric.md` before the upstream default,
+  conditional on Beca conducting an interview. Persona 5 uses a short pointer and
+  `executive-turn-reminder.md`. Keep `replace_base_system_prompt=false`; replacing
+  it bypasses native memory injection. A mandatory native case search was tested and removed: its first reply took
+  44 seconds without a material question improvement. Retrieval remains available
+  when useful; existing company context takes priority.
+- The existing three Library tools use native MCP server 7, Streamable HTTP and
+  PER_USER credentials. The CE public catalog exposes metadata, not credentials.
+  The owner read 22 offerings; QA read an empty organization. Missing credentials
+  remained denied. Beca itself invoked `library_snapshot` through native MCP.
+  Credentials expire after 24 hours; renewal is not implemented. This is QA access.
+- Native MBB retrieval returned indexed McKinsey energy guidance in a fresh
+  interview. The earlier six-case sweep did not retrieve it. Availability alone
+  does not prove preparation or justify the latency.
+- Serving API/background image: `onyx-burn2:consulting-extraction-v5-sep25`
+  (digest `e01e7602d0bff56e9af603d914aa5ef7e3713a19f9c670f54b4bb2715d0bff5c`).
+  Background brief model is 19 (AWS Kimi K3). Persona 5 now defaults to AWS Kimi 19
+  through native configuration. Model 19 is visible in the existing provider
+  catalog. Other persona defaults and provider scopes did not change. Earlier
+  QA explicitly selected 19; default-path live proof is pending.
+- Six adaptive interviews preserved corrections and resisted fabricated inputs.
+  Five changed-company research jobs completed in about 18–31 seconds. Those
+  fixtures do not establish a fresh PDL match. The QA profile was restored.
+- None of the six passed overall. SaaS omitted an observed rate and proposed a
+  circular formula. Retail said $5 million correctly in chat but saved $500,000
+  as the baseline for the same hypothetical product. Services left a derived
+  operand undeclared. Manufacturing had no final saved brief after 105 seconds.
+  Other cases also exceeded the 60-second usable-model boundary. Retain failures.
+- Manual source-identical extraction diagnostics are not automatic-save proof.
+  Kimi 19 preserved energy, SaaS and retail sources. A target/baseline prompt fix
+  then preserved the services capacity constraint. Earlier home services timed out and manufacturing emitted NUL bytes. The v4
+  source-identical probes then passed both in 40.05 and 39.47 seconds. These are
+  manual diagnostics, not automatic-save or full-journey timing proof. Hidden Kimi 21 worked through native AWS tools
+  but mislabeled calculated results as executive facts. Do not promote it.
+- The serving image uses the compact extraction prompt, explicit baseline/ASCII
+  rules and a NUL validation guard. Native Celery retries busy locks every five
+  seconds, up to 80 seconds. A separate provider failure count preserves four
+  provider retries at 5/10/20/40 seconds. Native Celery regressions reproduced the
+  stale-lock and mixed-error failures before the repair. Generation checks remain.
+- The existing casebook principles reference is attached through native persona
+  files. Processing completed; native full-context extraction returned 3,370 tokens
+  without a search call. It is internal guidance, never customer evidence. Existing
+  privacy and shares are unchanged. See `beca-capabilities.md` for the source.
+- All five changed backend source hashes match the serving API image. Gateway
+  reload and canonical health passed after restart. Integrated acceptance is pending.
+- Current local checks: 27 structured-brief, 14 context, 17 evaluator and 9 adaptive
+  harness tests pass. The installed worker passed nine focused retry tests. These
+  tests do not establish executive quality or a saved Monte Carlo calculation.
+- Browser inspection confirmed only final tool-cycle text is visible after reload.
+  Intermediate SSE responses must not inflate visible word counts or roast counts.
+- Earlier model 8 default/maximum reasoning remains LOW. It affects that entire
+  model configuration, not only extraction. Some native providers strip unsupported
+  reasoning parameters; a requested setting is not proof that it was enforced.
+- All inference used the existing AWS provider. No IAM, subscription, credential
+  or billing change was made. No new memory store or orchestration framework exists.
+- PR 31 remains draft. Required upstream CI is not all green: dependency audit
+  reports the existing anyio advisory, and several upstream jobs remain queued.
+  No merge, six-case acceptance or production-completion claim is supported.
 
 Use the explicit Compose project `burn2` for runtime changes. Omitting `-p burn2`
 creates a different stack. Reload the existing gateway after API recreation and

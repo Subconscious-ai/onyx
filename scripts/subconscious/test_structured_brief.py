@@ -6,6 +6,12 @@ from onyx.server.query_and_chat.burn2.validation import validate_brief
 
 
 class StructuredBriefTest(unittest.TestCase):
+    def test_generated_equation_rejects_nul_before_postgres_handoff(self):
+        brief = self.brief()
+        brief["model"]["equation"]["text"] = "visitors \x00d7 conversion_rate"
+        with self.assertRaisesRegex(ValueError, "NUL"):
+            validate_brief(brief, [])
+
     def test_quoted_third_party_instruction_is_not_an_unresolved_executive_conflict(
         self,
     ):
