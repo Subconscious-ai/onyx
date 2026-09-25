@@ -29,7 +29,7 @@ chat, memory database, swarm runtime or evaluation platform. Simulated panel app
 is not a claim of measured human executive satisfaction. Scripted timing, provider
 freshness and actual saved Monte Carlo calculation have separate receipts.
 
-Recovery, September 25 at 09:05 UTC:
+Recovery, September 25 at 09:17 UTC:
 - Native memory and MemoryTool are enabled for the owner and existing QA users.
   An actual MemoryTool write was recalled in another persona's fresh conversation.
 - Unknown-company drafts no longer suppress established PDL/research context.
@@ -54,7 +54,8 @@ Recovery, September 25 at 09:05 UTC:
   Background brief model is 19 (AWS Kimi K3). Persona 5 now defaults to AWS Kimi 19
   through native configuration. Model 19 is visible in the existing provider
   catalog. Other persona defaults and provider scopes did not change. Earlier
-  QA explicitly selected 19; default-path live proof is pending.
+  QA explicitly selected 19. A fresh default-path interview now confirms 19 without
+  a request override.
 - Six adaptive interviews preserved corrections and resisted fabricated inputs.
   Five changed-company research jobs completed in about 18–31 seconds. Those
   fixtures do not establish a fresh PDL match. The QA profile was restored.
@@ -79,7 +80,20 @@ Recovery, September 25 at 09:05 UTC:
   without a search call. It is internal guidance, never customer evidence. Existing
   privacy and shares are unchanged. See `beca-capabilities.md` for the source.
 - All five changed backend source hashes match the serving API image. Gateway
-  reload and canonical health passed after restart. Integrated acceptance is pending.
+  reload and canonical health passed after restart.
+- The default-path energy interview automatically saved a source-grounded brief:
+  5.5% observed conversion, 7% target, three months, unknown visitor count and
+  declared equation operands. No manual preparation rescued that save.
+- Actual Build opened `/dashboard/burn-import` and returned 404 before any model
+  save. Read-only Clerk checks identified the cause: both synthetic QA organizations
+  have explicit `frontDoorEnabled=false`. Verified login and membership work.
+  No opt-out, identity or permission setting was changed. Approval to temporarily
+  enable QA-A and restore it is pending. This is not an established deployment bug.
+- The native casebook File citation incorrectly appeared beside private customer
+  numbers, with stray parentheses in the rendered UI. Values were correct but the
+  attribution was misleading. The interview also repeated its model synthesis.
+  Native policy now separates methodological references from executive facts and
+  requests one-sentence updates after synthesis. Fresh validation is in progress.
 - Current local checks: 27 structured-brief, 14 context, 17 evaluator and 9 adaptive
   harness tests pass. The installed worker passed nine focused retry tests. These
   tests do not establish executive quality or a saved Monte Carlo calculation.
