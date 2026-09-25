@@ -28,7 +28,7 @@ def select_profile(payload: dict) -> dict[str, Any] | None:
 
 
 def turn_guidance(_turn: int, text: str) -> str:
-    attention_budget = "Maximum 60 spoken words. Summarize only the material update; no unsolicited KPI lists, invented target placeholders or full repeated brief. "
+    attention_budget = "Summarize only the material update; no unsolicited KPI lists, invented target placeholders or full repeated brief. "
     conclude = bool(
         re.search(
             r"\b(?:no(?: extra| more| further)? questions?|without (?:another |a |any )?questions?|conclude|summari[sz]e|print)\b",
@@ -47,14 +47,14 @@ def turn_guidance(_turn: int, text: str) -> str:
         "Jerry contributes once per interview: if no previous Jerry observation exists, "
         "include one original grounded line of at most 15 words when volunteered context supports it. "
         "Respect any earlier opt-out or distress. Never invent a tension, mock ambition or an honest unknown, "
-        "or delay progress for humor. Follow with the useful question or model synthesis. "
+        "or delay progress for humor. "
         if humor_allowed
         else "Omit humor. "
     )
     question_guidance = (
         "Question budget: zero. The latest executive request explicitly disallows questions. Acknowledge the update or give the requested synthesis and stop. Do not ask for permission, another input or a next step."
         if conclude
-        else "One concise answer, at most one material question. If the objective, desired target, timeframe, customer population and journey are known, give one concise synthesis instead of more discovery; the application renders the model button. Otherwise ask the next material unanswered question; thanks or great does not end discovery. Keep unavailable numbers unknown. When the executive requests a conclusion, summarize without any question."
+        else "One concise answer, at most one material question. Keep unavailable numbers unknown."
     )
     return (
         attention_budget

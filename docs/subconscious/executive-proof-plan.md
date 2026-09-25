@@ -29,7 +29,7 @@ chat, memory database, swarm runtime or evaluation platform. Simulated panel app
 is not a claim of measured human executive satisfaction. Scripted timing, provider
 freshness and actual saved Monte Carlo calculation have separate receipts.
 
-Recovery, September 25 at 09:17 UTC:
+Recovery, September 25 at 09:32 UTC:
 - Native memory and MemoryTool are enabled for the owner and existing QA users.
   An actual MemoryTool write was recalled in another persona's fresh conversation.
 - Unknown-company drafts no longer suppress established PDL/research context.
@@ -49,8 +49,8 @@ Recovery, September 25 at 09:17 UTC:
 - Native MBB retrieval returned indexed McKinsey energy guidance in a fresh
   interview. The earlier six-case sweep did not retrieve it. Availability alone
   does not prove preparation or justify the latency.
-- Serving API/background image: `onyx-burn2:consulting-extraction-v5-sep25`
-  (digest `e01e7602d0bff56e9af603d914aa5ef7e3713a19f9c670f54b4bb2715d0bff5c`).
+- Serving API/background image: `onyx-burn2:consulting-native-policy-v7-sep25`
+  (digest `f66e734d5f2d654998fdcfb62949efd6b6e73d2616761ea88f639f31c0ee9bce`).
   Background brief model is 19 (AWS Kimi K3). Persona 5 now defaults to AWS Kimi 19
   through native configuration. Model 19 is visible in the existing provider
   catalog. Other persona defaults and provider scopes did not change. Earlier
@@ -75,10 +75,11 @@ Recovery, September 25 at 09:17 UTC:
   seconds, up to 80 seconds. A separate provider failure count preserves four
   provider retries at 5/10/20/40 seconds. Native Celery regressions reproduced the
   stale-lock and mixed-error failures before the repair. Generation checks remain.
-- The existing casebook principles reference is attached through native persona
-  files. Processing completed; native full-context extraction returned 3,370 tokens
-  without a search call. It is internal guidance, never customer evidence. Existing
-  privacy and shares are unchanged. See `beca-capabilities.md` for the source.
+- The casebook principles file was detached after native file citations appeared
+  beside private customer numbers. Full-context files set `always_cite_documents`
+  in Onyx; they are unsuitable for noncitable methodology. A concise optional
+  method from the same existing reference now uses native persona instructions.
+  Corpus search and legitimate citations remain enabled. See `beca-capabilities.md`.
 - All five changed backend source hashes match the serving API image. Gateway
   reload and canonical health passed after restart.
 - The default-path energy interview automatically saved a source-grounded brief:
@@ -93,8 +94,24 @@ Recovery, September 25 at 09:17 UTC:
   numbers, with stray parentheses in the rendered UI. Values were correct but the
   attribution was misleading. The interview also repeated its model synthesis.
   Native policy now separates methodological references from executive facts and
-  requests one-sentence updates after synthesis. Fresh validation is in progress.
-- Current local checks: 27 structured-brief, 14 context, 17 evaluator and 9 adaptive
+  requests one-sentence updates after synthesis. A fresh energy run then removed
+  the citation defect and retained a valid automatic brief. Three chat requests
+  took 15.216 seconds; saved readback was 48 seconds after the last reply. Do not
+  present that as a complete 60-second model journey.
+- The services adversary caught an incorrect 2.1-consultant recommendation where
+  the inputs require 2.5 FTE. Native Python had correctly computed other quantities;
+  the assistant introduced the wrong number afterward. The policy now requires
+  every derived quantity to come from printed tool output. A later run had correct
+  arithmetic, but still added correct numbers absent from the tool output.
+- The later services interview also parked decisive private inputs before asking.
+  The policy now asks for a missing private value needed for the requested decision.
+  Remaining truly unavailable quantities stay symbolic. The tester must not rescue
+  passivity by volunteering unasked inputs.
+- Removed duplicate runtime instructions that conflicted with the native policy's
+  word budget and one-time synthesis. Explicit stop and humor opt-out safeguards
+  remain. The v7 source hash and canonical health check match the serving runtime.
+  The next frozen configuration run is in progress; no panel pass exists.
+- Current local checks: 27 structured-brief, 13 context, 17 evaluator and 9 adaptive
   harness tests pass. The installed worker passed nine focused retry tests. These
   tests do not establish executive quality or a saved Monte Carlo calculation.
 - Browser inspection confirmed only final tool-cycle text is visible after reload.

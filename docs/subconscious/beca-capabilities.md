@@ -54,25 +54,29 @@ The Beca rubric applies those patterns during the interview: use an executive qu
 
 Internal search retrieves relevant passages as needed. The complete case library is not loaded into every turn. MBB references inform a useful question or model proposal; cases never become facts about an executive business. Citation QA must distinguish the retrieved GitHub copy from the original publisher URL stored in front matter.
 
-September 25 configuration: private Beca (persona 5) now also has the existing
-`mbb-casebook/corpus/external/frameworks/case-library-principles.md` attached through
-native user files. Source revision: `7bf300097add0bc05663bb6bac9b92bc16ee74a3`;
-native file: `0532ed2e-9a30-4ea4-89dc-7c47695c06ca`. Native processing completed,
-and `extract_context_files` read back 3,370 prompt tokens with
-`use_as_search_filter=false`: this compact reference fits directly in context
-without a first-turn search. It is guidance, not a mandatory model template or
-evidence about the customer. The owner manifest traces it to
-[Case-Library](https://github.com/kevinguo0351/Case-Library); its recorded internal
-research/no-republication restriction remains. No customer files or broader
-sharing were added. Preserve the current owner and persona permissions when
-refreshing this attachment; native custom-persona files supersede project files.
-The rest of the corpus remains available through native search.
+September 25 configuration: private Beca (persona 5) uses this 65-word optional
+method in its native `system_prompt`, after the existing workspace-policy pointer:
+
+> Optional consulting method, adapted from the existing MBB case-library principles: anchor on the executive objective; propose a tailored driver relationship; compare against the relevant baseline or target; identify the binding constraint; calculate only what changes the decision; state the uncertainty that could reverse the recommendation. Treat these as optional reasoning aids, never a mandatory template, customer evidence, or a reason to ask publicly answerable questions.
+
+Source: `mbb-casebook/corpus/external/frameworks/case-library-principles.md`, revision
+`7bf300097add0bc05663bb6bac9b92bc16ee74a3`. The owner manifest traces the collected
+reference to [Case-Library](https://github.com/kevinguo0351/Case-Library); its
+internal research/no-republication restriction remains. The full file was first
+attached through native user files, but live tests showed misleading file
+citations attached to private customer facts. Native full-context files enable
+`always_cite_documents` and cannot individually be marked noncitable guidance.
+The association for file `0532ed2e-9a30-4ea4-89dc-7c47695c06ca` was therefore removed;
+the stored file remains for audit. Native readback confirms no full-context files
+for this persona, with internal search, base prompt, tools, model and sharing
+preserved. Research citations remain enabled. The rest of the corpus stays
+available through native search; no separate skill runtime was introduced.
 
 Beca's native default model is configuration 19 (AWS Kimi K3). Its catalog
 visibility is enabled for existing provider-authorized users; other persona
 defaults and provider access are unchanged. Configuration 8's temporary LOW
 reasoning settings were not reverted because no verified earlier setting was
-available. Model configuration and attachment readbacks prove configuration,
+available. Model configuration and instruction readbacks prove configuration,
 not interview quality or end-to-end latency.
 
 ## Customer evidence and useful native additions
