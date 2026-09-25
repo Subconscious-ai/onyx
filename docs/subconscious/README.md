@@ -245,3 +245,14 @@ eligibility. Prove the full callback with an existing eligible Google identity
 before claiming one-login completion. Never infer membership or link identities
 by email to bypass this test. Working context remains in native Onyx Postgres;
 causl-kb receives interview/profile/research on successful model save, not each turn.
+
+September25 shared-login acceptance supersedes the login blocker above: the dedicated
+Clerk Auth0 client now permits organization-less authentication, and Clerk's custom
+provider no longer forces the shared Google-only Auth0 organization. Clerk memberships
+and database owner IDs were preserved. A clean browser with no Clerk cookies signed
+into Burn, completed four answers, saved the exact interview and six retained research
+sources through the inline action, opened the specific model without another sign-in,
+reloaded it and found it in the model list. Total through list confirmation:87.4seconds.
+This is retained-context proof, not fresh PDL/research within60seconds. Independent
+review confirmed only the intended login settings changed. Host credential recovery
+instructions are in private machine configuration, not this repository.
