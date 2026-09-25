@@ -5,9 +5,10 @@
 ## Current acceptance, September 25
 
 Native memory now works across fresh chats. Beca's existing research context and
-per-user causl-kb Library retrieval are connected. This is not yet an accepted
-executive experience: live panel tests still find unsupported claims and delayed
-brief preparation. Read the current recovery and evidence section in
+per-user causl-kb Library retrieval are connected. A six-case live review saved five briefs, but did not pass full acceptance.
+A later native memory-policy check returned ordinary replies in about four to
+five seconds while preserving explicit memory writes. This is a bounded check;
+unsupported claims, delayed preparation and final model verification remain open. Read the current recovery and evidence section in
 [the proof plan](executive-proof-plan.md) before relying on older passes below.
 
 The Library transport is in draft

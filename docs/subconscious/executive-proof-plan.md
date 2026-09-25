@@ -29,7 +29,7 @@ chat, memory database, swarm runtime or evaluation platform. Simulated panel app
 is not a claim of measured human executive satisfaction. Scripted timing, provider
 freshness and actual saved Monte Carlo calculation have separate receipts.
 
-Recovery, September 25 at 09:57 UTC:
+Recovery, September 25 at 10:22 UTC:
 - Native memory and MemoryTool are enabled for the owner and existing QA users.
   An actual MemoryTool write was recalled in another persona's fresh conversation.
 - Unknown-company drafts no longer suppress established PDL/research context.
@@ -146,11 +146,54 @@ Recovery, September 25 at 09:57 UTC:
   The prior LOW-cap extraction still needed 40 seconds. Changing that setting
   alone is not a demonstrated latency repair; no speculative provider change
   was made. Final structured generation remains a material latency limitation.
+- A single current-prompt model 8 diagnostic completed in 13 seconds, but failed
+  transition validation and promoted invented behavior/calculated values to
+  executive facts. It did retain the target and scenario names. No model setting
+  changed; faster generation was not accepted as a correctness substitute.
 - All inference used the existing AWS provider. No IAM, subscription, credential
   or billing change was made. No new memory store or orchestration framework exists.
 - PR 31 remains draft. Required upstream CI is not all green: dependency audit
   reports the existing anyio advisory, and several upstream jobs remain queued.
   No merge, six-case acceptance or production-completion claim is supported.
+
+Latest frozen six-case diagnostics on source `66eabdd457`:
+
+| Case | Result before downstream model compilation |
+| --- | --- |
+| Services | Private journey/economics elicited; correct spoken calculations; draft percentage notation and conservative source demotion remain |
+| Energy | Correct final endpoint/ramp draft after challenging an unsupported whole-quarter uplift claim |
+| SaaS | 70% baseline and corrected 80% target retained; aggregate cohort must not become a conditional edge rate |
+| Retail | Rejects hypothetical $5M as actual and one complaint as causality; complete final revenue relationship |
+| Home services | Valid Angi memory recall; no automatic brief observed through 108.7 seconds after reply; provider timeout logged |
+| Manufacturing | Correct client scope, 25% baseline/30% target, quoted instruction rejection and calculations; an explicit unknown was not parked |
+
+Five of six automatically saved drafts. Independent judges did not approve full
+acceptance. Saved readbacks for successful cases occurred 31.5–40.7 seconds after
+the final reply; first-ready times are bounded by five-second polling. Total
+session times include the adaptive tester and, for energy, a stop/resume pause.
+No 60-second or final compiled-model result is established.
+
+The existing causl-kb compiler normalizes percentage values, repairs draft algebra,
+and checks graph units. Inconsistent draft percentage notation does not establish
+an incorrect final calculation. Exercise that compiler before adding another
+parser to Onyx. Full Build remains pending the QA workspace opt-out decision.
+Native memory is also not source-backed numeric evidence: the tested memory rows
+had no source message/conversation IDs, and current extraction excludes those
+summaries from executive evidence. Original chat and accepted Library receipts
+must remain distinct from remembered summaries.
+
+At 10:20 UTC, native persona policy was narrowed to avoid saving every interview
+turn through MemoryTool. Memory recall and the tool both remain enabled. A
+separate three-turn canary returned ordinary replies in 4.989 and 3.817 seconds
+with zero memory writes. An explicit remember request then invoked MemoryTool,
+completed in 9.881 seconds and persisted a company-qualified preference. Native
+readback confirmed both flags remain true. This is a successful bounded memory
+check, not a rerun of the six cases or an end-to-end latency guarantee.
+
+Private receipts remain in the existing acceptance store under
+`consulting-panel/v10-runtime` and `consulting-panel/memory-policy-spotcheck`.
+QA profile restoration succeeded; no test polling or provider calls remain active.
+The final candidate remains draft and unmerged.
 
 Use the explicit Compose project `burn2` for runtime changes. Omitting `-p burn2`
 creates a different stack. Reload the existing gateway after API recreation and

@@ -79,6 +79,27 @@ reasoning settings were not reverted because no verified earlier setting was
 available. Model configuration and instruction readbacks prove configuration,
 not interview quality or end-to-end latency.
 
+## Native memory and business evidence
+
+Native memory recall and MemoryTool are enabled for the owner and existing QA
+users. Fresh-chat recall across personas is verified. Both settings remain on.
+Use memory for company-qualified preferences and durable decisions. Existing
+conversation and brief persistence already retain active interview answers.
+Do not copy each turn through MemoryTool: its update runs an additional model
+call before the main chat resumes.
+
+Native memory is a personal summary, not accepted ontology or source-backed
+numeric evidence. All of a user's memory records are injected across personas;
+there is no automatic company filter. The tested QA memory rows contain no source
+conversation/message IDs. One fresh Angi chat correctly reused prior funnel
+numbers, but the brief extractor only had current executive statements. Do not
+claim those retained numbers passed fresh evidence admission. Use the existing
+causl-kb Library for accepted business evidence and preserve company scope.
+
+The native persona instructions restrict memory writes to explicit requests or
+one useful decision at interview completion. This is model guidance, not a hard
+frequency limit. Keep `replace_base_system_prompt=false` to preserve native recall.
+
 ## Customer evidence and useful native additions
 
 | Capability | Existing path | Remaining requirement |
