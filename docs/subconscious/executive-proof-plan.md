@@ -52,6 +52,19 @@ validation and AWS model selection remain intact. The setup helper now preserves
 memory injection. The company-profile tool describes research as conditional on an
 available website and the returned status, rather than promising every save starts it.
 
+The narrow repair is serving in API and background image
+`onyx-burn2:native-preparation-78c85f4ac5`. Both deployed source hashes match the
+commit, and the canonical health endpoint returns 200. Independent review found
+no blocker for this repair. The native conversation default remains model19.
+
+A fresh browser login with retained PDL context exercised this deployed candidate.
+Replies completed at 44.2 and 60.8 seconds; the brief was ready at 93 seconds.
+The handoff PUT returned 200, but the run failed its fresh-research assertion at
+127.9 seconds. The first turn still made five profile calls, omitted the supplied
+website, and saved an inferred customer segment. It correctly said research had
+not started, but did not recover. This is a failed acceptance run, not a 60-second
+success. The temporary QA-A organization flag was restored to its original value.
+
 ## Active September 25: prepared, proactive executive interview
 
 User-authorized outcome: use native Onyx memory, existing tools and libraries to
