@@ -22,7 +22,6 @@ from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
 from onyx.llm.factory import get_llm_for_persona, get_llm_token_counter
 from onyx.llm.models import (
-    ReasoningEffort,
     SystemMessage,
     ToolChoiceOptions,
     UserMessage,
@@ -171,7 +170,6 @@ Proposed interventions remain hypotheses. Jokes, confidence, and rejected third-
             max_tokens=6000,
             timeout_override=int(min(45, remaining)),
             total_timeout_override=remaining,
-            reasoning_effort=ReasoningEffort.HIGH,
         )
         calls = response.choice.message.tool_calls
         if (

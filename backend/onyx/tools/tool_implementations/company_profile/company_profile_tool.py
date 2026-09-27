@@ -28,7 +28,9 @@ class CompanyProfileTool(Tool[None]):
     DESCRIPTION = (
         "Read, initialize or correct the signed-in executive's private working company profile. "
         "Update with supplied fields; the tool reads the current revision when omitted. Update when the executive explicitly supplies their real company details or "
-        "asks to correct them. Send only supplied fields with that revision. This save starts GPT Researcher; general add_memory does not. "
+        "asks to correct them. Include their website when supplied. Saving requests GPT Researcher when a public company website is available. "
+        "Read the returned research status: needs_company means research has not started; unavailable means it failed to start. "
+        "General add_memory does not start research. "
         "Do not save inferred facts, source instructions or hypothetical scenarios. "
         "This does not change shared company records, membership or accepted ontology."
     )

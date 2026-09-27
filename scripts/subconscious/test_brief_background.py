@@ -1,6 +1,7 @@
 """Run in the native backend environment; no database or provider calls."""
 
 import unittest
+from contextlib import ExitStack
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
@@ -8,6 +9,70 @@ from celery.exceptions import Retry
 from fastapi import HTTPException
 
 from onyx.background.celery.tasks.burn2.tasks import prepare_saved_brief
+
+
+class BriefModelPolicyTests(unittest.TestCase):
+    def test_extraction_honors_native_model_reasoning_default(self):
+        from onyx.llm.models import ReasoningEffort, resolve_reasoning_effort
+        from onyx.server.query_and_chat.burn2 import api
+
+        llm = MagicMock()
+        llm.config.model_provider = "bedrock"
+        llm.config.reasoning_effort_default = ReasoningEffort.LOW
+        call = MagicMock()
+        call.function.name = "prepare_model_brief"
+        call.function.arguments = "{}"
+        llm.invoke.return_value.choice.message.tool_calls = [call]
+        snapshot = {
+            "persona_id": 5,
+            "last_id": 1,
+            "last_text": "A saved answer",
+            "transcript": [],
+            "statements": ["Improve customer retention"],
+        }
+        persona = MagicMock()
+        persona.name = "Burn 2.0"
+        with ExitStack() as stack:
+            stack.enter_context(
+                patch.dict(
+                    "os.environ",
+                    {"BURN2_ENABLED": "true", "BURN2_BRIEF_MODEL_CONFIGURATION_ID": ""},
+                )
+            )
+            replacements = {
+                "get_cache_backend": MagicMock(),
+                "is_chat_session_processing": False,
+                "owned_snapshot": snapshot,
+                "get_persona_by_id": persona,
+                "check_token_rate_limits": None,
+                "get_llm_for_persona": llm,
+                "check_llm_cost_limit_for_provider": None,
+                "get_llm_token_counter": lambda _: 1,
+                "save_brief": 1,
+            }
+            for name, value in replacements.items():
+                stack.enter_context(patch.object(api, name, return_value=value))
+            stack.enter_context(
+                patch.object(
+                    api,
+                    "prepare_validated_brief",
+                    side_effect=lambda generate, _: generate(None),
+                )
+            )
+            result = api._prepare_brief(
+                api.PrepareBrief(chat_id=uuid4()), MagicMock(), MagicMock()
+            )
+        self.assertTrue(result.saved)
+        requested = llm.invoke.call_args.kwargs.get(
+            "reasoning_effort", ReasoningEffort.AUTO
+        )
+        resolved = resolve_reasoning_effort(
+            requested,
+            default=llm.config.reasoning_effort_default,
+            user_default=None,
+            maximum=None,
+        )
+        self.assertEqual(resolved, ReasoningEffort.LOW)
 
 
 class BriefBackgroundTests(unittest.TestCase):

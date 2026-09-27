@@ -26,6 +26,32 @@ saved-model proof. Each temporary synthetic QA-A workflow enablement was restore
 customer workspace flags were untouched. Preserve failed runs when evaluating a new
 native configuration; do not promote a faster model on timing alone.
 
+## September 27: later adversarial checks and preparation latency
+
+Six native Nova17 LOW interviews saved and reopened their briefs. None proved
+60-second readiness; first saves were observed at 63–80 seconds. Source inversion,
+unsupported causal claims, repeated questions and excessive jokes remain failures.
+The rule-based tester missed imperative questions. Missing values it never supplied
+are not evidence of data loss. Do not promote Nova based on faster replies.
+
+An adaptive GPT-OSS8 services test correctly found a 40-project capacity ceiling,
+$1.6M contribution and $400k target shortfall. It preserved the supplied inputs and
+rejected unsupported feasibility. However, it used 536 words, omitted customer
+behavior, and first observed automatic saving at 104.7 seconds. It is not acceptance.
+
+A no-save diagnostic reused that actual source snapshot, deployed extraction prompt,
+schema and validators. Model8 LOW took 10.9 seconds but lost the stated deadline.
+Model19 LOW took 26.7 seconds, passed validation on its first call, and preserved
+units, deadline, source quotes and parked unknowns. Both left absent customer behavior
+unfilled. Original history remained unchanged. These timings exclude queue and delivery.
+
+The extraction endpoint forced HIGH reasoning despite native model19's LOW default.
+The candidate removes this override and reuses native reasoning resolution. A regression
+reproduced HIGH where LOW was configured; all ten background tests then passed. Source
+validation and AWS model selection remain intact. The setup helper now preserves native
+memory injection. The company-profile tool describes research as conditional on an
+available website and the returned status, rather than promising every save starts it.
+
 ## Active September 25: prepared, proactive executive interview
 
 User-authorized outcome: use native Onyx memory, existing tools and libraries to
