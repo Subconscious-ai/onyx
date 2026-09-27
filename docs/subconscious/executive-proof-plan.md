@@ -1,5 +1,31 @@
 # Executive interview acceptance proof
 
+## September 27: independent delivery tracks
+
+- [causl-kb PR #605: preserve sign-in and save the model](https://github.com/Subconscious-ai/causl-kb/pull/605)
+  now passes real browser save, GET readback, reload and listing on candidate `b4a2d12`.
+  The actual grid shows 1,000 × 5.5% = 55 contracts, target 70, gap 15. An empty-browser
+  test entered credentials only in Burn/Auth0 and opened the saved model in 19.6 seconds.
+  The installed SDK already supports AWS SigV4; readiness needed to recognize it.
+  Existing credentials and Burn origin were configured only for this preview branch.
+  No new key, IAM grant, or production configuration change was needed.
+- [Onyx PR #39: unblock release CI](https://github.com/Subconscious-ai/onyx/pull/39)
+  patches AnyIO to 4.14.2 and passes the real security audit without suppressions.
+  Upstream RunsOn ARM jobs remain unrunnable. The AWS runner group excludes public
+  repositories; a GitHub-hosted runner exception is pending. Do not widen permissions.
+- [Onyx issue #38: prove the prepared 60-second interview](https://github.com/Subconscious-ai/onyx/issues/38)
+  remains open. Fresh synthetic-email PDL correctly returned no match. Kimi 19 omitted
+  the supplied website, persisted an inferred segment and falsely claimed research
+  was running despite `needs_company`. The prompt adjustment reduced redundant calls
+  but did not repair field selection or status honesty. Readback confirms the current
+  rubric/reminder are installed and `replace_base_system_prompt=false`.
+
+The handoff proof starts from an existing interview, not fresh discovery. Accepted
+ontology stages/transitions were deliberately zero. Brief readiness alone is not a
+saved-model proof. Each temporary synthetic QA-A workflow enablement was restored;
+customer workspace flags were untouched. Preserve failed runs when evaluating a new
+native configuration; do not promote a faster model on timing alone.
+
 ## Active September 25: prepared, proactive executive interview
 
 User-authorized outcome: use native Onyx memory, existing tools and libraries to
