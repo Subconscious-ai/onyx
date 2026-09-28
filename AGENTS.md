@@ -149,14 +149,4 @@ used in an experiment. Keep machine-specific paths in private host configuration
 
 ## Agent skills
 
-### Issue tracker
-
-GitHub Issues on `Subconscious-ai/onyx`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-The five default triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context: one root CONTEXT.md glossary plus docs/adr/, both created on first use. See `docs/agents/domain.md`.
+See `docs/agents/` for the issue tracker (GitHub Issues), triage labels and domain-doc layout.
