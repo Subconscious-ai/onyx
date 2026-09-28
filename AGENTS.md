@@ -146,3 +146,17 @@ Before finding, saving, or updating organization research materials, read the cu
 [organization library](https://github.com/Subconscious-ai/hermes/blob/main/library/LIBRARY.md) and follow its owner links.
 Update records at their owner; record the actual source revision and exact file/run
 used in an experiment. Keep machine-specific paths in private host configuration.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `Subconscious-ai/onyx`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one root CONTEXT.md glossary plus docs/adr/, both created on first use. See `docs/agents/domain.md`.
