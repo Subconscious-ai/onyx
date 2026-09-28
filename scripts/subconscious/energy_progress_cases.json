@@ -1,0 +1,72 @@
+{
+  "energy_progress": [
+    {
+      "message": "I want to optimize the marketing messaging for my energy company. Conversion is about 5.5% and I want 7% over the next three months.",
+      "asks_about": "customer|conversion|convert|action|sign|purchase|audience|journey|step|channel|who",
+      "brief_required": false
+    },
+    {
+      "message": "Thanks!",
+      "asks_about": "customer|conversion|convert|action|sign|purchase|audience|journey|step|channel|who",
+      "brief_required": false
+    },
+    {
+      "message": "Residential homeowners see a paid search ad, visit our energy tariff page, request a quote, then sign a supply contract. Conversion means contracts signed divided by tariff-page visitors. We want to test the value proposition on that page. Traffic volume and intermediate step conversion are unknown; keep them unknown.",
+      "brief_required": false
+    },
+    {
+      "message": "Print a concise first model and tell me where to open it. No more questions.",
+      "questions_allowed": false,
+      "spoken_requires": "Open business model",
+      "forbidden": [
+        "Jerry:",
+        "guesstimate",
+        "squiggle"
+      ],
+      "brief_required": false,
+      "max_words": 100
+    }
+  ],
+  "energy_ready": [
+    {
+      "message": "I run an energy supplier. Residential homeowners see a paid search ad, visit our tariff page, request a quote, then sign a supply contract. Conversion means signed contracts divided by tariff-page visitors: 5.5% now, target 7% in three months. We will compare a price-savings headline with a predictable-bill headline on that page. Their effects, traffic volume and intermediate conversion rates are unknown; leave them unknown.",
+      "brief_required": false
+    },
+    {
+      "message": "Great.",
+      "brief_required": false,
+      "spoken_requires": "Open business model",
+      "questions_allowed": false,
+      "forbidden": [
+        "Jerry:",
+        "guesstimate",
+        "squiggle"
+      ]
+    }
+  ],
+  "energy_original": [
+    {
+      "message": "I'm looking to optimize the marketing messaging for my energy company.",
+      "brief_required": false
+    },
+    {
+      "message": "I'm looking for conversion rates: to increase my conversion rates",
+      "brief_required": false
+    },
+    {
+      "message": "It's about 5.5% and I'm trying to get it to 7%.",
+      "brief_required": false
+    },
+    {
+      "message": "Over the next 3 months",
+      "brief_required": false,
+      "asks_about": "customer|conversion|convert|action|sign|purchase|audience|journey|step|channel|who"
+    },
+    {
+      "message": "We sell energy supply contracts to residential homeowners. They see a search ad, visit our tariff page, request a quote and sign. Conversion is signed contracts divided by tariff-page visitors. We want to test the page message. Traffic and intermediate rates are unknown.",
+      "brief_required": false,
+      "questions_allowed": false,
+      "spoken_requires": "Open business model"
+    }
+  ]
+}

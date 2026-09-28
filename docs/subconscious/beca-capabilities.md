@@ -26,7 +26,7 @@ A server registration and a persona tool assignment are separate native settings
 
 The sidebar resolves the three workflow links from the authenticated catalog. IDs 7 and 8 are private native personas; permissions and existing conversations remain preserved. The experiment prompts live in [experiment-design-prompt.md](experiment-design-prompt.md) and [experiment-analytics-prompt.md](experiment-analytics-prompt.md). Configure those prompts using the native persona editor and native system-prompt extension mode. Use the workflow-specific task reminders below. A vague tool-only reminder caused irrelevant study retrieval for a diagram request.
 
-Experiment design now uses the existing AWS Bedrock configuration `us.amazon.nova-2-lite-v1:0` (ID 17 on the review database). The September 12 comparison retained correct Python arithmetic and a rejected-term correction. Beca and analytics retain model configuration 8; background briefs retain configuration 5. Only design changed defaults. Native model visibility must be enabled before selecting a persona default: the native persona reader clears an inaccessible default. Provider credentials, permissions and other model configurations remain preserved. Model selection stays outside the customer conversation.
+Experiment design now uses the existing AWS Bedrock configuration `us.amazon.nova-2-lite-v1:0` (ID 17 on the review database). The September 12 comparison retained correct Python arithmetic and a rejected-term correction. Those September 12 checks used configuration 8 for Beca and analytics, and configuration 5 for background briefs. Beca and its background briefs now use configuration 19, as recorded below. Analytics retains its existing default. Native model visibility must be enabled before selecting a persona default: the native persona reader clears an inaccessible default. Provider credentials, permissions and other model configurations remain preserved. Model selection stays outside the customer conversation.
 
 For experiment design, use the narrower reminder: “Answer the latest design request with one concise reviewable proposal. Use run_python before any arithmetic claim. Use paid customers per qualified lead within each experiment arm. Preserve contribution versus revenue, percentage points versus relative percent, and an unchosen measurement window. Never use full-business volume as an arm denominator. No marketing promises, guessed test duration or sample size, measured-effect claims from simulation, unsolicited diagrams, stored drafts or launches outside the requested scope. Preserve unknowns and distinguish targets from observations.” A September 12 replay exposed incorrect spoken multiplication despite supplied inputs. Actual Python receipts now support the arithmetic; proposed terms and statistical decisions still require substantive review.
 
@@ -53,6 +53,52 @@ The Beca rubric applies those patterns during the interview: use an executive qu
 `mbb-casebook` supplies indexed public firm articles, cases, reports and recruiting casebooks. Native file corpora cover Bain, BCG, McKinsey and external casebooks. A GitHub connector also indexes mbb-casebook. Corpus access is workspace-public within authenticated Onyx, not public internet access. Empty persona document-set lists impose no additional subset filter; native document permissions still apply.
 
 Internal search retrieves relevant passages as needed. The complete case library is not loaded into every turn. MBB references inform a useful question or model proposal; cases never become facts about an executive business. Citation QA must distinguish the retrieved GitHub copy from the original publisher URL stored in front matter.
+
+September 25 configuration: private Beca (persona 5) uses this 65-word optional
+method in its native `system_prompt`, after the existing workspace-policy pointer:
+
+> Optional consulting method, adapted from the existing MBB case-library principles: anchor on the executive objective; propose a tailored driver relationship; compare against the relevant baseline or target; identify the binding constraint; calculate only what changes the decision; state the uncertainty that could reverse the recommendation. Treat these as optional reasoning aids, never a mandatory template, customer evidence, or a reason to ask publicly answerable questions.
+
+Source: `mbb-casebook/corpus/external/frameworks/case-library-principles.md`, revision
+`7bf300097add0bc05663bb6bac9b92bc16ee74a3`. The owner manifest traces the collected
+reference to [Case-Library](https://github.com/kevinguo0351/Case-Library); its
+internal research/no-republication restriction remains. The full file was first
+attached through native user files, but live tests showed misleading file
+citations attached to private customer facts. Native full-context files enable
+`always_cite_documents` and cannot individually be marked noncitable guidance.
+The association for file `0532ed2e-9a30-4ea4-89dc-7c47695c06ca` was therefore removed;
+the stored file remains for audit. Native readback confirms no full-context files
+for this persona, with internal search, base prompt, tools, model and sharing
+preserved. Research citations remain enabled. The rest of the corpus stays
+available through native search; no separate skill runtime was introduced.
+
+Beca's native default model is configuration 19 (AWS Kimi K3). Its catalog
+visibility is enabled for existing provider-authorized users; other persona
+defaults and provider access are unchanged. Configuration 8's temporary LOW
+reasoning settings were not reverted because no verified earlier setting was
+available. Model configuration and instruction readbacks prove configuration,
+not interview quality or end-to-end latency.
+
+## Native memory and business evidence
+
+Native memory recall and MemoryTool are enabled for the owner and existing QA
+users. Fresh-chat recall across personas is verified. Both settings remain on.
+Use memory for company-qualified preferences and durable decisions. Existing
+conversation and brief persistence already retain active interview answers.
+Do not copy each turn through MemoryTool: its update runs an additional model
+call before the main chat resumes.
+
+Native memory is a personal summary, not accepted ontology or source-backed
+numeric evidence. All of a user's memory records are injected across personas;
+there is no automatic company filter. The tested QA memory rows contain no source
+conversation/message IDs. One fresh Angi chat correctly reused prior funnel
+numbers, but the brief extractor only had current executive statements. Do not
+claim those retained numbers passed fresh evidence admission. Use the existing
+causl-kb Library for accepted business evidence and preserve company scope.
+
+The native persona instructions restrict memory writes to explicit requests or
+one useful decision at interview completion. This is model guidance, not a hard
+frequency limit. Keep `replace_base_system_prompt=false` to preserve native recall.
 
 ## Customer evidence and useful native additions
 

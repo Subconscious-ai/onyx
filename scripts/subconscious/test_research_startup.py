@@ -1,9 +1,11 @@
 """Public startup context must remain sourced, bounded and separate from facts."""
 
 import json
+import time
 import unittest
 
 from onyx.server.query_and_chat.burn2.research import (
+    prepared_company_context,
     public_research_query,
     research_context,
     research_matches_company,
@@ -13,6 +15,34 @@ from onyx.server.query_and_chat.burn2.research import (
 
 
 class ResearchStartupTests(unittest.TestCase):
+    def test_unknown_brief_retains_preparation_without_applying_employer_to_client(
+        self,
+    ):
+        profile = {
+            "status": "ready",
+            "profile": {"company": "Acme", "role": "CEO", "website": "acme.com"},
+            "correction": {"revision": 0},
+        }
+        research = {
+            "status": "ready",
+            "query": public_research_query(profile),
+            "checked_at": time.time(),
+            "report": "Acme manufactures widgets.",
+            "source_urls": ["https://acme.com/products"],
+        }
+        for company in (None, "", "Unknown"):
+            context = prepared_company_context(
+                profile, research, company, has_draft=True
+            )
+            self.assertIn("Acme", context)
+            self.assertIn("manufactures widgets", context)
+            self.assertIn("unconfirmed", context.lower())
+        other = prepared_company_context(
+            profile, research, "Different Client", has_draft=True
+        )
+        self.assertNotIn("manufactures widgets", other)
+        self.assertNotIn('"effective"', other)
+
     def test_professional_match_cannot_replace_a_different_interviewed_business(self):
         profile = {
             "status": "ready",
@@ -101,6 +131,16 @@ class ResearchStartupTests(unittest.TestCase):
         self.assertFalse(research_reusable(state, "company A", now=90000))
         state.update(status="queued")
         self.assertFalse(research_reusable(state, "company A", now=500))
+
+    def test_prepared_context_retains_later_relevant_sources_within_receipt_bound(self):
+        context = research_context(
+            {
+                "status": "ready",
+                "report": "Background " * 500 + "Texas Fan Club tariff is available.",
+                "source_urls": ["https://example.com/texas"],
+            }
+        )
+        self.assertIn("Texas Fan Club tariff", context)
 
     def test_retrieved_report_is_never_accepted_or_private_business_evidence(self):
         context = research_context(

@@ -91,6 +91,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useTranslations } from "next-intl";
 import ExecutiveWorkspace, {
   ExecutiveWelcome,
+  ExecutiveModelAction,
 } from "@/sections/executive/ExecutiveWorkspace";
 import { isExecutiveAgent } from "@/lib/executive/brief";
 import { consultingRole } from "@/lib/agents/consulting";
@@ -559,6 +560,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
 
   const onChat = useCallback(
     (message: string) => {
+      if (isLoadingAgents || !activeAgent) return;
       if (multiModel.isMultiModelActive) {
         foldSidebarForMultiModel();
       }
@@ -578,6 +580,8 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
       }
     },
     [
+      isLoadingAgents,
+      activeAgent,
       resetInputBar,
       onSubmit,
       currentMessageFiles,
@@ -621,6 +625,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
 
   const handleAppInputBarSubmit = useCallback(
     async (message: string) => {
+      if (isLoadingAgents || !activeAgent) return;
       // If we're in an existing chat session, always use chat mode
       // (appMode only applies to new sessions)
       if (currentChatSessionId) {
@@ -655,6 +660,8 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
       await submitQuery(message, onChat);
     },
     [
+      isLoadingAgents,
+      activeAgent,
       currentChatSessionId,
       submitQuery,
       onChat,
@@ -807,6 +814,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
         ))}
 
       <ExecutiveWorkspace
+        email={user?.email}
         onModelContext={receiveModelContext}
         active={isExecutiveAgent(activeAgent)}
         messages={messageHistory}
@@ -872,6 +880,9 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                           selectedModels={multiModel.selectedModels}
                           fullWidthChat={fullWidthActive}
                         />
+                        {isExecutiveAgent(activeAgent) && (
+                          <ExecutiveModelAction />
+                        )}
                       </ChatScrollContainer>
                     </Fade>
 
@@ -1046,6 +1057,8 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                           // Intentionally enabled during name-only onboarding (showOnboarding=false)
                           // since LLM providers are already configured and the user can chat.
                           disabled={
+                            isLoadingAgents ||
+                            !activeAgent ||
                             (!llmManager.isLoadingProviders &&
                               llmManager.hasAnyProvider === false) ||
                             (showOnboarding &&

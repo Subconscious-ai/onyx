@@ -20,6 +20,49 @@ from eval_interview import (
 
 
 class EvaluationChecks(unittest.TestCase):
+    def test_question_examples_do_not_hide_the_question_topic(self):
+        turn = Turn("Thanks", asks_about="channel", brief_required=False)
+        self.assertEqual(
+            assess(
+                turn,
+                "Which channel carries the message (e.g., email, TV or radio)?",
+                "",
+            ),
+            [],
+        )
+
+    def test_energy_acknowledgement_must_advance_discovery(self):
+        cases = json.loads(
+            Path(__file__).with_name("energy_progress_cases.json").read_text()
+        )
+        turn = Turn(**cases["energy_progress"][1])
+        self.assertTrue(
+            assess(
+                turn,
+                "Your goal is to raise conversion from 5.5% to 7% within three months.",
+                "Which customer segment does the campaign target?",
+            )
+        )
+        self.assertEqual(
+            assess(
+                turn,
+                "What customer action counts as a conversion?",
+                "Which customer segment does the campaign target?",
+            ),
+            [],
+        )
+        handoff = Turn(**cases["energy_progress"][3])
+        self.assertTrue(assess(handoff, 'View "Model Draft 1" in Brief.', ""))
+        self.assertEqual(
+            assess(
+                handoff,
+                "The draft connects tariff-page visits to signed contracts. "
+                "Traffic remains unknown. Select Open business model when it appears.",
+                "",
+            ),
+            [],
+        )
+
     def test_prototype_cases_detect_declared_unknowns_and_assistant_company_confusion(
         self,
     ):
@@ -172,7 +215,7 @@ class EvaluationChecks(unittest.TestCase):
             ),
         )
 
-    def test_evaluation_never_selects_anthropic_even_through_bedrock(self):
+    def test_evaluation_requires_aws_billing_not_a_particular_model_vendor(self):
         providers = [
             {
                 "provider": "bedrock",
@@ -186,8 +229,12 @@ class EvaluationChecks(unittest.TestCase):
                 "provider": "openai",
                 "model_configurations": [{"id": 4, "name": "gpt-4"}],
             },
+            {
+                "provider": "anthropic",
+                "model_configurations": [{"id": 5, "name": "claude-sonnet"}],
+            },
         ]
-        self.assertEqual(allowed_bedrock_models(providers), {1})
+        self.assertEqual(allowed_bedrock_models(providers), {1, 2})
 
     def test_failed_preparation_preserves_a_failure_receipt_and_checks_storage(self):
         source = {
