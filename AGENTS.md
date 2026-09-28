@@ -146,3 +146,7 @@ Before finding, saving, or updating organization research materials, read the cu
 [organization library](https://github.com/Subconscious-ai/hermes/blob/main/library/LIBRARY.md) and follow its owner links.
 Update records at their owner; record the actual source revision and exact file/run
 used in an experiment. Keep machine-specific paths in private host configuration.
+
+## Agent skills
+
+See `docs/agents/` for the issue tracker (GitHub Issues), triage labels and domain-doc layout.
