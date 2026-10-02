@@ -19,7 +19,7 @@ five seconds while preserving explicit memory writes. This is a bounded check;
 unsupported claims, delayed preparation and final model verification remain open. Read the current recovery and evidence section in
 [the proof plan](executive-proof-plan.md) before relying on older passes below.
 
-The Library transport is in draft
+The Library transport landed in
 [PR #613 — let Beca read accepted organization evidence](https://github.com/Subconscious-ai/causl-kb/pull/613).
 It reuses the installed MCP SDK and existing three Library tools. Native Onyx stores
 each user's scoped credential. The current 24-hour capabilities need renewal;
@@ -370,8 +370,40 @@ and validation modules. After replacing native API containers, reload the inner
 upstream IP. Keep private persona/compose/environment backups off Git.
 
 Focused checks: 98 Python and 65 UI tests; both repositories' focused type checks
-and 61 KB handoff tests passed. The Library per-user capability currently returns
-401. Do not call that empty accepted memory or broaden owner scopes to repair it.
-Use verified current organization membership before renewing its existing
-capability. Onyx dependency audit and the stacked KB base's unrelated lint errors
+and 61 KB handoff tests passed. The Library per-user capability returned 401 because it had expired and targeted
+the old Clerk organization. October 2 recovery verified current Auth0 membership
+and the matching native OAuth account before restoring its existing per-user
+connection. A native credential-resolved live snapshot returned 22 offerings,
+50 attributes, 50 attribute levels and six personas. No roles or memberships
+changed. The recovery capability expires after 24 hours; durable OAuth renewal
+remains unproved. [causl-kb PR #674 — allow native renewable Library OAuth](https://github.com/Subconscious-ai/causl-kb/pull/674)
+adds the resource adapter; it does not itself establish live consent or renewal. Onyx dependency audit and the stacked KB base's unrelated lint errors
 remain CI failures; draft publication is not merge acceptance.
+
+### October 2: authentication and final-save boundary
+
+Wayfinder execution remains in [#38 — reach a usable prepared business model](https://github.com/Subconscious-ai/onyx/issues/38),
+with [#49 — restore caller-scoped Library context](https://github.com/Subconscious-ai/onyx/issues/49)
+and [#50 — finish interview-to-model onboarding](https://github.com/Subconscious-ai/onyx/issues/50).
+The current consumer is [causl-kb PR #675 — build with an unknown numeric target](https://github.com/Subconscious-ai/causl-kb/pull/675),
+rebased on Auth0 main; it supersedes closed PR #667.
+
+A preview Auth0 callback must use the same stable origin as the model handoff.
+The default generated Vercel hostname differed from the branch alias, breaking
+the origin-bound receiver after login. Set branch-specific `APP_BASE_URL` to the
+receiver alias, redeploy, and read back `/auth/login`'s `redirect_uri`. Preserve
+the nonce and exact destination through the official SDK. An allowlisted callback
+alone does not prove a completed authenticated model save.
+
+Extraction no longer treats an earlier company `Unknown` as a company selection.
+The live reported conversation still reopened with company unresolved. Do not
+force a professional employer match into a different or ambiguous business model.
+The matching-company gate correctly withholds unrelated background. One material
+scope confirmation can be necessary; public company trivia is not.
+
+Focused proof: 13 Library/JWT authentication tests and 61 handoff/compiler/dossier
+route tests pass. The extraction regression failed against the prior runtime and
+passes against the candidate. The retained QA identities are not members of the
+current Auth0 organization. Do not grant membership or forge a session to claim a
+customer journey pass. A legitimate member login, native OAuth renewal, saved
+model calculation/reload, and the full sixty-second clock remain live acceptance.

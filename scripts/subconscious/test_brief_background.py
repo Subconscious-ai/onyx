@@ -53,6 +53,23 @@ class BriefModelPolicyTests(unittest.TestCase):
             for name, value in replacements.items():
                 stack.enter_context(patch.object(api, name, return_value=value))
             stack.enter_context(
+                patch("onyx.db.burn2_profile.read_profile", return_value={})
+            )
+            stack.enter_context(
+                patch("onyx.db.burn2_research.read_research", return_value=None)
+            )
+            stack.enter_context(
+                patch.object(
+                    api,
+                    "latest_saved_brief",
+                    return_value={
+                        "company": "Unknown",
+                        "objective": {"status": "executive"},
+                        "model": {"equation": {"text": "Old assumption"}},
+                    },
+                )
+            )
+            stack.enter_context(
                 patch.object(
                     api,
                     "prepare_validated_brief",
@@ -63,6 +80,11 @@ class BriefModelPolicyTests(unittest.TestCase):
                 api.PrepareBrief(chat_id=uuid4()), MagicMock(), MagicMock()
             )
         self.assertTrue(result.saved)
+        import json
+
+        payload = json.loads(llm.invoke.call_args.kwargs["prompt"][1].content)
+        self.assertNotIn("company", payload["previous_draft"])
+        self.assertNotIn("equation", payload["previous_draft"]["model"])
         requested = llm.invoke.call_args.kwargs.get(
             "reasoning_effort", ReasoningEffort.AUTO
         )
