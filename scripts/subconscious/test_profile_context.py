@@ -133,6 +133,40 @@ class ProfileTests(unittest.TestCase):
         self.assertNotIn("1970", str(value))
         self.assertNotIn("123", str(value))
 
+    def test_professional_dossier_retains_career_and_linkedin_without_contact_data(
+        self,
+    ):
+        value = select_profile(
+            {
+                "likelihood": 8,
+                "data": {
+                    "full_name": "Pat Example",
+                    "job_title": "CEO",
+                    "job_company_name": "Acme",
+                    "linkedin_url": "linkedin.com/in/pat-example",
+                    "summary": "Builds enterprise research businesses.",
+                    "job_summary": "Leads customer research.",
+                    "skills": ["pricing", "market research"],
+                    "experience": [
+                        {
+                            "company": {"name": "Prior Co", "website": "prior.example"},
+                            "title": {"name": "Product lead"},
+                            "start_date": "2020-01",
+                            "end_date": "2023-01",
+                            "email": "private@example.com",
+                        }
+                    ],
+                    "phone_numbers": ["123"],
+                    "personal_emails": ["private@example.com"],
+                },
+            }
+        )
+        self.assertEqual(value["linkedin_url"], "https://linkedin.com/in/pat-example")
+        self.assertIn("Prior Co", str(value["experience"]))
+        self.assertEqual(value["skills"], ["pricing", "market research"])
+        self.assertNotIn("private@example.com", str(value))
+        self.assertNotIn("123", str(value))
+
     def test_low_confidence_match_never_becomes_identity(self):
         self.assertIsNone(
             select_profile({"likelihood": 2, "data": {"full_name": "Wrong person"}})

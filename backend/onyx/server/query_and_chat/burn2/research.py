@@ -40,11 +40,30 @@ def public_research_query(profile: dict[str, Any] | None) -> str | None:
     if not url:
         return None
     host = urlsplit(url).hostname
-    return (
-        f"Research the public business at https://{host}. Identify products, "
-        "buyer groups and competitors with original-source URLs. "
-        "Do not infer private objectives or operating metrics."
+    if not host or len(host) > 253:
+        return None
+    professional = profile.get("provider_profile") or {}
+    person = professional.get("name", "")
+    person_query = ""
+    if isinstance(person, str) and re.fullmatch(r"[\w .'-]{3,80}", person):
+        person_query = (
+            f" Verify public professional background for {person} at this company."
+        )
+        linkedin = public_source_url(professional.get("linkedin_url"))
+        if (
+            linkedin
+            and (urlsplit(linkedin).hostname or "").removeprefix("www.")
+            == "linkedin.com"
+        ):
+            person_query += f" Check {linkedin[:180]}."
+    query = (
+        f"Research the public business at https://{host}. Identify products, buyers, "
+        "pricing/revenue model, competitors and customer buying journey. "
+        "Offer two plausible journey structures and relevant success measures, clearly labeled as proposals. "
+        "Cite original URLs; distinguish published facts from hypotheses. "
+        "Do not infer private objectives, operating metrics or market prevalence."
     )
+    return query + person_query if len(query + person_query) <= 800 else query
 
 
 def research_reusable(
@@ -52,7 +71,7 @@ def research_reusable(
 ) -> bool:
     if not state or state.get("query") != query:
         return False
-    lifetime = 300 if state.get("status") in {"queued", "running"} else 86400
+    lifetime = 300 if state.get("status") in {"queued", "running"} else 21600
     age = (time.time() if now is None else now) - state.get("checked_at", 0)
     return state.get("status") in {"queued", "running", "ready"} and 0 <= age < lifetime
 

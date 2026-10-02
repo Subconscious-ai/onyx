@@ -392,13 +392,8 @@ export function modelReadiness(brief: InterviewBrief | null): ModelReadiness {
   const missing: string[] = [];
   if (!brief || brief.objective.status !== "executive")
     missing.push("An executive objective");
-  if (
-    !brief?.keyResults?.some(
-      (kr) =>
-        kr.target.status === "executive" && kr.deadline.status === "executive"
-    )
-  )
-    missing.push("A measurable target and deadline");
+  if (!brief?.keyResults?.some((kr) => kr.metric.trim() && kr.unit.trim()))
+    missing.push("A named success measure");
   if ((brief?.journey.length ?? 0) < 2)
     missing.push("Customer behavior before and after a decision");
   if (!brief?.transitions?.length)

@@ -22,9 +22,42 @@ def select_profile(payload: dict) -> dict[str, Any] | None:
         "industry": "job_company_industry",
         "website": "job_company_website",
     }
-    return {
+    profile: dict[str, Any] = {
         key: str(data[value])[:200] for key, value in fields.items() if data.get(value)
     }
+    for key in ("summary", "job_summary"):
+        if isinstance(data.get(key), str) and data[key].strip():
+            profile[key] = data[key][:1500]
+    linkedin = data.get("linkedin_url")
+    if isinstance(linkedin, str):
+        linkedin = linkedin.removeprefix("https://").removeprefix("http://")
+        if re.fullmatch(r"(?:www\.)?linkedin\.com/in/[a-zA-Z0-9_%.-]+/?", linkedin):
+            profile["linkedin_url"] = "https://" + linkedin
+    skills = data.get("skills")
+    if isinstance(skills, list):
+        profile["skills"] = [item[:80] for item in skills[:12] if isinstance(item, str)]
+    experience = data.get("experience")
+    if isinstance(experience, list):
+        roles = []
+        for item in experience[:6]:
+            if not isinstance(item, dict):
+                continue
+            company = item.get("company") or {}
+            title = item.get("title") or {}
+            role = {}
+            for key, value in {
+                "company": company.get("name") if isinstance(company, dict) else None,
+                "role": title.get("name") if isinstance(title, dict) else None,
+                "start_date": item.get("start_date"),
+                "end_date": item.get("end_date"),
+            }.items():
+                if isinstance(value, str) and value:
+                    role[key] = value[:200]
+            if role:
+                roles.append(role)
+        if roles:
+            profile["experience"] = roles
+    return profile
 
 
 def turn_guidance(_turn: int, text: str) -> str:
