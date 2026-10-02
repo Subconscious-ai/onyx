@@ -388,11 +388,17 @@ and [#50 — finish interview-to-model onboarding](https://github.com/Subconscio
 The current consumer is [causl-kb PR #675 — build with an unknown numeric target](https://github.com/Subconscious-ai/causl-kb/pull/675),
 rebased on Auth0 main; it supersedes closed PR #667.
 
+The October 2 repair runs as `onyx-burn2:prepared-oct2d`. API and worker image
+read-back passed; the API source hash matches the published commit. Native QA
+`/api/me` returned 200, and the Library read still succeeded after replacement.
+The four browser automatic-save/recovery tests also pass.
+
 A preview Auth0 callback must use the same stable origin as the model handoff.
 The default generated Vercel hostname differed from the branch alias, breaking
 the origin-bound receiver after login. Set branch-specific `APP_BASE_URL` to the
 receiver alias, redeploy, and read back `/auth/login`'s `redirect_uri`. Preserve
-the nonce and exact destination through the official SDK. An allowlisted callback
+the nonce and exact destination through the official SDK. The redeployed receiver
+returned the exact stable callback origin in live read-back. An allowlisted callback
 alone does not prove a completed authenticated model save.
 
 Extraction no longer treats an earlier company `Unknown` as a company selection.
