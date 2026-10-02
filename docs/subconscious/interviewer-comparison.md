@@ -8,7 +8,7 @@ No platform has passed authenticated entry to a saved, reopened market model in 
 This work tests moderation through real platform APIs. It does not certify the complete product pipeline.
 ElevenLabs remains blocked by an invalid credential. Do not select a three-platform winner from two platforms.
 
-Keep native Onyx as the product host. Do not add a second production framework from these results alone.
+Keep native Onyx as the product host. Apply Parlant's conditional-guideline lessons through the existing Burn instructions; do not add a second production framework from these results alone.
 Retain the private comparison so ElevenLabs can complete the same test when its credential works.
 
 ## Agreed outcome
@@ -26,7 +26,7 @@ Credits count as metered usage. The comparison requires six development customer
 
 - Native Onyx creates, streams, and reopens private conversations. No replacement chat, memory, or authentication service was built.
 - Parlant 3.3.2 uses its official SDK, conditional guidelines, native retriever, and session events.
-- Both moderators use AWS Bedrock `openai.gpt-oss-120b-1:0`. The simulated executive and diagnostic evaluator use that model too.
+- The original comparison moderators use AWS Bedrock `openai.gpt-oss-120b-1:0`. The simulated executive and diagnostic evaluator use that model too.
   These findings apply to this model/configuration; they do not rank every model available on each platform.
 - Parlant uses LiteLLM 1.103.2 and Titan V2 embeddings. Boto3 is 1.43.106; HTTPX is 0.28.1.
 - The final Parlant configuration uses its native `NullPerceivedPerformancePolicy` to remove cosmetic preambles.
@@ -120,6 +120,82 @@ Do not infer public homework merely from that fallback message.
 Parlant is the stronger moderation POC in this bounded test. Native is faster and remains the existing product host.
 Neither justifies a production framework selection. Complete ElevenLabs and the actual saved-model boundary before choosing.
 
+## Native interview upgrade and adversarial reassessment
+
+The canonical [executive rubric](executive-rubric.md) and [turn reminder](executive-turn-reminder.md)
+now use ordered conditions: identify the business decision, earn a consequential private observation,
+state its exact model consequence, then stop discovery. A volunteered answer outranks delayed brief extraction.
+Unknown numbers stay symbolic. Public references do not become company facts. A process joke cannot add evidence.
+The existing native memory, research, calculator, and specialist tools remain available.
+
+The new assessment reuses the six independent review customers as **regressions**, not unseen validation.
+It freezes the source fixtures and private facts, then tests the saved native instructions through the real Burn chat
+and automatic brief worker. Four native candidates were configured privately; candidate 3 completed all six cases,
+then candidate 4 retested only the two cases with grounding defects. Production Beca was unchanged during iteration.
+
+| Independently audited outcome | Original native review | Upgraded native candidate 3 |
+| --- | ---: | ---: |
+| Useful private insight earned | 1/6 | 6/6 |
+| Exact spoken and structured model consequence | 0/6 | 6/6 |
+| Customers with repeated explicit unknown questions | 6/6 | 0/6 |
+| Native brief saved within the 75-second polling window | Not exercised on supported Burn persona | 5/6 |
+| Native brief eventually reopened | Not exercised on supported Burn persona | 6/6 |
+| Unsupported factual details | Not a clean baseline | 2/6 |
+| Saved business model exercised | 0 | 0 |
+
+Candidate 3 introduced an unsupported renewal dependency in education and unsupported cancellation timing in hospitality.
+It was withheld from production. Candidate 4 strengthens grounding in question setup and humor. Its targeted education
+and hospitality runs each earned the private insight in **two customer answers** and saved a native brief.
+Their diagnostic interview totals were **67.374s** and **63.921s** at 60-wpm typing, including final reading;
+residual brief waits were **33.190s** and **40.661s** separately. Simulated replies were paced on these targeted runs.
+Independent final review found the earlier unsupported factual details absent in both targeted cases. Presenter names are not business evidence; the submit-button joke is a contextual metaphor rather than a claim about disclosure timing. Only these two cases were retested on candidate 4. The reviewer supports publishing the bounded interview improvement, not certifying the complete pipeline.
+
+For the six-case candidate-3 assessment, the median diagnostic interview time is **76.823s** at 60-wpm typing
+or **90.490s** at 45-wpm typing, including final answer reading. Median moderator processing is **12.051s**.
+These exclude authentication, fresh provider preparation, and model generation. They do not satisfy the agreed
+60-second authenticated-entry-to-saved-model acceptance clock. The model used was the existing AWS Bedrock
+`us.moonshotai.kimi-k3` (configuration 19); original native and Parlant comparison runs used GPT OSS 120B.
+The simulated executive and diagnostic evaluator still used configured GPT OSS 120B. This is an integrated
+configuration improvement, not a controlled prompt-only or model-only comparison.
+
+The persisted brief remains an incomplete product boundary: all six company fields were Unknown despite profile
+context, two candidate-3 key-result lists were empty, and advisory percent-input equations omitted explicit /100
+conversion. Candidate 4 retained the hospitality key result but did not establish a general extraction fix: the education baseline incorrectly contains qualitative testimony, and the hotel capacity constraint remains in the goal quote rather than an explicit model constraint.
+No compiled calculation or reopened causl-kb model was exercised. Do not report these chat/brief successes as
+accepted ontology writes, correct Monte Carlo execution, or complete market-model persistence.
+
+### Published native settings, October 2
+
+Candidate 4 was applied to existing Beca (persona 5) through native persona helpers and read back: both prompts match the canonical files, all 46 assigned tools and AWS model configuration 19 are retained, and native base-prompt memory remains enabled. No role, sharing, provider, or backend image changes were made. The previous native settings were preserved privately for rollback. The isolated QA profile was restored after testing.
+
+[Try upgraded Beca](https://burn.subconscious.ai/app?agentId=5) in a **new conversation** on the canonical login origin. Existing conversations retain their transcript and can carry earlier assumptions. This is an interviewer configuration release. It does not repair or prove the remaining extraction, ontology-admission, compiled-model, or timing boundaries.
+
+### Regression and operating lessons
+
+- Four benchmark regressions were observed failing before repair: assigned native tools/model were replaced by
+  benchmark defaults; a generic persona skipped Burn extraction; saved promises were not actual brief receipts;
+  frozen turn instructions and final synthesis reading were not checked. The focused suite now passes **94 tests**.
+- Preserve `replace_base_system_prompt=false`. Replacing the native base prompt removes its memory injection.
+- Use the existing supported executive persona path and native defaults. Prompt files alone do not update the
+  persona's Postgres settings; read back both stored system and task instructions after configuration.
+- Source company identity must reach the brief extractor, not only the interviewer. Native brief storage is
+  different from causl-kb accepted ontology and a saved business model.
+- Correct an isolated QA profile when changing synthetic companies. Retained dossier roles otherwise contaminate
+  later cases. Restore the existing QA profile after testing; never change roles, sharing, or real customer profiles.
+- Public fixtures are labeled synthetic and are never accepted market evidence. These reruns do not prove fresh
+  PDL or GPT Researcher discovery; the separate live preparation probe remains the applicable provider evidence.
+- Keep AWS throttling receipts and late brief saves. Candidate 3 retained one failed education attempt, then retried
+  only that case with paced replies. A native saved response after the polling window is eventual success, not timely success.
+- The simulated human's semantic classifier missed a legitimate cold-chain question. An independent source-grounded
+  adjudication corrected only that exact test move, preserving its original failure and all budget reservations.
+- Automatic evaluator ratings misclassified presenter names as unsupported business evidence and missed earned
+  insights. Independent transcript-and-brief review determines acceptance; rating averages do not.
+
+As of the targeted candidate-4 rerun, reservations total **$188.627324/$240**, including failed attempts and
+all development/comparison calls. The largest customer reservation remains **$18.545908/$20**.
+These are conservative reservations, not reconciled provider invoices. Further six-case paid reruns cannot be
+assumed to fit the remaining per-customer limits. The existing ledger must continue unchanged.
+
 ## Live preparation probe
 
 A separate existing-path probe performed a fresh PDL lookup and dispatched GPT Researcher in parallel.
@@ -143,7 +219,7 @@ or a saved model. Native research storage and causl-kb accepted memory are diffe
 - Old UAT cases volunteered their goal in an opening message. Some early baseline runs omitted that knowledge when automatic opening was added.
 - An early Parlant adapter treated a preamble's ready status as completion. Corrected runs wait for the native completed stage.
 - Native round 3 initially called a Burn-only brief route for a generic persona and received HTTP errors after valid interviews.
-  All six transcripts were independently reopened. The driver now measures chat retention without calling that route.
+  All six transcripts were independently reopened. The original correction measured chat retention without calling that route. The upgrade now calls the brief route only for a supported executive persona.
 - The simulated executive sometimes classified generic prompts too generously and released a private insight without earning it.
   Independent review rejects those successes. Automatic evaluator scores are diagnostic, not acceptance evidence.
 - The Parlant POC uses transient native sessions. Reading those events before shutdown does not establish durable recovery.
@@ -156,7 +232,7 @@ The ledger persists across restarts and all vendors share each customer's limit.
 The live preparation probe also reserves budget against its existing development customer.
 Native requests reserve $1 each. Parlant completion reservations cover its SDK's 5,000-token output limit at conservative rates.
 
-Final review reservations total **$131.677**, including **$33.187** for unseen customers and the tester correction.
+The original independent review reservations totaled **$131.677**, including **$33.187** for unseen customers and the tester correction.
 The largest customer reservation is **$18.546**. All twelve customers remain within their $20 reservation ceiling.
 Reservations are conservative ceilings, not provider invoices. Actual metered totals have not been reconciled with account billing.
 Do not reset the ledger, create a new customer label for retries, or describe reservations as measured spend.

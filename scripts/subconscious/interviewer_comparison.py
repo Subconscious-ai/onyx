@@ -75,10 +75,11 @@ class Budget:
         )
 
 
-def human_seconds(question: str, answer: str) -> float:
+def human_seconds(question: str, answer: str | None) -> float:
     # Explicit modeled reading at 240 wpm, typing at 60 wpm, and 2s reflection.
     # Not a measurement of real human behavior or actual waiting in this runner.
-    return len(question.split()) / 4 + len(answer.split()) + 2
+    reading = len(question.split()) / 4
+    return reading if answer is None else reading + len(answer.split()) + 2
 
 
 def reveal(case: dict, ids: list[str], seen: set[str]) -> tuple[str, list[str]]:
@@ -212,6 +213,17 @@ class NativeOnyx:
             and stored["system_prompt"] != self.instructions
         ):
             raise ValueError("Stored native POC does not match frozen instructions")
+        if "task_prompt" in config and stored["task_prompt"] != config["task_prompt"]:
+            raise ValueError(
+                "Stored native turn instructions do not match the candidate"
+            )
+        self.tool_ids = [tool["id"] for tool in stored["tools"]]
+        self.model_configuration_id = stored["default_model_configuration_id"]
+        self.burn_brief_enabled = stored["name"] in {
+            "Executive interview",
+            "Burn 2.0",
+            "Burn 2.0 Nova QA",
+        }
 
     async def begin(self, customer: str, case: dict) -> str:
         self.chat_id = (
@@ -233,7 +245,6 @@ class NativeOnyx:
                     "synthetic": True,
                     "market_hint": case.get("market", customer.split("_")[0]),
                 },
-                "customer": customer,
                 "accepted_ontology": [],
                 "research_status": "pending",
             },
@@ -252,13 +263,12 @@ class NativeOnyx:
                 "chat_session_id": self.chat_id,
                 "parent_message_id": -1,
                 "origin": "webapp",
-                "llm_override": {"model_configuration_id": 8},
-                "allowed_tool_ids": [6],
+                "llm_override": {"model_configuration_id": self.model_configuration_id},
+                "allowed_tool_ids": self.tool_ids,
                 "additional_context": json.dumps(
                     {
                         **context,
-                        "evaluation_instructions": self.instructions,
-                        "scope": "Isolated synthetic customer; exclude unrelated saved memories.",
+                        "scope": "Isolated synthetic engagement. Its ID is a test label, not a company name. Exclude unrelated saved memories. Fixture evidence is not live provider research.",
                     }
                 ),
             },
@@ -269,6 +279,13 @@ class NativeOnyx:
                     continue
                 packet = json.loads(line)
                 if packet.get("error"):
+                    write_private_json(
+                        self.budget.path.parent
+                        / "onyx"
+                        / "stream-errors"
+                        / (str(self.chat_id) + ".json"),
+                        packet,
+                    )
                     raise RuntimeError(
                         "Native stream failed: "
                         + str(packet.get("error_code", "unknown"))
@@ -280,12 +297,30 @@ class NativeOnyx:
 
     async def retained(self) -> dict:
         session = await self.api("GET", "/chat/get-chat-session/" + str(self.chat_id))
+        started = time.monotonic()
+        saved = False
+        brief = None
+        if self.burn_brief_enabled:
+            while time.monotonic() - started < 75:
+                result = await self.api(
+                    "GET", "/chat/executive-brief?chat_id=" + str(self.chat_id)
+                )
+                if result.get("saved"):
+                    brief = json.loads(
+                        result["message"]
+                        .split("<interview-brief>", 1)[1]
+                        .split("</interview-brief>", 1)[0]
+                    )
+                    saved = True
+                    break
+                await asyncio.sleep(1)
         return {
             "chat_id": self.chat_id,
             "message_count": len(session.get("messages", [])),
             "retained_native_chat": bool(session.get("messages")),
-            # Generic private POC personas do not own a Burn executive brief.
-            "native_brief_saved": False,
+            "native_brief_saved": saved,
+            "brief": brief,
+            "brief_wait_after_interview_seconds": round(time.monotonic() - started, 3),
             "saved_business_model": False,
         }
 
@@ -497,7 +532,12 @@ async def evaluate(args) -> None:
                 "customer": name,
                 "platform": args.platform,
                 "revision": config["revision"],
-                "model": "AWS Bedrock GPT OSS 120B",
+                "model": "Native configured AWS model"
+                if args.platform == "onyx"
+                else "AWS Bedrock GPT OSS 120B",
+                "model_configuration_id": moderator.model_configuration_id
+                if args.platform == "onyx"
+                else None,
                 "turns": [],
                 "failures": [],
                 "research": "scripted fixture arrivals; not live discovery",
@@ -540,7 +580,6 @@ async def evaluate(args) -> None:
                             "synthetic": True,
                             "market_hint": case.get("market", name.split("_")[0]),
                         },
-                        "customer": name,
                         "accepted_ontology": [],
                         "research_status": "fixture_ready",
                         "evidence": case.get("public_evidence", []),
@@ -578,6 +617,8 @@ async def evaluate(args) -> None:
                         and (not case.get("adversary") or adversary_sent)
                     ):
                         break
+                receipt["final_reading_seconds"] = human_seconds(answer, None)
+                modeled_human += receipt["final_reading_seconds"]
                 receipt["retention"] = await moderator.retained()
                 receipt["revealed_fact_ids"] = sorted(seen)
                 receipt["diagnostic_review"] = await asyncio.to_thread(

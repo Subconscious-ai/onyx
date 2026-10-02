@@ -2,10 +2,10 @@
 
 [Open Burn](https://burn.subconscious.ai/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Start login on this canonical address. Branch previews redirect to the registered login origin and do not prove their own authenticated customer path.
 
-## Current acceptance, October 1
+## Current acceptance, October 2
 
 The [interviewer comparison](interviewer-comparison.md) completed three development rounds and six unseen reviews each for Native Onyx and Parlant.
-Parlant earned more private insights; Native was faster. Neither proved the full 60-second model journey.
+The original comparison favored Parlant for insight and Native for speed. Applying conditional interviewing through native Burn configuration improved the six native regression cases to 6/6 useful private insights and model consequences, with no repeated unknown questions. Five briefs saved within the polling window; all six eventually reopened. The two final targeted grounding checks passed independently; those native instructions are now applied to Beca. Start a new conversation on the canonical Burn URL. Publication state and retained failures are documented in the comparison. The full 60-second saved-model journey remains unproved.
 ElevenLabs remains untested because its available credential is a key ID, not an API secret.
 A separate live preparation probe returned nine research sources in 32.389 seconds, with an explicit PDL no-match.
 That probe does not prove causl-kb admission or a saved model.
