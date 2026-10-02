@@ -270,11 +270,15 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
 
 
 def needs_completion(value: dict) -> bool:
-    """A stated numeric objective must survive extraction into the model contract."""
+    """A structured objective needs usable drivers, even without numeric targets."""
     objective = value.get("objective", {})
     return bool(
         objective.get("status") == "executive"
-        and re.search(r"\d", objective.get("text", ""))
+        and (
+            re.search(r"\d", objective.get("text", ""))
+            or value.get("keyResults")
+            or len(value.get("journey", [])) >= 2
+        )
         and (
             not value.get("keyResults") or not (value.get("model") or {}).get("inputs")
         )
@@ -336,7 +340,7 @@ def prepare_validated_brief(
             brief = validate_brief(value, statements)
             if needs_completion(brief):
                 raise ValueError(
-                    "A stated numeric objective requires key results and named model inputs"
+                    "A structured objective requires key results and named model inputs"
                 )
             return brief
         except ValueError as error:

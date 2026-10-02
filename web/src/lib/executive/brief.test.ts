@@ -1,5 +1,6 @@
 import {
   projectBrief,
+  modelReadiness,
   visibleInterviewText,
   type InterviewMessage,
 } from "./brief";
@@ -324,6 +325,44 @@ describe("Burn 2.0 model handoff", () => {
     expect(result.brief?.keyResults?.[0]?.baseline.status).toBe("unknown");
     expect(result.brief?.keyResults?.[0]?.target.status).toBe("executive");
     expect(result.brief?.model?.equation.status).toBe("assumption");
+  });
+  test("allows a named success measure and journey to build a symbolic model with unknown targets", () => {
+    const symbolic = projectBrief([
+      ...history,
+      answer({
+        ...v2,
+        keyResults: [
+          {
+            ...v2.keyResults[0],
+            target: { text: "Unknown", status: "unknown" },
+            deadline: { text: "Unknown", status: "unknown" },
+          },
+        ],
+        journey: [
+          ...v2.journey,
+          {
+            id: "renew",
+            actor: "Administrator",
+            text: "Renews",
+            status: "assumption",
+          },
+        ],
+        transitions: [
+          {
+            id: "renewal",
+            from: "activate",
+            to: "renew",
+            behavior: { text: "Chooses to renew", status: "assumption" },
+            metric: "Annual renewal",
+          },
+        ],
+      }),
+    ]).brief;
+    expect(modelReadiness(symbolic).ready).toBe(true);
+    expect(symbolic?.keyResults?.[0]?.target.status).toBe("unknown");
+    expect(
+      modelReadiness(symbolic && { ...symbolic, keyResults: [] }).ready
+    ).toBe(false);
   });
   test("a quoted scenario cannot become a company baseline or target", () => {
     const quote = "Assume a renewal baseline of 80 percent for a scenario.";

@@ -72,6 +72,47 @@ class ResearchStartupTests(unittest.TestCase):
         for private in ("Private", "CEO", "secret", "email", "Ignore", "/private"):
             self.assertNotIn(private, query)
 
+    def test_public_professional_lookup_and_market_journey_use_the_existing_research_query(
+        self,
+    ):
+        query = public_research_query(
+            {
+                "status": "ready",
+                "profile": {"website": "acme.com"},
+                "provider_profile": {
+                    "name": "Pat Example",
+                    "website": "acme.com",
+                    "linkedin_url": "https://linkedin.com/in/pat-example",
+                },
+            }
+        )
+        self.assertIn("Pat Example", query)
+        self.assertIn("linkedin.com/in/pat-example", query)
+        self.assertIn("journey", query)
+        self.assertIn("success", query)
+        self.assertLessEqual(len(query), 800)
+        self.assertFalse(
+            research_reusable(
+                {"status": "ready", "query": query, "checked_at": 100}, query, now=22000
+            )
+        )
+
+    def test_client_company_research_does_not_attach_employer_dossier(self):
+        profile = {
+            "status": "ready",
+            "profile": {"company": "ClientCo", "website": "clientco.com"},
+            "provider_profile": {
+                "name": "Pat Example",
+                "company": "EmployerCo",
+                "website": "employerco.com",
+                "linkedin_url": "https://linkedin.com/in/pat-example",
+            },
+        }
+        query = public_research_query(profile)
+        self.assertIn("clientco.com", query)
+        self.assertNotIn("Pat Example", query)
+        self.assertNotIn("linkedin.com", query)
+
     def test_missing_or_unsafe_match_never_starts_public_research(self):
         for website in (
             "",

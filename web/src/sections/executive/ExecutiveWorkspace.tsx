@@ -14,6 +14,8 @@ import {
   useState,
 } from "react";
 import { useAutomaticBrief, useExecutiveContext } from "@/lib/executive/hooks";
+import type { PublicResearch } from "@/lib/executive/hooks";
+import type { ProfileFields } from "@/lib/executive/profile";
 import {
   createModelHandoff,
   modelBusinessContext,
@@ -35,6 +37,11 @@ import {
 import "./executive.css";
 
 const ModelActionContext = createContext<React.ReactNode>(null);
+const PreparationContext = createContext<{
+  profile?: ProfileFields;
+  profileStatus: string;
+  research: PublicResearch;
+} | null>(null);
 
 /** Render the existing action inside the native chat scroll area. */
 export function ExecutiveModelAction() {
@@ -122,11 +129,31 @@ function exportBrief(brief: InterviewBrief) {
 
 export function ExecutiveWelcome() {
   const t = useTranslations("executive");
+  const preparation = useContext(PreparationContext);
+  const observation =
+    preparation?.research.status === "ready"
+      ? preparation.research.report
+          ?.split("\n")
+          .find(
+            (line) => line.trim().length > 20 && !line.trim().startsWith("#")
+          )
+          ?.slice(0, 320)
+      : null;
   return (
     <div className="executive-welcome">
       <Text as="h1" font="heading-h2">
         {t("openingSpeaker")}
       </Text>
+      {preparation?.profile?.name && (
+        <Text as="p" font="secondary-body">
+          {`${preparation.profileStatus} · ${preparation.profile.name}`}
+        </Text>
+      )}
+      {observation && (
+        <Text as="p" font="main-ui-body">
+          {observation}
+        </Text>
+      )}
       <Text as="p" font="main-ui-body">
         {t("openingQuestion")}
       </Text>
@@ -344,7 +371,13 @@ export default function ExecutiveWorkspace({
 
         <div className="executive-main">
           <div className="executive-conversation">
-            <div className="executive-native-chat">{children}</div>
+            <div className="executive-native-chat">
+              <PreparationContext.Provider
+                value={{ profile: dossier?.profile, profileStatus, research }}
+              >
+                {children}
+              </PreparationContext.Provider>
+            </div>
           </div>
 
           {active && (
@@ -424,11 +457,11 @@ export default function ExecutiveWorkspace({
                     ))}
                   </div>
                 )}
-                {specialists.map((specialist) => (
-                  <Text as="p" font="secondary-body" key={specialist.name}>
-                    {`${specialist.name}: ${specialist.job}`}
+                {brief?.objective.status === "executive" && (
+                  <Text as="p" font="secondary-body">
+                    {brief.objective.text}
                   </Text>
-                ))}
+                )}
               </details>
               <div className="executive-brief-top">
                 <div>
