@@ -346,7 +346,7 @@ not executive testimony. The research sidebar no longer presents static speciali
 job descriptions as conversation evidence.
 
 The actual reported conversation was read through native ownership helpers. Its
-later revenue-growth, $25,000 proof-of-concept and awareness/consideration/purchase
+later revenue-growth, stated proof-of-concept price and awareness/consideration/purchase
 answers were present, but earlier responses had stopped discovery prematurely.
 Fresh PDL completed in 0.51 seconds; retained fresh GPT Researcher preparation had
 seven original sources. This is not proof of their admission into accepted KB
