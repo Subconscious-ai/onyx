@@ -4,3 +4,4 @@ FROM ${BURN_BASE_IMAGE}
 COPY --link backend/onyx/server/query_and_chat/burn2/api.py /app/onyx/server/query_and_chat/burn2/api.py
 COPY --link backend/onyx/server/query_and_chat/burn2/profile.py /app/onyx/server/query_and_chat/burn2/profile.py
 COPY --link backend/onyx/server/query_and_chat/burn2/research.py /app/onyx/server/query_and_chat/burn2/research.py
+COPY --link backend/onyx/server/query_and_chat/burn2/validation.py /app/onyx/server/query_and_chat/burn2/validation.py

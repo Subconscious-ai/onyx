@@ -45,7 +45,26 @@ def public_research_query(profile: dict[str, Any] | None) -> str | None:
     professional = profile.get("provider_profile") or {}
     person = professional.get("name", "")
     person_query = ""
-    if isinstance(person, str) and re.fullmatch(r"[\w .'-]{3,80}", person):
+    provider_website = professional.get("website", "")
+    provider_url = (
+        public_source_url(
+            provider_website
+            if "://" in provider_website
+            else f"https://{provider_website}"
+        )
+        if isinstance(provider_website, str)
+        else None
+    )
+    same_company = bool(
+        provider_url
+        and (urlsplit(provider_url).hostname or "").removeprefix("www.")
+        == host.removeprefix("www.")
+    )
+    if (
+        same_company
+        and isinstance(person, str)
+        and re.fullmatch(r"[\w .'-]{3,80}", person)
+    ):
         person_query = (
             f" Verify public professional background for {person} at this company."
         )

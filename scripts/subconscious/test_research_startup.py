@@ -81,6 +81,7 @@ class ResearchStartupTests(unittest.TestCase):
                 "profile": {"website": "acme.com"},
                 "provider_profile": {
                     "name": "Pat Example",
+                    "website": "acme.com",
                     "linkedin_url": "https://linkedin.com/in/pat-example",
                 },
             }
@@ -95,6 +96,22 @@ class ResearchStartupTests(unittest.TestCase):
                 {"status": "ready", "query": query, "checked_at": 100}, query, now=22000
             )
         )
+
+    def test_client_company_research_does_not_attach_employer_dossier(self):
+        profile = {
+            "status": "ready",
+            "profile": {"company": "ClientCo", "website": "clientco.com"},
+            "provider_profile": {
+                "name": "Pat Example",
+                "company": "EmployerCo",
+                "website": "employerco.com",
+                "linkedin_url": "https://linkedin.com/in/pat-example",
+            },
+        }
+        query = public_research_query(profile)
+        self.assertIn("clientco.com", query)
+        self.assertNotIn("Pat Example", query)
+        self.assertNotIn("linkedin.com", query)
 
     def test_missing_or_unsafe_match_never_starts_public_research(self):
         for website in (

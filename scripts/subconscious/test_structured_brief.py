@@ -6,6 +6,15 @@ from onyx.server.query_and_chat.burn2.validation import validate_brief
 
 
 class StructuredBriefTest(unittest.TestCase):
+    def test_nonnumeric_success_measure_does_not_complete_an_empty_model(self):
+        from onyx.server.query_and_chat.burn2.validation import needs_completion
+
+        value = self.brief()
+        value["keyResults"] = [{"metric": "Time to first valid sample"}]
+        self.assertTrue(needs_completion(value))
+        value["model"]["inputs"] = [{"name": "Decision to collection time"}]
+        self.assertFalse(needs_completion(value))
+
     def test_assistant_proposals_preserve_reference_context_without_source_admission(
         self,
     ):

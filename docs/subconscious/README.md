@@ -329,3 +329,49 @@ acceptance. #31 remains draft; causl-kb #430 owns the unfinished integrated jour
 The source/library work in #35 is real retrieval capability, not proof that every
 interview used MBB evidence. Keep behavior proof separate from configured tools,
 source merges, deployment health and narrow synthetic passes.
+
+### October 2: prepared interview repair
+
+The hosted repair reuses native Onyx conversations, PDL, GPT Researcher, structured
+brief extraction and the existing model handoff. Professional preparation now
+retains bounded LinkedIn, skills, experience and summaries. PDL and completed
+research expire after six hours. Public professional research is included only
+when the PDL employer domain matches the selected company; client switches must
+not infer a new affiliation.
+
+Beca now keeps an executive's supplied outcome and measure, proposes a sourced
+or explicitly hypothetical journey, and asks about one material private handoff.
+Unknown numeric targets do not block a first symbolic model. Proposed stages are
+not executive testimony. The research sidebar no longer presents static specialist
+job descriptions as conversation evidence.
+
+The actual reported conversation was read through native ownership helpers. Its
+later revenue-growth, $25,000 proof-of-concept and awareness/consideration/purchase
+answers were present, but earlier responses had stopped discovery prematurely.
+Fresh PDL completed in 0.51 seconds; retained fresh GPT Researcher preparation had
+seven original sources. This is not proof of their admission into accepted KB
+ontology or of total preparation within sixty seconds.
+
+The adversarial clinic replay earned a private administrator setup/training
+handoff in three executive answers. Full runtime/tester elapsed time was 63 seconds,
+before adding modeled human response time or proving model save. Its first
+extractor retained an assistant-proposed goal and empty inputs; the repair rejects
+that incomplete structure and supplies the same preparation to extraction as to
+chat. A final owned read-back retained the time objective and rejection guardrail
+with unknown values, in 9.64 seconds. The actual executive's fourteen-message
+re-extraction saved and reopened in 20.45 seconds. It still returned company
+`Unknown`; therefore matching dossier admission on that model handoff is not
+proved. Neither receipt establishes financial-model correctness or full acceptance.
+
+Runtime overlay: `onyx-burn2:prepared-oct2c`; AWS structured extractor configuration
+`8`, conversation configuration `19`. The overlay includes API, profile, research
+and validation modules. After replacing native API containers, reload the inner
+`burn2-gateway-1` nginx as well as checking health: otherwise it retains the old
+upstream IP. Keep private persona/compose/environment backups off Git.
+
+Focused checks: 98 Python and 65 UI tests; both repositories' focused type checks
+and 61 KB handoff tests passed. The Library per-user capability currently returns
+401. Do not call that empty accepted memory or broaden owner scopes to repair it.
+Use verified current organization membership before renewing its existing
+capability. Onyx dependency audit and the stacked KB base's unrelated lint errors
+remain CI failures; draft publication is not merge acceptance.
