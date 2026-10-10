@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'backend/onyx/server/query_and_chat/burn2/**'
+      - 'backend/onyx/background/celery/tasks/burn2/**'
       - 'scripts/subconscious/**'
       - 'docs/subconscious/executive-*.md'
       - '.github/workflows/burn-interview-proof.yml'
@@ -28,4 +29,4 @@ jobs:
       - name: Prove timing, evidence validation and evaluation failure detection
         env:
           PYTHONPATH: backend:scripts/subconscious
-        run: python -m unittest test_profile_context test_eval_interview test_structured_brief test_requested_tool test_research_startup
+        run: python -m unittest test_profile_context test_eval_interview test_structured_brief test_requested_tool test_research_startup test_adversarial_uat

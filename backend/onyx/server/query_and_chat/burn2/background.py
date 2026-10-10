@@ -86,16 +86,24 @@ def enqueue_brief(user_id: UUID, chat_id: UUID) -> None:
     if os.environ.get("BURN2_BACKGROUND_PREPARATION") != "true":
         return
     try:
+        tenant_id = get_current_tenant_id()
+        generation = uuid4().hex
+        get_cache_backend().set(
+            f"burn2:brief-generation:{tenant_id}:{user_id}:{chat_id}",
+            generation,
+            ex=300,
+        )
         client_app.send_task(
             BRIEF_TASK,
             kwargs={
                 "user_id": str(user_id),
                 "chat_id": str(chat_id),
-                "tenant_id": get_current_tenant_id(),
+                "tenant_id": tenant_id,
+                "generation": generation,
             },
             queue=OnyxCeleryQueues.PRIMARY,
             expires=300,
-            countdown=1,
+            countdown=3,
         )
     except Exception as error:
         logger.warning("Burn brief scheduling unavailable: %s", type(error).__name__)

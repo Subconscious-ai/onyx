@@ -94,8 +94,8 @@ def main() -> None:
         "system_prompt": rubric.read_text(),
         "task_prompt": reminder.read_text(),
         "datetime_aware": True,
-        # Native Onyx otherwise inserts the rubric as a user message each turn.
-        "replace_base_system_prompt": True,
+        # Preserve native memory injection and workspace policy.
+        "replace_base_system_prompt": False,
         "starter_messages": [
             {
                 "name": "Start with a decision",
@@ -128,7 +128,7 @@ def main() -> None:
     saved = api(f"/persona/{result['id']}")
     assert saved["system_prompt"] == body["system_prompt"]
     assert saved["task_prompt"] == body["task_prompt"]
-    assert saved["replace_base_system_prompt"] is True
+    assert saved["replace_base_system_prompt"] is False
     assert saved["default_model_configuration_id"] == args.model_configuration
     assert {item["id"] for item in saved["tools"]} == set(body["tool_ids"])
     print(

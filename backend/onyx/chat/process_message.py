@@ -826,7 +826,7 @@ def build_chat_turn(
     executive_history = (
         tuple(chat_history)
         if os.environ.get("BURN2_ENABLED") == "true"
-        and persona.name == "Burn 2.0"
+        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
         and user is not None
         else ()
     )
@@ -934,7 +934,7 @@ def build_chat_turn(
     forced_tool_id = new_msg_req.forced_tool_id
     if (
         os.environ.get("BURN2_ENABLED") == "true"
-        and persona.name == "Burn 2.0"
+        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
         and forced_tool_id is None
     ):
         from onyx.server.query_and_chat.burn2.requested_tool import requested_tool
@@ -1007,7 +1007,7 @@ def build_chat_turn(
 
     if (
         os.environ.get("BURN2_ENABLED") == "true"
-        and persona.name == "Burn 2.0"
+        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
         and user is not None
     ):
         from onyx.db.burn2_profile import read_profile
@@ -1015,15 +1015,11 @@ def build_chat_turn(
         from onyx.server.query_and_chat.burn2.profile import (
             interview_context,
             is_model_review_context,
-            profile_context,
             project_chat_history,
             turn_guidance,
         )
         from onyx.server.query_and_chat.burn2.research import (
-            public_research_query,
-            research_context,
-            research_matches_company,
-            research_reusable,
+            prepared_company_context,
         )
         from onyx.server.query_and_chat.burn2.validation import latest_saved_brief
 
@@ -1035,7 +1031,6 @@ def build_chat_turn(
         turns = len(statements)
         profile = read_profile(user.id)
         research = read_research(user.id)
-        public_query = public_research_query(profile)
         draft = latest_saved_brief(
             [
                 {"type": row.message_type.value, "message": row.message}
@@ -1043,27 +1038,11 @@ def build_chat_turn(
             ],
             statements,
         )
-        matching_company = research_matches_company(
-            profile, draft.get("company") if draft else None
-        )
-        context = "\n".join(
-            filter(
-                None,
-                [
-                    profile_context(profile)
-                    if (
-                        not draft
-                        or matching_company
-                        or profile.get("correction", {}).get("revision", 0)
-                    )
-                    else "",
-                    research_context(research)
-                    if matching_company
-                    and public_query
-                    and research_reusable(research, public_query)
-                    else "",
-                ],
-            )
+        context = prepared_company_context(
+            profile,
+            research,
+            draft.get("company") if draft else None,
+            has_draft=bool(draft),
         )
         requested_context = additional_context or new_msg_req.additional_context
         model_review_context = (
@@ -1152,7 +1131,7 @@ def build_chat_turn(
 
     if (
         os.environ.get("BURN2_ENABLED") == "true"
-        and persona.name == "Burn 2.0"
+        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
         and user is not None
     ):
         simple_chat_history = project_chat_history(
@@ -1437,7 +1416,8 @@ def _run_models(
 
         if (
             os.environ.get("BURN2_ENABLED") == "true"
-            and setup.persona.name == "Burn 2.0"
+            and setup.persona.name
+            in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
             and setup.incognito_record_mode is None
             and any(model_succeeded)
         ):
@@ -1494,12 +1474,23 @@ def _run_models(
                 tool for tool_list in thread_tool_dict.values() for tool in tool_list
             ]
 
-            if setup.forced_tool_id and setup.forced_tool_id not in {
+            from onyx.server.query_and_chat.burn2.requested_tool import (
+                initial_profile_tool,
+            )
+
+            forced_tool_id = initial_profile_tool(
+                enabled=os.environ.get("BURN2_ENABLED") == "true"
+                and not setup.new_msg_req.deep_research,
+                persona_name=setup.persona.name,
+                user_id=None if user.is_anonymous else user.id,
+                incognito=setup.incognito_record_mode is not None,
+                tools=model_tools,
+                forced_tool_id=setup.forced_tool_id,
+            )
+            if forced_tool_id and forced_tool_id not in {
                 tool.id for tool in model_tools
             }:
-                raise ValueError(
-                    f"Forced tool {setup.forced_tool_id} not found in tools"
-                )
+                raise ValueError(f"Forced tool {forced_tool_id} not found in tools")
 
             # Per-thread copy: run_llm_loop mutates simple_chat_history in-place.
             if n_models == 1 and setup.new_msg_req.deep_research:
@@ -1531,7 +1522,7 @@ def _run_models(
                     user_memory_context=setup.user_memory_context,
                     llm=model_llm,
                     token_counter=get_llm_token_counter(model_llm),
-                    forced_tool_id=setup.forced_tool_id,
+                    forced_tool_id=forced_tool_id,
                     user_identity=setup.user_identity,
                     chat_session_id=str(setup.chat_session_id),
                     chat_files=setup.chat_files_for_tools,

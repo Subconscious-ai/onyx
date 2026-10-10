@@ -27,31 +27,39 @@ def select_profile(payload: dict) -> dict[str, Any] | None:
     }
 
 
-def turn_guidance(turn: int, text: str) -> str:
-    attention_budget = "Maximum 60 spoken words. Summarize only the material update; no unsolicited KPI lists, invented target placeholders or full repeated brief. "
-    if turn == 4 and not re.search(
+def turn_guidance(_turn: int, text: str) -> str:
+    attention_budget = "No unsolicited KPI lists, invented target placeholders or full repeated brief. "
+    conclude = bool(
+        re.search(
+            r"\b(?:no(?: extra| more| further)? questions?|without (?:another |a |any )?questions?|conclude|summari[sz]e|print)\b",
+            text,
+            re.I,
+        )
+    )
+    humor_allowed = not conclude and not re.search(
         r"\b(stop|frustrat\w*|annoy\w*|awful|angry|repeating the same|"
         r"roast me not|no jokes|no humo[u]?r|don.t roast|do not roast|"
         r"keep (?:this|it) serious|losing their jobs|layoffs|company is closing)\b",
         text,
         re.I,
-    ):
-        return (
-            attention_budget
-            + "Executive answer four: Jerry contributes exactly one sharp, funny business roast, prefixed 'Jerry:'. Maximum 15 words for the punchline. Skewer a volunteered boast, business contradiction or unsupported grand ambition; aim for a cutting observation, not encouragement. Use only executive-supplied business context, never invent facts. Never mock identity, personal data, customers, job losses or an honest unknown. Omit humor after a humor opt-out or distress anywhere in the conversation. The regular interviewer then continues briefly, with no extra question. A joke is not evidence and must never enter the model brief."
-        )
+    )
+    humor = (
+        "Jerry contributes once per interview: if no previous Jerry observation exists, "
+        "include one original grounded line of at most 15 words when volunteered context supports it. "
+        "Respect any earlier opt-out or distress. Never invent a tension, mock ambition or an honest unknown, "
+        "or delay progress for humor. "
+        if humor_allowed
+        else "Omit humor. "
+    )
     question_guidance = (
         "Question budget: zero. The latest executive request explicitly disallows questions. Acknowledge the update or give the requested synthesis and stop. Do not ask for permission, another input or a next step."
-        if re.search(
-            r"\b(?:no(?: extra| more| further)? questions?|without (?:another |a |any )?questions?|conclude)\b",
-            text,
-            re.I,
-        )
-        else "One concise answer, at most one material question. When the executive requests a conclusion, summarize without any question."
+        if conclude
+        else "One concise answer, at most one material question. Keep unavailable numbers unknown."
     )
     return (
         attention_budget
-        + "No humor on this turn. Do not repeat previous jokes. Use the relevant specialist objective: Sarah maps customer decisions; Frankie links the target to economic drivers; Mei checks alternatives and conflicting evidence. "
+        + humor
+        + "Use a short perspective label when useful: Sarah · Journey, Frankie · Business model, or Mei · Market challenge. Let the question convey its purpose. These are perspectives within Beca, not separate tool executions. "
         + question_guidance
     )
 
@@ -182,9 +190,9 @@ def interview_context(
         + json.dumps(unknowns)
         + "\nQuestions already asked (conversation data): "
         + json.dumps(asked[-8:])
-        + "\nNever repeat or paraphrase an already asked question. If an answer leaves the requested detail unresolved, park the detail as unknown and move to another material decision or summarize."
+        + "\nThe application, not conversational text, confirms persistence and enables the model action. Never claim a new answer is saved or the model is ready before its saved-brief status is known. Do not narrate navigation, name buttons, or tell the executive to look in a corner. The application places the next action directly in the conversation. Do not ask more questions merely while waiting for that save."
+        + "\nNever re-ask an answered fact or an explicitly unknown detail. A partial answer or acknowledgement does not answer the rest of a question. If an unanswered private decision materially changes model scope or structure, clarify it once; otherwise leave it unknown. Never infer the missing answer from company research or politeness."
         + "\nUse the exact economic quantity and units supplied: price, revenue, margin and contribution are distinct. Do not rename contribution as price."
-        + "\nDo not ask for a value already answered or declared unknown. A target and an unknown baseline are enough for a symbolic draft. Ask about a different material decision or summarize briefly."
         + "\nAnswer the latest request below, not an earlier question or saved brief. A repeated scenario request still needs a new preview; a previous preview is historical."
         + "\nLatest executive request: "
         + json.dumps(recent[-1][:1800] if recent else "")
