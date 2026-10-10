@@ -20,6 +20,7 @@ from onyx.server.features.mcp.oauth import (
 )
 from onyx.server.metrics.mcp_client import record_mcp_client_tool_outcome
 from onyx.server.metrics.mcp_common import MCPToolCallStatus
+from onyx.server.query_and_chat.causl.models import CauslActor
 from onyx.server.query_and_chat.placement import Placement
 from onyx.server.query_and_chat.streaming_models import (
     CustomToolDelta,
@@ -83,6 +84,8 @@ class MCPTool(Tool[None]):
         user_oauth_token: str | None = None,
         additional_headers: dict[str, str] | None = None,
         resolved_credentials: ResolvedMCPCredentials | None = None,
+        bound_actor: CauslActor | None = None,
+        bound_issuer: str | None = None,
     ) -> None:
         super().__init__(emitter=emitter)
 
@@ -94,6 +97,8 @@ class MCPTool(Tool[None]):
         self._user_oauth_token = user_oauth_token
         self._additional_headers = additional_headers or {}
         self._resolved_credentials = resolved_credentials
+        self._bound_actor = bound_actor
+        self._bound_issuer = bound_issuer
 
         self._mcp_tool_name = tool_name
         self._name = tool_name  # NOTE: this may change in _disambiguate_mcp_tool_names
@@ -180,7 +185,9 @@ class MCPTool(Tool[None]):
             # not for a dead OAuth grant — its stale bearer wins the header
             # merge, so the call can only fail upstream.
             if not credentials.can_authenticate() and (
-                credentials.needs_reauth() or not self._additional_headers
+                self._bound_actor is not None
+                or credentials.needs_reauth()
+                or not self._additional_headers
             ):
                 auth_error_msg = (
                     f"The {self._name} tool from {self.mcp_server.name} requires "
@@ -246,6 +253,16 @@ class MCPTool(Tool[None]):
                         self.connection_config.id,
                         None,
                     )
+
+            if self._bound_actor is not None:
+                headers = merge_mcp_headers(
+                    headers,
+                    {
+                        "x-causl-expected-organization": self._bound_actor.org_id,
+                        "x-causl-expected-subject": self._bound_actor.user_id,
+                        "x-causl-expected-issuer": self._bound_issuer or "",
+                    },
+                )
 
             tool_result = call_mcp_tool(
                 self.mcp_server.server_url,
