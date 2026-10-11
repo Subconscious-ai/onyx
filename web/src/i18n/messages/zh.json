@@ -1,4 +1,16 @@
 {
+  "causlWorkspace": {
+    "notConfigured": "请从causl-kb工作区打开助手。如果仍无法使用，请联系管理员。",
+    "signin": "请使用与causl-kb相同的组织账户登录，然后重新打开此对话。",
+    "signInAction": "登录Onyx",
+    "reopen": "重新打开对话",
+    "access": "请检查组织账户并连接其资料库，然后重新打开此对话。",
+    "connectLibrary": "连接资料库",
+    "connecting": "正在连接…",
+    "unavailable": "工作区上下文暂不可用。已保存的对话仍然保留。",
+    "opening": "正在打开工作区对话…",
+    "contextChanged": "消息发送前工作区已变更。请检查当前上下文后重新发送。"
+  },
   "accountPopover": {
     "accountFallback": {
       "label": "账户"
