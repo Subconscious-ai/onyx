@@ -32,6 +32,94 @@ function pending() {
 }
 
 describe("native workspace context bridge", () => {
+  test("rejects draft handoff while a newer page context is pending and after a scope switch", async () => {
+    const next = pending();
+    const open = jest
+      .fn()
+      .mockResolvedValueOnce(workspace)
+      .mockReturnValueOnce(next.promise);
+    const onError = jest.fn();
+    const controller = createCauslBridge({
+      nonce: "frame-nonce",
+      open,
+      onReady: jest.fn(),
+      onError,
+    });
+    controller.receive(message(1));
+    await controller.prepareSubmission();
+    controller.receive(message(2, "models"));
+    const draft = {
+      ...message(2, "models"),
+      kind: "causl:draft",
+      id: "ed27d121-b407-4920-b43a-c3281ed9d62e",
+      text: "Explain this model",
+    };
+    expect(controller.receiveDraft(draft)).toBeNull();
+    expect(
+      controller.receiveDraft({ ...draft, ...message(1), kind: "causl:draft" })
+    ).toBeNull();
+    next.resolve(workspace);
+    await controller.prepareSubmission();
+    expect(controller.receiveDraft(draft)).toEqual({
+      id: draft.id,
+      text: draft.text,
+    });
+    controller.receive({
+      ...message(3, "models"),
+      actor: { orgId: "org_c", userId: "auth0|alice" },
+    });
+    expect(onError).toHaveBeenCalledWith("changed");
+    expect(
+      controller.receiveDraft({
+        ...draft,
+        id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      })
+    ).toBeNull();
+  });
+  test("accepts one bounded question only for the exact verified caller, selection and revision", async () => {
+    const controller = createCauslBridge({
+      nonce: "frame-nonce",
+      open: jest.fn().mockResolvedValue(workspace),
+      onReady: jest.fn(),
+      onError: jest.fn(),
+    });
+    const context = message(1, "models");
+    const draft = {
+      ...context,
+      kind: "causl:draft",
+      id: "ed27d121-b407-4920-b43a-c3281ed9d62e",
+      text: "Explain the selected model",
+    };
+    expect(controller.receiveDraft(draft)).toBeNull();
+    controller.receive(context);
+    await controller.prepareSubmission();
+    expect(
+      controller.receiveDraft({
+        ...draft,
+        actor: { ...context.actor, orgId: "foreign" },
+      })
+    ).toBeNull();
+    expect(
+      controller.receiveDraft({
+        ...draft,
+        selection: { ...context.selection, marketId: "foreign" },
+      })
+    ).toBeNull();
+    expect(controller.receiveDraft({ ...draft, revision: 0 })).toBeNull();
+    expect(controller.receiveDraft({ ...draft, nonce: "foreign" })).toBeNull();
+    expect(
+      controller.receiveDraft({ ...draft, text: "x".repeat(4001) })
+    ).toBeNull();
+    expect(controller.receiveDraft(draft)).toEqual({
+      id: draft.id,
+      text: draft.text,
+    });
+    expect(controller.receiveDraft(draft)).toBeNull();
+    controller.dispose();
+    expect(
+      controller.receiveDraft({ ...draft, id: "a".repeat(36) })
+    ).toBeNull();
+  });
   test("forwards an exact saved report selection and rejects malformed report identities", async () => {
     const selected: CauslContextMessage = {
       ...message(1),

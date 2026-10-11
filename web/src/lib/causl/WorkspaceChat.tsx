@@ -9,7 +9,7 @@ import {
   openCauslWorkspace,
   type CauslWorkspaceError,
 } from "./bridge";
-import type { CauslWorkspace } from "./types";
+import type { CauslContextMessage, CauslDraft, CauslWorkspace } from "./types";
 import {
   getMCPUserOAuthNavigationUrl,
   startMCPUserOAuth,
@@ -40,6 +40,9 @@ export default function WorkspaceChat({
   const params = useSearchParams();
   const bridge = useRef<ReturnType<typeof createCauslBridge> | null>(null);
   const [workspace, setWorkspace] = useState<CauslWorkspace | null>(null);
+  const [draft, setDraft] = useState<
+    (CauslDraft & { context: CauslContextMessage }) | null
+  >(null);
   const [error, setError] = useState<CauslWorkspaceError["reason"] | null>(
     null
   );
@@ -52,6 +55,12 @@ export default function WorkspaceChat({
       onReady: (ready) => {
         setError(null);
         setWorkspace(ready);
+        const context = controller.navigationContext();
+        if (context)
+          window.parent.postMessage(
+            { ...context, kind: "causl:authorized" },
+            parentOrigin
+          );
         const query = new URLSearchParams(window.location.search);
         if (
           query.get("chatId") !== ready.chatId ||
@@ -65,6 +74,7 @@ export default function WorkspaceChat({
       onError: (reason) => {
         setError(reason);
         setWorkspace(null);
+        setDraft(null);
       },
     });
     bridge.current = controller;
@@ -73,8 +83,14 @@ export default function WorkspaceChat({
         authenticated &&
         event.source === window.parent &&
         event.origin === parentOrigin
-      )
-        controller.receive(event.data);
+      ) {
+        const draft = controller.receiveDraft(event.data);
+        const context = controller.navigationContext();
+        if (draft && context) setDraft({ ...draft, context });
+        else if (event.data?.kind === "causl:context") {
+          if (controller.receive(event.data)) setDraft(null);
+        }
+      }
     };
     window.addEventListener("message", receive);
     const removeNavigation = installCauslNavigation({
@@ -169,6 +185,21 @@ export default function WorkspaceChat({
             <SearchFiltersProvider>
               <AppPage
                 causlWorkspace={{
+                  draft: draft ?? undefined,
+                  onDraftConsumed: (id) => {
+                    const context = bridge.current?.navigationContext();
+                    if (
+                      draft?.id !== id ||
+                      !context ||
+                      JSON.stringify(context) !== JSON.stringify(draft.context)
+                    )
+                      return;
+                    window.parent.postMessage(
+                      { ...context, kind: "causl:draft-consumed", id },
+                      parentOrigin!
+                    );
+                    setDraft(null);
+                  },
                   prepareSubmission: async () => {
                     if (!bridge.current)
                       throw new Error("Workspace unavailable");

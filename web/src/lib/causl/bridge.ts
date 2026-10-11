@@ -1,5 +1,6 @@
 import type {
   CauslContextMessage,
+  CauslDraft,
   CauslSelection,
   CauslWorkspace,
 } from "./types";
@@ -144,6 +145,7 @@ export function createCauslBridge(options: {
   } | null = null;
   let disposed = false;
   let verified = false;
+  const draftIds = new Set<string>();
 
   function receive(value: unknown) {
     const message = parseCauslMessage(value);
@@ -186,6 +188,7 @@ export function createCauslBridge(options: {
             error instanceof CauslWorkspaceError ? error.reason : "unavailable"
           );
       });
+    return true;
   }
 
   async function prepareSubmission(): Promise<CauslSelection> {
@@ -207,5 +210,39 @@ export function createCauslBridge(options: {
     return !disposed && verified && current ? current.message : null;
   }
 
-  return { receive, prepareSubmission, navigationContext, dispose };
+  function receiveDraft(value: unknown): CauslDraft | null {
+    const context = navigationContext();
+    if (
+      !context ||
+      !object(value) ||
+      value.kind !== "causl:draft" ||
+      typeof value.id !== "string" ||
+      !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(
+        value.id
+      ) ||
+      !reference(value.text, 4000) ||
+      !value.text.trim() ||
+      draftIds.has(value.id)
+    )
+      return null;
+    const proposed = parseCauslMessage({ ...value, kind: "causl:context" });
+    if (
+      !proposed ||
+      proposed.nonce !== context.nonce ||
+      proposed.revision !== context.revision ||
+      JSON.stringify(proposed.actor) !== JSON.stringify(context.actor) ||
+      JSON.stringify(proposed.selection) !== JSON.stringify(context.selection)
+    )
+      return null;
+    draftIds.add(value.id);
+    return { id: value.id, text: value.text };
+  }
+
+  return {
+    receive,
+    receiveDraft,
+    prepareSubmission,
+    navigationContext,
+    dispose,
+  };
 }

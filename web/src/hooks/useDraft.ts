@@ -45,9 +45,11 @@ export interface UseDraftReturn<T> {
   // Distinguishes "not read yet" from "read, nothing there".
   loaded: boolean;
   hasDraft: boolean;
-  // Debounced; empty values remove the key.
+  // Debounced; empty text retains any bounded handoff receipts.
   save: (value: T) => void;
-  // Removes immediately and cancels any pending write.
+  saveHandoff: (value: T, id: string) => boolean;
+  hasHandoff: (id: string) => boolean;
+  // Clears text immediately and cancels pending writes; handoff receipts remain.
   clear: () => void;
 }
 
@@ -63,12 +65,14 @@ export function useDraft<T>({
   );
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isEmptyRef = useRef(isEmpty);
+  const handoffIdsRef = useRef<string[]>([]);
 
   useEffect(() => {
     isEmptyRef.current = isEmpty;
   }, [isEmpty]);
 
   useEffect(() => {
+    handoffIdsRef.current = [];
     const storage = getStorage();
     if (!storage) {
       setEntry({ key, draft: null });
@@ -76,7 +80,22 @@ export function useDraft<T>({
     }
     try {
       const raw = storage.getItem(key);
-      setEntry({ key, draft: raw === null ? null : (JSON.parse(raw) as T) });
+      const parsed = raw === null ? null : JSON.parse(raw);
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        parsed.onyxDraftHandoffs === 1 &&
+        Array.isArray(parsed.ids) &&
+        parsed.ids.length <= 32 &&
+        parsed.ids.every((id: unknown) => typeof id === "string")
+      ) {
+        handoffIdsRef.current = parsed.ids;
+        // SAFETY: The envelope holds the same caller-owned T previously stored at this key.
+        setEntry({ key, draft: parsed.value as T | null });
+      } else {
+        // SAFETY: Legacy values retain this hook's existing caller-owned T contract.
+        setEntry({ key, draft: parsed as T | null });
+      }
     } catch {
       setEntry({ key, draft: null });
     }
@@ -93,25 +112,60 @@ export function useDraft<T>({
     };
   }, [key]);
 
+  const persist = useCallback(
+    (value: T | null, ids: string[]) => {
+      const storage = getStorage();
+      if (!storage) return false;
+      try {
+        if (!ids.length && (value === null || isEmptyRef.current(value)))
+          storage.removeItem(key);
+        else
+          storage.setItem(
+            key,
+            JSON.stringify(
+              ids.length ? { onyxDraftHandoffs: 1, value, ids } : value
+            )
+          );
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [key]
+  );
+
+  // Keep receipt metadata with the text in one write before the sender drops its copy.
+  const saveHandoff = useCallback(
+    (value: T, id: string) => {
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      const ids = [
+        ...handoffIdsRef.current
+          .filter((previous) => previous !== id)
+          .slice(-31),
+        id,
+      ];
+      handoffIdsRef.current = ids;
+      return persist(value, ids);
+    },
+    [persist]
+  );
+  const hasHandoff = useCallback(
+    (id: string) => handoffIdsRef.current.includes(id),
+    []
+  );
+
   const save = useCallback(
     (value: T) => {
       if (timerRef.current !== null) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         timerRef.current = null;
-        const storage = getStorage();
-        if (!storage) return;
-        try {
-          if (isEmptyRef.current(value)) {
-            storage.removeItem(key);
-          } else {
-            storage.setItem(key, JSON.stringify(value));
-          }
-        } catch {
-          // ignore
-        }
+        persist(value, handoffIdsRef.current);
       }, debounceMs);
     },
-    [key, debounceMs]
+    [persist, debounceMs]
   );
 
   const clear = useCallback(() => {
@@ -119,13 +173,13 @@ export function useDraft<T>({
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-    clearDraft(key);
+    persist(null, handoffIdsRef.current);
     setEntry({ key, draft: null });
-  }, [key]);
+  }, [key, persist]);
 
   const loaded = entry !== null && entry.key === key;
   const draft = loaded ? entry.draft : null;
   const hasDraft = draft !== null && !isEmpty(draft);
 
-  return { draft, loaded, hasDraft, save, clear };
+  return { draft, loaded, hasDraft, save, saveHandoff, hasHandoff, clear };
 }

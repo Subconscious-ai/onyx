@@ -122,6 +122,8 @@ function Fade({ show, children, className }: FadeProps) {
 export interface ChatPageProps {
   firstMessage?: string;
   causlWorkspace?: {
+    draft?: import("@/lib/causl/types").CauslDraft;
+    onDraftConsumed?: (id: string) => void;
     prepareSubmission: () => Promise<
       import("@/lib/causl/types").CauslSelection
     >;
@@ -1076,6 +1078,10 @@ export default function AppPage({
                         />
                         <AppInputBar
                           embeddedWorkspace={Boolean(causlWorkspace)}
+                          workspaceDraft={causlWorkspace?.draft}
+                          onWorkspaceDraftConsumed={
+                            causlWorkspace?.onDraftConsumed
+                          }
                           toolConfiguration={toolConfiguration}
                           ref={chatInputBarRef}
                           deepResearchEnabled={

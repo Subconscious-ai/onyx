@@ -25,3 +25,8 @@ export interface CauslWorkspace {
   scopeKey: string;
   contextDigest: string;
 }
+
+export interface CauslDraft {
+  id: string;
+  text: string;
+}

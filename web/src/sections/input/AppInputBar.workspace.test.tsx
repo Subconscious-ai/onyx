@@ -113,6 +113,192 @@ beforeEach(() => {
   store.enqueueCurrentMessage("Queued message Q");
 });
 
+test("appends successive model questions to a recovered native draft once without sending or queueing them", async () => {
+  sessionStorage.setItem(
+    draftKey("chat", "workspace-chat"),
+    JSON.stringify("Recovered executive draft")
+  );
+  const submit = jest.fn();
+  const consumed = jest.fn();
+  const beforeQueue = [
+    ...useChatSessionStore.getState().sessions.get("workspace-chat")!
+      .queuedMessages,
+  ];
+  const initial = {
+    ...props(submit),
+    initialMessage: "",
+    workspaceDraft: {
+      id: "model-question",
+      text: "Explain the volume assumption",
+    },
+    onWorkspaceDraftConsumed: consumed,
+  };
+  const rendered = render(<AppInputBar {...initial} />);
+  const input = () =>
+    rendered.container.querySelector('[contenteditable="true"]');
+  await waitFor(() =>
+    expect(input()).toHaveTextContent("Recovered executive draft")
+  );
+  await waitFor(() =>
+    expect(input()).toHaveTextContent("Explain the volume assumption")
+  );
+  rendered.rerender(<AppInputBar {...initial} />);
+  expect(
+    input()!.textContent!.match(/Explain the volume assumption/g)
+  ).toHaveLength(1);
+  expect(consumed).toHaveBeenCalledWith("model-question");
+  rendered.rerender(
+    <AppInputBar
+      {...initial}
+      workspaceDraft={{ id: "second-question", text: "Compare scenarios" }}
+    />
+  );
+  await waitFor(() => expect(input()).toHaveTextContent("Compare scenarios"));
+  expect(input()).toHaveTextContent("Recovered executive draft");
+  expect(
+    input()!.textContent!.match(/Explain the volume assumption/g)
+  ).toHaveLength(1);
+  expect(consumed.mock.calls).toEqual([
+    ["model-question"],
+    ["second-question"],
+  ]);
+  expect(submit).not.toHaveBeenCalled();
+  expect(
+    useChatSessionStore.getState().sessions.get("workspace-chat")!
+      .queuedMessages
+  ).toEqual(beforeQueue);
+});
+
+test("persists the complete appended draft before acknowledging so immediate remount cannot lose it", async () => {
+  const key = draftKey("chat", "workspace-chat");
+  sessionStorage.setItem(key, JSON.stringify("Existing executive text"));
+  const consumed = jest.fn(() => sessionStorage.getItem(key));
+  const submit = jest.fn();
+  const initial = {
+    ...props(submit),
+    initialMessage: "",
+    workspaceDraft: { id: "model-question", text: "Repair the model" },
+    onWorkspaceDraftConsumed: consumed,
+  };
+  const first = render(<AppInputBar {...initial} />);
+  await waitFor(() => expect(consumed).toHaveBeenCalledTimes(1));
+  expect(JSON.parse(consumed.mock.results[0]!.value)).toEqual({
+    onyxDraftHandoffs: 1,
+    value: "Existing executive text\n\nRepair the model",
+    ids: ["model-question"],
+  });
+  first.unmount();
+  const reopened = render(<AppInputBar {...props(submit)} initialMessage="" />);
+  await waitFor(() =>
+    expect(
+      reopened.container.querySelector('[contenteditable="true"]')
+    ).toHaveTextContent("Existing executive text")
+  );
+  expect(
+    reopened.container.querySelector('[contenteditable="true"]')
+  ).toHaveTextContent("Repair the model");
+  expect(submit).not.toHaveBeenCalled();
+});
+
+test("reacknowledges a persisted handoff after a lost receipt without appending twice", async () => {
+  const submit = jest.fn();
+  const consumed = jest.fn();
+  const initial = {
+    ...props(submit),
+    initialMessage: "",
+    workspaceDraft: { id: "model-question", text: "Compare scenarios" },
+    onWorkspaceDraftConsumed: consumed,
+  };
+  const first = render(<AppInputBar {...initial} />);
+  await waitFor(() => expect(consumed).toHaveBeenCalledTimes(1));
+  first.unmount();
+  const second = render(<AppInputBar {...initial} />);
+  await waitFor(() => expect(consumed).toHaveBeenCalledTimes(2));
+  expect(
+    second.container
+      .querySelector('[contenteditable="true"]')!
+      .textContent!.match(/Compare scenarios/g)
+  ).toHaveLength(1);
+  expect(submit).not.toHaveBeenCalled();
+});
+
+test("keeps the sender recovery copy when native draft storage refuses the handoff", async () => {
+  const consumed = jest.fn();
+  const storage = jest
+    .spyOn(Storage.prototype, "setItem")
+    .mockImplementation(() => {
+      throw new DOMException("Storage blocked", "QuotaExceededError");
+    });
+  try {
+    const rendered = render(
+      <AppInputBar
+        {...props(jest.fn())}
+        workspaceDraft={{ id: "model-question", text: "Repair the model" }}
+        onWorkspaceDraftConsumed={consumed}
+      />
+    );
+    await waitFor(() =>
+      expect(
+        rendered.container.querySelector('[contenteditable="true"]')
+      ).toHaveTextContent("Repair the model")
+    );
+    expect(consumed).not.toHaveBeenCalled();
+    expect(
+      rendered.container
+        .querySelector('[contenteditable="true"]')!
+        .textContent!.match(/Repair the model/g)
+    ).toHaveLength(1);
+    storage.mockRestore();
+    await waitFor(() =>
+      expect(
+        JSON.parse(sessionStorage.getItem(draftKey("chat", "workspace-chat"))!)
+      ).toMatchObject({ ids: ["model-question"] })
+    );
+    rendered.unmount();
+    const reopened = render(
+      <AppInputBar
+        {...props(jest.fn())}
+        initialMessage=""
+        workspaceDraft={{ id: "model-question", text: "Repair the model" }}
+        onWorkspaceDraftConsumed={consumed}
+      />
+    );
+    await waitFor(() =>
+      expect(consumed).toHaveBeenCalledWith("model-question")
+    );
+    expect(
+      reopened.container
+        .querySelector('[contenteditable="true"]')!
+        .textContent!.match(/Repair the model/g)
+    ).toHaveLength(1);
+  } finally {
+    storage.mockRestore();
+  }
+});
+
+test("ignores host questions on the ordinary standalone native input", async () => {
+  const consumed = jest.fn();
+  const submit = jest.fn();
+  const rendered = render(
+    <AppInputBar
+      {...props(submit)}
+      embeddedWorkspace={false}
+      workspaceDraft={{ id: "model-question", text: "Host question" }}
+      onWorkspaceDraftConsumed={consumed}
+    />
+  );
+  await waitFor(() =>
+    expect(
+      rendered.container.querySelector('[contenteditable="true"]')
+    ).toHaveTextContent("Independent draft D")
+  );
+  expect(
+    rendered.container.querySelector('[contenteditable="true"]')
+  ).not.toHaveTextContent("Host question");
+  expect(consumed).not.toHaveBeenCalled();
+  expect(submit).not.toHaveBeenCalled();
+});
+
 test.each(["accepted", "refused"] as const)(
   "retains independent draft while queued preparation is %s",
   async (result) => {
