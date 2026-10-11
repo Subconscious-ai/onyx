@@ -8,9 +8,17 @@ import pytest
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from onyx.configs.constants import MessageType
 from onyx.db import causl_workspace
+from onyx.db.causl_statement import read_causl_statement
 from onyx.db.causl_workspace import open_causl_chat, read_causl_binding
-from onyx.db.models import ChatSession, EncryptedKeyValueStore, Persona, User
+from onyx.db.models import (
+    ChatMessage,
+    ChatSession,
+    EncryptedKeyValueStore,
+    Persona,
+    User,
+)
 from onyx.error_handling.exceptions import OnyxError
 from onyx.server.query_and_chat.causl.models import CauslActor, CauslSelection
 
@@ -43,6 +51,9 @@ def workspace(
         db_session.scalars(select(ChatSession).where(ChatSession.user_id == user.id))
     )
     for chat in chats:
+        db_session.execute(
+            delete(ChatMessage).where(ChatMessage.chat_session_id == chat.id)
+        )
         binding = read_causl_binding(db_session, user.id, chat.id)
         if binding is not None:
             keys = [
@@ -201,3 +212,105 @@ def test_concurrent_open_does_not_create_duplicate_conversations(
         len(list(db.scalars(select(ChatSession).where(ChatSession.user_id == user.id))))
         == 1
     )
+
+
+def test_fact_source_reads_the_owned_persisted_human_message_after_reopen(
+    workspace: tuple[Session, User, Persona, CauslActor],
+) -> None:
+    db, user, persona, actor = workspace
+    binding = open_causl_chat(
+        db,
+        user,
+        actor,
+        ISSUER,
+        CauslSelection(page="library", market_id="market_b"),
+        persona.id,
+        22,
+    )
+    message = ChatMessage(
+        chat_session_id=binding.chat_id,
+        message="Our product supports SSO. Other information is private.",
+        message_type=MessageType.USER,
+        token_count=12,
+    )
+    db.add(message)
+    db.commit()
+    with Session(db.get_bind()) as independent:
+        statement = read_causl_statement(
+            independent, user.id, binding, binding.chat_id, message.id, message.message
+        )
+        assert statement is not None
+        assert (
+            statement.message
+            == "Our product supports SSO. Other information is private."
+        )
+        assert statement.chat_id == binding.chat_id
+        assert statement.message_id == message.id
+        assert statement.market_id == "market_b"
+        assert statement.actor == actor
+        assert statement.issuer == ISSUER
+        assert (
+            read_causl_statement(
+                independent, user.id, binding, binding.chat_id, message.id, None
+            )
+            is None
+        )
+
+
+@pytest.mark.parametrize(
+    "mismatch", ["assistant", "system", "caller", "chat", "deleted", "rewritten"]
+)
+def test_fact_source_denies_nonhuman_foreign_and_deleted_messages(
+    workspace: tuple[Session, User, Persona, CauslActor], mismatch: str
+) -> None:
+    db, user, persona, actor = workspace
+    binding = open_causl_chat(
+        db,
+        user,
+        actor,
+        ISSUER,
+        CauslSelection(page="library", market_id="market_b"),
+        persona.id,
+        22,
+    )
+    message = ChatMessage(
+        chat_session_id=binding.chat_id,
+        message="Our product supports SSO.",
+        message_type={
+            "assistant": MessageType.ASSISTANT,
+            "system": MessageType.SYSTEM,
+        }.get(mismatch, MessageType.USER),
+        token_count=6,
+    )
+    db.add(message)
+    db.commit()
+    user_id = user.id
+    if mismatch == "caller":
+        user_id = uuid4()
+        binding = binding.model_copy(update={"user_id": user_id})
+    elif mismatch == "chat":
+        binding = open_causl_chat(
+            db,
+            user,
+            actor,
+            ISSUER,
+            CauslSelection(page="library", market_id="market_a"),
+            persona.id,
+            22,
+        )
+    elif mismatch == "deleted":
+        chat = db.get(ChatSession, binding.chat_id)
+        assert chat is not None
+        chat.deleted = True
+        db.commit()
+    with pytest.raises(OnyxError):
+        read_causl_statement(
+            db,
+            user_id,
+            binding,
+            binding.chat_id,
+            message.id,
+            "Please read our product record."
+            if mismatch == "rewritten"
+            else message.message,
+        )

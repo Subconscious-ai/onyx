@@ -22,6 +22,11 @@ from onyx.db.chat import set_preferred_response
 from onyx.db.models import ChatMessage
 from onyx.llm.interfaces import ToolChoiceOptions
 from onyx.llm.override_models import LLMOverride
+from onyx.server.query_and_chat.causl.models import (
+    CauslActor,
+    CauslChatBinding,
+    CauslSelection,
+)
 from onyx.server.query_and_chat.models import SendMessageRequest
 from onyx.server.query_and_chat.placement import Placement
 from onyx.server.query_and_chat.streaming_models import (
@@ -281,6 +286,8 @@ def _make_setup(n_models: int = 1) -> MagicMock:
     setup.user_message_id = None
     setup.custom_tool_additional_headers = None
     setup.mcp_headers = None
+    setup.causl_binding = None
+    setup.causl_original_message = None
     return setup
 
 
@@ -297,6 +304,42 @@ class TestRunModels:
     All external dependencies (LLM, DB, tools) are patched out.  Worker threads
     still run but return immediately since run_llm_loop is mocked.
     """
+
+    @pytest.mark.parametrize("original_message", ["Our product supports SSO.", None])
+    def test_worker_passes_the_original_bound_statement_to_native_tool_construction(
+        self, original_message: str | None
+    ) -> None:
+        setup = _make_setup()
+        setup.user_message_id = 123
+        setup.causl_original_message = original_message
+        setup.causl_binding = CauslChatBinding(
+            user_id=uuid4(),
+            actor=CauslActor(org_id="org_b", user_id="auth0|alice"),
+            issuer="https://auth.example/",
+            market_id="market_b",
+            chat_id=setup.chat_session_id,
+            selection=CauslSelection(page="library", market_id="market_b"),
+            library_server_id=22,
+        )
+        with (
+            patch("onyx.chat.process_message.run_llm_loop"),
+            patch("onyx.chat.process_message.run_deep_research_llm_loop"),
+            patch(
+                "onyx.chat.process_message.construct_tools", return_value={}
+            ) as construct,
+            patch("onyx.chat.process_message.llm_loop_completion_handle"),
+            patch(
+                "onyx.chat.process_message.get_llm_token_counter",
+                return_value=lambda _: 0,
+            ),
+        ):
+            _run_models_collect(setup)
+        construct.assert_called_once()
+        config = construct.call_args.kwargs["custom_tool_config"]
+        assert config.causl_binding == setup.causl_binding
+        assert config.chat_session_id == setup.chat_session_id
+        assert config.message_id == 123
+        assert config.causl_original_message == original_message
 
     def test_n1_overall_stop_from_llm_loop_passes_through(self) -> None:
         """OverallStop emitted by run_llm_loop is passed through the drain loop unchanged."""

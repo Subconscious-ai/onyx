@@ -245,3 +245,4 @@ class ChatTurnSetup:
     custom_tool_additional_headers: dict[str, str] | None
     mcp_headers: dict[str, str] | None
     causl_binding: CauslChatBinding | None = None
+    causl_original_message: str | None = None

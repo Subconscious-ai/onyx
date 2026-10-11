@@ -768,6 +768,7 @@ def build_chat_turn(
 
     # ── Query Processing hook + user message ─────────────────────────────────
     # Skipped on regeneration (parent is USER type): message already exists/was accepted.
+    causl_original_message = None
     if parent_message.message_type == MessageType.USER:
         user_message = parent_message
     else:
@@ -789,9 +790,12 @@ def build_chat_turn(
                 ).model_dump(),
                 response_type=QueryProcessingResponse,
             )
-            message_text = _resolve_query_processing_hook_result(
+            processed_text = _resolve_query_processing_hook_result(
                 hook_result, message_text
             )
+            # Hook rejection still applies, but a rewritten query is not a human statement.
+            if causl_binding is None:
+                message_text = processed_text
 
         # Store with the model-agnostic default tokenizer (same convention as
         # assistant/summary rows in save_chat.py) so budget math sums a single
@@ -817,6 +821,8 @@ def build_chat_turn(
             commit=True,
         )
         chat_history.append(user_message)
+        if causl_binding is not None:
+            causl_original_message = new_msg_req.message
 
     # Collect file IDs for the file reader tool *before* summary truncation so
     # that files attached to older (summarized-away) messages are still accessible
@@ -1241,6 +1247,7 @@ def build_chat_turn(
         custom_tool_additional_headers=custom_tool_additional_headers,
         mcp_headers=mcp_headers,
         causl_binding=causl_binding,
+        causl_original_message=causl_original_message,
     )
 
 
@@ -1504,6 +1511,7 @@ def _run_models(
                     additional_headers=setup.custom_tool_additional_headers,
                     mcp_headers=setup.mcp_headers,
                     causl_binding=setup.causl_binding,
+                    causl_original_message=setup.causl_original_message,
                 ),
                 file_reader_tool_config=FileReaderToolConfig(
                     user_file_ids=setup.available_files.user_file_ids,

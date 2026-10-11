@@ -1,13 +1,25 @@
+from unittest.mock import MagicMock
+from uuid import uuid4
+
 import pytest
 
+from onyx.chat import process_message
 from onyx.chat.process_message import (
     _resolve_query_processing_hook_result,
     remove_answer_citations,
 )
+from onyx.configs.constants import MessageType
+from onyx.db.models import ChatMessage, ChatSession, Persona, User
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
 from onyx.hooks.executor import HookSkipped, HookSoftFailed
 from onyx.hooks.points.query_processing import QueryProcessingResponse
+from onyx.server.query_and_chat.causl.models import (
+    CauslActor,
+    CauslChatBinding,
+    CauslSelection,
+)
+from onyx.server.query_and_chat.models import SendMessageRequest
 
 
 def test_remove_answer_citations_strips_http_markdown_citation() -> None:
@@ -119,3 +131,87 @@ def test_nonempty_query_rewrites_message_text() -> None:
         QueryProcessingResponse(query="rewritten query"), "original query"
     )
     assert result == "rewritten query"
+
+
+@pytest.mark.parametrize("workspace_bound", [True, False])
+@pytest.mark.parametrize("hook_query", ["Our product supports SSO.", None])
+def test_native_message_storage_keeps_executive_words_when_a_hook_adds_a_claim(
+    monkeypatch: pytest.MonkeyPatch, workspace_bound: bool, hook_query: str | None
+) -> None:
+    user = User(id=uuid4(), email="alice@example.test")
+    persona = Persona(id=11, name="Business workspace")
+    chat = ChatSession(
+        id=uuid4(), user_id=user.id, persona=persona, incognito_record_mode=None
+    )
+    binding = CauslChatBinding(
+        user_id=user.id,
+        actor=CauslActor(org_id="org_b", user_id="auth0|alice"),
+        issuer="https://auth.example/",
+        market_id="market_b",
+        chat_id=chat.id,
+        selection=CauslSelection(page="library", market_id="market_b"),
+        library_server_id=22,
+    )
+    monkeypatch.setattr(process_message, "get_current_tenant_id", lambda: "public")
+    monkeypatch.setattr(
+        process_message, "get_chat_session_by_id", lambda **_kwargs: chat
+    )
+    monkeypatch.setattr(
+        process_message,
+        "workspace_turn",
+        lambda *_args: (binding if workspace_bound else None, "{}"),
+    )
+    monkeypatch.setattr(process_message, "mt_cloud_telemetry", lambda **_kwargs: None)
+    monkeypatch.setattr(
+        process_message, "get_llm_for_persona", lambda **_kwargs: MagicMock()
+    )
+    monkeypatch.setattr(
+        process_message, "check_llm_cost_limit_for_provider", lambda **_kwargs: None
+    )
+    monkeypatch.setattr(
+        process_message, "get_llm_token_counter", lambda *_args: MagicMock()
+    )
+    monkeypatch.setattr(
+        process_message, "_build_model_display_name", lambda *_args: "Mock model"
+    )
+    monkeypatch.setattr(process_message, "verify_user_files", lambda **_kwargs: None)
+    monkeypatch.setattr(
+        process_message, "create_chat_history_chain", lambda **_kwargs: []
+    )
+    monkeypatch.setattr(
+        process_message,
+        "get_or_create_root_message",
+        lambda **_kwargs: ChatMessage(id=1, message_type=MessageType.SYSTEM),
+    )
+    hook = MagicMock(return_value=QueryProcessingResponse(query=hook_query))
+    monkeypatch.setattr(process_message, "execute_hook", hook)
+    monkeypatch.setattr(process_message, "get_tokenizer", lambda *_args: MagicMock())
+    save = MagicMock(side_effect=RuntimeError("stop after message capture"))
+    monkeypatch.setattr(process_message, "create_new_chat_message", save)
+    request = SendMessageRequest(
+        chat_session_id=chat.id, message="Please read our product record."
+    )
+    if hook_query is None:
+        with pytest.raises(OnyxError) as error:
+            next(
+                process_message.build_chat_turn(
+                    request, user, MagicMock(), llm_overrides=None
+                )
+            )
+        assert error.value.error_code is OnyxErrorCode.QUERY_REJECTED
+        hook.assert_called_once()
+        save.assert_not_called()
+        return
+    with pytest.raises(RuntimeError, match="stop after message capture"):
+        next(
+            process_message.build_chat_turn(
+                request, user, MagicMock(), llm_overrides=None
+            )
+        )
+    hook.assert_called_once()
+    expected = (
+        "Please read our product record."
+        if workspace_bound
+        else "Our product supports SSO."
+    )
+    assert save.call_args.kwargs["message"] == expected

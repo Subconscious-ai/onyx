@@ -78,6 +78,26 @@ The browser can supply page and selection hints. It cannot supply accepted conte
 Missing values stay unknown. Executive statements and synthetic results retain their distinct meanings.
 Changes require the existing KB review and save interfaces.
 
+## Executive statement source
+
+The native MCP constructor can attach a persisted executive statement to the bound
+`prepare_library_change` tool. It reads the current turn's saved human message through
+the native caller and chat association. Assistant messages, system messages, another
+chat's messages, another caller's messages and deleted chats cannot supply that source.
+Bound turns retain the original request text when query hooks return rewritten text.
+Hook rejection still applies. The saved text must match the original current request.
+Regeneration can reuse history for answers, but cannot turn an older potentially rewritten
+message into statement evidence. Send a new human message to prepare that fact for review.
+The model chooses a change and an exact excerpt of at most 1,200 characters. The runtime
+supplies the source chat/message IDs and the conversation's fixed market. It replaces
+model-supplied citations and market selection. Only the excerpt crosses to KB; the rest
+of the message remains in native chat history.
+
+This source check does not accept a fact or prove that the executive's statement is true.
+The paired KB proposal tool, review, atomic save and teammate readback are still required.
+Until that KB tool is registered, this seam alone does not enable the fact-review journey.
+Unbound connections and other servers' tools retain their ordinary behavior.
+
 This change does not add a second assistant runtime, widen private chat access or retire the model composer.
 Model action parity, reviewed facts, saved report integration and hosted acceptance remain under #685.
 
@@ -85,6 +105,7 @@ Model action parity, reviewed facts, saved report integration and hosted accepta
 
 Focused tests cover native authentication, context validation and tool scoping without paid model calls.
 Disposable Postgres tests cover concurrent opens, reload, ownership and transaction rollback.
+They also cover persisted statement retrieval and denial of foreign, nonhuman and deleted sources.
 The HTTP test covers workspace-open and streaming context propagation between separate callers.
 Native frontend tests cover stale context replies, frame policy, native transport and draft/queue recovery.
 KB Chromium tests cover desktop/mobile layout, navigation, scope replacement and frame retention.

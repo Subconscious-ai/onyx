@@ -11,6 +11,7 @@ from onyx.chat.emitter import Emitter
 from onyx.configs.app_configs import DISABLE_VECTOR_DB
 from onyx.configs.model_configs import GEN_AI_TEMPERATURE
 from onyx.context.search.models import BaseFilters, PersonaSearchInfo
+from onyx.db.causl_statement import read_causl_statement
 from onyx.db.engine.sql_engine import get_session_with_current_tenant_if_none
 from onyx.db.mcp import (
     get_all_mcp_tools_for_server,
@@ -30,6 +31,7 @@ from onyx.server.features.mcp.credentials import (
     resolve_mcp_credentials,
 )
 from onyx.server.query_and_chat.causl.models import CauslChatBinding
+from onyx.server.query_and_chat.causl.statement import FACT_PREPARATION_TOOL
 from onyx.tools.built_in_tools import get_built_in_tool_by_id
 from onyx.tools.interface import Tool
 from onyx.tools.models import DynamicSchemaInfo, SearchToolUsage
@@ -93,6 +95,7 @@ class CustomToolConfig(BaseModel):
     additional_headers: dict[str, str] | None = None
     mcp_headers: dict[str, str] | None = None
     causl_binding: CauslChatBinding | None = None
+    causl_original_message: str | None = None
 
 
 def _get_image_generation_config(llm: LLM, db_session: Session) -> LLMConfig:
@@ -501,6 +504,23 @@ def _construct_tools_impl(
             mcp_tool_cache[db_tool_model.mcp_server_id] = {}
             # Find the matching tool definition
             for saved_tool in saved_tools:
+                binding = (
+                    custom_tool_config.causl_binding if custom_tool_config else None
+                )
+                statement = (
+                    read_causl_statement(
+                        db_session,
+                        user.id,
+                        binding,
+                        custom_tool_config.chat_session_id,
+                        custom_tool_config.message_id,
+                        custom_tool_config.causl_original_message,
+                    )
+                    if saved_tool.name == FACT_PREPARATION_TOOL
+                    and binding is not None
+                    and custom_tool_config is not None
+                    else None
+                )
                 # Create MCPTool instance for this specific tool
                 mcp_tool = MCPTool(
                     tool_id=saved_tool.id,
@@ -515,6 +535,7 @@ def _construct_tools_impl(
                     user_oauth_token=mcp_credentials.user_oauth_token,
                     additional_headers=additional_mcp_headers,
                     resolved_credentials=mcp_credentials,
+                    bound_statement=statement,
                     bound_actor=(
                         custom_tool_config.causl_binding.actor
                         if custom_tool_config
