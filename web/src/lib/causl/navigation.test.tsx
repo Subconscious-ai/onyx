@@ -25,53 +25,57 @@ function link(href: string) {
 }
 
 describe("native workspace record links", () => {
-  test("opens a review in the parent workspace only after caller verification", async () => {
-    const controller = createCauslBridge({
-      nonce: "frame",
-      open: jest.fn().mockResolvedValue(workspace),
-      onReady: jest.fn(),
-      onError: jest.fn(),
-    });
-    const send = jest.fn();
-    const remove = installCauslNavigation({
-      document,
-      parentOrigin: "https://kb.example",
-      current: controller.navigationContext,
-      send,
-    });
-    const anchor = link(
-      "https://kb.example/dashboard/model?market=market_b#modelReview=sealed"
-    );
-    try {
-      anchor.firstElementChild!.dispatchEvent(
-        new MouseEvent("click", { bubbles: true, cancelable: true })
-      );
-      expect(send).not.toHaveBeenCalled();
-      controller.receive(context);
-      await controller.prepareSubmission();
-      const click = new MouseEvent("click", {
-        bubbles: true,
-        cancelable: true,
+  test.each([
+    "https://kb.example/dashboard/model?market=market_b#modelReview=sealed",
+    "https://kb.example/dashboard/analysis?market=market_b&run=run_b&studio=ed27d121-b407-4920-b43a-c3281ed9d62e#reportReview=sealed",
+  ])(
+    "opens %s in the parent workspace only after caller verification",
+    async (href) => {
+      const controller = createCauslBridge({
+        nonce: "frame",
+        open: jest.fn().mockResolvedValue(workspace),
+        onReady: jest.fn(),
+        onError: jest.fn(),
       });
-      anchor.firstElementChild!.dispatchEvent(click);
-      expect(click.defaultPrevented).toBe(true);
-      expect(send).toHaveBeenCalledWith({
-        kind: "causl:navigate",
-        nonce: context.nonce,
-        revision: context.revision,
-        actor: context.actor,
-        href: anchor.href,
+      const send = jest.fn();
+      const remove = installCauslNavigation({
+        document,
+        parentOrigin: "https://kb.example",
+        current: controller.navigationContext,
+        send,
       });
-      controller.dispose();
-      anchor.dispatchEvent(
-        new MouseEvent("click", { bubbles: true, cancelable: true })
-      );
-      expect(send).toHaveBeenCalledTimes(1);
-    } finally {
-      remove();
-      anchor.remove();
+      const anchor = link(href);
+      try {
+        anchor.firstElementChild!.dispatchEvent(
+          new MouseEvent("click", { bubbles: true, cancelable: true })
+        );
+        expect(send).not.toHaveBeenCalled();
+        controller.receive(context);
+        await controller.prepareSubmission();
+        const click = new MouseEvent("click", {
+          bubbles: true,
+          cancelable: true,
+        });
+        anchor.firstElementChild!.dispatchEvent(click);
+        expect(click.defaultPrevented).toBe(true);
+        expect(send).toHaveBeenCalledWith({
+          kind: "causl:navigate",
+          nonce: context.nonce,
+          revision: context.revision,
+          actor: context.actor,
+          href: anchor.href,
+        });
+        controller.dispose();
+        anchor.dispatchEvent(
+          new MouseEvent("click", { bubbles: true, cancelable: true })
+        );
+        expect(send).toHaveBeenCalledTimes(1);
+      } finally {
+        remove();
+        anchor.remove();
+      }
     }
-  });
+  );
 
   test("preserves external links, other markets and explicit new-tab gestures", async () => {
     const controller = createCauslBridge({
@@ -98,6 +102,12 @@ describe("native workspace record links", () => {
         "https://kb.example/dashboard/model?market=market_b&market=market_a"
       ),
       link("https://kb.example/dashboard/model?market=market_b#review=sealed"),
+      link(
+        "https://kb.example/dashboard/analysis?market=market_a#reportReview=sealed"
+      ),
+      link(
+        "https://kb.example/dashboard/analysis?market=market_b#modelReview=sealed"
+      ),
       link(
         "https://kb.example/dashboard/library?record=offering_b#review=sealed&extra=x"
       ),

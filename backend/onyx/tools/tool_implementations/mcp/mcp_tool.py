@@ -148,6 +148,8 @@ class MCPTool(Tool[None]):
         if self._bound_actor is not None and self._mcp_tool_name in {
             "inspect_model",
             "prepare_model_change",
+            "inspect_report",
+            "prepare_report",
         }:
             schema = {
                 **schema,
@@ -191,10 +193,12 @@ class MCPTool(Tool[None]):
             if self._bound_actor is not None and self._mcp_tool_name in {
                 "inspect_model",
                 "prepare_model_change",
+                "inspect_report",
+                "prepare_report",
             }:
                 if not self._bound_market_id:
                     raise ValueError(
-                        "Open a selected market before using its model tools."
+                        "Open a selected market before using its model or report tools."
                     )
                 llm_kwargs = {**llm_kwargs, "market": self._bound_market_id}
             if (

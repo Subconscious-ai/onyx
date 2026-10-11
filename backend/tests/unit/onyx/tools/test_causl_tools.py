@@ -470,8 +470,11 @@ def test_same_named_tool_on_an_ordinary_connection_keeps_its_schema(
 
 
 @pytest.mark.parametrize("market_id", ["market_b", None])
-@pytest.mark.parametrize("tool_name", ["inspect_model", "prepare_model_change"])
-def test_selected_model_tools_use_the_bound_market_before_network_access(
+@pytest.mark.parametrize(
+    "tool_name",
+    ["inspect_model", "prepare_model_change", "inspect_report", "prepare_report"],
+)
+def test_selected_model_and_report_tools_use_the_bound_market_before_network_access(
     monkeypatch: pytest.MonkeyPatch, market_id: str | None, tool_name: str
 ) -> None:
     server = MCPServer(

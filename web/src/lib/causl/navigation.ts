@@ -70,7 +70,7 @@ export function installCauslNavigation(options: {
         ? "review"
         : route[1] === "model"
           ? "modelReview"
-          : null;
+          : "reportReview";
     if (
       [...fragment.keys()].some(
         (key) => key !== review || fragment.getAll(key).length !== 1
