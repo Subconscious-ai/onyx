@@ -20,6 +20,7 @@ import { VoiceModeProvider } from "@/providers/VoiceModeProvider";
 import { RootLayout } from "@opal/layouts";
 import AppChrome from "@/layouts/chromes/AppChrome";
 import AppPage from "@/views/AppPage";
+import { installCauslNavigation } from "@/lib/causl/navigation";
 
 interface WorkspaceChatProps {
   parentOrigin: string | null;
@@ -76,11 +77,18 @@ export default function WorkspaceChat({
         controller.receive(event.data);
     };
     window.addEventListener("message", receive);
+    const removeNavigation = installCauslNavigation({
+      document,
+      parentOrigin,
+      current: controller.navigationContext,
+      send: (message) => window.parent.postMessage(message, parentOrigin),
+    });
     window.parent.postMessage({ kind: "causl:ready", nonce }, parentOrigin);
     return () => {
       controller.dispose();
       bridge.current = null;
       window.removeEventListener("message", receive);
+      removeNavigation();
     };
   }, [authenticated, parentOrigin, nonce, router]);
 

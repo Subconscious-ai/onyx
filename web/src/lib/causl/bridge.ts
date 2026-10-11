@@ -130,6 +130,7 @@ export function createCauslBridge(options: {
     promise: Promise<CauslWorkspace>;
   } | null = null;
   let disposed = false;
+  let verified = false;
 
   function receive(value: unknown) {
     const message = parseCauslMessage(value);
@@ -151,6 +152,7 @@ export function createCauslBridge(options: {
     }
     scope = nextScope;
     current?.controller.abort();
+    verified = false;
     const controller = new AbortController();
     const next = {
       message,
@@ -160,7 +162,10 @@ export function createCauslBridge(options: {
     current = next;
     void next.promise
       .then((workspace) => {
-        if (!disposed && current === next) options.onReady(workspace);
+        if (!disposed && current === next) {
+          verified = true;
+          options.onReady(workspace);
+        }
       })
       .catch((error: unknown) => {
         if (!disposed && current === next && !controller.signal.aborted)
@@ -181,8 +186,13 @@ export function createCauslBridge(options: {
 
   function dispose() {
     disposed = true;
+    verified = false;
     current?.controller.abort();
   }
 
-  return { receive, prepareSubmission, dispose };
+  function navigationContext() {
+    return !disposed && verified && current ? current.message : null;
+  }
+
+  return { receive, prepareSubmission, navigationContext, dispose };
 }
