@@ -32,6 +32,34 @@ function pending() {
 }
 
 describe("native workspace context bridge", () => {
+  test("forwards an exact saved report selection and rejects malformed report identities", async () => {
+    const selected: CauslContextMessage = {
+      ...message(1),
+      selection: {
+        page: "reports",
+        marketId: "market_b",
+        runId: "run_b",
+        studioId: "ed27d121-b407-4920-b43a-c3281ed9d62e",
+      },
+    };
+    const open = jest.fn().mockResolvedValue(workspace);
+    const controller = createCauslBridge({
+      nonce: "frame-nonce",
+      open,
+      onReady: jest.fn(),
+      onError: jest.fn(),
+    });
+    controller.receive(selected);
+    expect(await controller.prepareSubmission()).toEqual(selected.selection);
+    expect(open).toHaveBeenCalledWith(selected, expect.any(AbortSignal));
+    expect(
+      parseCauslMessage({
+        ...selected,
+        selection: { ...selected.selection, studioId: "-".repeat(36) },
+      })
+    ).toBeNull();
+  });
+
   test("retains the conversation and uses the latest page before sending", async () => {
     const open = jest.fn().mockResolvedValue(workspace);
     const onReady = jest.fn();

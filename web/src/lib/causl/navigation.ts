@@ -56,7 +56,7 @@ export function installCauslNavigation(options: {
         ? ["market", "type", "entity", "record"]
         : route[1] === "model"
           ? ["market"]
-          : ["market", "run"];
+          : ["market", "run", "studio"];
     if (
       [...url.searchParams.keys()].some(
         (key) =>

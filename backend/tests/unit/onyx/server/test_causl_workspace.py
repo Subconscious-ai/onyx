@@ -326,6 +326,30 @@ def test_checks_actual_report_run_reference() -> None:
         )
 
 
+def test_checks_saved_report_identity_and_preserves_its_selection_query() -> None:
+    studio_id = uuid4()
+    selection = CauslSelection(
+        page="reports", market_id="market_b", studio_id=studio_id
+    )
+    assert selection.query() == {
+        "page": "reports",
+        "market": "market_b",
+        "studio": str(studio_id),
+    }
+    payload = envelope()
+    payload["context"]["page"] = "reports"
+    payload["context"]["analysis"] = {
+        "run": {"id": "run_b"},
+        "studio": {"id": str(studio_id)},
+    }
+    context._validate(CauslContextEnvelope.model_validate(payload), ACTOR, selection)
+    payload["context"]["analysis"]["studio"]["id"] = str(uuid4())
+    with pytest.raises(OnyxError):
+        context._validate(
+            CauslContextEnvelope.model_validate(payload), ACTOR, selection
+        )
+
+
 def test_denies_another_native_login_even_with_a_valid_library_grant(
     connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
 ) -> None:

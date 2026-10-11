@@ -28,6 +28,7 @@ class CauslSelection(BaseModel):
     run_id: str | None = Field(
         alias="runId", default=None, min_length=1, max_length=500
     )
+    studio_id: UUID | None = Field(alias="studioId", default=None)
 
     def query(self) -> dict[str, str]:
         query = {"page": self.page}
@@ -37,6 +38,8 @@ class CauslSelection(BaseModel):
             query.update(recordType=self.record.type, record=self.record.id)
         if self.run_id:
             query["run"] = self.run_id
+        if self.studio_id:
+            query["studio"] = str(self.studio_id)
         return query
 
 

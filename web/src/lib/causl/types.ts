@@ -8,6 +8,7 @@ export interface CauslSelection {
   marketId?: string;
   record?: { type: string; id: string };
   runId?: string;
+  studioId?: string;
 }
 
 export interface CauslContextMessage {

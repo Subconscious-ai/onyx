@@ -169,6 +169,27 @@ def _read(
         ) from None
 
 
+def _valid_analysis(analysis: object, selection: CauslSelection) -> bool:
+    if not selection.run_id and not selection.studio_id:
+        return analysis is None
+    if not isinstance(analysis, dict):
+        return False
+    run = analysis.get("run")
+    if not isinstance(run, dict):
+        return False
+    run_id = run.get("id")
+    if not isinstance(run_id, str) or not run_id:
+        return False
+    if selection.run_id and run_id != selection.run_id:
+        return False
+    studio = analysis.get("studio")
+    return (
+        isinstance(studio, dict) and studio.get("id") == str(selection.studio_id)
+        if selection.studio_id
+        else studio is None
+    )
+
+
 def _validate(
     envelope: CauslContextEnvelope, actor: CauslActor, selection: CauslSelection
 ) -> None:
@@ -181,7 +202,6 @@ def _validate(
     market = context.get("market")
     record = context.get("record")
     analysis = context.get("analysis")
-    run = analysis.get("run") if isinstance(analysis, dict) else None
     valid = (
         context.get("version") == 1
         and context.get("page") == selection.page
@@ -202,11 +222,7 @@ def _validate(
             if selection.record
             else record is None
         )
-        and (
-            isinstance(run, dict) and run.get("id") == selection.run_id
-            if selection.run_id
-            else analysis is None
-        )
+        and _valid_analysis(analysis, selection)
         and isinstance(context.get("library"), dict)
     )
     if not valid:

@@ -39,6 +39,14 @@ export function parseCauslMessage(value: unknown): CauslContextMessage | null {
   if (selection.marketId !== undefined && !reference(selection.marketId))
     return null;
   if (selection.runId !== undefined && !reference(selection.runId)) return null;
+  if (
+    selection.studioId !== undefined &&
+    (typeof selection.studioId !== "string" ||
+      !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(
+        selection.studioId
+      ))
+  )
+    return null;
   let record: CauslSelection["record"];
   if (selection.record !== undefined) {
     if (
@@ -60,6 +68,9 @@ export function parseCauslMessage(value: unknown): CauslContextMessage | null {
         ? { marketId: selection.marketId }
         : {}),
       ...(selection.runId !== undefined ? { runId: selection.runId } : {}),
+      ...(selection.studioId !== undefined
+        ? { studioId: selection.studioId }
+        : {}),
       ...(record ? { record } : {}),
     },
   };
@@ -98,7 +109,9 @@ export async function openCauslWorkspace(
   if (
     !object(result) ||
     typeof result.chatId !== "string" ||
-    !/^[a-f0-9-]{36}$/i.test(result.chatId) ||
+    !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(
+      result.chatId
+    ) ||
     typeof result.agentId !== "number" ||
     !Number.isSafeInteger(result.agentId) ||
     result.agentId <= 0 ||
