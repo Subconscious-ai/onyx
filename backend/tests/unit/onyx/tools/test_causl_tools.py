@@ -470,8 +470,9 @@ def test_same_named_tool_on_an_ordinary_connection_keeps_its_schema(
 
 
 @pytest.mark.parametrize("market_id", ["market_b", None])
-def test_selected_model_inspection_uses_the_bound_market_before_network_access(
-    monkeypatch: pytest.MonkeyPatch, market_id: str | None
+@pytest.mark.parametrize("tool_name", ["inspect_model", "prepare_model_change"])
+def test_selected_model_tools_use_the_bound_market_before_network_access(
+    monkeypatch: pytest.MonkeyPatch, market_id: str | None, tool_name: str
 ) -> None:
     server = MCPServer(
         id=22,
@@ -483,7 +484,7 @@ def test_selected_model_inspection_uses_the_bound_market_before_network_access(
         7,
         MagicMock(),
         server,
-        "inspect_model",
+        tool_name,
         "Inspect the saved model",
         {
             "type": "object",

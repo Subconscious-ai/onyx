@@ -145,7 +145,10 @@ class MCPTool(Tool[None]):
             and self._mcp_tool_name == FACT_PREPARATION_TOOL
         ):
             schema = fact_preparation_schema(schema)
-        if self._bound_actor is not None and self._mcp_tool_name == "inspect_model":
+        if self._bound_actor is not None and self._mcp_tool_name in {
+            "inspect_model",
+            "prepare_model_change",
+        }:
             schema = {
                 **schema,
                 "properties": {
@@ -185,10 +188,13 @@ class MCPTool(Tool[None]):
         _server = self.mcp_server.name
         outcome = MCPToolCallStatus.ERROR
         try:
-            if self._bound_actor is not None and self._mcp_tool_name == "inspect_model":
+            if self._bound_actor is not None and self._mcp_tool_name in {
+                "inspect_model",
+                "prepare_model_change",
+            }:
                 if not self._bound_market_id:
                     raise ValueError(
-                        "Open a selected market before inspecting its model."
+                        "Open a selected market before using its model tools."
                     )
                 llm_kwargs = {**llm_kwargs, "market": self._bound_market_id}
             if (
