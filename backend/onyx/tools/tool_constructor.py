@@ -536,6 +536,11 @@ def _construct_tools_impl(
                     additional_headers=additional_mcp_headers,
                     resolved_credentials=mcp_credentials,
                     bound_statement=statement,
+                    bound_market_id=(
+                        binding.market_id
+                        if binding and binding.library_server_id == mcp_server.id
+                        else None
+                    ),
                     bound_actor=(
                         custom_tool_config.causl_binding.actor
                         if custom_tool_config

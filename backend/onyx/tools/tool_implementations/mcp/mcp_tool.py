@@ -93,6 +93,7 @@ class MCPTool(Tool[None]):
         bound_actor: CauslActor | None = None,
         bound_issuer: str | None = None,
         bound_statement: CauslStatement | None = None,
+        bound_market_id: str | None = None,
     ) -> None:
         super().__init__(emitter=emitter)
 
@@ -107,6 +108,7 @@ class MCPTool(Tool[None]):
         self._bound_actor = bound_actor
         self._bound_issuer = bound_issuer
         self._bound_statement = bound_statement
+        self._bound_market_id = bound_market_id
 
         self._mcp_tool_name = tool_name
         self._name = tool_name  # NOTE: this may change in _disambiguate_mcp_tool_names
@@ -143,6 +145,18 @@ class MCPTool(Tool[None]):
             and self._mcp_tool_name == FACT_PREPARATION_TOOL
         ):
             schema = fact_preparation_schema(schema)
+        if self._bound_actor is not None and self._mcp_tool_name == "inspect_model":
+            schema = {
+                **schema,
+                "properties": {
+                    key: value
+                    for key, value in schema.get("properties", {}).items()
+                    if key != "market"
+                },
+                "required": [
+                    key for key in schema.get("required", []) if key != "market"
+                ],
+            }
         return {
             "type": "function",
             "function": {
@@ -171,6 +185,12 @@ class MCPTool(Tool[None]):
         _server = self.mcp_server.name
         outcome = MCPToolCallStatus.ERROR
         try:
+            if self._bound_actor is not None and self._mcp_tool_name == "inspect_model":
+                if not self._bound_market_id:
+                    raise ValueError(
+                        "Open a selected market before inspecting its model."
+                    )
+                llm_kwargs = {**llm_kwargs, "market": self._bound_market_id}
             if (
                 self._bound_actor is not None
                 and self._mcp_tool_name == FACT_PREPARATION_TOOL

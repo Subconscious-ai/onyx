@@ -117,6 +117,8 @@ def test_workspace_tools_exclude_personal_search_profile_and_unrelated_connectio
         search_usage_forcing_setting=SearchToolUsage.ENABLED,
     )
     assert set(result) == {4, 7}
+    assert isinstance(result[7][0], mcp_tool.MCPTool)
+    assert result[7][0]._bound_market_id == "market_b"
     connection_lookup.assert_called_once()
     assert connection_lookup.call_args.args[0] == 22
     memory_lookup.assert_not_called()
@@ -465,3 +467,70 @@ def test_same_named_tool_on_an_ordinary_connection_keeps_its_schema(
     tool, _statement = statement_tool
     tool._bound_actor = None
     assert tool.tool_definition()["function"]["parameters"] == tool._tool_definition
+
+
+@pytest.mark.parametrize("market_id", ["market_b", None])
+def test_selected_model_inspection_uses_the_bound_market_before_network_access(
+    monkeypatch: pytest.MonkeyPatch, market_id: str | None
+) -> None:
+    server = MCPServer(
+        id=22,
+        name="KB",
+        auth_type=MCPAuthenticationType.NONE,
+        server_url="https://kb.example/api/mcp/library",
+    )
+    tool = mcp_tool.MCPTool(
+        7,
+        MagicMock(),
+        server,
+        "inspect_model",
+        "Inspect the saved model",
+        {
+            "type": "object",
+            "properties": {"market": {"type": "string"}, "action": {"type": "string"}},
+            "required": ["market", "action"],
+        },
+        bound_actor=CauslActor(org_id="org_b", user_id="auth0|alice"),
+        bound_issuer="https://auth.example/",
+        bound_market_id=market_id,
+    )
+    call = MagicMock(return_value={"content": []})
+    monkeypatch.setattr(mcp_tool, "call_mcp_tool", call)
+    schema = tool.tool_definition()["function"]["parameters"]
+    assert schema["required"] == ["action"]
+    assert set(schema["properties"]) == {"action"}
+    response = tool.run(
+        Placement(turn_index=0), market="forged_market_a", action="inspect-model"
+    )
+    if market_id is None:
+        call.assert_not_called()
+        assert "selected market" in response.llm_facing_response
+    else:
+        assert call.call_args.args[2] == {
+            "market": market_id,
+            "action": "inspect-model",
+        }
+
+
+def test_ordinary_model_tools_keep_their_original_market_parameter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = MCPServer(
+        id=22,
+        name="Other",
+        auth_type=MCPAuthenticationType.NONE,
+        server_url="https://other.example/mcp",
+    )
+    schema = {
+        "type": "object",
+        "properties": {"market": {"type": "string"}},
+        "required": ["market"],
+    }
+    tool = mcp_tool.MCPTool(
+        7, MagicMock(), server, "inspect_model", "An unrelated tool", schema
+    )
+    assert tool.tool_definition()["function"]["parameters"] == schema
+    call = MagicMock(return_value={"content": []})
+    monkeypatch.setattr(mcp_tool, "call_mcp_tool", call)
+    tool.run(Placement(turn_index=0), market="other_market")
+    assert call.call_args.args[2] == {"market": "other_market"}

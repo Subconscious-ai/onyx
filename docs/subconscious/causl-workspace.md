@@ -94,12 +94,19 @@ model-supplied citations and market selection. Only the excerpt crosses to KB; t
 of the message remains in native chat history.
 
 This source check does not accept a fact or prove that the executive's statement is true.
-The paired KB proposal tool, review, atomic save and teammate readback are still required.
-Until that KB tool is registered, this seam alone does not enable the fact-review journey.
+The paired KB proposal tool, review, atomic save and teammate readback are implemented
+in KB PR #689. They still need deployed registration and authenticated journey verification.
 Unbound connections and other servers' tools retain their ordinary behavior.
 
+The configured Library connection can also expose `inspect_model`. Native Onyx
+removes its market selector from the model's schema and supplies the bound market
+before network access. A missing selected market fails closed. KB loads the current
+saved primary model and reuses the pinned Guesstimate calculator for outputs,
+lineage/sensitivity, source and scenario inspection. These reads do not edit or
+save the model, run paid inference or produce observed causal results.
+
 This change does not add a second assistant runtime, widen private chat access or retire the model composer.
-Model action parity, reviewed facts, saved report integration and hosted acceptance remain under #685.
+Model edit/history parity, saved report integration and hosted acceptance remain under #685.
 
 ## Verification boundary
 
