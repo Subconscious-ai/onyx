@@ -209,6 +209,16 @@ class ProfileTests(unittest.TestCase):
             turn_guidance(8, "No more questions.", model_review=True),
         )
 
+    def test_fourth_unknown_answer_finishes_symbolic_discovery_instead_of_reasking(
+        self,
+    ):
+        guidance = turn_guidance(
+            4, "Expansion waits for one use case. Conversion rates are unknown."
+        )
+        self.assertIn("Question budget: zero", guidance)
+        self.assertIn("first symbolic model", guidance)
+        self.assertNotIn("at most one material question", guidance)
+
     def test_fifth_answer_respects_humor_opt_out_and_distress(self):
         for answer in (
             "Stop repeating the same question.",

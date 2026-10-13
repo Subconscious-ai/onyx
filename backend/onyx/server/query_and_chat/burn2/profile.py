@@ -97,9 +97,12 @@ def turn_guidance(turn: int, text: str, *, model_review: bool = False) -> str:
             "Do not restart discovery. Answer the latest scenario or model request; "
             "ask at most one material question only when that request needs a missing private input."
         )
-    elif turn >= 5:
+    elif turn >= 5 or (
+        turn >= 4
+        and re.search(r"\b(?:unknown|unavailable|don.t know|do not know)\b", text, re.I)
+    ):
         question_guidance = (
-            "Question budget: zero. Discovery ends by the fifth turn. "
+            "Question budget: zero. Discovery ends by the fifth turn, or after a fourth answer parks unknowns. "
             "Synthesize the first symbolic model from the supplied goal, measure, journey, "
             "prepared dossier and matching company research. Keep missing operating numbers unknown "
             "and proposed relationships labeled as assumptions. Do not ask for another input, "
