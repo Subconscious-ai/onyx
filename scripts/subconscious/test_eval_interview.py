@@ -20,6 +20,18 @@ from eval_interview import (
 
 
 class EvaluationChecks(unittest.TestCase):
+    def test_executive_proof_roast_uses_fifth_turn_and_opt_out_reaches_it(self):
+        cases = json.loads(
+            Path(__file__).with_name("executive-proof-cases.json").read_text()
+        )
+        turns = cases["correction_unknowns_and_roast"]
+        self.assertEqual(len(turns), 5)
+        self.assertEqual([turn["jerry"] for turn in turns], [False] * 4 + [True])
+        self.assertFalse(turns[4]["questions_allowed"])
+        self.assertTrue(turns[4]["prepare_brief"])
+        self.assertEqual(len(cases["humor_opt_out"]), 5)
+        self.assertFalse(cases["humor_opt_out"][4]["jerry"])
+
     def test_question_examples_do_not_hide_the_question_topic(self):
         turn = Turn("Thanks", asks_about="channel", brief_required=False)
         self.assertEqual(
