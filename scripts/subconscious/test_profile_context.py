@@ -88,7 +88,7 @@ class ProfileTests(unittest.TestCase):
         self.assertIn("Frankie · Business model", guidance)
         self.assertIn("Mei · Market challenge", guidance)
         self.assertIn(
-            "Jerry contributes", turn_guidance(4, "Our forecasts run on optimism.")
+            "Jerry contributes", turn_guidance(5, "Our forecasts run on optimism.")
         )
 
     def test_explicit_summary_request_sets_a_zero_question_turn_budget(self):
@@ -172,15 +172,44 @@ class ProfileTests(unittest.TestCase):
             select_profile({"likelihood": 2, "data": {"full_name": "Wrong person"}})
         )
 
-    def test_jerry_is_available_before_fourth_turn_without_repetition(self):
-        for turn in (1, 2, 3, 4, 5):
+    def test_discovery_stops_by_fifth_turn_without_claiming_a_saved_model(self):
+        for turn in (5, 6, 12):
             with self.subTest(turn=turn):
                 guidance = turn_guidance(turn, "Our forecasts run on optimism.")
-                self.assertIn("Jerry contributes", guidance)
-                self.assertIn("once", guidance)
-                self.assertNotIn("No humor on this turn", guidance)
+                self.assertIn("Question budget: zero", guidance)
+                self.assertIn("first symbolic model", guidance)
+                self.assertIn(
+                    "prepared dossier and matching company research", guidance
+                )
+                self.assertIn("unknown", guidance)
+                self.assertIn("application receipt", guidance)
+                self.assertNotIn("at most one material question", guidance)
 
-    def test_fourth_answer_respects_humor_opt_out_and_distress(self):
+    def test_jerry_is_reserved_for_fifth_turn_without_delaying_an_earlier_model(self):
+        for turn in (1, 2, 3, 4, 6):
+            with self.subTest(turn=turn):
+                guidance = turn_guidance(turn, "Our forecasts run on optimism.")
+                self.assertNotIn("Jerry contributes", guidance)
+        guidance = turn_guidance(5, "Our forecasts run on optimism.")
+        self.assertIn("Jerry contributes", guidance)
+        self.assertIn("once", guidance)
+        self.assertIn("Never delay", guidance)
+
+    def test_saved_model_review_does_not_restart_discovery_or_repeat_the_burn(self):
+        guidance = turn_guidance(
+            8, "Try a different conversion rate.", model_review=True
+        )
+        self.assertNotIn("Discovery ends", guidance)
+        self.assertNotIn("first symbolic model", guidance)
+        self.assertNotIn("Jerry", guidance)
+        self.assertIn("saved model", guidance)
+        self.assertIn("application receipt", guidance)
+        self.assertIn(
+            "Question budget: zero",
+            turn_guidance(8, "No more questions.", model_review=True),
+        )
+
+    def test_fifth_answer_respects_humor_opt_out_and_distress(self):
         for answer in (
             "Stop repeating the same question.",
             "No jokes, please.",
@@ -189,4 +218,4 @@ class ProfileTests(unittest.TestCase):
             "The company is closing and everyone is losing their jobs.",
         ):
             with self.subTest(answer=answer):
-                self.assertNotIn("Jerry", turn_guidance(4, answer))
+                self.assertNotIn("Jerry", turn_guidance(5, answer))

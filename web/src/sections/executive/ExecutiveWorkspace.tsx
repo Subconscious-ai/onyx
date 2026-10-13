@@ -71,7 +71,7 @@ const specialists = [
     name: "Jerry",
     role: "Perspective & humor",
     initial: "J",
-    job: "One brief, grounded roast after the fourth answer. Never after frustration or about personal data.",
+    job: "One brief, grounded roast on the fifth turn. Never after frustration or about personal data.",
   },
 ];
 

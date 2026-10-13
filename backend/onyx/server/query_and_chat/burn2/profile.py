@@ -60,7 +60,7 @@ def select_profile(payload: dict) -> dict[str, Any] | None:
     return profile
 
 
-def turn_guidance(_turn: int, text: str) -> str:
+def turn_guidance(turn: int, text: str, *, model_review: bool = False) -> str:
     attention_budget = "No unsolicited KPI lists, invented target placeholders or full repeated brief. "
     conclude = bool(
         re.search(
@@ -69,26 +69,52 @@ def turn_guidance(_turn: int, text: str) -> str:
             re.I,
         )
     )
-    humor_allowed = not conclude and not re.search(
-        r"\b(stop|frustrat\w*|annoy\w*|awful|angry|repeating the same|"
-        r"roast me not|no jokes|no humo[u]?r|don.t roast|do not roast|"
-        r"keep (?:this|it) serious|losing their jobs|layoffs|company is closing)\b",
-        text,
-        re.I,
+    humor_allowed = (
+        turn == 5
+        and not model_review
+        and not conclude
+        and not re.search(
+            r"\b(stop|frustrat\w*|annoy\w*|awful|angry|repeating the same|"
+            r"roast me not|no jokes|no humo[u]?r|don.t roast|do not roast|"
+            r"keep (?:this|it) serious|losing their jobs|layoffs|company is closing)\b",
+            text,
+            re.I,
+        )
     )
     humor = (
         "Jerry contributes once per interview: if no previous Jerry observation exists, "
         "include one original grounded line of at most 15 words when volunteered context supports it. "
-        "Respect any earlier opt-out or distress. Never invent a tension, mock ambition or an honest unknown, "
-        "or delay progress for humor. "
+        "Respect any earlier opt-out or distress. Never invent a tension, mock ambition or an honest unknown. "
+        "Never delay an earlier model for humor. "
         if humor_allowed
         else "Omit humor. "
     )
-    question_guidance = (
-        "Question budget: zero. The latest executive request explicitly disallows questions. Acknowledge the update or give the requested synthesis and stop. Do not ask for permission, another input or a next step."
-        if conclude
-        else "One concise answer, at most one material question. Keep unavailable numbers unknown."
-    )
+    if conclude:
+        question_guidance = "Question budget: zero. The latest executive request explicitly disallows questions. Acknowledge the update or give the requested synthesis and stop. Do not ask for permission, another input or a next step."
+    elif model_review:
+        question_guidance = (
+            "Review the actual saved model using its current application receipt. "
+            "Do not restart discovery. Answer the latest scenario or model request; "
+            "ask at most one material question only when that request needs a missing private input."
+        )
+    elif turn >= 5:
+        question_guidance = (
+            "Question budget: zero. Discovery ends by the fifth turn. "
+            "Synthesize the first symbolic model from the supplied goal, measure, journey, "
+            "prepared dossier and matching company research. Keep missing operating numbers unknown "
+            "and proposed relationships labeled as assumptions. Do not ask for another input, "
+            "confirmation or permission. Let the existing brief extraction and model action proceed. "
+            "If an essential private goal is still missing, name that gap without inventing it. "
+            "Only an application receipt can establish that the model was created or saved."
+        )
+    else:
+        question_guidance = (
+            "One concise answer, at most one material question. Use the supplied prepared dossier "
+            "and matching company research before asking for a private gap. Capture the goal, "
+            "named success measure and customer journey within four discovery questions. "
+            "Stop earlier when those essentials suffice for a first symbolic model. "
+            "Keep unavailable numbers unknown."
+        )
     return (
         attention_budget
         + humor
