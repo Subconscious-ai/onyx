@@ -1,6 +1,6 @@
 # Burn 2.0 on native Onyx
 
-[Open Burn](https://burn.subconscious.ai/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Start login on this canonical address. Branch previews redirect to the registered login origin and do not prove their own authenticated customer path.
+[Open Burn](https://burn.subconscious.ai/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Start login on this canonical address. The native OAuth callback uses this registered origin. Starting OAuth directly from a branch preview can fail with `OAUTH_INVALID_STATE` because its state cookie belongs to the preview. A ready preview does not prove its authenticated customer path.
 
 ## Current acceptance, October 2
 
@@ -415,3 +415,14 @@ passes against the candidate. The retained QA identities are not members of the
 current Auth0 organization. Do not grant membership or forge a session to claim a
 customer journey pass. A legitimate member login, native OAuth renewal, saved
 model calculation/reload, and the full sixty-second clock remain live acceptance.
+
+
+### October 13: saved model and native Library connection
+
+The held receiver in causl-kb PR #675 saved the synthetic consultancy model at revision one. Authenticated reload returned the exact document. Canonical KB readback returned the same model. The native grid displayed the independent expected capacity: 12,000 hours, 40 projects, $1.6 million contribution and a $400,000 target gap. Model generation took 8.0 seconds; saving took 0.33 seconds. These are model-stage times, not the complete interview clock.
+
+Native handoff and workspace creation now use the existing native feature flag and current organization membership. Optional public-research eligibility stays separate. Unsupported calculated point inputs use the existing bounded compiler repair. They cannot silently become empty operating inputs.
+
+A fresh native model workspace initially returned `Connect your Library account`. The standard QA member completed the existing per-user OAuth flow for the configured Library server. The next workspace request returned 200. No admin role or membership changed. Check actual model-agent readback before claiming that memory works across chats.
+
+The hosted profile and message modules matched main `1c1bc1ee94` during this check. The hosted preparation API contained additional changes. Preserve that source and compare it before any backend replacement. Frontend publication does not deploy backend interview rules. PR #48 and KB #675 remain held for owner QA. Automatic native handoff, matching fresh research and the full sixty-second journey still require live proof.
