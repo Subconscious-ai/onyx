@@ -20,6 +20,13 @@ from onyx.server.features.mcp.oauth import (
 )
 from onyx.server.metrics.mcp_client import record_mcp_client_tool_outcome
 from onyx.server.metrics.mcp_common import MCPToolCallStatus
+from onyx.server.query_and_chat.causl.models import CauslActor
+from onyx.server.query_and_chat.causl.statement import (
+    FACT_PREPARATION_TOOL,
+    CauslStatement,
+    fact_preparation_arguments,
+    fact_preparation_schema,
+)
 from onyx.server.query_and_chat.placement import Placement
 from onyx.server.query_and_chat.streaming_models import (
     CustomToolDelta,
@@ -83,6 +90,10 @@ class MCPTool(Tool[None]):
         user_oauth_token: str | None = None,
         additional_headers: dict[str, str] | None = None,
         resolved_credentials: ResolvedMCPCredentials | None = None,
+        bound_actor: CauslActor | None = None,
+        bound_issuer: str | None = None,
+        bound_statement: CauslStatement | None = None,
+        bound_market_id: str | None = None,
     ) -> None:
         super().__init__(emitter=emitter)
 
@@ -94,6 +105,10 @@ class MCPTool(Tool[None]):
         self._user_oauth_token = user_oauth_token
         self._additional_headers = additional_headers or {}
         self._resolved_credentials = resolved_credentials
+        self._bound_actor = bound_actor
+        self._bound_issuer = bound_issuer
+        self._bound_statement = bound_statement
+        self._bound_market_id = bound_market_id
 
         self._mcp_tool_name = tool_name
         self._name = tool_name  # NOTE: this may change in _disambiguate_mcp_tool_names
@@ -124,12 +139,35 @@ class MCPTool(Tool[None]):
     def tool_definition(self) -> dict:
         """Return the tool definition from the MCP server"""
         # Convert MCP tool definition to OpenAI function calling format
+        schema = _normalize_parameters_schema(self._tool_definition)
+        if (
+            self._bound_actor is not None
+            and self._mcp_tool_name == FACT_PREPARATION_TOOL
+        ):
+            schema = fact_preparation_schema(schema)
+        if self._bound_actor is not None and self._mcp_tool_name in {
+            "inspect_model",
+            "prepare_model_change",
+            "inspect_report",
+            "prepare_report",
+        }:
+            schema = {
+                **schema,
+                "properties": {
+                    key: value
+                    for key, value in schema.get("properties", {}).items()
+                    if key != "market"
+                },
+                "required": [
+                    key for key in schema.get("required", []) if key != "market"
+                ],
+            }
         return {
             "type": "function",
             "function": {
                 "name": self._name,
                 "description": self._description,
-                "parameters": _normalize_parameters_schema(self._tool_definition),
+                "parameters": schema,
             },
         }
 
@@ -152,6 +190,27 @@ class MCPTool(Tool[None]):
         _server = self.mcp_server.name
         outcome = MCPToolCallStatus.ERROR
         try:
+            if self._bound_actor is not None and self._mcp_tool_name in {
+                "inspect_model",
+                "prepare_model_change",
+                "inspect_report",
+                "prepare_report",
+            }:
+                if not self._bound_market_id:
+                    raise ValueError(
+                        "Open a selected market before using its model or report tools."
+                    )
+                llm_kwargs = {**llm_kwargs, "market": self._bound_market_id}
+            if (
+                self._bound_actor is not None
+                and self._mcp_tool_name == FACT_PREPARATION_TOOL
+            ):
+                llm_kwargs = fact_preparation_arguments(
+                    llm_kwargs,
+                    self._bound_statement,
+                    self._bound_actor,
+                    self._bound_issuer,
+                )
             request_headers = {
                 name: value
                 for name, value in self._additional_headers.items()
@@ -180,7 +239,9 @@ class MCPTool(Tool[None]):
             # not for a dead OAuth grant — its stale bearer wins the header
             # merge, so the call can only fail upstream.
             if not credentials.can_authenticate() and (
-                credentials.needs_reauth() or not self._additional_headers
+                self._bound_actor is not None
+                or credentials.needs_reauth()
+                or not self._additional_headers
             ):
                 auth_error_msg = (
                     f"The {self._name} tool from {self.mcp_server.name} requires "
@@ -246,6 +307,16 @@ class MCPTool(Tool[None]):
                         self.connection_config.id,
                         None,
                     )
+
+            if self._bound_actor is not None:
+                headers = merge_mcp_headers(
+                    headers,
+                    {
+                        "x-causl-expected-organization": self._bound_actor.org_id,
+                        "x-causl-expected-subject": self._bound_actor.user_id,
+                        "x-causl-expected-issuer": self._bound_issuer or "",
+                    },
+                )
 
             tool_result = call_mcp_tool(
                 self.mcp_server.server_url,

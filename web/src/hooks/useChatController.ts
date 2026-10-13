@@ -84,6 +84,7 @@ import { ProjectFile, useProjectsContext } from "@/lib/projects/providers";
 import { useIncognito } from "@/providers/IncognitoProvider";
 import { projectFilesToFileDescriptors } from "@/lib/projects/utils";
 import { useSharedSearchFilters } from "@/lib/searchFilters/providers";
+import type { CauslSelection } from "@/lib/causl/types";
 
 const SYSTEM_MESSAGE_ID = -3;
 
@@ -104,6 +105,9 @@ export interface OnSubmitProps {
   regenerationRequest?: RegenerationRequest | null;
   // Additional context injected into the LLM call but not stored/shown in chat.
   additionalContext?: string;
+  causlSelection?: CauslSelection;
+  onInputAccepted?: () => void;
+  onInputRejected?: () => void;
   /** When 2+ models, triggers multi-model parallel generation via backend. */
   selectedModels?: SelectedModel[];
 }
@@ -390,6 +394,9 @@ export default function useChatController({
       modelOverride,
       regenerationRequest,
       additionalContext,
+      causlSelection,
+      onInputAccepted,
+      onInputRejected,
       selectedModels,
     }: OnSubmitProps) => {
       // Read at submit time so no caller can capture a stale value.
@@ -492,6 +499,7 @@ export default function useChatController({
       }
 
       if (currentChatState != "input") {
+        onInputRejected?.();
         if (currentChatState == "uploading") {
           toast.error("Please wait for the content to upload");
         } else {
@@ -794,6 +802,7 @@ export default function useChatController({
         chatSessionId: frozenSessionId,
       });
       resetInputBar();
+      onInputAccepted?.();
 
       let answer = "";
 
@@ -1106,6 +1115,7 @@ export default function useChatController({
           forcedToolId: effectiveForcedToolId,
           origin: messageOrigin,
           additionalContext,
+          causlSelection,
           llmOverrides: isMultiModel
             ? selectedModels!.map((m) => ({
                 model_provider: m.name,

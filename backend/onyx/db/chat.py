@@ -252,6 +252,7 @@ def create_chat_session(
     project_id: int | None = None,
     incognito_record_mode: IncognitoRecordMode | None = None,
     session_id: UUID | None = None,
+    commit: bool = True,
 ) -> ChatSession:
     chat_session = ChatSession(
         # Caller-supplied only for incognito, where uploads name the session
@@ -269,7 +270,10 @@ def create_chat_session(
     )
 
     db_session.add(chat_session)
-    db_session.commit()
+    if commit:
+        db_session.commit()
+    else:
+        db_session.flush()
 
     return chat_session
 

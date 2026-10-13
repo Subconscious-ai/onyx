@@ -72,6 +72,8 @@ import {
 } from "@/app/app/stores/useChatSessionStore";
 import QueuedMessageBar from "@/sections/input/QueuedMessageBar";
 import { handleInputNavKeys } from "@/sections/input/inputBarKeys";
+import type { OnSubmitProps } from "@/hooks/useChatController";
+import type { CauslDraft } from "@/lib/causl/types";
 
 export interface AppInputBarHandle {
   appendDraft: (text: string) => void;
@@ -82,7 +84,14 @@ export interface AppInputBarHandle {
 export interface AppInputBarProps {
   initialMessage?: string;
   stopGenerating: () => void;
-  onSubmit: (message: string) => void;
+  onSubmit: (
+    message: string,
+    callbacks?: Pick<OnSubmitProps, "onInputAccepted" | "onInputRejected">
+  ) => void;
+  /** The workspace clears its draft only after context authorization succeeds. */
+  embeddedWorkspace?: boolean;
+  workspaceDraft?: CauslDraft;
+  onWorkspaceDraftConsumed?: (id: string) => void;
   llmManager: LlmManager;
   chatState: ChatState;
   currentSessionFileTokenCount: number;
@@ -114,6 +123,9 @@ const AppInputBar = React.memo(
     initialMessage = "",
     stopGenerating,
     onSubmit,
+    embeddedWorkspace = false,
+    workspaceDraft,
+    onWorkspaceDraftConsumed,
     chatState,
     currentSessionFileTokenCount,
     availableContextTokens,
@@ -233,6 +245,8 @@ const AppInputBar = React.memo(
       draft: chatDraft,
       loaded: chatDraftLoaded,
       save: saveChatDraft,
+      saveHandoff: saveChatHandoff,
+      hasHandoff: hasChatHandoff,
       clear: clearChatDraft,
     } = useDraft<string>({ key: chatDraftStorageKey });
     const draftSeededRef = useRef(false);
@@ -266,6 +280,7 @@ const AppInputBar = React.memo(
         // Skip the save effect's next run; it would fire with the stale empty
         // message and wipe what we just seeded.
         skipNextDraftSaveRef.current = true;
+        messageRef.current = chatDraft;
         setMessage(chatDraft);
       }
     }, [chatDraftLoaded, chatDraft, initialMessage, setMessage]);
@@ -302,20 +317,56 @@ const AppInputBar = React.memo(
           return;
         }
         handleSubmit(text);
-        clearChatDraft();
+        if (!embeddedWorkspace) clearChatDraft();
       },
-      [handleSubmit, clearChatDraft]
+      [handleSubmit, clearChatDraft, embeddedWorkspace]
     );
 
     // Expose reset and focus methods to parent via ref
-    React.useImperativeHandle(ref, () => ({
-      appendDraft: (text: string) => {
-        setMessage(message.trim() ? `${message}\n\n${text}` : text);
+    const appendDraft = useCallback(
+      (text: string) => {
+        const current = messageRef.current;
+        const next = current.trim() ? `${current}\n\n${text}` : text;
+        messageRef.current = next;
+        setMessage(next);
         requestAnimationFrame(() => {
           inputRef.current?.focus();
           setCursorToEnd();
         });
+        return next;
       },
+      [setMessage, inputRef, setCursorToEnd]
+    );
+    const consumedWorkspaceDrafts = useRef(new Set<string>());
+    useEffect(() => {
+      if (
+        !embeddedWorkspace ||
+        !workspaceDraft ||
+        !chatDraftLoaded ||
+        !draftSeededRef.current ||
+        consumedWorkspaceDrafts.current.has(workspaceDraft.id)
+      )
+        return;
+      consumedWorkspaceDrafts.current.add(workspaceDraft.id);
+      if (hasChatHandoff(workspaceDraft.id)) {
+        onWorkspaceDraftConsumed?.(workspaceDraft.id);
+        return;
+      }
+      const next = appendDraft(workspaceDraft.text);
+      if (saveChatHandoff(next, workspaceDraft.id))
+        onWorkspaceDraftConsumed?.(workspaceDraft.id);
+    }, [
+      embeddedWorkspace,
+      workspaceDraft,
+      chatDraftLoaded,
+      appendDraft,
+      saveChatHandoff,
+      hasChatHandoff,
+      onWorkspaceDraftConsumed,
+    ]);
+
+    React.useImperativeHandle(ref, () => ({
+      appendDraft,
       reset: () => {
         if (!isAutoSending.current) {
           clearMessage();
@@ -411,9 +462,32 @@ const AppInputBar = React.memo(
       prevRenderCompleteRef.current = latestMessageRenderComplete;
 
       if (!wasReady && isReady && queuedMessages.length > 0) {
-        const nextMessage = queuedMessages[0]!.text;
+        const queued = queuedMessages[0]!;
+        const nextMessage = queued.text;
         isAutoSending.current = true;
         stopTTS();
+        if (embeddedWorkspace) {
+          const sessionId = useChatSessionStore.getState().currentSessionId;
+          onSubmit(nextMessage, {
+            onInputAccepted: () => {
+              isAutoSending.current = false;
+              const store = useChatSessionStore.getState();
+              const index = sessionId
+                ? (store.sessions
+                    .get(sessionId)
+                    ?.queuedMessages.findIndex(
+                      (item) => item.id === queued.id
+                    ) ?? -1)
+                : -1;
+              if (sessionId && index >= 0)
+                store.removeQueuedMessage(sessionId, index);
+            },
+            onInputRejected: () => {
+              isAutoSending.current = false;
+            },
+          });
+          return;
+        }
         onSubmit(nextMessage);
         isAutoSending.current = false;
         removeCurrentQueuedMessage(0);
@@ -425,6 +499,7 @@ const AppInputBar = React.memo(
       removeCurrentQueuedMessage,
       stopTTS,
       onSubmit,
+      embeddedWorkspace,
     ]);
 
     // Animate attached files wrapper to its content height so CSS transitions
@@ -1021,6 +1096,7 @@ const AppInputBar = React.memo(
                         rounding={2}
                         key="create-new"
                         href="/app/settings/chat-preferences"
+                        target={embeddedWorkspace ? "_blank" : undefined}
                         icon={SvgPlus}
                         state={
                           tabbingIconIndex === sortedFilteredPrompts.length
