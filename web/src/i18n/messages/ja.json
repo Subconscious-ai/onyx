@@ -1,4 +1,16 @@
 {
+  "causlWorkspace": {
+    "notConfigured": "causl-kbのワークスペースからアシスタントを開いてください。引き続き利用できない場合は管理者にお問い合わせください。",
+    "signin": "causl-kbと同じ組織アカウントでログインしてから、この会話を開き直してください。",
+    "signInAction": "Onyxにログイン",
+    "reopen": "会話を開き直す",
+    "access": "組織アカウントを確認し、ライブラリに接続してから、この会話を開き直してください。",
+    "connectLibrary": "ライブラリに接続",
+    "connecting": "接続中…",
+    "unavailable": "コンテキストを利用できません。保存済みの会話は保持されています。",
+    "opening": "会話を開いています…",
+    "contextChanged": "送信前にワークスペースが変更されました。現在のコンテキストを確認して再送してください。"
+  },
   "accountPopover": {
     "accountFallback": {
       "label": "アカウント"

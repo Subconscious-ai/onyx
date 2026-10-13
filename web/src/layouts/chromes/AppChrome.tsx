@@ -666,9 +666,13 @@ function Footer() {
 
 interface AppChromeProps {
   children: React.ReactNode;
+  embedded?: boolean;
 }
 
-export default function AppChrome({ children }: AppChromeProps) {
+export default function AppChrome({
+  children,
+  embedded = false,
+}: AppChromeProps) {
   const [rightPanel, setRightPanel] = useState<ReactNode>(null);
 
   const appPosition = useAppPosition();
@@ -778,9 +782,9 @@ export default function AppChrome({ children }: AppChromeProps) {
             )}
 
             {/* Header */}
-            <Header />
+            {!embedded && <Header />}
             <RootLayout.MainContent>{children}</RootLayout.MainContent>
-            <Footer />
+            {!embedded && <Footer />}
           </div>
           {rightPanel}
         </div>

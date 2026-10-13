@@ -11,6 +11,7 @@ from onyx.db.enums import ChatSessionSharedStatus
 from onyx.db.models import ChatSession
 from onyx.file_store.models import FileDescriptor
 from onyx.llm.override_models import LLMOverride
+from onyx.server.query_and_chat.causl.models import CauslSelection
 from onyx.server.query_and_chat.streaming_models import Packet
 
 AUTO_PLACE_AFTER_LATEST_MESSAGE = -1
@@ -152,9 +153,13 @@ class SendMessageRequest(BaseModel):
     # (not shown in chat history). Used e.g. by the Chrome extension to pass
     # the current tab URL when "Read this tab" is enabled.
     additional_context: str | None = None
+    # Page hints only. The native caller's Library grant supplies context on every turn.
+    causl_selection: CauslSelection | None = None
 
     @model_validator(mode="after")
     def check_chat_session_id_or_info(self) -> "SendMessageRequest":
+        if self.causl_selection is not None and self.chat_session_id is None:
+            raise ValueError("Workspace messages require a bound conversation.")
         # If neither is provided, default to creating a new chat session using the
         # default ChatSessionCreationRequest values.
         if self.chat_session_id is None and self.chat_session_info is None:

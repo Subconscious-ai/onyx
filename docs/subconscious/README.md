@@ -124,6 +124,8 @@ Production deployment `dpl_FdNmDXw9UPnsPiSRqhiSRRC3Lgcy` is Ready from main `fc9
 
 ## Start here
 
+- [causl-kb workspace assistant](causl-workspace.md): native conversation binding, per-user Library access and remaining customer acceptance.
+
 - [Historical Beca prototype QA](prototype-plan.md): public research, background briefs, saved-model recovery and retained failures on the recorded artifacts.
 
 - [Hosting, recovery and deployment lessons](durable-hosting.md): native Compose, rootless execution, encrypted Vercel Blob backups, restart and restore evidence.

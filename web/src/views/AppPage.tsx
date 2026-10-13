@@ -122,9 +122,19 @@ function Fade({ show, children, className }: FadeProps) {
 
 export interface ChatPageProps {
   firstMessage?: string;
+  causlWorkspace?: {
+    draft?: import("@/lib/causl/types").CauslDraft;
+    onDraftConsumed?: (id: string) => void;
+    prepareSubmission: () => Promise<
+      import("@/lib/causl/types").CauslSelection
+    >;
+  };
 }
 
-export default function AppPage({ firstMessage }: ChatPageProps) {
+export default function AppPage({
+  firstMessage,
+  causlWorkspace,
+}: ChatPageProps) {
   // Performance tracking
   // Keeping this here in case we need to track down slow renders in the future
   // const renderCount = useRef(0);
@@ -143,6 +153,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
   // });
 
   const t = useTranslations("chat.app");
+  const workspaceLabels = useTranslations("causlWorkspace");
   const router = useRouter();
   const appPosition = useAppPosition();
   const { isMobile } = useScreenSize();
@@ -447,8 +458,33 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
     searchParams,
     resetInputBar,
   });
+  const [workspacePreparing, setWorkspacePreparing] = useState(false);
+  const workspacePreparingRef = useRef(false);
   const onSubmit = useCallback(
-    (params: OnSubmitProps) => {
+    async (params: OnSubmitProps) => {
+      if (causlWorkspace) {
+        if (workspacePreparingRef.current) {
+          params.onInputRejected?.();
+          return;
+        }
+        workspacePreparingRef.current = true;
+        setWorkspacePreparing(true);
+        let causlSelection;
+        try {
+          causlSelection = await causlWorkspace.prepareSubmission();
+        } catch {
+          params.onInputRejected?.();
+          toast.error(workspaceLabels("contextChanged"));
+          return;
+        } finally {
+          workspacePreparingRef.current = false;
+          setWorkspacePreparing(false);
+        }
+        return submitNative({ ...params, causlSelection }).catch(() => {
+          params.onInputRejected?.();
+          toast.error(workspaceLabels("contextChanged"));
+        });
+      }
       const receipt =
         isExecutiveAgent(activeAgent) &&
         currentChatSessionId &&
@@ -462,7 +498,14 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
           undefined,
       });
     },
-    [activeAgent, currentChatSessionId, modelContext, submitNative]
+    [
+      activeAgent,
+      currentChatSessionId,
+      modelContext,
+      submitNative,
+      causlWorkspace,
+      workspaceLabels,
+    ]
   );
 
   const {
@@ -554,7 +597,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
     t,
   ]);
 
-  if (resolvedUser === null) {
+  if (resolvedUser === null && !causlWorkspace) {
     redirect("/auth/login");
   }
 
@@ -624,13 +667,20 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
   );
 
   const handleAppInputBarSubmit = useCallback(
-    async (message: string) => {
-      if (isLoadingAgents || !activeAgent) return;
+    async (
+      message: string,
+      callbacks?: Pick<OnSubmitProps, "onInputAccepted" | "onInputRejected">
+    ) => {
+      if (isLoadingAgents || !activeAgent) {
+        callbacks?.onInputRejected?.();
+        return;
+      }
       // If we're in an existing chat session, always use chat mode
       // (appMode only applies to new sessions)
       if (currentChatSessionId) {
-        resetInputBar();
+        if (!causlWorkspace) resetInputBar();
         onSubmit({
+          ...callbacks,
           message,
           currentMessageFiles,
           deepResearch:
@@ -663,6 +713,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
       isLoadingAgents,
       activeAgent,
       currentChatSessionId,
+      causlWorkspace,
       submitQuery,
       onChat,
       incognitoEnabledRef,
@@ -719,7 +770,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
   // Handle error case where no agents are available.
   // Only show this after agents have loaded to prevent flash during initial load.
   if (!activeAgent && !isLoadingAgents) {
-    return <NoAgentModal />;
+    return <NoAgentModal embeddedWorkspace={Boolean(causlWorkspace)} />;
   }
 
   const hasAgentStarterMessages =
@@ -816,7 +867,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
       <ExecutiveWorkspace
         email={user?.email}
         onModelContext={receiveModelContext}
-        active={isExecutiveAgent(activeAgent)}
+        active={!causlWorkspace && isExecutiveAgent(activeAgent)}
         messages={messageHistory}
         chatId={currentChatSessionId}
         busy={currentChatState !== "input"}
@@ -918,8 +969,18 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                                   : sessionFetchError.detail
                             }
                           />
-                          <Button href="/app" prominence="secondary">
-                            {t("newChatButton.label")}
+                          <Button
+                            href={causlWorkspace ? undefined : "/app"}
+                            onClick={
+                              causlWorkspace
+                                ? () => window.location.reload()
+                                : undefined
+                            }
+                            prominence="secondary"
+                          >
+                            {causlWorkspace
+                              ? workspaceLabels("reopen")
+                              : t("newChatButton.label")}
                           </Button>
                         </Section>
                       )}
@@ -1030,6 +1091,11 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                           )}
                         />
                         <AppInputBar
+                          embeddedWorkspace={Boolean(causlWorkspace)}
+                          workspaceDraft={causlWorkspace?.draft}
+                          onWorkspaceDraftConsumed={
+                            causlWorkspace?.onDraftConsumed
+                          }
                           toolConfiguration={toolConfiguration}
                           ref={chatInputBarRef}
                           deepResearchEnabled={
@@ -1059,6 +1125,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                           disabled={
                             isLoadingAgents ||
                             !activeAgent ||
+                            workspacePreparing ||
                             (!llmManager.isLoadingProviders &&
                               llmManager.hasAnyProvider === false) ||
                             (showOnboarding &&

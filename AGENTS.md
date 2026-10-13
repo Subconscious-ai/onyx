@@ -2,6 +2,15 @@
 
 This file provides guidance to AI agents when working with code in this repository.
 
+## Working across repos
+
+Read the [system map](https://github.com/Subconscious-ai/market-ontology/blob/main/SYSTEM.md) before any change that touches another repo. Data shapes come
+from `market-ontology`; UI tokens and copy come from `design-system`. A contract change is a
+version bump in the owner repo, then a re-pin PR here. With other agents working in parallel,
+claim the issue first (assign yourself, label `agent-wip`), work on your own branch
+`agent/<agent>-<issue>`, and hand off with a PR that closes the issue. Humans merge.
+Check the whole system with `scripts/system-status.sh` in market-ontology.
+
 ## Subconscious Burn fork
 
 For Burn interview, hosting, authentication, or model-handoff work, read [the Burn entry point](docs/subconscious/README.md) before the upstream notes below. Publish through the `subconscious` remote; `origin` still points to upstream Onyx. Hosted QA uses existing authorized accounts. The upstream Playwright credentials below apply only to disposable test stacks.
@@ -137,3 +146,7 @@ Before finding, saving, or updating organization research materials, read the cu
 [organization library](https://github.com/Subconscious-ai/hermes/blob/main/library/LIBRARY.md) and follow its owner links.
 Update records at their owner; record the actual source revision and exact file/run
 used in an experiment. Keep machine-specific paths in private host configuration.
+
+## Agent skills
+
+See `docs/agents/` for the issue tracker (GitHub Issues), triage labels and domain-doc layout.

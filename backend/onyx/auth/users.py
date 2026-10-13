@@ -76,11 +76,18 @@ from onyx.auth.mobile_sso.sso_completion import (
     complete_mobile_sso,
     is_mobile_sso,
 )
-from onyx.auth.oidc_client import log_token_exchange_failure
+from onyx.auth.oidc_client import VerifiedEmailOpenID, log_token_exchange_failure
 from onyx.auth.pat import get_hashed_pat_from_request
 from onyx.auth.permissions import has_global_permission
 from onyx.auth.pkce import generate_pkce_pair
 from onyx.auth.schemas import AuthBackend, UserCreate
+from onyx.auth.session_identity import (
+    OIDCIdentity,
+    oidc_login_identity,
+    read_validated_identity,
+    record_issued_identity,
+    remove_session_identity,
+)
 from onyx.auth.session_tokens import (
     SESSION_TOKEN_GRACE_PERIOD_SECONDS,
     SessionRejection,
@@ -1675,6 +1682,7 @@ class TenantAwareRedisStrategy(RedisStrategy[User, uuid.UUID]):
             ),
             ex=physical_session_ttl_seconds(self.lifetime_seconds),
         )
+        await record_issued_identity(token, user.id)
         return token
 
     async def read_token(
@@ -1698,7 +1706,9 @@ class TenantAwareRedisStrategy(RedisStrategy[User, uuid.UUID]):
 
         try:
             parsed_id = user_manager.parse_id(result.sub)
-            return await user_manager.get(parsed_id)
+            user = await user_manager.get(parsed_id)
+            await read_validated_identity(token, user.id)
+            return user
         except (exceptions.UserNotExists, exceptions.InvalidID):
             return None
 
@@ -1717,6 +1727,7 @@ class TenantAwareRedisStrategy(RedisStrategy[User, uuid.UUID]):
             ),
             ex=SESSION_TOKEN_GRACE_PERIOD_SECONDS,
         )
+        await remove_session_identity(token)
 
     async def refresh_token(self, token: Optional[str], user: User) -> str:
         """Refreshes a token by extending its expiration time in Redis."""
@@ -1759,6 +1770,23 @@ class RefreshableDatabaseStrategy(DatabaseStrategy[User, uuid.UUID, AccessToken]
     ):
         super().__init__(access_token_db, lifetime_seconds)
         self._access_token_db = access_token_db
+
+    async def write_token(self, user: User) -> str:
+        token = await super().write_token(user)
+        await record_issued_identity(token, user.id)
+        return token
+
+    async def read_token(
+        self, token: Optional[str], user_manager: BaseUserManager[User, uuid.UUID]
+    ) -> Optional[User]:
+        user = await super().read_token(token, user_manager)
+        if user is not None and token is not None:
+            await read_validated_identity(token, user.id)
+        return user
+
+    async def destroy_token(self, token: str, user: User) -> None:
+        await super().destroy_token(token, user)
+        await remove_session_identity(token)
 
     async def refresh_token(self, token: Optional[str], user: User) -> str:
         """Refresh a token by updating its expiration time in the database."""
@@ -2656,7 +2684,13 @@ async def complete_login_flow(
         await user_manager.on_after_login(user, request)
         return redirect_response
 
-    response = await backend.login(strategy, user)
+    identity = (
+        OIDCIdentity(issuer=oauth_client.expected_issuer, subject=account_id)
+        if isinstance(oauth_client, VerifiedEmailOpenID)
+        else None
+    )
+    with oidc_login_identity(identity):
+        response = await backend.login(strategy, user)
     await user_manager.on_after_login(user, request, response)
 
     if tenant_id is None:

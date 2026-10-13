@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { Route } from "next";
 import { useSessionWatcher } from "@/lib/auth/hooks";
 import { getExtensionContext } from "@/lib/extension/utils";
@@ -45,10 +45,16 @@ const SESSION_END_MESSAGE_KEYS = {
 
 export function AuthenticationShell({ children }: AuthenticationShellProps) {
   const t = useTranslations("auth");
+  const workspaceLabels = useTranslations("causlWorkspace");
   const router = useRouter();
+  const embeddedWorkspace = usePathname() === "/causl";
   const { sessionEnded, sessionEndReason } = useSessionWatcher();
 
   function handleLogin() {
+    if (embeddedWorkspace) {
+      window.open("/auth/login?next=%2Fapp", "_blank", "noopener,noreferrer");
+      return;
+    }
     const { isExtension } = getExtensionContext();
     if (isExtension) {
       window.open(
@@ -97,6 +103,14 @@ export function AuthenticationShell({ children }: AuthenticationShellProps) {
               <Button onClick={handleLogin}>
                 {t("sessionEnd.loginButton.label")}
               </Button>
+              {embeddedWorkspace && (
+                <Button
+                  prominence="secondary"
+                  onClick={() => window.location.reload()}
+                >
+                  {workspaceLabels("reopen")}
+                </Button>
+              )}
             </Modal.Footer>
           </Modal.Content>
         </Modal>
