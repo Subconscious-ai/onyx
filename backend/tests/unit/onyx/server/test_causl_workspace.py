@@ -297,6 +297,40 @@ def test_refuses_a_turn_in_another_market_before_retrieval(
     retrieval.assert_not_called()
 
 
+@pytest.mark.parametrize("has_model", [True, False])
+def test_saved_model_context_sets_review_phase_without_claiming_an_empty_model(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+    has_model: bool,
+) -> None:
+    db, user, _server = connected
+    chat = ChatSession(id=uuid4(), user_id=user.id, persona_id=11)
+    binding = CauslChatBinding(
+        user_id=user.id,
+        issuer="https://auth.example/",
+        actor=ACTOR,
+        market_id="market_b",
+        chat_id=chat.id,
+        selection=SELECTION,
+        library_server_id=22,
+    )
+    monkeypatch.setattr(turn, "read_causl_binding", lambda *_args: binding)
+    payload = envelope()
+    payload["context"]["model"] = (
+        {"id": "saved_model_b", "revision": 1, "inputs": []} if has_model else None
+    )
+    http_response(monkeypatch, payload)
+    _, prompt = turn.workspace_turn(db, user, chat, SELECTION)
+    assert prompt is not None
+    if has_model:
+        assert "A saved model exists for this market" in prompt
+        assert "Do not restart discovery" in prompt
+        assert "no questions, no research, or no edits" in prompt
+        assert "saved_model_b" in prompt
+    else:
+        assert "A saved model exists for this market" not in prompt
+
+
 def test_does_not_adopt_an_unbound_native_conversation(
     connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
 ) -> None:
