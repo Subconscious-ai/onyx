@@ -1,6 +1,6 @@
 """User-scoped research in native encrypted Postgres, with native tool access."""
 
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -16,7 +16,10 @@ from onyx.server.features.mcp.credentials import resolve_mcp_credentials
 
 def read_research(user_id: UUID) -> dict[str, Any] | None:
     try:
-        return dict(load_encrypted_kv(f"burn2:research:{user_id}"))
+        value = load_encrypted_kv(f"burn2:research:{user_id}")
+        if not isinstance(value, dict):
+            raise ValueError("Saved research must be an object")
+        return cast(dict[str, Any], value)
     except KvKeyNotFoundError:
         return None
 

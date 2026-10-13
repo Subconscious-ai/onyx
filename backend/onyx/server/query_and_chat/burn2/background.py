@@ -31,12 +31,12 @@ def ensure_research(user_id: UUID) -> dict:
     lock = get_cache_backend().lock(f"burn2:research:{user_id}", timeout=20)
     if not lock.acquire(blocking=False):
         state = read_research(user_id)
-        return (
-            state if state and research_reusable(state, query) else {"status": "queued"}
-        )
+        if state is not None and research_reusable(state, query):
+            return state
+        return {"status": "queued"}
     try:
         state = read_research(user_id)
-        if research_reusable(state, query):
+        if state is not None and research_reusable(state, query):
             return state
         # Prevent background refresh from repeatedly retrying a failed provider.
         if (

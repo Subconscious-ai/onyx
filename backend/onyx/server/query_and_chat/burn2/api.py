@@ -204,7 +204,7 @@ Proposed interventions remain hypotheses. Jokes, confidence, and rejected third-
             or calls[0].function.name != "prepare_model_brief"
         ):
             raise ValueError("Structured brief was not returned")
-        return json.loads(calls[0].function.arguments)
+        return json.loads(calls[0].function.arguments or "")
 
     try:
         brief = prepare_validated_brief(generate, snapshot["statements"])
