@@ -305,6 +305,53 @@ class TestRunModels:
     still run but return immediately since run_llm_loop is mocked.
     """
 
+    @pytest.mark.parametrize("workspace_bound", [False, True])
+    def test_workspace_turn_cannot_bootstrap_a_personal_company_profile(
+        self, monkeypatch: pytest.MonkeyPatch, workspace_bound: bool
+    ) -> None:
+        monkeypatch.setenv("BURN2_ENABLED", "true")
+        setup = _make_setup()
+        setup.persona.name = "Burn 2.0"
+        setup.incognito_record_mode = None
+        setup.causl_binding = (
+            CauslChatBinding(
+                user_id=uuid4(),
+                actor=CauslActor(org_id="org_b", user_id="auth0|alice"),
+                issuer="https://auth.example/",
+                market_id="market_b",
+                chat_id=setup.chat_session_id,
+                selection=CauslSelection(page="library", market_id="market_b"),
+                library_server_id=22,
+            )
+            if workspace_bound
+            else None
+        )
+        tool = MagicMock(id=67)
+        with (
+            patch("onyx.chat.process_message.run_llm_loop") as run,
+            patch("onyx.chat.process_message.run_deep_research_llm_loop"),
+            patch(
+                "onyx.chat.process_message.construct_tools", return_value={67: [tool]}
+            ),
+            patch("onyx.chat.process_message.llm_loop_completion_handle"),
+            patch(
+                "onyx.chat.process_message.get_llm_token_counter",
+                return_value=lambda _: 0,
+            ),
+            patch(
+                "onyx.server.query_and_chat.burn2.requested_tool.initial_profile_tool",
+                side_effect=lambda **kwargs: 67 if kwargs["enabled"] else None,
+            ) as bootstrap,
+        ):
+            _run_models_collect(setup)
+
+        bootstrap.assert_called_once()
+        assert bootstrap.call_args.kwargs["enabled"] is not workspace_bound
+        run.assert_called_once()
+        assert run.call_args.kwargs["forced_tool_id"] == (
+            None if workspace_bound else 67
+        )
+
     @pytest.mark.parametrize("original_message", ["Our product supports SSO.", None])
     def test_worker_passes_the_original_bound_statement_to_native_tool_construction(
         self, original_message: str | None

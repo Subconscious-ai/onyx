@@ -27,6 +27,7 @@ The paired KB layout uses `ENABLE_ONYX_ASSISTANT=true` and its existing
 `BURN_ONYX_ORIGIN` setting. The flag defaults to false.
 Native Onyx adds `/causl` and reuses its existing chat page, controller and transport.
 Set `CAUSL_KB_EMBED_ORIGINS` to the exact KB origins allowed to frame this route.
+Set frontend `CAUSL_KB_MCP_SERVER_ID` to the same Library server ID as the backend.
 Invalid entries fail closed. Normal application, administration and login routes retain
 their existing frame policy.
 
@@ -119,3 +120,27 @@ KB Chromium tests cover desktop/mobile layout, navigation, scope replacement and
 The KB browser test uses a placeholder native frame; it does not run a hosted Onyx conversation.
 These checks do not prove Auth0 callbacks, browser cookie behavior or the deployed customer journey.
 Merge, deployment and paid hosted checks require separate approval.
+
+## Native image preparation
+
+Use `docs/subconscious/hosting/Dockerfile.causl` with the inspected live image as
+`BURN_BASE_IMAGE` and the reviewed commit as `CAUSL_SOURCE_REVISION`.
+The existing prototype and Beca overlays omit workspace modules.
+Build the candidate before changing a running service.
+Compile checks do not prove imports, startup, authentication or the customer journey.
+Validate API and background imports in the candidate before an approved replacement.
+Keep the live Compose commands, secrets, volumes and unrelated services.
+This branch adds no migration or dependency-lock change.
+
+The October 12 source readback found deployed interview preparation from the
+`codex/46-interviewer-comparison` source. Preserve its persona aliases, prepared
+research context and native profile bootstrap for ordinary chats.
+Workspace-bound chats exclude that personal context and bootstrap.
+The source integration retains these existing behaviors; it does not release that
+branch's separate frontend or evaluation work.
+
+Read the Library server's actual authentication mode before configuration.
+An API-token connection cannot supply the workspace's per-user OAuth identity.
+Preserve existing connections while preparing a reviewed OAuth connection.
+Configure the backend IDs before a fresh verified OIDC sign-in.
+Old native sessions do not contain the required issuer and subject metadata.
