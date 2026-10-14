@@ -60,7 +60,9 @@ def select_profile(payload: dict) -> dict[str, Any] | None:
     return profile
 
 
-def turn_guidance(turn: int, text: str, *, model_review: bool = False) -> str:
+def turn_guidance(
+    turn: int, text: str, *, model_review: bool = False, draft: dict | None = None
+) -> str:
     attention_budget = "No unsolicited KPI lists, invented target placeholders or full repeated brief. "
     conclude = bool(
         re.search(
@@ -118,6 +120,26 @@ def turn_guidance(turn: int, text: str, *, model_review: bool = False) -> str:
             "Stop earlier when those essentials suffice for a first symbolic model. "
             "Keep unavailable numbers unknown."
         )
+        if (
+            draft
+            and draft.get("objective", {}).get("status") == "executive"
+            and any(
+                item.get("metric", "").lower() not in {"", "unknown"}
+                and item.get("unit", "").lower() not in {"", "unknown"}
+                and any(
+                    item.get(note, {}).get("status") == "executive"
+                    for note in ("baseline", "target")
+                )
+                for item in draft.get("keyResults", [])
+            )
+            and (len(draft.get("journey", [])) < 2 or not draft.get("transitions"))
+        ):
+            question_guidance = (
+                "The next missing connection is the customer journey. Capture it before another operating-number question. "
+                "Propose two or three relevant customer decisions from matching research, labeled as a hypothesis, "
+                "and ask the executive to confirm or correct their actual path. Do not invent confirmation. "
+                + question_guidance
+            )
     return (
         attention_budget
         + humor

@@ -51,6 +51,14 @@ class AdaptiveTesterTests(unittest.TestCase):
         )
         self.assertEqual(key, "goal")
 
+    def test_buyer_path_question_supplies_the_journey(self):
+        _, key = choose_reply(
+            self.case,
+            "Which key decisions define the path from quote to final order?",
+            set(),
+        )
+        self.assertEqual(key, "journey")
+
     def test_customer_segment_target_does_not_answer_numeric_goal(self):
         reply, key = choose_reply(
             self.case, "Which customer segment should we target?", set()

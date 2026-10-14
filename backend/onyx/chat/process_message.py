@@ -1072,7 +1072,10 @@ def build_chat_turn(
             requested_context if is_model_review_context(requested_context) else None
         )
         guidance = turn_guidance(
-            turns, message_text, model_review=model_review_context is not None
+            turns,
+            message_text,
+            model_review=model_review_context is not None,
+            draft=draft,
         )
         additional_context = "\n".join(
             filter(

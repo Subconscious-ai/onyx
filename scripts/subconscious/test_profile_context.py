@@ -10,6 +10,38 @@ from onyx.server.query_and_chat.burn2.profile import (
 
 
 class ProfileTests(unittest.TestCase):
+    def test_known_goal_prioritizes_missing_journey_before_more_economics(self):
+        draft = {
+            "objective": {
+                "status": "executive",
+                "text": "Reach $2 million contribution",
+            },
+            "keyResults": [
+                {
+                    "metric": "Annual contribution",
+                    "unit": "USD",
+                    "target": {"status": "executive"},
+                }
+            ],
+            "journey": [],
+        }
+        guidance = turn_guidance(2, "Ten consultants.", draft=draft)
+        self.assertIn("next missing connection is the customer journey", guidance)
+        self.assertIn("before another operating-number question", guidance)
+        self.assertIn("confirm or correct", guidance)
+        self.assertNotIn("Question budget: zero", guidance)
+
+    def test_complete_connections_stop_discovery_without_another_question(self):
+        draft = {
+            "objective": {"status": "executive", "text": "Improve conversion"},
+            "keyResults": [{"metric": "Conversion", "unit": "%"}],
+            "journey": [{"id": "view"}, {"id": "buy"}],
+            "transitions": [{"from": "view", "to": "buy"}],
+            "model": {"inputs": [{"value": {"status": "executive"}}]},
+        }
+        guidance = turn_guidance(4, "Intermediate rates remain unknown.", draft=draft)
+        self.assertIn("Question budget: zero", guidance)
+
     def test_model_review_uses_explicit_context_purpose_without_replaying_old_results(
         self,
     ):
