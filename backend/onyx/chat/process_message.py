@@ -120,6 +120,7 @@ from onyx.llm.utils import (
 )
 from onyx.natural_language_processing.utils import get_tokenizer
 from onyx.onyxbot.slack.models import SlackContext
+from onyx.prompts.causl_workspace import WORKSPACE_INSTRUCTIONS
 from onyx.prompts.prompt_utils import substitute_user_placeholders
 from onyx.server.query_and_chat.burn2 import EXECUTIVE_INTERVIEW_PERSONA_NAMES
 from onyx.server.query_and_chat.causl.turn import workspace_turn
@@ -898,7 +899,9 @@ def build_chat_turn(
     # run_llm_loop sends to the model — so long directory values can't
     # invalidate the reservation.
     max_reserved_system_prompt_tokens_str = substitute_user_placeholders(
-        (persona.system_prompt or "") + (custom_agent_prompt or ""),
+        (persona.system_prompt or "")
+        + (custom_agent_prompt or "")
+        + (WORKSPACE_INSTRUCTIONS if causl_binding is not None else ""),
         user_memory_context.user_info.placeholder_values,
     )
     reserved_token_count = calculate_reserved_tokens(
@@ -1563,6 +1566,9 @@ def _run_models(
                     include_citations=setup.new_msg_req.include_citations,
                     all_injected_file_metadata=setup.all_injected_file_metadata,
                     inject_memories_in_prompt=user.use_memories,
+                    workspace_instructions=WORKSPACE_INSTRUCTIONS
+                    if setup.causl_binding is not None
+                    else None,
                 )
 
             model_succeeded[model_idx] = True
