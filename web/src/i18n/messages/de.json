@@ -9985,6 +9985,11 @@
         "source": "Diagrammquelle",
         "preparing": "Diagramm wird vorbereitet…",
         "unavailable": "Diagramm nicht verfügbar. Die Quelle bleibt verfügbar."
+      },
+      "evidence": {
+        "label": "Studienbelege",
+        "preparing": "Belege werden vorbereitet…",
+        "unavailable": "Belege nicht verfügbar."
       }
     },
     "modals": {

@@ -4,6 +4,7 @@ import React, { useState, ReactNode, useCallback, useMemo, memo } from "react";
 import { SvgCheck, SvgCode, SvgCopy } from "@opal/icons";
 import { useTranslations } from "next-intl";
 import MermaidDiagram from "@/sections/diagrams/MermaidDiagram";
+import RehoboamViewBlock from "@/sections/evidence/RehoboamViewBlock";
 
 interface CodeBlockProps {
   className?: string;
@@ -69,6 +70,10 @@ export const CodeBlock = memo(function CodeBlock({
 
   if (language.toLowerCase() === "mermaid") {
     return <MermaidDiagram source={codeText} />;
+  }
+
+  if (language.toLowerCase() === "rehoboam-view") {
+    return <RehoboamViewBlock source={codeText} />;
   }
 
   if (typeof children === "string" && !language) {
