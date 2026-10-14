@@ -59,6 +59,14 @@ class AdaptiveTesterTests(unittest.TestCase):
         )
         self.assertEqual(key, "journey")
 
+    def test_plain_outcome_choice_supplies_the_private_goal(self):
+        _, key = choose_reply(
+            self.case,
+            "Should messaging drive new sign-ups, plan upgrades, or renewals?",
+            set(),
+        )
+        self.assertEqual(key, "goal")
+
     def test_customer_segment_target_does_not_answer_numeric_goal(self):
         reply, key = choose_reply(
             self.case, "Which customer segment should we target?", set()

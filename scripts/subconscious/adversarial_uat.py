@@ -37,6 +37,10 @@ def choose_reply(case: dict, answer: str, revealed: set[str]) -> tuple[str, str]
             re.I,
         ):
             intent = "journey"
+        elif any(f["id"] == "goal" for f in case["facts"]) and re.search(
+            r"outcome|objective|success|sign.?ups.*(?:upgrades|renewals)", asked, re.I
+        ):
+            intent = "goal"
         elif re.search(r"why |reason|caus|influence|key factor", asked, re.I):
             return case.get(
                 "unknown_answer",
