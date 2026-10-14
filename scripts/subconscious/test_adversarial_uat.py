@@ -34,6 +34,23 @@ class AdaptiveTesterTests(unittest.TestCase):
         self.assertEqual(key, "journey")
         self.assertIn("Homeowners", reply)
 
+    def test_answers_a_proposed_sequence_confirmation(self):
+        reply, key = choose_reply(
+            self.case,
+            "Proposed journey: view, quote, sign. Does that sequence fit, or what changes?",
+            set(),
+        )
+        self.assertEqual(key, "journey")
+        self.assertIn("Homeowners", reply)
+
+    def test_answers_a_named_measure_question(self):
+        reply, key = choose_reply(
+            self.case,
+            "What success measure counts, and what target do you have?",
+            set(),
+        )
+        self.assertEqual(key, "goal")
+
     def test_customer_segment_target_does_not_answer_numeric_goal(self):
         reply, key = choose_reply(
             self.case, "Which customer segment should we target?", set()

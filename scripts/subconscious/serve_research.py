@@ -67,6 +67,7 @@ async def configure(upstream: Path) -> FastMCP:
             "SMART_LLM": "bedrock:us.amazon.nova-pro-v1:0",
             "STRATEGIC_LLM": "bedrock:us.amazon.nova-pro-v1:0",
             "EMBEDDING": "bedrock:amazon.titan-embed-text-v2:0",
+            "SIMILARITY_THRESHOLD": "0.2",
             "RETRIEVER": "exa",
             "MAX_ITERATIONS": "2",
             "MAX_SEARCH_RESULTS_PER_QUERY": "3",

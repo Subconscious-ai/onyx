@@ -174,6 +174,7 @@ export function useAutomaticBrief({
     const started = Date.now();
     let timer: ReturnType<typeof setTimeout>;
     let manual = attempt > 0;
+    let recoveryRequested = false;
     const poll = async () => {
       setState({ key, phase: "updating" });
       try {
@@ -196,9 +197,15 @@ export function useAutomaticBrief({
         if (
           !manual &&
           (response.status === 405 ||
-            (response.ok && !result.saved && result.background === false))
+            (response.ok && !result.saved && result.background === false) ||
+            (response.ok &&
+              !result.saved &&
+              result.background === true &&
+              !recoveryRequested &&
+              Date.now() - started >= 8000))
         ) {
           manual = true;
+          recoveryRequested = true;
           timer = setTimeout(poll, 0);
           return;
         }

@@ -14,6 +14,36 @@ describe("automatic saved evidence", () => {
     { type: "user", message: "Reach $10 million by 2027" },
     { type: "assistant", message: "Which customer decision matters?" },
   ];
+  it("recovers a stalled background brief through the existing locked POST", async () => {
+    const fetcher = jest.spyOn(global, "fetch").mockImplementation(
+      async (_url, init) =>
+        ({
+          ok: true,
+          status: 200,
+          json: async () =>
+            init?.method === "POST"
+              ? { saved: true, message: "latest saved evidence" }
+              : { saved: false, background: true },
+        }) as Response
+    );
+    const { result } = renderHook(() =>
+      useAutomaticBrief({
+        active: true,
+        chatId: "stalled-chat",
+        busy: false,
+        messages,
+      })
+    );
+    for (let i = 0; i < 7; i++) {
+      await act(async () => {
+        jest.advanceTimersByTime(2000);
+      });
+    }
+    expect(
+      fetcher.mock.calls.filter(([, init]) => init?.method === "POST")
+    ).toHaveLength(1);
+    expect(result.current.savedMessage).toBe("latest saved evidence");
+  });
   it("waits for streaming and prepares once without a page reload", async () => {
     const fetcher = jest.spyOn(global, "fetch").mockResolvedValue({
       ok: true,

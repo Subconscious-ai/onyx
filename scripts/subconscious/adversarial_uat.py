@@ -32,7 +32,7 @@ def choose_reply(case: dict, answer: str, revealed: set[str]) -> tuple[str, str]
         # 'Which customer segment should we target?' is not a numeric-goal ask).
         intent = None
         if re.search(
-            r"segment|population|audience|who |journey|steps|customer action",
+            r"segment|population|audience|who |journey|steps|sequence|customer action",
             asked,
             re.I,
         ):
