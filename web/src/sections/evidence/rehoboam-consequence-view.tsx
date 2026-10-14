@@ -136,7 +136,7 @@ export function RehoboamConsequenceView({ view, className, onPrepareComparison }
   try { value = rehoboamConsequenceView(view); }
   catch (error) { return <ViewError className={className} message={error instanceof Error ? error.message : String(error)} />; }
   return <FindingFrame
-    name={value.id.split('/')[0]} runId={value.runId} className={className}
+    name={value.id.split('/')[0] ?? value.id} runId={value.runId} className={className}
     kicker={value.id === REHOBOAM_IMPORTANCE_COMPOSITION_VIEW_ID ? 'What composes importance' : 'Tested saved-offer changes'}
     question={value.question} finding={value.finding} objective={value.objective}
     next={{ label: value.next.label,

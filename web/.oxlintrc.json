@@ -120,7 +120,12 @@
     "storybook-static",
     "lib/opal/dist",
     "tools/oxlint/anti-slop",
-    "tools/oxlint/i18n"
+    "tools/oxlint/i18n",
+    "src/sections/evidence/rehoboam-*",
+    "src/sections/evidence/effect-interval-plot.tsx",
+    "src/sections/evidence/format.ts",
+    "src/sections/evidence/styles.tsx",
+    "src/sections/evidence/types.ts"
   ],
   "env": {
     "builtin": true

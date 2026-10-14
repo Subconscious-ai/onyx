@@ -49,9 +49,10 @@ function ridge(level: RespondentLevel, x: (value: number) => number, baseline: n
   const points = level.density.map(
     (point) => `${x(point.value).toFixed(1)},${(baseline - (point.density / peak) * RIDGE).toFixed(1)}`,
   );
-  const first = x(level.density[0].value).toFixed(1);
-  const last = x(level.density[level.density.length - 1].value).toFixed(1);
-  return `M${first},${baseline} L${points.join('L')} L${last},${baseline} Z`;
+  const first = level.density[0];
+  const last = level.density[level.density.length - 1];
+  if (!first || !last) return null;
+  return `M${x(first.value).toFixed(1)},${baseline} L${points.join('L')} L${x(last.value).toFixed(1)},${baseline} Z`;
 }
 
 type Focus = (id: string | null, anchor: Element | null) => void;

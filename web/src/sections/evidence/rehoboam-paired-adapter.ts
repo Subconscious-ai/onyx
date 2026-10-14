@@ -94,7 +94,7 @@ function summaryOf(value: unknown, field: string): Summary {
   if (!isRecord(value)) fail(`${field} is missing`);
   const n = count(value.n, `${field}.n`);
   const sides = ['positive_count', 'negative_count', 'tie_count'].map((key) => count(value[key], `${field}.${key}`));
-  if (n < 1 || sides[0] + sides[1] + sides[2] !== n) fail(`${field} counts do not add up to n`);
+  if (n < 1 || sides.reduce((sum, side) => sum + side, 0) !== n) fail(`${field} counts do not add up to n`);
   for (const key of ['mean', 'median', 'p10', 'p90', 'positive_share', 'negative_share', 'tie_share']) {
     finite(VIEW, value[key], `${field}.${key}`);
   }

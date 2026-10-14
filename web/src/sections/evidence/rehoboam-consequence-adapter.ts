@@ -157,7 +157,7 @@ function importanceCohort(value: Record<string, unknown>): { matched: number; re
 function importanceSelection(attributes: Record<string, unknown>[], selectedId: string): void {
   const contributions = attributes.flatMap((attribute) => records(attribute.contributions, 'contributions'));
   const selected = contributions.filter((item) => item.selected === true);
-  if (selected.length > 1 || (selected.length === 1 && selected[0].comparison_id !== selectedId)) fail('importance mark selection differs');
+  if (selected.length > 1 || (selected.length === 1 && selected[0]?.comparison_id !== selectedId)) fail('importance mark selection differs');
   const visible = contributions.some((item) => item.comparison_id === selectedId);
   if (visible && selected.length !== 1) fail('importance selected mark is missing');
 }
@@ -215,10 +215,11 @@ function offerChanges(changes: Record<string, unknown>[], value: Record<string, 
   const selected = changes.filter((change) => change.selected === true);
   if (value.selected_comparison_id === null) {
     if (selected.length || !unavailable.some((reason) => reason.code === 'no_improving_candidate')) fail('unselected offer change needs its reason');
-  } else if (value.selected_comparison_id !== selectedId || selected.length !== 1 || selected[0].comparison_id !== selectedId) {
+  } else if (value.selected_comparison_id !== selectedId || selected.length !== 1 || selected[0]?.comparison_id !== selectedId) {
     fail('saved-offer mark differs from selected comparison');
   }
-  if (selected.length && (selected[0].gain_points as number) <= 0) fail('selected offer change does not improve modeled choice');
+  const [chosen] = selected;
+  if (chosen && (chosen.gain_points as number) <= 0) fail('selected offer change does not improve modeled choice');
 }
 
 type OfferProfile = { offer_id: string; name: string; levels: unknown };
@@ -232,15 +233,15 @@ function draftReplacesLevel(action: Extract<ProposedNext['action'], { kind: 'pre
   const originalLevels = records(focus.levels, 'focus_offer.levels');
   const draftLevels = action.draft_offer.levels;
   return draftLevels.length === originalLevels.length &&
-    originalLevels.every((level, index) => draftLevels[index].attribute === level.attribute &&
-      draftLevels[index].level === (level.attribute === action.attribute ? action.to_level : level.level)) &&
+    originalLevels.every((level, index) => draftLevels[index]?.attribute === level.attribute &&
+      draftLevels[index]?.level === (level.attribute === action.attribute ? action.to_level : level.level)) &&
     originalLevels.some((level) => level.attribute === action.attribute && level.level === action.from_level);
 }
 
 function offerAction(action: ProposedNext['action'], focus: Record<string, unknown>, competitors: Record<string, unknown>[], included: boolean): void {
   if (action.kind !== 'prepare_simulator_draft') return;
   const sameCompetitors = action.competitors.length === competitors.length &&
-    action.competitors.every((item, index) => sameProfile(item, competitors[index]));
+    action.competitors.every((item, index) => sameProfile(item, competitors[index] ?? {}));
   const sameFocus = sameProfile(action.focus_offer, focus) &&
     action.draft_offer.offer_id === focus.offer_id && action.draft_offer.name === focus.name;
   if (!sameFocus || !sameCompetitors || action.opt_out_included !== included || !draftReplacesLevel(action, focus)) {

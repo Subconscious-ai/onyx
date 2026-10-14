@@ -85,7 +85,7 @@ export function rehoboamSegmentComparisonView(view: unknown): RehoboamSegmentCom
   const warnings = warningsOf(VIEW, data);
 
   if (!Array.isArray(data.groups) || data.groups.length !== 2) fail('exactly two groups are required');
-  const groups = data.groups.map((group: unknown, index: number) => {
+  const [groupA, groupB] = data.groups.map((group: unknown, index: number) => {
     if (!isRecord(group)) fail(`groups[${index}] is not an object`);
     if (group.status !== 'ok') fail(`groups[${index}] is ${String(group.status)}`);
     if (!Array.isArray(group.filter)) fail(`groups[${index}].filter is missing`);
@@ -97,6 +97,7 @@ export function rehoboamSegmentComparisonView(view: unknown): RehoboamSegmentCom
       respondents: finite(group.n, `groups[${index}].n`),
     };
   });
+  if (!groupA || !groupB) fail('exactly two groups are required');
 
   if (!Array.isArray(data.rows) || data.rows.length === 0) fail('rows are missing');
   const byId = new Map<string, { attribute: string; level: string; values: Record<string, ComparisonValue> }>();
@@ -105,7 +106,7 @@ export function rehoboamSegmentComparisonView(view: unknown): RehoboamSegmentCom
     const attribute = text(row.attribute, `rows[${index}].attribute`);
     const level = typeof row.level === 'string' ? row.level : '';
     const group = text(row.group, `rows[${index}].group`);
-    if (group !== groups[0].key && group !== groups[1].key) fail(`rows[${index}] names unknown group ${group}`);
+    if (group !== groupA.key && group !== groupB.key) fail(`rows[${index}] names unknown group ${group}`);
     const lower = finiteOrNull(row.lower ?? null, `rows[${index}].lower`);
     const upper = finiteOrNull(row.upper ?? null, `rows[${index}].upper`);
     if (lower !== null && upper !== null && lower > upper) fail(`rows[${index}] range is reversed`);
@@ -122,8 +123,8 @@ export function rehoboamSegmentComparisonView(view: unknown): RehoboamSegmentCom
   });
 
   const pairs = [...byId.entries()].map(([id, entry]) => {
-    const a = entry.values[groups[0].key];
-    const b = entry.values[groups[1].key];
+    const a = entry.values[groupA.key];
+    const b = entry.values[groupB.key];
     if (!a || !b) fail(`${id} is missing from one group`);
     return { id, attribute: entry.attribute, level: entry.level, a, b, gap: b.estimate - a.estimate };
   });
@@ -134,8 +135,8 @@ export function rehoboamSegmentComparisonView(view: unknown): RehoboamSegmentCom
     measure,
     units: UNITS[measure],
     groups: [
-      { label: groups[0].label, filter: groups[0].filter, respondents: groups[0].respondents },
-      { label: groups[1].label, filter: groups[1].filter, respondents: groups[1].respondents },
+      { label: groupA.label, filter: groupA.filter, respondents: groupA.respondents },
+      { label: groupB.label, filter: groupB.filter, respondents: groupB.respondents },
     ],
     pairs,
     warnings,

@@ -72,10 +72,14 @@ function adapt(view: unknown) {
 
 /** A single-dimension, single-level filter, which is what the pickers edit. */
 function simple(filter: SegmentFilter): { dimension: string; level: string } | null {
-  if (filter.length !== 1) return null;
-  const entries = Object.entries(filter[0]);
-  if (entries.length !== 1 || entries[0][1].length !== 1) return null;
-  return { dimension: entries[0][0], level: entries[0][1][0] };
+  const [clause] = filter;
+  if (filter.length !== 1 || !clause) return null;
+  const entries = Object.entries(clause);
+  const [entry] = entries;
+  if (entries.length !== 1 || !entry) return null;
+  const [dimension, levels] = entry;
+  const [level] = levels;
+  return levels.length === 1 && level !== undefined ? { dimension, level } : null;
 }
 
 const label = (dimension: string) => dimension.replace(/_/g, '');
@@ -205,7 +209,7 @@ function GroupSelects({ index, picked, comparison, minimum, pending, pick }: Gro
 }
 
 interface GroupPickersProps extends Omit<GroupSelectsProps, 'index' | 'picked' | 'comparison'> {
-  groups: ComparisonGroup[];
+  groups: [ComparisonGroup, ComparisonGroup];
   pickers: Picker[];
   comparison?: ComparisonControls;
   colors: [string, string];
@@ -258,7 +262,7 @@ interface PairMarkProps {
   y: number;
   index: number;
   x: (value: number) => number;
-  groups: ComparisonGroup[];
+  groups: [ComparisonGroup, ComparisonGroup];
   format: Formatters;
   activeId: string | null;
   theme: ChartTheme;
@@ -354,7 +358,7 @@ function groupLine(group: ComparisonGroup, value: ComparisonPair['a'], fmt: Form
   return `${group.label}: ${fmt(value.estimate)} (n=${value.respondents})${range}`;
 }
 
-function PairTip({ tip, groups, format, left, top }: { tip: ComparisonPair; groups: ComparisonGroup[]; format: Formatters; left: number; top: number }) {
+function PairTip({ tip, groups, format, left, top }: { tip: ComparisonPair; groups: [ComparisonGroup, ComparisonGroup]; format: Formatters; left: number; top: number }) {
   return (
     <ViewTooltip left={left} top={top}>
       <strong>{tip.level || tip.attribute}</strong>
@@ -454,7 +458,7 @@ export function RehoboamSegmentComparisonView({ view, comparison, className }: R
   const pickers = current.groups.map((group) => simple(group.filter));
   const filters = current.groups.map((group) => group.filter) as Filters;
   const pick: PickGroup = (index, dimension, level) => {
-    const choice = level ?? defaultLevel(comparison, dimension, pickers[1 - index], minimum);
+    const choice = level ?? defaultLevel(comparison, dimension, pickers[1 - index] ?? null, minimum);
     if (!choice) return;
     const next = [...filters] as Filters;
     next[index] = [{ [dimension]: [choice] }];

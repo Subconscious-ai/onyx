@@ -123,7 +123,7 @@ interface SweepState {
 
 /** Every level a product may take for an attribute: the host's list, or the levels on show. */
 function levelOptions(scenario: ScenarioControls | undefined, current: RehoboamMarketShareView, attribute: string) {
-  return scenario?.levels[attribute] ?? [...new Set(current.products.map((product) => product.levels[attribute]))];
+  return scenario?.levels[attribute] ?? [...new Set(current.products.flatMap((product) => product.levels[attribute] ?? []))];
 }
 
 /** A new product that differs from the last one: the next level of every attribute. */
@@ -132,8 +132,9 @@ function nextProduct(products: ScenarioProduct[], attributes: string[], levelsFo
   const next: ScenarioProduct = {};
   for (const attribute of attributes) {
     const options = levelsFor(attribute);
-    const index = options.indexOf(seed[attribute]);
-    next[attribute] = options[(index + 1) % options.length] ?? options[0];
+    const index = options.indexOf(seed[attribute] ?? '');
+    const level = options[(index + 1) % options.length] ?? options[0];
+    if (level !== undefined) next[attribute] = level;
   }
   return next;
 }
@@ -151,7 +152,7 @@ function useSweep(scenario: ScenarioControls | undefined) {
       index,
       letter: current.products[index]?.letter ?? '',
       attribute,
-      current: products[index][attribute],
+      current: products[index]?.[attribute] ?? '',
       rows: levelOptions(scenario, current, attribute).map((level) => ({ level, share: null, failed: false })),
       statement: null,
       error: null,
@@ -485,7 +486,7 @@ function ScenarioGrid({ current, products, activeSlots, state, controls, maxProd
         const letter = current.products[index]?.letter ?? String.fromCharCode(65 + index);
         return (
           <ProductCard
-            before={state.previousBySlot.get(state.slots[index])}
+            before={state.previousBySlot.get(state.slots[index] ?? -1)}
             controls={controls}
             dim={dim}
             index={index}

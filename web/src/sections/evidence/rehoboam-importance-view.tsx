@@ -56,9 +56,10 @@ function ridgePath(row: ImportanceRow, x: (value: number) => number, baseline: n
   if (peak <= 0) return null;
   const y = (density: number) => baseline - (density / peak) * RIDGE;
   const top = row.spread.map((point, index) => `${index === 0 ? 'M' : 'L'}${x(point.value).toFixed(1)},${y(point.density).toFixed(1)}`);
-  const first = row.spread[0].value;
-  const last = row.spread[row.spread.length - 1].value;
-  return `M${x(first).toFixed(1)},${baseline} ${top.join('').replace(/^M/, 'L')} L${x(last).toFixed(1)},${baseline} Z`;
+  const first = row.spread[0];
+  const last = row.spread[row.spread.length - 1];
+  if (!first || !last) return null;
+  return `M${x(first.value).toFixed(1)},${baseline} ${top.join('').replace(/^M/, 'L')} L${x(last.value).toFixed(1)},${baseline} Z`;
 }
 
 type Focus = (attribute: string | null, anchor: Element | null) => void;

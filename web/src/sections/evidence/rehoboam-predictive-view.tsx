@@ -23,7 +23,7 @@ export function RehoboamPredictiveView({ result }: { result: unknown }) {
 }
 
 function PredictiveStory({ value }: { value: PredictivePresentation }) {
-  const [selectedId, setSelectedId] = useState(value.rows[0].id);
+  const [selectedId, setSelectedId] = useState(value.rows[0]?.id);
   const selected = value.rows.find(row => row.id === selectedId)!;
   // Ranges from a saved fit that failed convergence are not shown.
   const ranges = value.status === 'POPULATION_CHECKS_PASS';
