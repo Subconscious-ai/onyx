@@ -740,6 +740,28 @@ def select_reminder_text(
     )
 
 
+def apply_turn_instructions(
+    system: ChatMessageSimple | None,
+    instructions: str | None,
+    token_counter: Callable[[str], int],
+) -> ChatMessageSimple | None:
+    """Add server-owned turn policy without changing native memory or source roles."""
+    if not instructions:
+        return system
+    text = (
+        (system.message if system else "")
+        + "\n\nCurrent application instructions:\n"
+        + instructions
+    )
+    if system:
+        return system.model_copy(
+            update={"message": text, "token_count": token_counter(text)}
+        )
+    return ChatMessageSimple(
+        message=text, token_count=token_counter(text), message_type=MessageType.SYSTEM
+    )
+
+
 def run_llm_loop(
     emitter: Emitter,
     state_container: ChatStateContainer,
@@ -759,6 +781,7 @@ def run_llm_loop(
     include_citations: bool = True,
     all_injected_file_metadata: dict[str, FileToolMetadata] | None = None,
     inject_memories_in_prompt: bool = True,
+    trusted_turn_instructions: str | None = None,
 ) -> None:
     with trace(
         "run_llm_loop",
@@ -989,6 +1012,10 @@ def run_llm_loop(
                         else None
                     )
                     custom_agent_prompt_msg = None
+
+            system_prompt = apply_turn_instructions(
+                system_prompt, trusted_turn_instructions, token_counter
+            )
 
             processed_task_prompt = (
                 process_prompt_template(

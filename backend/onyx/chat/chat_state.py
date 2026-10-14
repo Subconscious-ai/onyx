@@ -246,3 +246,4 @@ class ChatTurnSetup:
     mcp_headers: dict[str, str] | None
     causl_binding: CauslChatBinding | None = None
     causl_original_message: str | None = None
+    trusted_turn_instructions: str | None = None

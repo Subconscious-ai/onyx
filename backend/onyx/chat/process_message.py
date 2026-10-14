@@ -1028,6 +1028,7 @@ def build_chat_turn(
     )
 
     model_review_context: str | None = None
+    trusted_turn_instructions: str | None = None
     if (
         os.environ.get("BURN2_ENABLED") == "true"
         and causl_binding is None
@@ -1077,13 +1078,13 @@ def build_chat_turn(
             model_review=model_review_context is not None,
             draft=draft,
         )
+        trusted_turn_instructions = guidance
         additional_context = "\n".join(
             filter(
                 None,
                 [
                     additional_context or new_msg_req.additional_context,
                     context,
-                    guidance,
                     interview_context(
                         statements,
                         [
@@ -1233,6 +1234,7 @@ def build_chat_turn(
         mcp_headers=mcp_headers,
         causl_binding=causl_binding,
         causl_original_message=causl_original_message,
+        trusted_turn_instructions=trusted_turn_instructions,
     )
 
 
@@ -1557,6 +1559,7 @@ def _run_models(
                     custom_agent_prompt=setup.custom_agent_prompt,
                     context_files=setup.extracted_context_files,
                     persona=setup.persona,
+                    trusted_turn_instructions=setup.trusted_turn_instructions,
                     user_memory_context=setup.user_memory_context,
                     llm=model_llm,
                     token_counter=get_llm_token_counter(model_llm),
