@@ -121,6 +121,7 @@ from onyx.llm.utils import (
 from onyx.natural_language_processing.utils import get_tokenizer
 from onyx.onyxbot.slack.models import SlackContext
 from onyx.prompts.prompt_utils import substitute_user_placeholders
+from onyx.server.query_and_chat.burn2 import EXECUTIVE_INTERVIEW_PERSONA_NAMES
 from onyx.server.query_and_chat.causl.turn import workspace_turn
 from onyx.server.query_and_chat.chat_utils import mime_type_to_chat_file_type
 from onyx.server.query_and_chat.models import (
@@ -839,7 +840,7 @@ def build_chat_turn(
         tuple(chat_history)
         if os.environ.get("BURN2_ENABLED") == "true"
         and causl_binding is None
-        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
+        and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and user is not None
         else ()
     )
@@ -956,7 +957,7 @@ def build_chat_turn(
     if (
         os.environ.get("BURN2_ENABLED") == "true"
         and causl_binding is None
-        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
+        and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and forced_tool_id is None
     ):
         from onyx.server.query_and_chat.burn2.requested_tool import requested_tool
@@ -1031,7 +1032,7 @@ def build_chat_turn(
     if (
         os.environ.get("BURN2_ENABLED") == "true"
         and causl_binding is None
-        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
+        and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and user is not None
     ):
         from onyx.db.burn2_profile import read_profile
@@ -1155,7 +1156,7 @@ def build_chat_turn(
     if (
         os.environ.get("BURN2_ENABLED") == "true"
         and causl_binding is None
-        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
+        and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and user is not None
     ):
         from onyx.server.query_and_chat.burn2.profile import project_chat_history
@@ -1445,8 +1446,7 @@ def _run_models(
         if (
             os.environ.get("BURN2_ENABLED") == "true"
             and setup.causl_binding is None
-            and setup.persona.name
-            in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
+            and setup.persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
             and setup.incognito_record_mode is None
             and any(model_succeeded)
         ):

@@ -313,13 +313,13 @@ const AppInputBar = React.memo(
     );
     const submitMessage = useCallback(
       (text: string) => {
-        if (!text.trim()) {
+        if (!text.trim() || (embeddedWorkspace && chatState !== "input")) {
           return;
         }
         handleSubmit(text);
         if (!embeddedWorkspace) clearChatDraft();
       },
-      [handleSubmit, clearChatDraft, embeddedWorkspace]
+      [handleSubmit, clearChatDraft, embeddedWorkspace, chatState]
     );
 
     // Expose reset and focus methods to parent via ref
@@ -461,33 +461,15 @@ const AppInputBar = React.memo(
       prevChatStateRef.current = chatState;
       prevRenderCompleteRef.current = latestMessageRenderComplete;
 
-      if (!wasReady && isReady && queuedMessages.length > 0) {
-        const queued = queuedMessages[0]!;
-        const nextMessage = queued.text;
+      if (
+        !embeddedWorkspace &&
+        !wasReady &&
+        isReady &&
+        queuedMessages.length > 0
+      ) {
+        const nextMessage = queuedMessages[0]!.text;
         isAutoSending.current = true;
         stopTTS();
-        if (embeddedWorkspace) {
-          const sessionId = useChatSessionStore.getState().currentSessionId;
-          onSubmit(nextMessage, {
-            onInputAccepted: () => {
-              isAutoSending.current = false;
-              const store = useChatSessionStore.getState();
-              const index = sessionId
-                ? (store.sessions
-                    .get(sessionId)
-                    ?.queuedMessages.findIndex(
-                      (item) => item.id === queued.id
-                    ) ?? -1)
-                : -1;
-              if (sessionId && index >= 0)
-                store.removeQueuedMessage(sessionId, index);
-            },
-            onInputRejected: () => {
-              isAutoSending.current = false;
-            },
-          });
-          return;
-        }
         onSubmit(nextMessage);
         isAutoSending.current = false;
         removeCurrentQueuedMessage(0);
@@ -867,7 +849,7 @@ const AppInputBar = React.memo(
             icon={
               isClassifying
                 ? SvgSimpleLoader
-                : chatState !== "input" && message.trim()
+                : !embeddedWorkspace && chatState !== "input" && message.trim()
                   ? SvgArrowUp
                   : chatState === "streaming" || isVoicePlaybackControllable
                     ? SvgStop
@@ -875,7 +857,7 @@ const AppInputBar = React.memo(
             }
             onClick={() => {
               const canSubmitNormally = chatState === "input";
-              if (!canSubmitNormally && message.trim()) {
+              if (!embeddedWorkspace && !canSubmitNormally && message.trim()) {
                 if (queuedMessages.length < MAX_QUEUED_MESSAGES) {
                   enqueueCurrentMessage(message.trim());
                   clearMessage();
@@ -1046,6 +1028,7 @@ const AppInputBar = React.memo(
                               submitMessage(message);
                             }
                           } else if (
+                            !embeddedWorkspace &&
                             message.trim() &&
                             !disabled &&
                             !isClassifying &&

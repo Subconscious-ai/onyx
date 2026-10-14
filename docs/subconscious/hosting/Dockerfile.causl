@@ -18,8 +18,11 @@ COPY backend/onyx/server/query_and_chat/causl/ /app/onyx/server/query_and_chat/c
 COPY backend/onyx/tools/tool_constructor.py /app/onyx/tools/tool_constructor.py
 COPY backend/onyx/tools/tool_implementations/mcp/mcp_tool.py /app/onyx/tools/tool_implementations/mcp/mcp_tool.py
 # Preserve the already deployed interview preparation alongside workspace isolation.
+COPY backend/onyx/server/query_and_chat/burn2/__init__.py /app/onyx/server/query_and_chat/burn2/__init__.py
+COPY backend/onyx/server/query_and_chat/burn2/api.py /app/onyx/server/query_and_chat/burn2/api.py
 COPY backend/onyx/server/query_and_chat/burn2/profile.py /app/onyx/server/query_and_chat/burn2/profile.py
 COPY backend/onyx/server/query_and_chat/burn2/research.py /app/onyx/server/query_and_chat/burn2/research.py
 COPY backend/onyx/server/query_and_chat/burn2/requested_tool.py /app/onyx/server/query_and_chat/burn2/requested_tool.py
 
 RUN python -m compileall -q /app/onyx/auth /app/onyx/chat /app/onyx/db /app/onyx/server/query_and_chat /app/onyx/tools
+RUN python -c "from onyx.server.query_and_chat.burn2 import EXECUTIVE_INTERVIEW_PERSONA_NAMES; assert len(EXECUTIVE_INTERVIEW_PERSONA_NAMES) == 3"
