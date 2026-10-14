@@ -43,6 +43,20 @@ class AdaptiveTesterTests(unittest.TestCase):
         self.assertEqual(key, "journey")
         self.assertIn("Homeowners", reply)
 
+    def test_imperative_confirmation_is_an_actual_request(self):
+        _, key = choose_reply(
+            self.case,
+            "Confirm or correct the customer journey from tariff-page visit to signed contract.",
+            set(),
+        )
+        self.assertEqual(key, "journey")
+
+    def test_passive_description_of_confirmation_does_not_supply_facts(self):
+        _, key = choose_reply(
+            self.case, "We will confirm the customer journey later.", set()
+        )
+        self.assertEqual(key, "passive_probe")
+
     def test_answers_a_named_measure_question(self):
         reply, key = choose_reply(
             self.case,
@@ -63,6 +77,20 @@ class AdaptiveTesterTests(unittest.TestCase):
         _, key = choose_reply(
             self.case,
             "Should messaging drive new sign-ups, plan upgrades, or renewals?",
+            set(),
+        )
+        self.assertEqual(key, "goal")
+
+    def test_short_confirmation_refers_to_the_proposed_journey(self):
+        _, key = choose_reply(
+            self.case, "Proposed journey: page, quote, contract. Does that fit?", set()
+        )
+        self.assertEqual(key, "journey")
+
+    def test_single_number_selection_is_a_goal_question(self):
+        _, key = choose_reply(
+            self.case,
+            "Which single number should messaging move, and what is it today?",
             set(),
         )
         self.assertEqual(key, "goal")

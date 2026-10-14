@@ -6,6 +6,12 @@ from onyx.server.query_and_chat.burn2.validation import validate_brief
 
 
 class StructuredBriefTest(unittest.TestCase):
+    def test_schema_repair_names_missing_fields_without_echoing_source_data(self):
+        brief = self.brief()
+        del brief["company"]
+        with self.assertRaisesRegex(ValueError, "missing company"):
+            validate_brief(brief, ["Private customer detail"])
+
     def test_literal_confirmed_goal_survives_an_earlier_hypothetical(self):
         brief = self.brief()
         brief["objective"] = {

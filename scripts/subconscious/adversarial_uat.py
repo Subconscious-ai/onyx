@@ -27,6 +27,15 @@ from eval_interview import (
 
 def choose_reply(case: dict, answer: str, revealed: set[str]) -> tuple[str, str]:
     asked = " ".join(questions(answer))
+    if not asked:
+        # An interviewer can ask with an imperative rather than a question mark.
+        # Ordinary recaps must still receive no unsolicited missing facts.
+        requests = re.findall(
+            r"(?:^|[.!?\n]\s*)(?:please\s+)?((?:confirm|correct|describe|outline|tell me|choose|select|share|give me)\b[^.!?\n]+)",
+            re.sub(r"<thinking>.*?</thinking>", "", answer, flags=re.S),
+            re.I,
+        )
+        asked = " ".join(requests)
     if asked:
         # Prefer the question's intent over incidental words (e.g. 'target' in
         # 'Which customer segment should we target?' is not a numeric-goal ask).
@@ -35,10 +44,15 @@ def choose_reply(case: dict, answer: str, revealed: set[str]) -> tuple[str, str]
             r"segment|population|audience|who |journey|steps|sequence|customer action|path from",
             asked,
             re.I,
+        ) or (
+            re.search(r"journey|customer path", answer, re.I)
+            and re.search(r"fit|match|confirm|correct|accurate", asked, re.I)
         ):
             intent = "journey"
         elif any(f["id"] == "goal" for f in case["facts"]) and re.search(
-            r"outcome|objective|success|sign.?ups.*(?:upgrades|renewals)", asked, re.I
+            r"outcome|objective|success|which (?:single )?(?:number|result)|sign.?ups.*(?:upgrades|renewals)",
+            asked,
+            re.I,
         ):
             intent = "goal"
         elif re.search(r"why |reason|caus|influence|key factor", asked, re.I):

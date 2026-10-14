@@ -180,6 +180,14 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
         # Schema paths contain field names and indices, never source content.
         paths = [
             f"{'.'.join(str(part) for part in error.absolute_schema_path)}:{error.validator}"
+            + (
+                ": missing "
+                + ", ".join(
+                    field for field in error.validator_value if field not in error.instance
+                )
+                if error.validator == "required" and isinstance(error.instance, dict)
+                else ""
+            )
             for error in errors[:4]
         ]
         raise ValueError("Invalid structured model brief: " + ";".join(paths))
