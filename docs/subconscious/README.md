@@ -46,8 +46,9 @@ under `~/.local/share/causl-uat/finish-20261014/agentdev-six/`. QA credentials s
 never copy them into issues, PRs or this document. The final fresh-login test proved a standard member,
 9.124 seconds to native entry, and 16.058 seconds to reopen an existing KB model without a second password.
 This is separate from the new-model timing above. Vercel previews use a different backend; their deployment
-status does not prove this agent-dev candidate. The Library page browser readback timed out; canonical
-record proof came from restricted tenant-role Postgres reads, not a successful Library UI test.
+status does not prove this agent-dev candidate. The initial Library browser readback timed out.
+A later SaaS Library check read all three accepted records, original quotes and provenance through
+the UI. The full 20-record proof came from restricted tenant-role Postgres reads.
 
 [Open Burn](https://burn.subconscious.ai/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Start login on this canonical address. The native OAuth callback uses this registered origin. Starting OAuth directly from a branch preview can fail with `OAUTH_INVALID_STATE` because its state cookie belongs to the preview. A ready preview does not prove its authenticated customer path.
 
