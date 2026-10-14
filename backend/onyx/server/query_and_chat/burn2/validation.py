@@ -132,8 +132,21 @@ def ground_journey_actors(journey: list[dict], transitions: list[dict]) -> None:
         # A genuine quote does not establish an invented participant. This
         # lexical guard is conservative, not full semantic entailment.
         actor = normal(stage["actor"])
+        plural = (
+            len(actor) > 2
+            and not actor.endswith("s")
+            and actor
+            not in {
+                "you",
+                "she",
+                "they",
+                "him",
+                "her",
+            }
+        )
         supported = bool(actor) and re.search(
-            r"(?<!\w)" + re.escape(actor) + r"(?!\w)", normal(stage.get("quote", ""))
+            r"(?<!\w)" + re.escape(actor) + (r"s?" if plural else "") + r"(?!\w)",
+            normal(stage.get("quote", "")),
         )
         if stage["status"] == "executive" and not supported:
             demote(stage)
@@ -183,7 +196,9 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
             + (
                 ": missing "
                 + ", ".join(
-                    field for field in error.validator_value if field not in error.instance
+                    field
+                    for field in error.validator_value
+                    if field not in error.instance
                 )
                 if error.validator == "required" and isinstance(error.instance, dict)
                 else ""
@@ -396,6 +411,11 @@ def extraction_schema(source_count: int) -> dict:
     schema["required"].remove("version")
     schema["properties"]["keyResults"]["minItems"] = 1
     schema["properties"]["model"]["properties"]["inputs"]["minItems"] = 1
+    schema["properties"]["journey"]["items"]["properties"]["actor"]["description"] = (
+        "For executive-supported stages, copy the actor phrase from the indexed executive message. "
+        "Reuse that same phrase across the person's decisions. Do not substitute generic visitor, prospect, "
+        "or customer labels when a specific actor is supplied. Unsupported actors and paths are assumptions."
+    )
 
     def references(item: Any) -> None:
         if isinstance(item, dict):

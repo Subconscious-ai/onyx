@@ -95,6 +95,12 @@ class AdaptiveTesterTests(unittest.TestCase):
         )
         self.assertEqual(key, "goal")
 
+    def test_percentage_question_supplies_the_known_measure(self):
+        _, key = choose_reply(
+            self.case, "What percentage of contracts renewed this year?", set()
+        )
+        self.assertEqual(key, "goal")
+
     def test_customer_segment_target_does_not_answer_numeric_goal(self):
         reply, key = choose_reply(
             self.case, "Which customer segment should we target?", set()

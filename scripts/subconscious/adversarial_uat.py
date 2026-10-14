@@ -50,7 +50,7 @@ def choose_reply(case: dict, answer: str, revealed: set[str]) -> tuple[str, str]
         ):
             intent = "journey"
         elif any(f["id"] == "goal" for f in case["facts"]) and re.search(
-            r"outcome|objective|success|which (?:single )?(?:number|result)|sign.?ups.*(?:upgrades|renewals)",
+            r"outcome|objective|success|which (?:single )?(?:number|result)|(?:what|which|how).*\b(?:percentage|percent|fraction|proportion)\b|sign.?ups.*(?:upgrades|renewals)",
             asked,
             re.I,
         ):

@@ -641,6 +641,38 @@ class StructuredBriefTest(unittest.TestCase):
                     "assumption",
                 )
 
+    def test_singular_actor_is_supported_by_the_quoted_plural(self):
+        source = "Texas homeowners visit our tariff page and sign a contract."
+        brief = self.brief()
+        brief["journey"] = [
+            {
+                "id": "visit",
+                "actor": "Texas homeowner",
+                "text": "Visit the tariff page",
+                "status": "executive",
+                "quote": source,
+            }
+        ]
+        self.assertEqual(
+            validate_brief(brief, [source])["journey"][0]["status"], "executive"
+        )
+
+    def test_actor_pronoun_does_not_match_a_verb_via_plural_expansion(self):
+        brief = self.brief()
+        source = "The customer is paying for the product."
+        brief["journey"] = [
+            {
+                "id": "pay",
+                "actor": "I",
+                "text": "Pay for the product",
+                "status": "executive",
+                "quote": source,
+            }
+        ]
+        self.assertEqual(
+            validate_brief(brief, [source])["journey"][0]["status"], "assumption"
+        )
+
     def test_blank_horizon_is_rejected_before_frontend_readback(self):
         value = self.brief()
         value["horizon"] = ""
