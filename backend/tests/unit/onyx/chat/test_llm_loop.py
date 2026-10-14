@@ -1465,3 +1465,14 @@ class TestSelectReminderText:
             ran_image_gen=True, just_ran_web_search=True, has_open_url_tool=True
         )
         assert result == IMAGE_GEN_REMINDER
+
+    def test_current_turn_policy_follows_static_and_tool_reminders(self) -> None:
+        policy = "Question budget: zero. Synthesize the current model."
+        for overrides in ({}, {"just_ran_web_search": True}, {"ran_image_gen": True}):
+            result = self._select(
+                persona_task_prompt="Ask one material question.",
+                current_turn_instructions=policy,
+                **overrides,
+            )
+            assert result is not None
+            assert result.endswith(policy)

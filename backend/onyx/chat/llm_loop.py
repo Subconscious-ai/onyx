@@ -721,6 +721,7 @@ def select_reminder_text(
     persona_task_prompt: str | None,
     include_citation_reminder: bool,
     include_file_reminder: bool,
+    current_turn_instructions: str | None = None,
 ) -> str | None:
     """Choose the reminder appended after a tool cycle.
 
@@ -729,15 +730,27 @@ def select_reminder_text(
     "open_url is not available" replies.
     """
     if ran_image_gen:
-        return IMAGE_GEN_REMINDER
-    if just_ran_web_search and has_open_url_tool and not out_of_cycles:
-        return OPEN_URL_REMINDER
-    return build_reminder_message(
-        reminder_text=persona_task_prompt,
-        include_citation_reminder=include_citation_reminder,
-        include_file_reminder=include_file_reminder,
-        is_last_cycle=out_of_cycles,
-    )
+        reminder = IMAGE_GEN_REMINDER
+    elif just_ran_web_search and has_open_url_tool and not out_of_cycles:
+        reminder = OPEN_URL_REMINDER
+    else:
+        reminder = build_reminder_message(
+            reminder_text=persona_task_prompt,
+            include_citation_reminder=include_citation_reminder,
+            include_file_reminder=include_file_reminder,
+            is_last_cycle=out_of_cycles,
+        )
+    if current_turn_instructions:
+        return "\n\n".join(
+            filter(
+                None,
+                [
+                    reminder,
+                    "Current application instructions:\n" + current_turn_instructions,
+                ],
+            )
+        )
+    return reminder
 
 
 def apply_turn_instructions(
@@ -1036,6 +1049,7 @@ def run_llm_loop(
                 include_citation_reminder=should_cite_documents
                 or always_cite_documents,
                 include_file_reminder=code_interpreter_file_generated,
+                current_turn_instructions=trusted_turn_instructions,
             )
 
             reminder_msg = (
