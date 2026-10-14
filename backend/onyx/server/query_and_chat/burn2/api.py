@@ -28,6 +28,7 @@ from onyx.llm.models import (
     UserMessage,
 )
 from onyx.llm.override_models import LLMOverride
+from onyx.server.query_and_chat.burn2 import EXECUTIVE_INTERVIEW_PERSONA_NAMES
 from onyx.server.query_and_chat.burn2.models import ProfileCorrection
 from onyx.server.query_and_chat.burn2.validation import (
     extraction_schema,
@@ -71,7 +72,7 @@ def _prepare_brief(
     except ValueError:
         raise HTTPException(404, "Saved executive conversation not available") from None
     persona = get_persona_by_id(snapshot["persona_id"], user, db, is_for_edit=False)
-    if persona.name not in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}:
+    if persona.name not in EXECUTIVE_INTERVIEW_PERSONA_NAMES:
         raise HTTPException(404, "Executive conversation required")
     if "</interview-brief>" in snapshot["last_text"]:
         try:
@@ -353,7 +354,7 @@ def read_executive_brief(
     try:
         snapshot = owned_snapshot(chat_id, user.id, db)
         persona = get_persona_by_id(snapshot["persona_id"], user, db, is_for_edit=False)
-        if persona.name not in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}:
+        if persona.name not in EXECUTIVE_INTERVIEW_PERSONA_NAMES:
             raise ValueError("Executive conversation required")
     except ValueError:
         raise OnyxError(
