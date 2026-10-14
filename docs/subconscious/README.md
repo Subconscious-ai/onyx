@@ -1,8 +1,93 @@
 # Burn 2.0 on native Onyx
 
-[Open Burn](https://burn.subconscious.ai/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Start login on this canonical address. Branch previews redirect to the registered login origin and do not prove their own authenticated customer path.
+## October 14 agent-dev QA
 
-## Current acceptance, September 25
+The paired QA runtime is [Beca on agent-dev](https://agent-dev.taila3aadb.ts.net:3011/app?agentId=2).
+This address requires the existing Tailscale network. Use **Subconscious account** for Auth0 login.
+Do not use the native password form with the Auth0 QA credentials. The real owner account has
+eight retained PDL professional fields and a completed nine-source company report. The synthetic
+QA account has no PDL match; its test companies are explicit corrections, never invented matches.
+
+The tested application pins are Onyx `552fa8c012` and KB `19230c8`. Later test/docs commits do not
+change application behavior. Both PR #48 and KB PR #675 remain drafts. Do not merge before owner QA.
+
+Six browser scenarios saved and reopened six Postgres models at revision 1. Independent native
+calculator readbacks matched energy 550/700 contracts, SaaS $2.1M/$2.4M renewal revenue,
+consulting $1.6M capacity contribution with a $400K gap, home services $120K/$160K revenue,
+and manufacturing 30/36 orders. Retail hypothetical inputs remain unknown in the factual baseline.
+Restricted tenant-role reads confirmed 20 accepted stage/transition records with original quotes
+and six retained interview dossiers. These checks prove writes and reads; they do not prove that
+the whole public market ontology is populated. Dossiers and research remain unaccepted source material.
+The anonymous manufacturing client had no website and no company research; its employer was not substituted.
+
+The complete six-case round took 59.33–73.11 seconds with scripted human delays. Estimates that
+include reading at 240 words/minute and typing at 60 words/minute were 143.80–204.93 seconds.
+The strict 60-second goal is not met. Interview quality is also open: the six-case round flagged
+two repeated topics. A corrected tester distinguishes unknown fulfillment capacity from a known
+sales volume; the later manufacturing test passed, while a home-services test still flagged a
+repeated journey request. Do not describe six saved models as six full acceptance passes.
+
+Operational repairs use existing paths:
+
+- API and worker `PYTHONPATH` must point at the pinned QA backend in their **EnvironmentFile**.
+  A systemd `Environment=` line does not override a later environment file.
+- Onyx and KB use `auth.subconscious.ai` for login. KB retains the tenant domain for management
+  API calls. Do not pin KB login to the synthetic QA organization; current membership checks remain active.
+- Native default Assistant is disabled in this QA workspace so a new chat opens Beca.
+  Beca's configured model must be visible in the native model catalog. Native memory remains enabled.
+- The current interviewer, extractor and model generator use Bedrock GPT OSS 120B.
+  Research still runs in the existing background worker. The browser owns automatic brief preparation
+  through the existing locked endpoint; `BURN2_BACKGROUND_PREPARATION=false` avoids competing stale jobs.
+- The research wrapper is retained in image `burn-research:qa-4c97a4fa2c`, using GPT Researcher 0.14.8.
+  The tested retrieval threshold is 0.2. A URL-only empty report is not completed research.
+
+Private receipts, failed trials, calculations, canonical readbacks and the fresh-login proof are retained
+under `~/.local/share/causl-uat/finish-20261014/agentdev-six/`. QA credentials stay in private files;
+never copy them into issues, PRs or this document. The final fresh-login test proved a standard member,
+9.124 seconds to native entry, and 16.058 seconds to reopen an existing KB model without a second password.
+This is separate from the new-model timing above. Vercel previews use a different backend; their deployment
+status does not prove this agent-dev candidate. The initial Library browser readback timed out.
+A later SaaS Library check read all three accepted records, original quotes and provenance through
+the UI. The full 20-record proof came from restricted tenant-role Postgres reads.
+
+[Open Burn](https://burn.subconscious.ai/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Start login on this canonical address. The native OAuth callback uses this registered origin. Starting OAuth directly from a branch preview can fail with `OAUTH_INVALID_STATE` because its state cookie belongs to the preview. A ready preview does not prove its authenticated customer path.
+
+## October 13 saved-model phase repair
+
+A standard member opened a fresh, authorized Models conversation. Beca read saved model
+`ab969463-9829-419a-8f71-ff667deaaa71`, revision 1, and executed Python against its inputs.
+The result matched independent expected values: $1.6 million annual contribution and a
+$400,000 gap to the $2 million goal. Processing took 4.924 seconds with Bedrock Kimi K3.
+The reply stopped without a question, new journey alternatives, research tools, or edit tools.
+This fixes the earlier canary that answered correctly, then restarted discovery.
+
+Commit `bc8f23a0c9` adds the phase instruction to the existing verified workspace-context
+prompt. Thirty-two focused workspace tests pass. A read-only review found no actionable defect.
+The hosted API container has only this module applied; its existing Burn API overlay is preserved.
+Its base image still names `causl-685-1c1bc1ee94`. Container recreation needs this reviewed
+module in the next image; an image label alone does not prove the running source.
+The stored private persona, model selection, 49 tools and shares were not changed.
+
+The QA account labelled admin in a private fixture is actually a standard viewer. Verify `/me`
+and persona permissions before configuration. Its denial on another account's private chat is
+expected. Shared market context is retrieved through the existing per-user Library grant.
+
+The KB draft preview enables the existing Models assistant. The first embedded check failed because Burn allowed `causl.io` but excluded the preview hostname.
+The existing exact-origin configuration now includes that controlled QA hostname. Vercel rebuilt
+the same hosted frontend commit `b0a2a429`; the frame header read-back confirms both origins.
+Direct authorized native model retrieval works. Rendered embedded acceptance remains pending.
+Fresh matched PDL/research, automatic interview handoff, and full 60-second timing remain unproved.
+Do not merge either draft before owner QA.
+
+## Earlier acceptance, October 2
+
+The [interviewer comparison](interviewer-comparison.md) completed three development rounds and six unseen reviews each for Native Onyx and Parlant.
+The original comparison favored Parlant for insight and Native for speed. Applying conditional interviewing through native Burn configuration improved the six native regression cases to 6/6 useful private insights and model consequences, with no repeated unknown questions. Five briefs saved within the polling window; all six eventually reopened. The two final targeted grounding checks passed independently; those native instructions are now applied to Beca. Start a new conversation on the canonical Burn URL. Publication state and retained failures are documented in the comparison. The full 60-second saved-model journey remains unproved.
+ElevenLabs remains untested because its available credential is a key ID, not an API secret.
+A separate live preparation probe returned nine research sources in 32.389 seconds, with an explicit PDL no-match.
+That probe does not prove causl-kb admission or a saved model.
+
+### September 25 retained evidence
 
 Native memory now works across fresh chats. Beca's existing research context and
 per-user causl-kb Library retrieval are connected. A six-case live review saved five briefs, but did not pass full acceptance.
@@ -11,7 +96,7 @@ five seconds while preserving explicit memory writes. This is a bounded check;
 unsupported claims, delayed preparation and final model verification remain open. Read the current recovery and evidence section in
 [the proof plan](executive-proof-plan.md) before relying on older passes below.
 
-The Library transport is in draft
+The Library transport landed in
 [PR #613 — let Beca read accepted organization evidence](https://github.com/Subconscious-ai/causl-kb/pull/613).
 It reuses the installed MCP SDK and existing three Library tools. Native Onyx stores
 each user's scoped credential. The current 24-hour capabilities need renewal;
@@ -115,6 +200,8 @@ Production deployment `dpl_FdNmDXw9UPnsPiSRqhiSRRC3Lgcy` is Ready from main `fc9
 - The existing model compiler owns executable algebra. Interview equations are advisory; additional required quantities stay explicit unknowns. The paired model window returns bounded saved-model context and actual calculation receipts through native chat's `additional_context`, scoped to the current Beca conversation. Preview and saved scenario states never imply an experiment launch.
 
 ## Start here
+
+- [causl-kb workspace assistant](causl-workspace.md): native conversation binding, per-user Library access and remaining customer acceptance.
 
 - [Historical Beca prototype QA](prototype-plan.md): public research, background briefs, saved-model recovery and retained failures on the recorded artifacts.
 
@@ -321,3 +408,98 @@ acceptance. #31 remains draft; causl-kb #430 owns the unfinished integrated jour
 The source/library work in #35 is real retrieval capability, not proof that every
 interview used MBB evidence. Keep behavior proof separate from configured tools,
 source merges, deployment health and narrow synthetic passes.
+
+### October 2: prepared interview repair
+
+The hosted repair reuses native Onyx conversations, PDL, GPT Researcher, structured
+brief extraction and the existing model handoff. Professional preparation now
+retains bounded LinkedIn, skills, experience and summaries. PDL and completed
+research expire after six hours. Public professional research is included only
+when the PDL employer domain matches the selected company; client switches must
+not infer a new affiliation.
+
+Beca now keeps an executive's supplied outcome and measure, proposes a sourced
+or explicitly hypothetical journey, and asks about one material private handoff.
+Unknown numeric targets do not block a first symbolic model. Proposed stages are
+not executive testimony. The research sidebar no longer presents static specialist
+job descriptions as conversation evidence.
+
+The actual reported conversation was read through native ownership helpers. Its
+later revenue-growth, stated proof-of-concept price and awareness/consideration/purchase
+answers were present, but earlier responses had stopped discovery prematurely.
+Fresh PDL completed in 0.51 seconds; retained fresh GPT Researcher preparation had
+seven original sources. This is not proof of their admission into accepted KB
+ontology or of total preparation within sixty seconds.
+
+The adversarial clinic replay earned a private administrator setup/training
+handoff in three executive answers. Full runtime/tester elapsed time was 63 seconds,
+before adding modeled human response time or proving model save. Its first
+extractor retained an assistant-proposed goal and empty inputs; the repair rejects
+that incomplete structure and supplies the same preparation to extraction as to
+chat. A final owned read-back retained the time objective and rejection guardrail
+with unknown values, in 9.64 seconds. The actual executive's fourteen-message
+re-extraction saved and reopened in 20.45 seconds. It still returned company
+`Unknown`; therefore matching dossier admission on that model handoff is not
+proved. Neither receipt establishes financial-model correctness or full acceptance.
+
+Runtime overlay: `onyx-burn2:prepared-oct2c`; AWS structured extractor configuration
+`8`, conversation configuration `19`. The overlay includes API, profile, research
+and validation modules. After replacing native API containers, reload the inner
+`burn2-gateway-1` nginx as well as checking health: otherwise it retains the old
+upstream IP. Keep private persona/compose/environment backups off Git.
+
+Focused checks: 98 Python and 65 UI tests; both repositories' focused type checks
+and 61 KB handoff tests passed. The Library per-user capability returned 401 because it had expired and targeted
+the old Clerk organization. October 2 recovery verified current Auth0 membership
+and the matching native OAuth account before restoring its existing per-user
+connection. A native credential-resolved live snapshot returned 22 offerings,
+50 attributes, 50 attribute levels and six personas. No roles or memberships
+changed. The recovery capability expires after 24 hours; durable OAuth renewal
+remains unproved. [causl-kb PR #674 — allow native renewable Library OAuth](https://github.com/Subconscious-ai/causl-kb/pull/674)
+adds the resource adapter; it does not itself establish live consent or renewal. Onyx dependency audit and the stacked KB base's unrelated lint errors
+remain CI failures; draft publication is not merge acceptance.
+
+### October 2: authentication and final-save boundary
+
+Wayfinder execution remains in [#38 — reach a usable prepared business model](https://github.com/Subconscious-ai/onyx/issues/38),
+with [#49 — restore caller-scoped Library context](https://github.com/Subconscious-ai/onyx/issues/49)
+and [#50 — finish interview-to-model onboarding](https://github.com/Subconscious-ai/onyx/issues/50).
+The current consumer is [causl-kb PR #675 — build with an unknown numeric target](https://github.com/Subconscious-ai/causl-kb/pull/675),
+rebased on Auth0 main; it supersedes closed PR #667.
+
+The October 2 repair runs as `onyx-burn2:prepared-oct2d`. API and worker image
+read-back passed; the API source hash matches the published commit. Native QA
+`/api/me` returned 200, and the Library read still succeeded after replacement.
+The four browser automatic-save/recovery tests also pass.
+
+A preview Auth0 callback must use the same stable origin as the model handoff.
+The default generated Vercel hostname differed from the branch alias, breaking
+the origin-bound receiver after login. Set branch-specific `APP_BASE_URL` to the
+receiver alias, redeploy, and read back `/auth/login`'s `redirect_uri`. Preserve
+the nonce and exact destination through the official SDK. The redeployed receiver
+returned the exact stable callback origin in live read-back. An allowlisted callback
+alone does not prove a completed authenticated model save.
+
+Extraction no longer treats an earlier company `Unknown` as a company selection.
+The live reported conversation still reopened with company unresolved. Do not
+force a professional employer match into a different or ambiguous business model.
+The matching-company gate correctly withholds unrelated background. One material
+scope confirmation can be necessary; public company trivia is not.
+
+Focused proof: 13 Library/JWT authentication tests and 61 handoff/compiler/dossier
+route tests pass. The extraction regression failed against the prior runtime and
+passes against the candidate. The retained QA identities are not members of the
+current Auth0 organization. Do not grant membership or forge a session to claim a
+customer journey pass. A legitimate member login, native OAuth renewal, saved
+model calculation/reload, and the full sixty-second clock remain live acceptance.
+
+
+### October 13: saved model and native Library connection
+
+The held receiver in causl-kb PR #675 saved the synthetic consultancy model at revision one. Authenticated reload returned the exact document. Canonical KB readback returned the same model. The native grid displayed the independent expected capacity: 12,000 hours, 40 projects, $1.6 million contribution and a $400,000 target gap. Model generation took 8.0 seconds; saving took 0.33 seconds. These are model-stage times, not the complete interview clock.
+
+Native handoff and workspace creation now use the existing native feature flag and current organization membership. Optional public-research eligibility stays separate. Unsupported calculated point inputs use the existing bounded compiler repair. They cannot silently become empty operating inputs.
+
+A fresh native model workspace initially returned `Connect your Library account`. The standard QA member completed the existing per-user OAuth flow for the configured Library server. The next workspace request returned 200. No admin role or membership changed. Check actual model-agent readback before claiming that memory works across chats.
+
+The hosted profile and message modules matched main `1c1bc1ee94` during this check. The hosted preparation API contained additional changes. Preserve that source and compare it before any backend replacement. Frontend publication does not deploy backend interview rules. PR #48 and KB #675 remain held for owner QA. Automatic native handoff, matching fresh research and the full sixty-second journey still require live proof.

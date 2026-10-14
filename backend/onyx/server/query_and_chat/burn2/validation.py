@@ -132,8 +132,21 @@ def ground_journey_actors(journey: list[dict], transitions: list[dict]) -> None:
         # A genuine quote does not establish an invented participant. This
         # lexical guard is conservative, not full semantic entailment.
         actor = normal(stage["actor"])
+        plural = (
+            len(actor) > 2
+            and not actor.endswith("s")
+            and actor
+            not in {
+                "you",
+                "she",
+                "they",
+                "him",
+                "her",
+            }
+        )
         supported = bool(actor) and re.search(
-            r"(?<!\w)" + re.escape(actor) + r"(?!\w)", normal(stage.get("quote", ""))
+            r"(?<!\w)" + re.escape(actor) + (r"s?" if plural else "") + r"(?!\w)",
+            normal(stage.get("quote", "")),
         )
         if stage["status"] == "executive" and not supported:
             demote(stage)
@@ -141,6 +154,34 @@ def ground_journey_actors(journey: list[dict], transitions: list[dict]) -> None:
     for edge in transitions:
         if edge["from"] in assumed or edge["to"] in assumed:
             demote(edge["behavior"])
+
+
+def ground_literal_goal(note: dict[str, Any], statements: list[str]) -> None:
+    """A literal declared goal is intent, even after an earlier hypothetical."""
+    label = re.match(r"^(?:goal|objective)\s*[:=]\s*(.+)$", note["text"], re.I)
+    if not label or note["status"] == "unknown":
+        return
+    phrase = r"(?:^|[.!?:;]\s+)(?:our |my |the )?(?:goal|objective)\s*(?:is\b|[:=])\s*"
+    goal = re.compile(phrase + re.escape(label[1]) + r"(?!\w)", re.I)
+    for source in reversed(statements):
+        trusted = _UNTRUSTED_INSTRUCTION_SPAN.sub(" ", source)
+        if _HYPOTHETICAL.search(source) or not re.search(
+            r"\b(?:goal|objective)\b", trusted, re.I
+        ):
+            continue
+        if (
+            len(source) <= 1200
+            and not re.search(
+                r'["“”]|\b(?:competitor|their|told|reported|says|said)\b', trusted, re.I
+            )
+            and not re.search(
+                r"\bnot\s+(?:our |my |the )?(?:goal|objective)\b", trusted, re.I
+            )
+            and goal.search(trusted)
+        ):
+            note.update(status="executive", quote=source)
+        # A later declaration or denial prevents revival of an older goal.
+        return
 
 
 def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
@@ -152,6 +193,16 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
         # Schema paths contain field names and indices, never source content.
         paths = [
             f"{'.'.join(str(part) for part in error.absolute_schema_path)}:{error.validator}"
+            + (
+                ": missing "
+                + ", ".join(
+                    field
+                    for field in error.validator_value
+                    if field not in error.instance
+                )
+                if error.validator == "required" and isinstance(error.instance, dict)
+                else ""
+            )
             for error in errors[:4]
         ]
         raise ValueError("Invalid structured model brief: " + ";".join(paths))
@@ -199,6 +250,7 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
     ]:
         if len({item["id"] for item in collection}) != len(collection):
             raise ValueError("Duplicate model identifiers")
+    ground_literal_goal(result["objective"], statements)
     ground(result["objective"])
     for stage in result["journey"]:
         ground(stage)
@@ -270,11 +322,15 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
 
 
 def needs_completion(value: dict) -> bool:
-    """A stated numeric objective must survive extraction into the model contract."""
+    """A structured objective needs usable drivers, even without numeric targets."""
     objective = value.get("objective", {})
     return bool(
         objective.get("status") == "executive"
-        and re.search(r"\d", objective.get("text", ""))
+        and (
+            re.search(r"\d", objective.get("text", ""))
+            or value.get("keyResults")
+            or len(value.get("journey", [])) >= 2
+        )
         and (
             not value.get("keyResults") or not (value.get("model") or {}).get("inputs")
         )
@@ -336,7 +392,7 @@ def prepare_validated_brief(
             brief = validate_brief(value, statements)
             if needs_completion(brief):
                 raise ValueError(
-                    "A stated numeric objective requires key results and named model inputs"
+                    "A structured objective requires key results and named model inputs"
                 )
             return brief
         except ValueError as error:
@@ -353,6 +409,13 @@ def extraction_schema(source_count: int) -> dict:
     schema = copy.deepcopy(SCHEMA)
     schema["properties"].pop("version")
     schema["required"].remove("version")
+    schema["properties"]["keyResults"]["minItems"] = 1
+    schema["properties"]["model"]["properties"]["inputs"]["minItems"] = 1
+    schema["properties"]["journey"]["items"]["properties"]["actor"]["description"] = (
+        "For executive-supported stages, copy the actor phrase from the indexed executive message. "
+        "Reuse that same phrase across the person's decisions. Do not substitute generic visitor, prospect, "
+        "or customer labels when a specific actor is supplied. Unsupported actors and paths are assumptions."
+    )
 
     def references(item: Any) -> None:
         if isinstance(item, dict):

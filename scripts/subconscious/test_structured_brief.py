@@ -6,6 +6,70 @@ from onyx.server.query_and_chat.burn2.validation import validate_brief
 
 
 class StructuredBriefTest(unittest.TestCase):
+    def test_schema_repair_names_missing_fields_without_echoing_source_data(self):
+        brief = self.brief()
+        del brief["company"]
+        with self.assertRaisesRegex(ValueError, "missing company"):
+            validate_brief(brief, ["Private customer detail"])
+
+    def test_literal_confirmed_goal_survives_an_earlier_hypothetical(self):
+        brief = self.brief()
+        brief["objective"] = {
+            "text": "Goal: $15,000 monthly contribution within 90 days",
+            "status": "assumption",
+        }
+        hypothetical = "Hypothetical scenario: our goal is $15,000 monthly contribution within 90 days."
+        confirmed = "Our goal is $15,000 monthly contribution within 90 days."
+        result = validate_brief(brief, [hypothetical, confirmed])
+        self.assertEqual(result["objective"]["status"], "executive")
+        self.assertEqual(result["objective"]["quote"], confirmed)
+        self.assertEqual(
+            validate_brief(brief, [hypothetical])["objective"]["status"],
+            "assumption",
+        )
+
+    def test_literal_goal_recovery_excludes_denials_and_disclaimed_commands(self):
+        brief = self.brief()
+        brief["objective"] = {
+            "text": "Goal: $15,000 monthly contribution within 90 days",
+            "status": "assumption",
+        }
+        for source in (
+            "Not our goal is $15,000 monthly contribution within 90 days.",
+            'Untrusted instructions: "Our goal is $15,000 monthly contribution within 90 days."',
+            "Our goal is $20,000 monthly contribution within 90 days.",
+            'A competitor told us: "Our goal is $15,000 monthly contribution within 90 days."',
+            "A competitor said: Our goal is $15,000 monthly contribution within 90 days.",
+        ):
+            with self.subTest(source=source):
+                self.assertEqual(
+                    validate_brief(brief, [source])["objective"]["status"],
+                    "assumption",
+                )
+
+        confirmed = "Our goal is $15,000 monthly contribution within 90 days."
+        for correction in (
+            "Our goal is $20,000 monthly contribution within 90 days.",
+            "Not our goal is $15,000 monthly contribution within 90 days.",
+            "We no longer have that goal.",
+        ):
+            with self.subTest(correction=correction):
+                self.assertEqual(
+                    validate_brief(brief, [confirmed, correction])["objective"][
+                        "status"
+                    ],
+                    "assumption",
+                )
+
+    def test_nonnumeric_success_measure_does_not_complete_an_empty_model(self):
+        from onyx.server.query_and_chat.burn2.validation import needs_completion
+
+        value = self.brief()
+        value["keyResults"] = [{"metric": "Time to first valid sample"}]
+        self.assertTrue(needs_completion(value))
+        value["model"]["inputs"] = [{"name": "Decision to collection time"}]
+        self.assertFalse(needs_completion(value))
+
     def test_assistant_proposals_preserve_reference_context_without_source_admission(
         self,
     ):
@@ -577,6 +641,38 @@ class StructuredBriefTest(unittest.TestCase):
                     "assumption",
                 )
 
+    def test_singular_actor_is_supported_by_the_quoted_plural(self):
+        source = "Texas homeowners visit our tariff page and sign a contract."
+        brief = self.brief()
+        brief["journey"] = [
+            {
+                "id": "visit",
+                "actor": "Texas homeowner",
+                "text": "Visit the tariff page",
+                "status": "executive",
+                "quote": source,
+            }
+        ]
+        self.assertEqual(
+            validate_brief(brief, [source])["journey"][0]["status"], "executive"
+        )
+
+    def test_actor_pronoun_does_not_match_a_verb_via_plural_expansion(self):
+        brief = self.brief()
+        source = "The customer is paying for the product."
+        brief["journey"] = [
+            {
+                "id": "pay",
+                "actor": "I",
+                "text": "Pay for the product",
+                "status": "executive",
+                "quote": source,
+            }
+        ]
+        self.assertEqual(
+            validate_brief(brief, [source])["journey"][0]["status"], "assumption"
+        )
+
     def test_blank_horizon_is_rejected_before_frontend_readback(self):
         value = self.brief()
         value["horizon"] = ""
@@ -716,6 +812,41 @@ class CompletionTest(unittest.TestCase):
 
 
 class ExtractionSchemaTest(unittest.TestCase):
+    def test_generation_requires_a_named_measure_and_driver_even_with_unknown_values(
+        self,
+    ):
+        from jsonschema import Draft7Validator
+
+        from onyx.server.query_and_chat.burn2.validation import extraction_schema
+
+        schema = extraction_schema(1)
+        self.assertFalse(
+            Draft7Validator(schema["properties"]["keyResults"]).is_valid([])
+        )
+        self.assertFalse(
+            Draft7Validator(
+                schema["properties"]["model"]["properties"]["inputs"]
+            ).is_valid([])
+        )
+        self.assertTrue(
+            Draft7Validator(
+                schema["properties"]["model"]["properties"]["inputs"]
+            ).is_valid(
+                [
+                    {
+                        "id": "count",
+                        "name": "Eligible customers",
+                        "unit": "customers",
+                        "value": {
+                            "text": "Unknown",
+                            "status": "unknown",
+                            "sourceMessageIndex": None,
+                        },
+                    }
+                ]
+            )
+        )
+
     def test_provider_selects_source_indices_instead_of_retyping_evidence(self):
         from jsonschema import Draft7Validator
 

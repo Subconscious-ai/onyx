@@ -51,8 +51,7 @@ export default function InterviewProgress({
   }, [brief, chatId, updating]);
   const goal = visibleBrief?.objective.status === "executive";
   const measure = !!visibleBrief?.keyResults?.some(
-    (item) =>
-      item.target.status === "executive" && item.deadline.status === "executive"
+    (item) => item.metric.trim() && item.unit.trim()
   );
   const journey =
     (visibleBrief?.journey.length ?? 0) >= 2 &&

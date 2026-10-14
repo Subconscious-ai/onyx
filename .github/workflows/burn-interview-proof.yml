@@ -29,4 +29,4 @@ jobs:
       - name: Prove timing, evidence validation and evaluation failure detection
         env:
           PYTHONPATH: backend:scripts/subconscious
-        run: python -m unittest test_profile_context test_eval_interview test_structured_brief test_requested_tool test_research_startup test_adversarial_uat
+        run: python -m unittest test_profile_context test_eval_interview test_structured_brief test_requested_tool test_research_startup test_adversarial_uat test_interviewer_comparison

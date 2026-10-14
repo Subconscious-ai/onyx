@@ -22,6 +22,7 @@ from onyx.db.models import ChatMessage, Persona
 from onyx.llm.interfaces import LLM, LLMUserIdentity
 from onyx.llm.models import ReasoningEffort
 from onyx.onyxbot.slack.models import SlackContext
+from onyx.server.query_and_chat.causl.models import CauslChatBinding
 from onyx.server.query_and_chat.models import SendMessageRequest
 from onyx.tools.models import ChatFile, ToolCallInfo
 
@@ -243,3 +244,6 @@ class ChatTurnSetup:
     slack_context: SlackContext | None
     custom_tool_additional_headers: dict[str, str] | None
     mcp_headers: dict[str, str] | None
+    causl_binding: CauslChatBinding | None = None
+    causl_original_message: str | None = None
+    trusted_turn_instructions: str | None = None

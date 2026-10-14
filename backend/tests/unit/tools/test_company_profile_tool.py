@@ -18,8 +18,9 @@ class CompanyProfileToolTests(unittest.TestCase):
         environment.start()
         self.addCleanup(environment.stop)
         self.owner = uuid4()
+        self.emitter = MagicMock()
         self.tool = CompanyProfileTool(
-            tool_id=123, user_id=self.owner, emitter=MagicMock()
+            tool_id=123, user_id=self.owner, emitter=self.emitter
         )
         self.placement = Placement(turn_index=0)
 
@@ -105,7 +106,7 @@ class CompanyProfileToolTests(unittest.TestCase):
                     fields={"company": "Synthetic"},
                 )
         research.assert_not_called()
-        self.tool.emitter.emit.assert_not_called()
+        self.emitter.emit.assert_not_called()
 
     def test_no_identity_override_or_incognito_write(self):
         with (
@@ -202,7 +203,7 @@ class CompanyProfileToolTests(unittest.TestCase):
                     fields={"company": "Synthetic"},
                 )
         research.assert_not_called()
-        self.tool.emitter.emit.assert_not_called()
+        self.emitter.emit.assert_not_called()
 
 
 if __name__ == "__main__":

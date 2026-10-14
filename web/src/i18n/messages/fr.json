@@ -1,4 +1,16 @@
 {
+  "causlWorkspace": {
+    "notConfigured": "Ouvrez l’assistant depuis votre espace causl-kb. S’il reste indisponible, contactez votre administrateur.",
+    "signin": "Connectez-vous avec le même compte d’organisation que dans causl-kb. Puis rouvrez cette conversation.",
+    "signInAction": "Se connecter à Onyx",
+    "reopen": "Rouvrir la conversation",
+    "access": "Vérifiez votre compte d’organisation et connectez sa bibliothèque. Puis rouvrez cette conversation.",
+    "connectLibrary": "Connecter la bibliothèque",
+    "connecting": "Connexion…",
+    "unavailable": "Le contexte est indisponible. Votre conversation enregistrée est conservée.",
+    "opening": "Ouverture de votre conversation…",
+    "contextChanged": "L’espace a changé avant l’envoi. Vérifiez le contexte actuel et renvoyez le message."
+  },
   "accountPopover": {
     "accountFallback": {
       "label": "Compte"

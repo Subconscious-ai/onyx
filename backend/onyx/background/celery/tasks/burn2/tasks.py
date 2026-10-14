@@ -4,7 +4,7 @@ import os
 import time
 from uuid import UUID
 
-from celery import Task, shared_task
+from celery import shared_task
 from fastapi import HTTPException
 
 from onyx.cache.factory import get_cache_backend
@@ -29,7 +29,7 @@ logger = setup_logger()
 
 @shared_task(bind=True, max_retries=12, ignore_result=True, trail=False)
 def research_company(
-    self: Task, *, user_id: str, persona_id: int, job_id: str, tenant_id: str
+    self, *, user_id: str, persona_id: int, job_id: str, tenant_id: str
 ) -> None:
     if tenant_id != get_current_tenant_id():
         raise ValueError("Research tenant context mismatch")
@@ -62,7 +62,9 @@ def research_company(
     if not lock.acquire(blocking=False):
         # Deduplicate this job without blocking a corrected company behind an
         # obsolete provider request. Its result still checks current job/query.
-        if self.request.retries >= self.max_retries or remaining <= 5:
+        if (
+            self.max_retries is not None and self.request.retries >= self.max_retries
+        ) or remaining <= 5:
             current = read_research(user_uuid)
             if (
                 current
@@ -134,7 +136,7 @@ def research_company(
 
 @shared_task(bind=True, max_retries=4, ignore_result=True, trail=False)
 def prepare_saved_brief(
-    self: Task,
+    self,
     *,
     user_id: str,
     chat_id: str,
@@ -184,7 +186,7 @@ def prepare_saved_brief(
                     if error.status_code == 409
                     else 5 * (2**provider_failures),
                     kwargs={
-                        **self.request.kwargs,
+                        **(self.request.kwargs or {}),
                         "provider_failures": provider_failures
                         + int(error.status_code == 502),
                     },

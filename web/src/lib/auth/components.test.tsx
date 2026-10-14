@@ -7,11 +7,47 @@
 import React from "react";
 import { render, screen, waitFor, setupUser } from "@tests/setup/test-utils";
 import { toast } from "@opal/layouts";
-import { EmailPasswordForm } from "@/lib/auth/components";
+import { AuthenticationShell, EmailPasswordForm } from "@/lib/auth/components";
+
+const mockPush = jest.fn();
+let mockPathname = "/app";
 
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
+  useRouter: () => ({ push: mockPush, refresh: jest.fn() }),
+  usePathname: () => mockPathname,
 }));
+
+jest.mock("@/lib/auth/hooks", () => ({
+  useSessionWatcher: () => ({ sessionEnded: true, sessionEndReason: null }),
+}));
+
+describe("Embedded workspace session recovery", () => {
+  test("opens sign-in separately and keeps recovery in the workspace", async () => {
+    mockPathname = "/causl";
+    const opened = jest.spyOn(window, "open").mockReturnValue(null);
+    try {
+      const user = setupUser();
+      render(
+        <AuthenticationShell>
+          <p>Existing conversation</p>
+        </AuthenticationShell>
+      );
+      await user.click(screen.getByRole("button", { name: /sign in|log in/i }));
+      expect(opened).toHaveBeenCalledWith(
+        "/auth/login?next=%2Fapp",
+        "_blank",
+        "noopener,noreferrer"
+      );
+      expect(mockPush).not.toHaveBeenCalled();
+      expect(
+        screen.getByRole("button", { name: "Reopen conversation" })
+      ).toBeVisible();
+    } finally {
+      opened.mockRestore();
+      mockPathname = "/app";
+    }
+  });
+});
 
 jest.mock("@opal/layouts/toast/store", () => ({
   toast: { error: jest.fn(), success: jest.fn() },

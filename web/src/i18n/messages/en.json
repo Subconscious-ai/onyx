@@ -1,4 +1,16 @@
 {
+  "causlWorkspace": {
+    "notConfigured": "Open this assistant from your causl-kb workspace. If it remains unavailable, contact your administrator.",
+    "signin": "Sign in with the same organization account you use in causl-kb. Then reopen this conversation.",
+    "signInAction": "Sign in to Onyx",
+    "reopen": "Reopen conversation",
+    "access": "Check your organization account and connect its Library. After connecting, reopen this conversation.",
+    "connectLibrary": "Connect Library",
+    "connecting": "Connecting…",
+    "unavailable": "The workspace context is unavailable. Your saved conversation is retained.",
+    "opening": "Opening your workspace conversation…",
+    "contextChanged": "The workspace changed before this message was sent. Review the current context and send it again."
+  },
   "accountPopover": {
     "accountFallback": {
       "label": "Account"

@@ -1512,6 +1512,11 @@ sandboxPushPolicy:
   allowTelepresenceAmbassador: false
 
 configMap:
+  # Optional causl-kb workspace: existing persona and per-user OAuth Library server IDs.
+  # CAUSL_KB_ASSISTANT_PERSONA_ID: ""
+  # CAUSL_KB_MCP_SERVER_ID: ""
+  # Exact comma-separated KB origins for the frontend /causl route only.
+  # CAUSL_KB_EMBED_ORIGINS: ""
   # Burn executive interview is opt-in; select an existing native Bedrock model ID.
   # BURN2_ENABLED: "false"
   # BURN2_BRIEF_MODEL_CONFIGURATION_ID: ""

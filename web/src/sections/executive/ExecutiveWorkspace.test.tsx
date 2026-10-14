@@ -245,3 +245,24 @@ it("opens with the interviewer question without a customer start command", () =>
   render(<ExecutiveWelcome />);
   expect(screen.getByText("openingQuestion")).toBeVisible();
 });
+
+it("shows the available company research when Beca opens instead of an unrelated generic greeting", () => {
+  (useExecutiveContext as jest.Mock).mockReturnValue({
+    dossier: { profile: { name: "Pat", company: "Acme" }, source: "pdl" },
+    research: {
+      status: "ready",
+      report:
+        "# Company research\n\nAcme sells paid pilots before broader contracts.",
+      source_urls: ["https://acme.com/products"],
+    },
+    profileStatus: "PDL professional match loaded · Acme",
+  });
+  (useAutomaticBrief as jest.Mock).mockReturnValue({ phase: "idle" });
+  render(
+    <ExecutiveWorkspace active messages={[]}>
+      <ExecutiveWelcome />
+    </ExecutiveWorkspace>
+  );
+  expect(screen.getByText(/Acme sells paid pilots/)).toBeVisible();
+  expect(screen.getByText(/Pat/)).toBeVisible();
+});

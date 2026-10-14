@@ -10,6 +10,38 @@ from onyx.server.query_and_chat.burn2.profile import (
 
 
 class ProfileTests(unittest.TestCase):
+    def test_known_goal_prioritizes_missing_journey_before_more_economics(self):
+        draft = {
+            "objective": {
+                "status": "executive",
+                "text": "Reach $2 million contribution",
+            },
+            "keyResults": [
+                {
+                    "metric": "Annual contribution",
+                    "unit": "USD",
+                    "target": {"status": "executive"},
+                }
+            ],
+            "journey": [],
+        }
+        guidance = turn_guidance(2, "Ten consultants.", draft=draft)
+        self.assertIn("next missing connection is the customer journey", guidance)
+        self.assertIn("before another operating-number question", guidance)
+        self.assertIn("confirm or correct", guidance)
+        self.assertNotIn("Question budget: zero", guidance)
+
+    def test_complete_connections_stop_discovery_without_another_question(self):
+        draft = {
+            "objective": {"status": "executive", "text": "Improve conversion"},
+            "keyResults": [{"metric": "Conversion", "unit": "%"}],
+            "journey": [{"id": "view"}, {"id": "buy"}],
+            "transitions": [{"from": "view", "to": "buy"}],
+            "model": {"inputs": [{"value": {"status": "executive"}}]},
+        }
+        guidance = turn_guidance(4, "Intermediate rates remain unknown.", draft=draft)
+        self.assertIn("Question budget: zero", guidance)
+
     def test_model_review_uses_explicit_context_purpose_without_replaying_old_results(
         self,
     ):
@@ -88,7 +120,7 @@ class ProfileTests(unittest.TestCase):
         self.assertIn("Frankie · Business model", guidance)
         self.assertIn("Mei · Market challenge", guidance)
         self.assertIn(
-            "Jerry contributes", turn_guidance(4, "Our forecasts run on optimism.")
+            "Jerry contributes", turn_guidance(5, "Our forecasts run on optimism.")
         )
 
     def test_explicit_summary_request_sets_a_zero_question_turn_budget(self):
@@ -133,20 +165,93 @@ class ProfileTests(unittest.TestCase):
         self.assertNotIn("1970", str(value))
         self.assertNotIn("123", str(value))
 
+    def test_professional_dossier_retains_career_and_linkedin_without_contact_data(
+        self,
+    ):
+        value = select_profile(
+            {
+                "likelihood": 8,
+                "data": {
+                    "full_name": "Pat Example",
+                    "job_title": "CEO",
+                    "job_company_name": "Acme",
+                    "linkedin_url": "linkedin.com/in/pat-example",
+                    "summary": "Builds enterprise research businesses.",
+                    "job_summary": "Leads customer research.",
+                    "skills": ["pricing", "market research"],
+                    "experience": [
+                        {
+                            "company": {"name": "Prior Co", "website": "prior.example"},
+                            "title": {"name": "Product lead"},
+                            "start_date": "2020-01",
+                            "end_date": "2023-01",
+                            "email": "private@example.com",
+                        }
+                    ],
+                    "phone_numbers": ["123"],
+                    "personal_emails": ["private@example.com"],
+                },
+            }
+        )
+        self.assertEqual(value["linkedin_url"], "https://linkedin.com/in/pat-example")
+        self.assertIn("Prior Co", str(value["experience"]))
+        self.assertEqual(value["skills"], ["pricing", "market research"])
+        self.assertNotIn("private@example.com", str(value))
+        self.assertNotIn("123", str(value))
+
     def test_low_confidence_match_never_becomes_identity(self):
         self.assertIsNone(
             select_profile({"likelihood": 2, "data": {"full_name": "Wrong person"}})
         )
 
-    def test_jerry_is_available_before_fourth_turn_without_repetition(self):
-        for turn in (1, 2, 3, 4, 5):
+    def test_discovery_stops_by_fifth_turn_without_claiming_a_saved_model(self):
+        for turn in (5, 6, 12):
             with self.subTest(turn=turn):
                 guidance = turn_guidance(turn, "Our forecasts run on optimism.")
-                self.assertIn("Jerry contributes", guidance)
-                self.assertIn("once", guidance)
-                self.assertNotIn("No humor on this turn", guidance)
+                self.assertIn("Question budget: zero", guidance)
+                self.assertIn("first symbolic model", guidance)
+                self.assertIn(
+                    "prepared dossier and matching company research", guidance
+                )
+                self.assertIn("unknown", guidance)
+                self.assertIn("application receipt", guidance)
+                self.assertNotIn("at most one material question", guidance)
 
-    def test_fourth_answer_respects_humor_opt_out_and_distress(self):
+    def test_jerry_is_reserved_for_fifth_turn_without_delaying_an_earlier_model(self):
+        for turn in (1, 2, 3, 4, 6):
+            with self.subTest(turn=turn):
+                guidance = turn_guidance(turn, "Our forecasts run on optimism.")
+                self.assertNotIn("Jerry contributes", guidance)
+        guidance = turn_guidance(5, "Our forecasts run on optimism.")
+        self.assertIn("Jerry contributes", guidance)
+        self.assertIn("once", guidance)
+        self.assertIn("Never delay", guidance)
+
+    def test_saved_model_review_does_not_restart_discovery_or_repeat_the_burn(self):
+        guidance = turn_guidance(
+            8, "Try a different conversion rate.", model_review=True
+        )
+        self.assertNotIn("Discovery ends", guidance)
+        self.assertNotIn("first symbolic model", guidance)
+        self.assertNotIn("Jerry", guidance)
+        self.assertIn("saved model", guidance)
+        self.assertIn("application receipt", guidance)
+        self.assertIn(
+            "Question budget: zero",
+            turn_guidance(8, "No more questions.", model_review=True),
+        )
+
+    def test_fourth_unknown_answer_finishes_symbolic_discovery_instead_of_reasking(
+        self,
+    ):
+        guidance = turn_guidance(
+            4, "Expansion waits for one use case. Conversion rates are unknown."
+        )
+        self.assertIn("Question budget: zero", guidance)
+        self.assertIn("first symbolic model", guidance)
+        self.assertNotIn("at most one material question", guidance)
+
+    def test_fifth_answer_respects_humor_opt_out_and_distress(self):
         for answer in (
             "Stop repeating the same question.",
             "No jokes, please.",
@@ -155,4 +260,4 @@ class ProfileTests(unittest.TestCase):
             "The company is closing and everyone is losing their jobs.",
         ):
             with self.subTest(answer=answer):
-                self.assertNotIn("Jerry", turn_guidance(4, answer))
+                self.assertNotIn("Jerry", turn_guidance(5, answer))

@@ -22,12 +22,47 @@ def select_profile(payload: dict) -> dict[str, Any] | None:
         "industry": "job_company_industry",
         "website": "job_company_website",
     }
-    return {
+    profile: dict[str, Any] = {
         key: str(data[value])[:200] for key, value in fields.items() if data.get(value)
     }
+    for key in ("summary", "job_summary"):
+        if isinstance(data.get(key), str) and data[key].strip():
+            profile[key] = data[key][:1500]
+    linkedin = data.get("linkedin_url")
+    if isinstance(linkedin, str):
+        linkedin = linkedin.removeprefix("https://").removeprefix("http://")
+        if re.fullmatch(r"(?:www\.)?linkedin\.com/in/[a-zA-Z0-9_%.-]+/?", linkedin):
+            profile["linkedin_url"] = "https://" + linkedin
+    skills = data.get("skills")
+    if isinstance(skills, list):
+        profile["skills"] = [item[:80] for item in skills[:12] if isinstance(item, str)]
+    experience = data.get("experience")
+    if isinstance(experience, list):
+        roles = []
+        for item in experience[:6]:
+            if not isinstance(item, dict):
+                continue
+            company = item.get("company") or {}
+            title = item.get("title") or {}
+            role = {}
+            for key, value in {
+                "company": company.get("name") if isinstance(company, dict) else None,
+                "role": title.get("name") if isinstance(title, dict) else None,
+                "start_date": item.get("start_date"),
+                "end_date": item.get("end_date"),
+            }.items():
+                if isinstance(value, str) and value:
+                    role[key] = value[:200]
+            if role:
+                roles.append(role)
+        if roles:
+            profile["experience"] = roles
+    return profile
 
 
-def turn_guidance(_turn: int, text: str) -> str:
+def turn_guidance(
+    turn: int, text: str, *, model_review: bool = False, draft: dict | None = None
+) -> str:
     attention_budget = "No unsolicited KPI lists, invented target placeholders or full repeated brief. "
     conclude = bool(
         re.search(
@@ -36,26 +71,77 @@ def turn_guidance(_turn: int, text: str) -> str:
             re.I,
         )
     )
-    humor_allowed = not conclude and not re.search(
-        r"\b(stop|frustrat\w*|annoy\w*|awful|angry|repeating the same|"
-        r"roast me not|no jokes|no humo[u]?r|don.t roast|do not roast|"
-        r"keep (?:this|it) serious|losing their jobs|layoffs|company is closing)\b",
-        text,
-        re.I,
+    humor_allowed = (
+        turn == 5
+        and not model_review
+        and not conclude
+        and not re.search(
+            r"\b(stop|frustrat\w*|annoy\w*|awful|angry|repeating the same|"
+            r"roast me not|no jokes|no humo[u]?r|don.t roast|do not roast|"
+            r"keep (?:this|it) serious|losing their jobs|layoffs|company is closing)\b",
+            text,
+            re.I,
+        )
     )
     humor = (
         "Jerry contributes once per interview: if no previous Jerry observation exists, "
         "include one original grounded line of at most 15 words when volunteered context supports it. "
-        "Respect any earlier opt-out or distress. Never invent a tension, mock ambition or an honest unknown, "
-        "or delay progress for humor. "
+        "Respect any earlier opt-out or distress. Never invent a tension, mock ambition or an honest unknown. "
+        "Never delay an earlier model for humor. "
         if humor_allowed
         else "Omit humor. "
     )
-    question_guidance = (
-        "Question budget: zero. The latest executive request explicitly disallows questions. Acknowledge the update or give the requested synthesis and stop. Do not ask for permission, another input or a next step."
-        if conclude
-        else "One concise answer, at most one material question. Keep unavailable numbers unknown."
-    )
+    if conclude:
+        question_guidance = "Question budget: zero. The latest executive request explicitly disallows questions. Acknowledge the update or give the requested synthesis and stop. Do not ask for permission, another input or a next step."
+    elif model_review:
+        question_guidance = (
+            "Review the actual saved model using its current application receipt. "
+            "Do not restart discovery. Answer the latest scenario or model request; "
+            "ask at most one material question only when that request needs a missing private input."
+        )
+    elif turn >= 5 or (
+        turn >= 4
+        and re.search(r"\b(?:unknown|unavailable|don.t know|do not know)\b", text, re.I)
+    ):
+        question_guidance = (
+            "Question budget: zero. Discovery ends by the fifth turn, or after a fourth answer parks unknowns. "
+            "Synthesize the first symbolic model from the supplied goal, measure, journey, "
+            "prepared dossier and matching company research. Keep missing operating numbers unknown "
+            "and proposed relationships labeled as assumptions. Do not ask for another input, "
+            "confirmation or permission. Let the existing brief extraction and model action proceed. "
+            "If an essential private goal is still missing, name that gap without inventing it. "
+            "Only an application receipt can establish that the model was created or saved. "
+            "Use at most 45 spoken words and end with a statement, not a question or invitation."
+        )
+    else:
+        question_guidance = (
+            "One concise answer, at most one material question. Use the supplied prepared dossier "
+            "and matching company research before asking for a private gap. Capture the goal, "
+            "named success measure and customer journey within four discovery questions. "
+            "When the executive already supplied a named measurable goal, capture the actual customer journey before asking about economics. "
+            "Stop earlier when those essentials suffice for a first symbolic model. "
+            "Keep unavailable numbers unknown."
+        )
+        if (
+            draft
+            and draft.get("objective", {}).get("status") == "executive"
+            and any(
+                item.get("metric", "").lower() not in {"", "unknown"}
+                and item.get("unit", "").lower() not in {"", "unknown"}
+                and any(
+                    item.get(note, {}).get("status") == "executive"
+                    for note in ("baseline", "target")
+                )
+                for item in draft.get("keyResults", [])
+            )
+            and (len(draft.get("journey", [])) < 2 or not draft.get("transitions"))
+        ):
+            question_guidance = (
+                "The next missing connection is the customer journey. Capture it before another operating-number question. "
+                "Propose two or three relevant customer decisions from matching research, labeled as a hypothesis, "
+                "and ask the executive to confirm or correct their actual path. Do not invent confirmation. "
+                + question_guidance
+            )
     return (
         attention_budget
         + humor

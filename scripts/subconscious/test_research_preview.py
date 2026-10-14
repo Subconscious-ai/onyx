@@ -27,6 +27,7 @@ class ResearchDeadlineTests(unittest.IsolatedAsyncioTestCase):
             server = await configure(Path("/unused"))
             self.assertIs(server, upstream)
             self.assertIsNotNone(server.auth)
+            self.assertEqual(os.environ["SIMILARITY_THRESHOLD"], "0.2")
 
     async def test_timeout_cancels_work_instead_of_reporting_completed_research(self):
         cancelled = asyncio.Event()
