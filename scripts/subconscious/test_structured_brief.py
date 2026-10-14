@@ -774,6 +774,41 @@ class CompletionTest(unittest.TestCase):
 
 
 class ExtractionSchemaTest(unittest.TestCase):
+    def test_generation_requires_a_named_measure_and_driver_even_with_unknown_values(
+        self,
+    ):
+        from jsonschema import Draft7Validator
+
+        from onyx.server.query_and_chat.burn2.validation import extraction_schema
+
+        schema = extraction_schema(1)
+        self.assertFalse(
+            Draft7Validator(schema["properties"]["keyResults"]).is_valid([])
+        )
+        self.assertFalse(
+            Draft7Validator(
+                schema["properties"]["model"]["properties"]["inputs"]
+            ).is_valid([])
+        )
+        self.assertTrue(
+            Draft7Validator(
+                schema["properties"]["model"]["properties"]["inputs"]
+            ).is_valid(
+                [
+                    {
+                        "id": "count",
+                        "name": "Eligible customers",
+                        "unit": "customers",
+                        "value": {
+                            "text": "Unknown",
+                            "status": "unknown",
+                            "sourceMessageIndex": None,
+                        },
+                    }
+                ]
+            )
+        )
+
     def test_provider_selects_source_indices_instead_of_retyping_evidence(self):
         from jsonschema import Draft7Validator
 

@@ -386,6 +386,8 @@ def extraction_schema(source_count: int) -> dict:
     schema = copy.deepcopy(SCHEMA)
     schema["properties"].pop("version")
     schema["required"].remove("version")
+    schema["properties"]["keyResults"]["minItems"] = 1
+    schema["properties"]["model"]["properties"]["inputs"]["minItems"] = 1
 
     def references(item: Any) -> None:
         if isinstance(item, dict):
