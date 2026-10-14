@@ -110,13 +110,15 @@ def turn_guidance(
             "and proposed relationships labeled as assumptions. Do not ask for another input, "
             "confirmation or permission. Let the existing brief extraction and model action proceed. "
             "If an essential private goal is still missing, name that gap without inventing it. "
-            "Only an application receipt can establish that the model was created or saved."
+            "Only an application receipt can establish that the model was created or saved. "
+            "Use at most 45 spoken words and end with a statement, not a question or invitation."
         )
     else:
         question_guidance = (
             "One concise answer, at most one material question. Use the supplied prepared dossier "
             "and matching company research before asking for a private gap. Capture the goal, "
             "named success measure and customer journey within four discovery questions. "
+            "When the executive already supplied a named measurable goal, capture the actual customer journey before asking about economics. "
             "Stop earlier when those essentials suffice for a first symbolic model. "
             "Keep unavailable numbers unknown."
         )
