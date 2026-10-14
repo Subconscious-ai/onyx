@@ -1,5 +1,54 @@
 # Burn 2.0 on native Onyx
 
+## October 14 agent-dev QA
+
+The paired QA runtime is [Beca on agent-dev](https://agent-dev.taila3aadb.ts.net:3011/app?agentId=2).
+This address requires the existing Tailscale network. Use **Subconscious account** for Auth0 login.
+Do not use the native password form with the Auth0 QA credentials. The real owner account has
+eight retained PDL professional fields and a completed nine-source company report. The synthetic
+QA account has no PDL match; its test companies are explicit corrections, never invented matches.
+
+The tested application pins are Onyx `552fa8c012` and KB `19230c8`. Later test/docs commits do not
+change application behavior. Both PR #48 and KB PR #675 remain drafts. Do not merge before owner QA.
+
+Six browser scenarios saved and reopened six Postgres models at revision 1. Independent native
+calculator readbacks matched energy 550/700 contracts, SaaS $2.1M/$2.4M renewal revenue,
+consulting $1.6M capacity contribution with a $400K gap, home services $120K/$160K revenue,
+and manufacturing 30/36 orders. Retail hypothetical inputs remain unknown in the factual baseline.
+Restricted tenant-role reads confirmed 20 accepted stage/transition records with original quotes
+and six retained interview dossiers. These checks prove writes and reads; they do not prove that
+the whole public market ontology is populated. Dossiers and research remain unaccepted source material.
+The anonymous manufacturing client had no website and no company research; its employer was not substituted.
+
+The complete six-case round took 59.33–73.11 seconds with scripted human delays. Estimates that
+include reading at 240 words/minute and typing at 60 words/minute were 143.80–204.93 seconds.
+The strict 60-second goal is not met. Interview quality is also open: the six-case round flagged
+two repeated topics. A corrected tester distinguishes unknown fulfillment capacity from a known
+sales volume; the later manufacturing test passed, while a home-services test still flagged a
+repeated journey request. Do not describe six saved models as six full acceptance passes.
+
+Operational repairs use existing paths:
+
+- API and worker `PYTHONPATH` must point at the pinned QA backend in their **EnvironmentFile**.
+  A systemd `Environment=` line does not override a later environment file.
+- Onyx and KB use `auth.subconscious.ai` for login. KB retains the tenant domain for management
+  API calls. Do not pin KB login to the synthetic QA organization; current membership checks remain active.
+- Native default Assistant is disabled in this QA workspace so a new chat opens Beca.
+  Beca's configured model must be visible in the native model catalog. Native memory remains enabled.
+- The current interviewer, extractor and model generator use Bedrock GPT OSS 120B.
+  Research still runs in the existing background worker. The browser owns automatic brief preparation
+  through the existing locked endpoint; `BURN2_BACKGROUND_PREPARATION=false` avoids competing stale jobs.
+- The research wrapper is retained in image `burn-research:qa-4c97a4fa2c`, using GPT Researcher 0.14.8.
+  The tested retrieval threshold is 0.2. A URL-only empty report is not completed research.
+
+Private receipts, failed trials, calculations, canonical readbacks and the fresh-login proof are retained
+under `~/.local/share/causl-uat/finish-20261014/agentdev-six/`. QA credentials stay in private files;
+never copy them into issues, PRs or this document. The final fresh-login test proved a standard member,
+9.124 seconds to native entry, and 16.058 seconds to reopen an existing KB model without a second password.
+This is separate from the new-model timing above. Vercel previews use a different backend; their deployment
+status does not prove this agent-dev candidate. The Library page browser readback timed out; canonical
+record proof came from restricted tenant-role Postgres reads, not a successful Library UI test.
+
 [Open Burn](https://burn.subconscious.ai/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Start login on this canonical address. The native OAuth callback uses this registered origin. Starting OAuth directly from a branch preview can fail with `OAUTH_INVALID_STATE` because its state cookie belongs to the preview. A ready preview does not prove its authenticated customer path.
 
 ## October 13 saved-model phase repair
