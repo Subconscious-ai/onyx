@@ -326,6 +326,84 @@ def test_checks_actual_report_run_reference() -> None:
         )
 
 
+def test_reads_inferred_run_for_the_selected_estimate(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    selection = CauslSelection(
+        page="library",
+        market_id="market_b",
+        record={"type": "estimate", "id": "estimate_b"},
+    )
+    payload = envelope()
+    payload["context"].update(
+        page="library",
+        record={
+            "type": "estimate",
+            "id": "estimate_b",
+            "properties": {"subconsciousExperimentId": "run_b"},
+        },
+        analysis={
+            "run": {"id": "run_b"},
+            "estimates": [{"id": "estimate_b", "runId": "run_b"}],
+        },
+    )
+    requests = http_response(monkeypatch, payload)
+    loaded = context.load_causl_context(db, user, ACTOR, selection)
+    assert loaded.envelope.context["analysis"]["run"]["id"] == "run_b"
+    assert "run" not in requests[0].url.params
+
+
+@pytest.mark.parametrize(
+    "changed",
+    [
+        "record_type",
+        "record_run",
+        "estimate_id",
+        "estimate_run",
+        "missing_estimates",
+        "studio",
+    ],
+)
+def test_denies_unrelated_inferred_analysis(changed: str) -> None:
+    selection = CauslSelection(
+        page="library", record={"type": "estimate", "id": "estimate_b"}
+    )
+    payload = envelope()
+    payload["context"].update(
+        page="library",
+        market=None,
+        record={
+            "type": "estimate",
+            "id": "estimate_b",
+            "properties": {"subconsciousExperimentId": "run_b"},
+        },
+        analysis={
+            "run": {"id": "run_b"},
+            "estimates": [{"id": "estimate_b", "runId": "run_b"}],
+        },
+    )
+    if changed == "record_type":
+        assert selection.record is not None
+        selection.record.type = "offering"
+        payload["context"]["record"]["type"] = "offering"
+    elif changed == "record_run":
+        payload["context"]["record"]["properties"]["subconsciousExperimentId"] = "run_a"
+    elif changed == "estimate_id":
+        payload["context"]["analysis"]["estimates"][0]["id"] = "estimate_a"
+    elif changed == "estimate_run":
+        payload["context"]["analysis"]["estimates"][0]["runId"] = "run_a"
+    elif changed == "missing_estimates":
+        payload["context"]["analysis"]["estimates"] = []
+    else:
+        payload["context"]["analysis"]["studio"] = {"id": str(uuid4())}
+    with pytest.raises(OnyxError) as failure:
+        context._validate(
+            CauslContextEnvelope.model_validate(payload), ACTOR, selection
+        )
+    assert failure.value.error_code == OnyxErrorCode.BAD_GATEWAY
+
+
 def test_checks_saved_report_identity_and_preserves_its_selection_query() -> None:
     studio_id = uuid4()
     selection = CauslSelection(
