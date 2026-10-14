@@ -1,10 +1,14 @@
 """Tests for llm_loop.py, including history construction and empty-response paths."""
 
+from contextlib import nullcontext
 from typing import Any
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
+from onyx.chat import llm_loop
+from onyx.chat.chat_state import ChatStateContainer
+from onyx.chat.emitter import Emitter
 from onyx.chat.llm_loop import (
     _REFUSAL_FINISH_REASONS,
     EmptyLLMResponseError,
@@ -23,8 +27,10 @@ from onyx.chat.models import (
     ToolCallSimple,
 )
 from onyx.configs.constants import MessageType
+from onyx.db.models import Persona
 from onyx.file_store.models import ChatFileType
-from onyx.llm.interfaces import LLMConfig, ToolChoiceOptions
+from onyx.llm.interfaces import LLM, LLMConfig, ToolChoiceOptions
+from onyx.prompts.causl_workspace import WORKSPACE_INSTRUCTIONS
 from onyx.prompts.chat_prompts import IMAGE_GEN_REMINDER, OPEN_URL_REMINDER
 from onyx.server.query_and_chat.placement import Placement
 from onyx.tools.models import ToolCallKickoff
@@ -106,6 +112,100 @@ def create_context_files(
         file_metadata=file_metadata,
         uncapped_token_count=num_files * tokens_per_file,
     )
+
+
+@pytest.mark.parametrize("resumed", [False, True])
+@pytest.mark.parametrize("workspace_bound", [False, True])
+@pytest.mark.parametrize("replace_base", [False, True])
+def test_native_messages_scope_workspace_rules_without_changing_persona(
+    monkeypatch: pytest.MonkeyPatch,
+    resumed: bool,
+    workspace_bound: bool,
+    replace_base: bool,
+) -> None:
+    persona = Persona(
+        system_prompt="Existing agent identity.",
+        task_prompt="Always ask three discovery questions.",
+        replace_base_system_prompt=replace_base,
+        datetime_aware=False,
+    )
+    history = [
+        create_message(
+            'Selected result: {"value":4.32,"unit":null,"sources":["https://example.com/run"]}',
+            MessageType.USER,
+        )
+    ]
+    if resumed:
+        history.append(
+            create_message(
+                "Earlier reply called it percentage points.", MessageType.ASSISTANT
+            )
+        )
+    history.append(
+        create_message("Explain this result and cite its source.", MessageType.USER)
+    )
+    captured: list[ChatMessageSimple] = []
+
+    def step(
+        *, history: list[ChatMessageSimple], **_kwargs: object
+    ) -> tuple[LlmStepResult, bool]:
+        captured.extend(history)
+        return LlmStepResult(
+            reasoning=None,
+            answer="Answer",
+            raw_answer="Answer",
+            tool_calls=None,
+            finish_reason="stop",
+        ), False
+
+    monkeypatch.setattr(llm_loop, "run_llm_step", step)
+    monkeypatch.setattr(llm_loop, "trace", lambda *_args, **_kwargs: nullcontext())
+    monkeypatch.setattr(
+        llm_loop, "get_session_with_current_tenant", lambda: nullcontext(MagicMock())
+    )
+    monkeypatch.setattr(
+        llm_loop, "get_default_base_system_prompt", lambda _db: "Native system rules."
+    )
+    monkeypatch.setattr("onyx.chat.prompt_utils.get_company_context", lambda: None)
+    monkeypatch.setattr(
+        "onyx.llm.litellm_singleton.config.initialize_litellm", lambda: None
+    )
+    llm = MagicMock(spec=LLM)
+    llm.config = LLMConfig(
+        model_provider="openai",
+        model_name="gpt-5-mini",
+        temperature=0,
+        max_input_tokens=16000,
+    )
+    llm_loop.run_llm_loop(
+        emitter=MagicMock(spec=Emitter),
+        state_container=MagicMock(spec=ChatStateContainer),
+        simple_chat_history=history,
+        tools=[],
+        custom_agent_prompt=None if replace_base else persona.system_prompt,
+        context_files=create_context_files(),
+        persona=persona,
+        user_memory_context=None,
+        llm=llm,
+        token_counter=len,
+        workspace_instructions=WORKSPACE_INSTRUCTIONS if workspace_bound else None,
+    )
+    system = captured[0]
+    reminder = captured[-1]
+    assert system.message_type == MessageType.SYSTEM
+    assert reminder.message_type == MessageType.USER_REMINDER
+    assert (WORKSPACE_INSTRUCTIONS in system.message) is workspace_bound
+    assert (WORKSPACE_INSTRUCTIONS in reminder.message) is workspace_bound
+    assert (
+        "Always ask three discovery questions." in reminder.message
+    ) is not workspace_bound
+    assert any(
+        '"unit":null' in message.message
+        and "https://example.com/run" in message.message
+        for message in captured
+    )
+    assert persona.system_prompt == "Existing agent identity."
+    assert persona.task_prompt == "Always ask three discovery questions."
 
 
 class TestConstructMessageHistory:

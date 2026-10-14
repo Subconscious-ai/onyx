@@ -759,6 +759,7 @@ def run_llm_loop(
     include_citations: bool = True,
     all_injected_file_metadata: dict[str, FileToolMetadata] | None = None,
     inject_memories_in_prompt: bool = True,
+    workspace_instructions: str | None = None,
 ) -> None:
     with trace(
         "run_llm_loop",
@@ -873,7 +874,9 @@ def run_llm_loop(
             else None
         )
         persona_task_prompt = (
-            substitute_user_placeholders(persona.task_prompt, placeholder_values)
+            workspace_instructions
+            if workspace_instructions
+            else substitute_user_placeholders(persona.task_prompt, placeholder_values)
             if persona and persona.task_prompt
             else None
         )
@@ -989,6 +992,22 @@ def run_llm_loop(
                         else None
                     )
                     custom_agent_prompt_msg = None
+
+            if workspace_instructions:
+                system_text = "\n\n".join(
+                    filter(
+                        None,
+                        [
+                            system_prompt.message if system_prompt else None,
+                            workspace_instructions,
+                        ],
+                    )
+                )
+                system_prompt = ChatMessageSimple(
+                    message=system_text,
+                    token_count=token_counter(system_text),
+                    message_type=MessageType.SYSTEM,
+                )
 
             processed_task_prompt = (
                 process_prompt_template(
