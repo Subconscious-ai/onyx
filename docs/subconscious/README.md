@@ -2,7 +2,34 @@
 
 [Open Burn](https://burn.subconscious.ai/app?agentId=5). Vercel serves the frontend; AWS serves the native backend at `https://api.dev.subconscious.ai/burn2`. Start login on this canonical address. The native OAuth callback uses this registered origin. Starting OAuth directly from a branch preview can fail with `OAUTH_INVALID_STATE` because its state cookie belongs to the preview. A ready preview does not prove its authenticated customer path.
 
-## Current acceptance, October 2
+## October 13 saved-model phase repair
+
+A standard member opened a fresh, authorized Models conversation. Beca read saved model
+`ab969463-9829-419a-8f71-ff667deaaa71`, revision 1, and executed Python against its inputs.
+The result matched independent expected values: $1.6 million annual contribution and a
+$400,000 gap to the $2 million goal. Processing took 4.924 seconds with Bedrock Kimi K3.
+The reply stopped without a question, new journey alternatives, research tools, or edit tools.
+This fixes the earlier canary that answered correctly, then restarted discovery.
+
+Commit `bc8f23a0c9` adds the phase instruction to the existing verified workspace-context
+prompt. Thirty-two focused workspace tests pass. A read-only review found no actionable defect.
+The hosted API container has only this module applied; its existing Burn API overlay is preserved.
+Its base image still names `causl-685-1c1bc1ee94`. Container recreation needs this reviewed
+module in the next image; an image label alone does not prove the running source.
+The stored private persona, model selection, 49 tools and shares were not changed.
+
+The QA account labelled admin in a private fixture is actually a standard viewer. Verify `/me`
+and persona permissions before configuration. Its denial on another account's private chat is
+expected. Shared market context is retrieved through the existing per-user Library grant.
+
+The KB draft preview enables the existing Models assistant. The first embedded check failed because Burn allowed `causl.io` but excluded the preview hostname.
+The existing exact-origin configuration now includes that controlled QA hostname. Vercel rebuilt
+the same hosted frontend commit `b0a2a429`; the frame header read-back confirms both origins.
+Direct authorized native model retrieval works. Rendered embedded acceptance remains pending.
+Fresh matched PDL/research, automatic interview handoff, and full 60-second timing remain unproved.
+Do not merge either draft before owner QA.
+
+## Earlier acceptance, October 2
 
 The [interviewer comparison](interviewer-comparison.md) completed three development rounds and six unseen reviews each for Native Onyx and Parlant.
 The original comparison favored Parlant for insight and Native for speed. Applying conditional interviewing through native Burn configuration improved the six native regression cases to 6/6 useful private insights and model consequences, with no repeated unknown questions. Five briefs saved within the polling window; all six eventually reopened. The two final targeted grounding checks passed independently; those native instructions are now applied to Beca. Start a new conversation on the canonical Burn URL. Publication state and retained failures are documented in the comparison. The full 60-second saved-model journey remains unproved.
