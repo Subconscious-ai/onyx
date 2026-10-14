@@ -127,6 +127,25 @@ class AdaptiveTesterTests(unittest.TestCase):
         self.assertEqual(key, "unknown")
         self.assertIn("unknown", reply)
 
+    def test_capacity_question_does_not_resupply_a_known_volume_as_capacity(self):
+        case = {
+            **self.case,
+            "facts": [
+                {
+                    "id": "economics",
+                    "topics": "number|job",
+                    "answer": "100 jobs monthly.",
+                }
+            ],
+        }
+        reply, key = choose_reply(
+            case,
+            "What is the maximum number of jobs you can complete monthly?",
+            {"economics"},
+        )
+        self.assertEqual(key, "unknown")
+        self.assertNotIn("100", reply)
+
     def test_idle_recaps_do_not_rescue_an_unresolved_journey(self):
         reply, key = choose_reply(self.case, "Thanks, noted.", {"goal"})
         self.assertEqual(key, "passive_probe")

@@ -37,6 +37,12 @@ def choose_reply(case: dict, answer: str, revealed: set[str]) -> tuple[str, str]
         )
         asked = " ".join(requests)
     if asked:
+        if re.search(
+            r"\b(?:maximum|capacity|staffing|resource limits?)\b", asked, re.I
+        ) and not any(fact["id"] == "capacity" for fact in case["facts"]):
+            return case.get(
+                "unknown_answer", "Capacity is unknown. Keep it unknown."
+            ), "unknown"
         # Prefer the question's intent over incidental words (e.g. 'target' in
         # 'Which customer segment should we target?' is not a numeric-goal ask).
         intent = None
