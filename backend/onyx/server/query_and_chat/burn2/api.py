@@ -80,19 +80,19 @@ def _prepare_brief(
     persona = get_persona_by_id(snapshot["persona_id"], user, db, is_for_edit=False)
     if persona.name not in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}:
         raise HTTPException(404, "Executive conversation required")
+    cached = None
     if "</interview-brief>" in snapshot["last_text"]:
+        saved = None
         try:
-            cached = validate_brief(
-                json.loads(
-                    snapshot["last_text"]
-                    .split("<interview-brief>", 1)[1]
-                    .split("</interview-brief>", 1)[0]
-                ),
-                snapshot["statements"],
+            saved = json.loads(
+                snapshot["last_text"]
+                .split("<interview-brief>", 1)[1]
+                .split("</interview-brief>", 1)[0]
             )
+            cached = validate_brief(saved, snapshot["statements"])
         except (ValueError, IndexError):
             cached = None
-        if cached and not needs_completion(cached):
+        if cached and cached == saved and not needs_completion(cached):
             return PreparedBrief(
                 message_id=snapshot["last_id"],
                 saved=True,
@@ -207,7 +207,11 @@ Proposed interventions remain hypotheses. Jokes, confidence, and rejected third-
         return json.loads(calls[0].function.arguments or "")
 
     try:
-        brief = prepare_validated_brief(generate, snapshot["statements"])
+        brief = (
+            cached
+            if cached and not needs_completion(cached)
+            else prepare_validated_brief(generate, snapshot["statements"])
+        )
     except Exception as error:
         logger.warning(
             "Burn model brief preparation failed (%s): %s",
@@ -367,15 +371,15 @@ def read_executive_brief(
         ) from None
     if "</interview-brief>" in snapshot["last_text"]:
         try:
-            brief = validate_brief(
-                json.loads(
-                    snapshot["last_text"]
-                    .split("<interview-brief>", 1)[1]
-                    .split("</interview-brief>", 1)[0]
-                ),
-                snapshot["statements"],
+            saved = json.loads(
+                snapshot["last_text"]
+                .split("<interview-brief>", 1)[1]
+                .split("</interview-brief>", 1)[0]
             )
+            brief = validate_brief(saved, snapshot["statements"])
             if not needs_completion(brief):
+                if brief != saved:
+                    return {"saved": False, "background": False}
                 return {
                     "saved": True,
                     "message": snapshot["last_text"],

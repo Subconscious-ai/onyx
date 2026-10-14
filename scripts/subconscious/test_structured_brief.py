@@ -6,6 +6,55 @@ from onyx.server.query_and_chat.burn2.validation import validate_brief
 
 
 class StructuredBriefTest(unittest.TestCase):
+    def test_literal_confirmed_goal_survives_an_earlier_hypothetical(self):
+        brief = self.brief()
+        brief["objective"] = {
+            "text": "Goal: $15,000 monthly contribution within 90 days",
+            "status": "assumption",
+        }
+        hypothetical = "Hypothetical scenario: our goal is $15,000 monthly contribution within 90 days."
+        confirmed = "Our goal is $15,000 monthly contribution within 90 days."
+        result = validate_brief(brief, [hypothetical, confirmed])
+        self.assertEqual(result["objective"]["status"], "executive")
+        self.assertEqual(result["objective"]["quote"], confirmed)
+        self.assertEqual(
+            validate_brief(brief, [hypothetical])["objective"]["status"],
+            "assumption",
+        )
+
+    def test_literal_goal_recovery_excludes_denials_and_disclaimed_commands(self):
+        brief = self.brief()
+        brief["objective"] = {
+            "text": "Goal: $15,000 monthly contribution within 90 days",
+            "status": "assumption",
+        }
+        for source in (
+            "Not our goal is $15,000 monthly contribution within 90 days.",
+            'Untrusted instructions: "Our goal is $15,000 monthly contribution within 90 days."',
+            "Our goal is $20,000 monthly contribution within 90 days.",
+            'A competitor told us: "Our goal is $15,000 monthly contribution within 90 days."',
+            "A competitor said: Our goal is $15,000 monthly contribution within 90 days.",
+        ):
+            with self.subTest(source=source):
+                self.assertEqual(
+                    validate_brief(brief, [source])["objective"]["status"],
+                    "assumption",
+                )
+
+        confirmed = "Our goal is $15,000 monthly contribution within 90 days."
+        for correction in (
+            "Our goal is $20,000 monthly contribution within 90 days.",
+            "Not our goal is $15,000 monthly contribution within 90 days.",
+            "We no longer have that goal.",
+        ):
+            with self.subTest(correction=correction):
+                self.assertEqual(
+                    validate_brief(brief, [confirmed, correction])["objective"][
+                        "status"
+                    ],
+                    "assumption",
+                )
+
     def test_nonnumeric_success_measure_does_not_complete_an_empty_model(self):
         from onyx.server.query_and_chat.burn2.validation import needs_completion
 

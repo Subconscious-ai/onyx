@@ -12,6 +12,39 @@ from onyx.background.celery.tasks.burn2.tasks import prepare_saved_brief
 
 
 class BriefModelPolicyTests(unittest.TestCase):
+    def test_revalidated_cache_must_be_saved_before_reporting_completion(self):
+        import json
+
+        from onyx.server.query_and_chat.burn2 import api
+
+        saved = {"objective": {"status": "assumption"}}
+        repaired = {
+            "objective": {"status": "executive"},
+            "keyResults": [{"metric": "Contribution"}],
+            "model": {"inputs": [{"name": "Leads"}]},
+        }
+        snapshot = {
+            "persona_id": 5,
+            "last_id": 1,
+            "last_text": "Answer<interview-brief>"
+            + json.dumps(saved)
+            + "</interview-brief>",
+            "statements": ["Our goal is increasing contribution."],
+        }
+        persona = MagicMock(name="persona")
+        persona.name = "Burn 2.0"
+        with (
+            patch.dict(
+                "os.environ",
+                {"BURN2_ENABLED": "true", "BURN2_BACKGROUND_PREPARATION": "true"},
+            ),
+            patch.object(api, "owned_snapshot", return_value=snapshot),
+            patch.object(api, "get_persona_by_id", return_value=persona),
+            patch.object(api, "validate_brief", return_value=repaired),
+        ):
+            result = api.read_executive_brief(uuid4(), MagicMock(), MagicMock())
+        self.assertEqual(result, {"saved": False, "background": False})
+
     def test_extraction_honors_native_model_reasoning_default(self):
         from onyx.llm.models import ReasoningEffort, resolve_reasoning_effort
         from onyx.server.query_and_chat.burn2 import api

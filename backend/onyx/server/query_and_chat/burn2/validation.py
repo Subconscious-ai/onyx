@@ -143,6 +143,34 @@ def ground_journey_actors(journey: list[dict], transitions: list[dict]) -> None:
             demote(edge["behavior"])
 
 
+def ground_literal_goal(note: dict[str, Any], statements: list[str]) -> None:
+    """A literal declared goal is intent, even after an earlier hypothetical."""
+    label = re.match(r"^(?:goal|objective)\s*[:=]\s*(.+)$", note["text"], re.I)
+    if not label or note["status"] == "unknown":
+        return
+    phrase = r"(?:^|[.!?:;]\s+)(?:our |my |the )?(?:goal|objective)\s*(?:is\b|[:=])\s*"
+    goal = re.compile(phrase + re.escape(label[1]) + r"(?!\w)", re.I)
+    for source in reversed(statements):
+        trusted = _UNTRUSTED_INSTRUCTION_SPAN.sub(" ", source)
+        if _HYPOTHETICAL.search(source) or not re.search(
+            r"\b(?:goal|objective)\b", trusted, re.I
+        ):
+            continue
+        if (
+            len(source) <= 1200
+            and not re.search(
+                r'["“”]|\b(?:competitor|their|told|reported|says|said)\b', trusted, re.I
+            )
+            and not re.search(
+                r"\bnot\s+(?:our |my |the )?(?:goal|objective)\b", trusted, re.I
+            )
+            and goal.search(trusted)
+        ):
+            note.update(status="executive", quote=source)
+        # A later declaration or denial prevents revival of an older goal.
+        return
+
+
 def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
     value = optional_evidence(value)
 
@@ -199,6 +227,7 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
     ]:
         if len({item["id"] for item in collection}) != len(collection):
             raise ValueError("Duplicate model identifiers")
+    ground_literal_goal(result["objective"], statements)
     ground(result["objective"])
     for stage in result["journey"]:
         ground(stage)
