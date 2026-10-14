@@ -1079,6 +1079,12 @@ def build_chat_turn(
             draft=draft,
         )
         trusted_turn_instructions = guidance
+        logger.info(
+            "Burn interview turn policy: turn=%s, has_brief=%s, model_review=%s",
+            turns,
+            draft is not None,
+            model_review_context is not None,
+        )
         additional_context = "\n".join(
             filter(
                 None,
