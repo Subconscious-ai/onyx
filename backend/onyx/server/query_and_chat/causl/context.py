@@ -169,9 +169,39 @@ def _read(
         ) from None
 
 
-def _valid_analysis(analysis: object, selection: CauslSelection) -> bool:
-    if not selection.run_id and not selection.studio_id:
-        return analysis is None
+def _valid_inferred_analysis(
+    analysis: object, selection: CauslSelection, record: object, run_id: str
+) -> bool:
+    if (
+        not isinstance(analysis, dict)
+        or not selection.record
+        or selection.record.type != "estimate"
+    ):
+        return False
+    properties = record.get("properties") if isinstance(record, dict) else None
+    if (
+        not isinstance(properties, dict)
+        or properties.get("subconsciousExperimentId") != run_id
+    ):
+        return False
+    estimates = analysis.get("estimates")
+    return (
+        analysis.get("studio") is None
+        and isinstance(estimates, list)
+        and any(
+            isinstance(estimate, dict)
+            and estimate.get("id") == selection.record.id
+            and estimate.get("runId") == run_id
+            for estimate in estimates
+        )
+    )
+
+
+def _valid_analysis(
+    analysis: object, selection: CauslSelection, record: object
+) -> bool:
+    if not selection.run_id and not selection.studio_id and analysis is None:
+        return True
     if not isinstance(analysis, dict):
         return False
     run = analysis.get("run")
@@ -182,6 +212,8 @@ def _valid_analysis(analysis: object, selection: CauslSelection) -> bool:
         return False
     if selection.run_id and run_id != selection.run_id:
         return False
+    if not selection.run_id and not selection.studio_id:
+        return _valid_inferred_analysis(analysis, selection, record, run_id)
     studio = analysis.get("studio")
     return (
         isinstance(studio, dict) and studio.get("id") == str(selection.studio_id)
@@ -222,7 +254,7 @@ def _validate(
             if selection.record
             else record is None
         )
-        and _valid_analysis(analysis, selection)
+        and _valid_analysis(analysis, selection, record)
         and isinstance(context.get("library"), dict)
     )
     if not valid:
