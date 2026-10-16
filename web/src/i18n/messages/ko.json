@@ -9985,6 +9985,11 @@
         "source": "다이어그램 소스",
         "preparing": "다이어그램 준비 중…",
         "unavailable": "다이어그램을 표시할 수 없습니다. 소스는 제공됩니다."
+      },
+      "evidence": {
+        "label": "연구 근거",
+        "preparing": "근거 준비 중…",
+        "unavailable": "근거를 표시할 수 없습니다."
       }
     },
     "modals": {

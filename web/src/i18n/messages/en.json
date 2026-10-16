@@ -9985,6 +9985,11 @@
         "source": "Diagram source",
         "preparing": "Preparing diagram…",
         "unavailable": "Diagram unavailable. Source remains available."
+      },
+      "evidence": {
+        "label": "Study evidence",
+        "preparing": "Preparing evidence…",
+        "unavailable": "Evidence unavailable."
       }
     },
     "modals": {
