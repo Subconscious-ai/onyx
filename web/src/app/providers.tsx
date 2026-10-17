@@ -16,9 +16,38 @@ export function initPostHog(key: string, host?: string | null): void {
     person_profiles: "identified_only",
     capture_pageview: false,
     cross_subdomain_cookie: false,
+    autocapture: false,
+    capture_pageleave: false,
+    disable_session_recording: true,
+    property_denylist: ["extension_context"],
+    before_send: (event) => {
+      if (!event) return null;
+      // OAuth codes and private prompts can occur in URL queries or fragments.
+      for (const properties of [
+        event.properties,
+        event.properties?.$set,
+        event.properties?.$set_once,
+      ]) {
+        if (!properties || typeof properties !== "object") continue;
+        for (const key of [
+          "$current_url",
+          "$referrer",
+          "$initial_current_url",
+          "$initial_referrer",
+        ]) {
+          if (typeof properties[key] !== "string") continue;
+          try {
+            const url = new URL(properties[key]);
+            properties[key] = url.origin + url.pathname;
+          } catch {
+            delete properties[key];
+          }
+        }
+      }
+      return event;
+    },
     session_recording: {
-      // Sensitive inputs should use data-ph-no-capture attribute
-      maskAllInputs: false,
+      maskAllInputs: true,
     },
   });
 }
