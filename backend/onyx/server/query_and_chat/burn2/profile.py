@@ -69,7 +69,11 @@ def turn_guidance(
         "Never ask to confirm a path already supplied or selected, invent extra steps, or request an answered or explicitly unknown value. "
     )
     if not model_review:
-        attention_budget = "Use at most 30 spoken words. " + attention_budget
+        attention_budget = (
+            "Use at most 30 spoken words. State uncertainty as a statement, not another question. "
+            "Keep explicitly fixed scenario inputs fixed; do not ask whether they will remain unchanged. "
+            + attention_budget
+        )
     conclude = bool(
         re.search(
             r"\b(?:no(?: extra| more| further)? questions?|without (?:another |a |any )?questions?|conclude|summari[sz]e|print)\b",
