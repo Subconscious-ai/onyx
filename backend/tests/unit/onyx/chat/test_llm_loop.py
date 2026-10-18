@@ -114,6 +114,7 @@ def create_context_files(
     )
 
 
+@pytest.mark.parametrize("proposal_ready", [False, True])
 @pytest.mark.parametrize("resumed", [False, True])
 @pytest.mark.parametrize("workspace_bound", [False, True])
 @pytest.mark.parametrize("replace_base", [False, True])
@@ -122,6 +123,7 @@ def test_native_messages_scope_workspace_rules_without_changing_persona(
     resumed: bool,
     workspace_bound: bool,
     replace_base: bool,
+    proposal_ready: bool,
 ) -> None:
     persona = Persona(
         system_prompt="Existing agent identity.",
@@ -141,9 +143,25 @@ def test_native_messages_scope_workspace_rules_without_changing_persona(
                 "Earlier reply called it percentage points.", MessageType.ASSISTANT
             )
         )
-    history.append(
-        create_message("Explain this result and cite its source.", MessageType.USER)
+    latest_request = (
+        "Propose the new team plan price of 29 USD for human review. Give me the review link."
+        if proposal_ready
+        else "Explain this result and cite its source."
     )
+    history.append(create_message(latest_request, MessageType.USER))
+    proposal_result = (
+        '{"status":"proposed","change":{"price":29,"unit":"USD"},'
+        '"reviewUrl":"https://kb.example/library#review=synthetic-token"}'
+    )
+    if proposal_ready:
+        history.extend(
+            [
+                create_assistant_with_tool_call(
+                    "proposal", "prepare_library_change", 20
+                ),
+                create_tool_response("proposal", proposal_result, len(proposal_result)),
+            ]
+        )
     captured: list[ChatMessageSimple] = []
 
     def step(
@@ -206,6 +224,28 @@ def test_native_messages_scope_workspace_rules_without_changing_persona(
     )
     assert persona.system_prompt == "Existing agent identity."
     assert persona.task_prompt == "Always ask three discovery questions."
+    if proposal_ready:
+        latest_user = next(
+            message
+            for message in reversed(captured)
+            if message.message_type == MessageType.USER
+        )
+        assert latest_user.message == latest_request
+        assert captured[-2].message_type == MessageType.TOOL_CALL_RESPONSE
+        assert captured[-2].message == proposal_result
+        if workspace_bound:
+            for message in (system, reminder):
+                assert (
+                    "When the latest request asks about an estimate," in message.message
+                )
+                assert "Use the selected result's numeric value" not in message.message
+                assert (
+                    "include its exact reviewUrl as a Markdown link" in message.message
+                )
+                assert "awaits human review" in message.message
+                assert (
+                    "Never describe a proposal as saved or accepted" in message.message
+                )
 
 
 class TestConstructMessageHistory:
