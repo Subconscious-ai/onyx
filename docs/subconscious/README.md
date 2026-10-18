@@ -503,3 +503,74 @@ Native handoff and workspace creation now use the existing native feature flag a
 A fresh native model workspace initially returned `Connect your Library account`. The standard QA member completed the existing per-user OAuth flow for the configured Library server. The next workspace request returned 200. No admin role or membership changed. Check actual model-agent readback before claiming that memory works across chats.
 
 The hosted profile and message modules matched main `1c1bc1ee94` during this check. The hosted preparation API contained additional changes. Preserve that source and compare it before any backend replacement. Frontend publication does not deploy backend interview rules. PR #48 and KB #675 remain held for owner QA. Automatic native handoff, matching fresh research and the full sixty-second journey still require live proof.
+
+
+### October 17 agent-dev context audit
+
+The account audit found a ready PDL match with eight professional fields. Its
+lookup completed about thirteen seconds before the first executive message.
+Public research completed about fifteen seconds after that message and retained
+eight source URLs. The current company-scope selector includes both records.
+Historical provider prompts were not retained. This is not per-turn proof for the
+older conversation. New native turn logs record profile/research status, research
+inclusion, and source count without recording personal fields or report content.
+
+The reported conversation selected a proposed customer journey with a short
+confirmation. Its stored draft still had no journey. Extraction now keeps named
+proposed stages as assumptions, with no fabricated executive source citation.
+The moderator stops asking for optional operating figures when the saved draft
+has the three model connections. The stored native prompt also makes journey
+confirmation conditional on a missing path.
+
+A live regression found invented actions attached to a genuine participant quote.
+The existing journey guard now checks content words and adjacent explicit denial.
+Unmatched wording remains proposed structure. This is conservative lexical
+validation, not semantic entailment. Exact Buy, Pay, Use, denied Buy/Buys, and
+invented Accept cases have regression coverage. The read-only review found no
+remaining issue within these bounded checks.
+
+Existing incomplete cached briefs do not automatically rerun the new extraction
+on reload. Do not claim old-chat repair from a fresh-chat test. Native preparation
+can race a fast next user turn; retain the resulting 409 receipts. An unavailable
+Build action is a failed journey, even when the conversation gives correct math.
+
+The delivery remains draft PR #48 and paired KB PR #675, held for owner QA.
+Agent-dev uses native Onyx app `1ccff3d2de` and KB `19230c8e238f` for this run.
+Vercel checks do not prove this backend. Use the existing tailnet QA URL above.
+83 focused profile/structured/adversarial tests and 65 native loop tests pass.
+These checks do not prove the live interview quality or sixty-second target.
+
+The final six-case run did **not** meet full acceptance. The independent review
+found defects missed by the script's `passed` field. Three models saved and
+reopened. Two handoffs remained unproved. Services never exposed Build.
+
+| Case | Save/reopen | Scripted elapsed | Modeled reading/typing total | Main failure |
+| --- | --- | --- | --- | --- |
+| Energy | Yes | 75.77s | 176.52s | Repeated journey confirmation |
+| SaaS | Yes | 70.78s | 147.03s | Repeated journey; baseline never collected |
+| Retail | Yes | 55.47s | 127.97s | Spoken false acceptance of hypothetical baseline; saved inputs remain unknown |
+| Services | No | 76.02s to failure | 162.77s to failure | No journey; no Build action |
+| Home services | Unproved | 105.74s to failure | 220.74s to failure | Extra questions; handoff timeout |
+| Manufacturing | Unproved | 79.69s to failure | 175.69s to failure | Repeated journey; handoff timeout |
+
+These are automated journeys and modeled human estimates, not real executive
+measurements. The fixture replies contain substantial typing. The driver also
+sends some extra acknowledgements after synthesis. Measure the first genuine
+ready/action timestamp separately; do not shorten pauses to manufacture a pass.
+Fixed adversary turns can hide repeated questions from the automatic classifier.
+
+Research readiness: Energy reused seven sources at 0.38s. Fresh SaaS, retail and
+services results arrived at 19.51s, 10.80s and 13.06s. Home services research arrived
+at 73.92s, after the interview. The unknown manufacturing client correctly had no
+research identity. These synthetic-account tests do not prove positive PDL matches.
+
+Follow-up handoff checks observed Auth0 HTTP429 `organizations_read` limits,
+including a 48-second retry header and a 98-second failed import-page response.
+They also observed a rejected model proposal (`target used as baseline`, HTTP502).
+Do not label these as a popup-only bug or bypass the membership/model guards.
+The two recovery attempts did not establish successful save/reopen.
+
+Private evidence is in `~/.local/share/causl-uat/finish-20261014/agentdev-six/`,
+`browser-oct17-final-*`; the compact assessment and account audit are in
+`~/.local/share/causl-uat/finish-20261017/`. Retain the failed receipts. Do not close
+#55 or merge #48/#675 from the unit tests, Vercel check, or three saved models.
