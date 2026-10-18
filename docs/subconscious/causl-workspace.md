@@ -45,6 +45,20 @@ copied transcript, anonymous denial and both browser views passed. This test reu
 previously calculated model; it made no new research or model-generation call. It does not
 prove the fresh 60-second interview. QA: [Beca on agent-dev](https://agent-dev.taila3aadb.ts.net:3011/app?agentId=2).
 
+## First-send workspace connection
+
+Native sign-in does not create a per-user Library OAuth grant. Before a standalone
+Beca send, the frontend checks the existing persona MCP connection status. If the
+grant is missing, **Connect workspace** opens the existing OAuth flow. The original
+draft and queued message stay in their native tab. A successful connection resumes
+that submission once; cancellation leaves the text available for editing.
+
+Fresh-user QA must use a standard member with no prior Library grant. A connected
+account can prove memory readback but cannot prove first-send onboarding. Inspect
+native stream packets: HTTP 200 can contain an `UNAUTHENTICATED` error and is not
+proof of a saved message. Require the exact persisted human message, a real saved
+assistant reply, and normal model save/reopen before handing off the QA link.
+
 ## Configuration
 
 Keep both settings unset to leave ordinary Onyx authentication unchanged.
