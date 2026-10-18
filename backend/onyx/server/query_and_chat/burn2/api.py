@@ -64,16 +64,6 @@ def discard_unverified_anchors(previous: dict) -> None:
     previous["model"].pop("equation", None)
 
 
-def acknowledged_brief(previous: dict | None, statements: list[str]) -> dict | None:
-    if (
-        previous
-        and statements[-1].strip().rstrip(".!").casefold() in {"thanks", "thank you"}
-        and not needs_completion(previous)
-    ):
-        return validate_brief(previous, statements)
-    return None
-
-
 def _prepare_brief(
     body: PrepareBrief,
     user: User = Depends(require_permission(Permission.WRITE_CHAT)),
@@ -130,7 +120,6 @@ def _prepare_brief(
     previous = latest_saved_brief(snapshot["transcript"], snapshot["statements"])
     if previous and previous["objective"]["status"] != "executive":
         previous = None
-    cached = cached or acknowledged_brief(previous, snapshot["statements"])
     if previous and previous.get("model"):
         discard_unverified_anchors(previous)
     from onyx.db.burn2_profile import read_profile
