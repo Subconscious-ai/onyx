@@ -19,6 +19,7 @@ interface LoginPageProps {
   hidePageRedirect?: boolean;
   verified?: boolean;
   isFirstUser?: boolean;
+  loggedOut?: boolean;
 }
 
 export default function LoginPage({
@@ -28,6 +29,7 @@ export default function LoginPage({
   hidePageRedirect,
   verified,
   isFirstUser,
+  loggedOut = false,
 }: LoginPageProps) {
   const t = useTranslations("auth");
   useSendAuthRequiredMessage();
@@ -40,7 +42,7 @@ export default function LoginPage({
   // Kill switch off: hide password login/signup. Backend refuses regardless.
   const passwordAuthEnabled = authTypeMetadata?.passwordAuthEnabled !== false;
   const orDivider = t("login.orDivider.text");
-  const automaticProvider = automaticAuth0Provider(authTypeMetadata);
+  const automaticProvider = automaticAuth0Provider(authTypeMetadata, loggedOut);
 
   if (automaticProvider) {
     return (

@@ -2,9 +2,14 @@ import type { AuthTypeMetadata, SSOProviderOption } from "./types";
 
 /** Hosted Auth0-only installs go directly to Universal Login. */
 export function automaticAuth0Provider(
-  metadata: AuthTypeMetadata | null
+  metadata: AuthTypeMetadata | null,
+  loggedOut = false
 ): SSOProviderOption | null {
-  if (metadata?.multiTenant !== false || metadata.passwordAuthEnabled !== false) {
+  if (
+    loggedOut ||
+    metadata?.multiTenant !== false ||
+    metadata.passwordAuthEnabled !== false
+  ) {
     return null;
   }
   const providers = metadata.ssoProviders ?? [];
