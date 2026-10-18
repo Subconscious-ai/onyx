@@ -13850,6 +13850,13 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "Source : {quote}",
+    "savedMarketFacts": "Faits de marché enregistrés",
+    "marketMemoryUnavailable": "La mémoire partagée du marché est indisponible.",
+    "marketMemoryLoading": "Lecture des faits de marché enregistrés…",
+    "marketMemorySource": "Faits acceptés de la bibliothèque de marché partagée.",
+    "marketMemoryEmpty": "Aucun fait de marché accepté. Les notes restent des brouillons avant révision.",
+    "marketMemoryBounded": "Vue limitée. Beca peut consulter davantage de faits dans la bibliothèque.",
     "companyProfile": {
       "title": "Profil de l’entreprise",
       "description": "Vos corrections priment sur PDL. Il s’agit de votre profil de travail privé, pas d’un dossier partagé de l’entreprise.",

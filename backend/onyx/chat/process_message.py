@@ -663,7 +663,8 @@ def build_chat_turn(
     causl_binding, workspace_context = workspace_turn(
         db_session, user, chat_session, new_msg_req.causl_selection
     )
-    if causl_binding is not None:
+    interview_mode = causl_binding is None or causl_binding.mode == "interview"
+    if causl_binding is not None and not interview_mode:
         additional_context = workspace_context
     message_text = new_msg_req.message
 
@@ -838,7 +839,7 @@ def build_chat_turn(
     executive_history = (
         tuple(chat_history)
         if os.environ.get("BURN2_ENABLED") == "true"
-        and causl_binding is None
+        and interview_mode
         and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
         and user is not None
         else ()
@@ -913,7 +914,7 @@ def build_chat_turn(
     # Only the default persona inside a project uses the project's files.
     context_user_files = (
         []
-        if causl_binding is not None
+        if causl_binding is not None and not interview_mode
         else resolve_context_user_files(
             persona=persona,
             project_id=chat_session.project_id,
@@ -939,7 +940,7 @@ def build_chat_turn(
     )
 
     # Also grant access to persona-attached user files for FileReaderTool
-    if causl_binding is None and persona.user_files:
+    if interview_mode and persona.user_files:
         existing = set(available_files.user_file_ids)
         for uf in persona.user_files:
             if uf.id not in existing:
@@ -955,7 +956,7 @@ def build_chat_turn(
     forced_tool_id = new_msg_req.forced_tool_id
     if (
         os.environ.get("BURN2_ENABLED") == "true"
-        and causl_binding is None
+        and interview_mode
         and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
         and forced_tool_id is None
     ):
@@ -1031,7 +1032,7 @@ def build_chat_turn(
     trusted_turn_instructions: str | None = None
     if (
         os.environ.get("BURN2_ENABLED") == "true"
-        and causl_binding is None
+        and interview_mode
         and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
         and user is not None
     ):
@@ -1094,6 +1095,7 @@ def build_chat_turn(
             filter(
                 None,
                 [
+                    workspace_context,
                     additional_context or new_msg_req.additional_context,
                     context,
                     interview_context(
@@ -1171,7 +1173,7 @@ def build_chat_turn(
 
     if (
         os.environ.get("BURN2_ENABLED") == "true"
-        and causl_binding is None
+        and interview_mode
         and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
         and user is not None
     ):
@@ -1462,7 +1464,7 @@ def _run_models(
 
         if (
             os.environ.get("BURN2_ENABLED") == "true"
-            and setup.causl_binding is None
+            and (setup.causl_binding is None or setup.causl_binding.mode == "interview")
             and setup.persona.name
             in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
             and setup.incognito_record_mode is None
@@ -1518,7 +1520,10 @@ def _run_models(
                 ),
                 allowed_tool_ids=setup.new_msg_req.allowed_tool_ids,
                 search_usage_forcing_setting=setup.search_params.search_usage,
-                allow_user_context=setup.causl_binding is None,
+                allow_user_context=(
+                    setup.causl_binding is None
+                    or setup.causl_binding.mode == "interview"
+                ),
             )
             model_tools = [
                 tool for tool_list in thread_tool_dict.values() for tool in tool_list
@@ -1530,7 +1535,10 @@ def _run_models(
 
             forced_tool_id = initial_profile_tool(
                 enabled=os.environ.get("BURN2_ENABLED") == "true"
-                and setup.causl_binding is None
+                and (
+                    setup.causl_binding is None
+                    or setup.causl_binding.mode == "interview"
+                )
                 and not setup.new_msg_req.deep_research,
                 persona_name=setup.persona.name,
                 user_id=None if user.is_anonymous else user.id,

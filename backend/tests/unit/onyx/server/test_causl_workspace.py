@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from onyx.auth.session_identity import SessionIdentity
 from onyx.db.enums import MCPAuthenticationPerformer, MCPAuthenticationType
-from onyx.db.models import ChatSession, MCPConnectionConfig, MCPServer, User
+from onyx.db.models import ChatSession, MCPConnectionConfig, MCPServer, Persona, User
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
 from onyx.server.features.mcp.credentials import ResolvedMCPCredentials
@@ -121,6 +121,77 @@ def test_reads_current_grant_and_supplies_narrowing_actor_headers(
     assert requests[0].headers["x-causl-expected-organization"] == "org_b"
     assert requests[0].headers["x-causl-expected-subject"] == "auth0|alice"
     assert dict(requests[0].url.params) == {"page": "models", "market": "market_b"}
+
+
+def test_new_interviews_read_the_same_committed_market_fact_without_chat_history(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    monkeypatch.setenv("BURN2_ENABLED", "true")
+    monkeypatch.setattr(turn, "read_causl_binding", lambda *_args: None)
+    monkeypatch.setattr(db, "get", lambda *_args: None)
+    monkeypatch.setattr(db, "scalar", lambda *_args: None)
+    payload = envelope()
+    payload["context"].update(page="workspace", market=None)
+    requests = http_response(monkeypatch, payload)
+    bindings = []
+    for _ in range(2):
+        chat = ChatSession(
+            id=uuid4(),
+            user_id=user.id,
+            persona_id=11,
+            persona=Persona(id=11, name="Executive interview"),
+        )
+        binding, prompt = turn.workspace_turn(db, user, chat, None)
+        assert binding is not None, "A native interview must read shared KB memory"
+        assert binding.mode == "interview"
+        assert prompt is not None and "Accepted B fact" in prompt
+        bindings.append(binding)
+    assert bindings[0].chat_id != bindings[1].chat_id
+    assert len(requests) == 2, "Each new conversation reads committed Postgres context"
+    assert "x-causl-expected-organization" not in requests[0].headers
+    assert requests[0].headers["x-causl-expected-subject"] == ACTOR.user_id
+
+
+def test_native_interview_refuses_a_library_login_for_another_person(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    monkeypatch.setenv("BURN2_ENABLED", "true")
+    monkeypatch.setattr(turn, "read_causl_binding", lambda *_args: None)
+    payload = envelope()
+    payload["actor"]["userId"] = "auth0|somebody_else"
+    payload["context"].update(page="workspace", market=None)
+    http_response(monkeypatch, payload)
+    chat = ChatSession(
+        id=uuid4(),
+        user_id=user.id,
+        persona_id=11,
+        persona=Persona(id=11, name="Executive interview"),
+    )
+    with pytest.raises(OnyxError):
+        turn.workspace_turn(db, user, chat, None)
+
+
+def test_existing_unbound_history_is_retained_without_guessing_its_organization(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    monkeypatch.setenv("BURN2_ENABLED", "true")
+    monkeypatch.setattr(turn, "read_causl_binding", lambda *_args: None)
+    monkeypatch.setattr(db, "get", lambda *_args: None)
+    monkeypatch.setattr(db, "scalar", lambda *_args: 42)
+    payload = envelope()
+    payload["context"].update(page="workspace", market=None)
+    http_response(monkeypatch, payload)
+    chat = ChatSession(
+        id=uuid4(),
+        user_id=user.id,
+        persona_id=11,
+        persona=Persona(id=11, name="Executive interview"),
+    )
+    with pytest.raises(OnyxError, match="Start a new interview"):
+        turn.workspace_turn(db, user, chat, None)
 
 
 @pytest.mark.parametrize(

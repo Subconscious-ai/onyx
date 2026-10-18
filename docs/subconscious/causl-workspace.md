@@ -5,6 +5,30 @@ The integration binds native conversations to an authorized organization and mar
 The paired KB panel keeps the native chat mounted across page navigation and collapse.
 This source change does not establish a hosted release or complete the full customer journey.
 
+## Shared market memory in native interviews
+
+[Onyx #70](https://github.com/Subconscious-ai/onyx/issues/70) connects configured native Beca
+interviews to the same per-user Library OAuth and fresh KB context reader. The verified Library
+response selects the initial organization. The native conversation retains that binding and
+rechecks it on later turns. Existing unbound conversations retain their transcripts; start a new
+interview to connect shared memory instead of guessing their historical organization.
+
+Accepted facts live in causal-KB Postgres. The brief's **Saved market facts** view reads that
+database and shows current values separately from approved source excerpts. The native
+`<interview-brief>` payload remains a working draft, not accepted business memory. No extractor
+claim, PDL result, or public research report silently becomes an accepted fact.
+
+Interview mode retains native PDL/research preparation, configured research tools, attached
+reference files, and turn guidance. It excludes personal MemoryTool writes. Supported fact
+changes use the existing source-bound Library proposal and review/save path. Permissions and
+admission rules are unchanged. Workspace mode keeps its stricter private-context exclusions.
+
+Paired [causl-KB #714](https://github.com/Subconscious-ai/causl-kb/issues/714) tests one approved
+chat fact through fresh authorized contexts and the model request. Its reader preserves approved
+excerpts and prioritizes recently corrected records. Focused database and HTTP tests are separate
+from authenticated hosted QA. This change does not prove automatic admission of every interview
+field or the 60-second onboarding target. Keep the paired PRs unmerged until owner QA.
+
 ## Configuration
 
 Keep both settings unset to leave ordinary Onyx authentication unchanged.

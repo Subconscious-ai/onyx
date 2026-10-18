@@ -13850,6 +13850,13 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "Quelle: {quote}",
+    "savedMarketFacts": "Gespeicherte Marktfakten",
+    "marketMemoryUnavailable": "Der gemeinsame Marktspeicher ist nicht verfügbar.",
+    "marketMemoryLoading": "Gespeicherte Marktfakten werden gelesen…",
+    "marketMemorySource": "Bestätigte Fakten aus der gemeinsamen Marktbibliothek.",
+    "marketMemoryEmpty": "Noch keine bestätigten Marktfakten. Interviewnotizen bleiben bis zur Prüfung Entwürfe.",
+    "marketMemoryBounded": "Begrenzte Ansicht. Beca kann weitere Fakten aus der Bibliothek abrufen.",
     "companyProfile": {
       "title": "Unternehmensprofil",
       "description": "Ihre Korrekturen haben Vorrang vor PDL. Dies ist Ihr privates Arbeitsprofil, kein gemeinsamer Unternehmensdatensatz.",

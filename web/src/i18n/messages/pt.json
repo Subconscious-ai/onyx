@@ -13850,6 +13850,13 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "Fonte: {quote}",
+    "savedMarketFacts": "Fatos de mercado salvos",
+    "marketMemoryUnavailable": "A memória compartilhada do mercado está indisponível.",
+    "marketMemoryLoading": "Lendo fatos de mercado salvos…",
+    "marketMemorySource": "Fatos aceitos da biblioteca de mercado compartilhada.",
+    "marketMemoryEmpty": "Ainda não há fatos de mercado aceitos. As notas da entrevista são rascunhos até a revisão.",
+    "marketMemoryBounded": "Exibindo uma visão limitada. Beca pode recuperar mais fatos da biblioteca.",
     "companyProfile": {
       "title": "Perfil da empresa",
       "description": "Suas correções têm prioridade sobre o PDL. Este é seu perfil privado de trabalho, não um registro compartilhado da empresa.",

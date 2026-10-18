@@ -13850,6 +13850,13 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "المصدر: {quote}",
+    "savedMarketFacts": "حقائق السوق المحفوظة",
+    "marketMemoryUnavailable": "ذاكرة السوق المشتركة غير متاحة.",
+    "marketMemoryLoading": "جارٍ قراءة حقائق السوق المحفوظة…",
+    "marketMemorySource": "حقائق معتمدة من مكتبة السوق المشتركة.",
+    "marketMemoryEmpty": "لا توجد حقائق سوق معتمدة بعد. تبقى ملاحظات المقابلة مسودات حتى مراجعتها.",
+    "marketMemoryBounded": "هذا عرض محدود. يمكن لبيكا استرجاع مزيد من الحقائق من المكتبة.",
     "companyProfile": {
       "title": "ملف الشركة",
       "description": "تتقدم تصحيحاتك على اقتراحات PDL. هذا ملف عمل خاص بك، وليس سجلاً مشتركاً للشركة.",
