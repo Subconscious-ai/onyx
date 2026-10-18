@@ -157,7 +157,7 @@ def turn_guidance(
     ):
         question_guidance = (
             "The saved draft has an executive goal and named measure, but its customer journey is incomplete. "
-            "If the latest reply already supplies or selects the path, retain it and do not ask the path question. "
+            "If the source answers, including the latest reply, already supply or select the path, retain it and do not ask the path question. "
             "Otherwise: Ask only one customer decision-path question before another operating-number question. "
             "Ask for their actors and decisions, or let them confirm or correct a clearly attributed proposal. "
             "Do not ask about economics, capacity, price, margin, or utilization. "

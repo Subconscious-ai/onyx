@@ -84,7 +84,7 @@ class ProfileTests(unittest.TestCase):
             "The next missing connection is the customer journey", guidance
         )
         self.assertIn(
-            "If the latest reply already supplies or selects the path, retain it and do not ask the path question",
+            "If the source answers, including the latest reply, already supply or select the path, retain it and do not ask the path question",
             guidance,
         )
 
