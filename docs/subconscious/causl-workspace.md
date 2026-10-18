@@ -29,6 +29,14 @@ excerpts and prioritizes recently corrected records. Focused database and HTTP t
 from authenticated hosted QA. This change does not prove automatic admission of every interview
 field or the 60-second onboarding target. Keep the paired PRs unmerged until owner QA.
 
+October 18 agent-dev QA used Onyx `622f335e19` and KB `1c6587b`. A standard member saved
+three reviewed journey stages and two transitions from a retained synthetic interview. A separate
+empty native chat retrieved the committed fact and original source identity in 0.552 seconds.
+The selected model context returned the same fact and evidence in 0.186 seconds. Exact model
+readback, anonymous denial and both browser views passed. This test reused the previously
+calculated model; it made no new research or model-generation call. It does not prove a fresh
+60-second interview. The QA entry remains [Beca on agent-dev](https://agent-dev.taila3aadb.ts.net:3011/app?agentId=2).
+
 ## Configuration
 
 Keep both settings unset to leave ordinary Onyx authentication unchanged.
