@@ -143,13 +143,13 @@ def test_native_messages_scope_workspace_rules_without_changing_persona(
                 "Earlier reply called it percentage points.", MessageType.ASSISTANT
             )
         )
-    latest_request = (
+    latest_request: str = (
         "Propose the new team plan price of 29 USD for human review. Give me the review link."
         if proposal_ready
         else "Explain this result and cite its source."
     )
     history.append(create_message(latest_request, MessageType.USER))
-    proposal_result = (
+    proposal_result: str = (
         '{"status":"proposed","change":{"price":29,"unit":"USD"},'
         '"reviewUrl":"https://kb.example/library#review=synthetic-token"}'
     )
@@ -225,7 +225,7 @@ def test_native_messages_scope_workspace_rules_without_changing_persona(
     assert persona.system_prompt == "Existing agent identity."
     assert persona.task_prompt == "Always ask three discovery questions."
     if proposal_ready:
-        latest_user = next(
+        latest_user: ChatMessageSimple = next(
             message
             for message in reversed(captured)
             if message.message_type == MessageType.USER
