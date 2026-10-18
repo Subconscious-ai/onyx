@@ -226,6 +226,9 @@ def _build_client(provider: SSOProvider, config: dict[str, Any]) -> BaseOAuth2[A
             name=provider.name,
             base_scopes=scopes,
             require_verified_email=config.get("require_verified_email", False),
+            auto_join_verified_email_domains=config.get(
+                "auto_join_verified_email_domains", []
+            ),
         )
         # The document is attacker-chosen once its URL is, and the endpoints it
         # names are fetched next, so they get the same treatment as the URL.

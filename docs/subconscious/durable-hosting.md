@@ -219,3 +219,21 @@ PREVIEW_GATEWAY_URL=https://api.dev.subconscious.ai/burn2 \
 ```
 
 This checks login transport and denial boundaries. It does not prove completed user sign-in, account recovery, or enterprise data isolation. Those remain separate acceptance checks in #21.
+
+
+## Shared company login
+
+The native OIDC provider can admit verified company users without separate invites.
+Set `require_verified_email=true` and `auto_join_verified_email_domains=["subconscious.ai"]`
+on the existing Auth0 provider through `update_sso_provider`. Both settings are required.
+The native client reads the verified email from Auth0 userinfo before applying this rule.
+Domain matches are exact. Subdomains and lookalikes do not qualify.
+
+Keep workspace invite-only access enabled. Existing external members keep their access.
+Other new users still need an invite. Native user creation assigns its normal role;
+this rule assigns no administrator role. Existing domain and tenant checks still apply.
+
+Disable password login through the native security settings only after SSO works.
+Keep a private configuration snapshot. Restart the API after an operator-side settings
+change because its security cache is process-local. No migration or data reset is needed.
+Verify fresh browser login, the native session, standard role, and outsider denial.

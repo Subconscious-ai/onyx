@@ -55,6 +55,8 @@ class OIDCProviderConfig(_OAuth2ProviderConfig):
     # email_verified claim (some IdPs, e.g. Microsoft Entra ID, omit it).
     # Any present value other than true is rejected regardless.
     require_verified_email: bool = False
+    # Exact domains admitted without an invite after strict email verification.
+    auto_join_verified_email_domains: list[str] = []
 
 
 class SAMLProviderConfig(_ProviderConfig):
