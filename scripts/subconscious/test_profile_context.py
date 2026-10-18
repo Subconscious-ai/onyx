@@ -10,6 +10,26 @@ from onyx.server.query_and_chat.burn2.profile import (
 
 
 class ProfileTests(unittest.TestCase):
+    def test_usable_draft_stops_before_asking_for_optional_operating_numbers(self):
+        draft = {
+            "objective": {"status": "executive", "text": "Reach $20 million revenue"},
+            "keyResults": [{"metric": "Annual revenue", "unit": "USD"}],
+            "journey": [
+                {"id": "content", "status": "assumption"},
+                {"id": "subscribe", "status": "assumption"},
+            ],
+            "transitions": [{"from": "content", "to": "subscribe"}],
+            "model": {
+                "equation": {"text": "customers * acv"},
+                "inputs": [{"name": "acv"}],
+            },
+            "conflicts": [],
+        }
+        guidance = turn_guidance(3, "Yes, that seems reasonable.", draft=draft)
+        self.assertIn("Question budget: zero", guidance)
+        self.assertNotIn("at most one material question", guidance)
+        self.assertIn("assumptions", guidance)
+
     def test_known_goal_prioritizes_missing_journey_before_more_economics(self):
         draft = {
             "objective": {

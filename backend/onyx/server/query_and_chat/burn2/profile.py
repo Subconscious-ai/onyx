@@ -99,6 +99,27 @@ def turn_guidance(
             "Do not restart discovery. Answer the latest scenario or model request; "
             "ask at most one material question only when that request needs a missing private input."
         )
+    elif draft and (
+        draft.get("objective", {}).get("status") == "executive"
+        and any(
+            kr.get("metric", "").strip() and kr.get("unit", "").strip()
+            for kr in draft.get("keyResults", [])
+        )
+        and len(draft.get("journey", [])) >= 2
+        and draft.get("transitions")
+        and draft.get("model", {}).get("equation", {}).get("text")
+        and draft.get("model", {}).get("inputs")
+        and not draft.get("conflicts")
+    ):
+        question_guidance = (
+            "Question budget: zero. The saved draft already contains the three essentials. "
+            "Do not ask for optional economics, capacity, churn, or another confirmation. "
+            "Give one brief insight or acknowledge the latest correction in at most 30 words. "
+            "Keep proposed journey steps and relationships labeled as assumptions. "
+            "The draft is not a saved business model: never claim model persistence, calculation, "
+            "or direct the executive to a tab. The application shows the real inline action. "
+            "End with a statement."
+        )
     elif turn >= 5 or (
         turn >= 4
         and re.search(r"\b(?:unknown|unavailable|don.t know|do not know)\b", text, re.I)

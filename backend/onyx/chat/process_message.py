@@ -1080,10 +1080,15 @@ def build_chat_turn(
         )
         trusted_turn_instructions = guidance
         logger.info(
-            "Burn interview turn policy: turn=%s, has_brief=%s, model_review=%s",
+            "Burn interview turn policy: turn=%s, has_brief=%s, model_review=%s, "
+            "profile_status=%s, research_status=%s, research_included=%s, research_sources=%s",
             turns,
             draft is not None,
             model_review_context is not None,
+            profile.get("status"),
+            (research or {}).get("status"),
+            "Public company research follows" in context,
+            len((research or {}).get("source_urls", [])),
         )
         additional_context = "\n".join(
             filter(
