@@ -148,7 +148,52 @@ def ground_journey_actors(journey: list[dict], transitions: list[dict]) -> None:
             r"(?<!\w)" + re.escape(actor) + (r"s?" if plural else "") + r"(?!\w)",
             normal(stage.get("quote", "")),
         )
-        if stage["status"] == "executive" and not supported:
+        # A real participant does not establish a newly invented action. Keep
+        # paraphrases that this conservative lexical check cannot ground as draft assumptions.
+        words = set(re.findall(r"\b[a-z]{2,}\b", normal(stage["text"]))) - {
+            "the",
+            "our",
+            "an",
+            "to",
+            "and",
+            "for",
+            "of",
+            "in",
+            "on",
+            "at",
+            "by",
+            "their",
+            "then",
+            "with",
+            "from",
+            "that",
+            "this",
+            "into",
+            "after",
+            "before",
+        }
+        source_words = set(re.findall(r"\b[a-z]{2,}\b", normal(stage.get("quote", ""))))
+        content_supported = bool(words) and all(
+            word in source_words
+            or word.removesuffix("s") in source_words
+            or word + "s" in source_words
+            for word in words
+        )
+        denied = any(
+            re.search(
+                r"\b(?:not|never|don.t|doesn.t|didn.t)\s+(?:"
+                + "|".join(
+                    re.escape(form)
+                    for form in {word, word.removesuffix("s"), word + "s"}
+                )
+                + r")\b",
+                normal(stage.get("quote", "")),
+            )
+            for word in words
+        )
+        if stage["status"] == "executive" and not (
+            supported and content_supported and not denied
+        ):
             demote(stage)
     assumed = {stage["id"] for stage in journey if stage["status"] == "assumption"}
     for edge in transitions:

@@ -622,6 +622,58 @@ class StructuredBriefTest(unittest.TestCase):
             self.assertEqual(note["status"], "assumption")
             self.assertNotIn("quote", note)
 
+    def test_short_customer_actions_keep_their_original_support(self):
+        for action in ("Buy", "Pay", "Use app"):
+            with self.subTest(action=action):
+                source = f"Customers {action.lower()}."
+                brief = self.brief()
+                brief["journey"] = [
+                    {
+                        "id": "act",
+                        "actor": "Customers",
+                        "text": action,
+                        "status": "executive",
+                        "quote": source,
+                    }
+                ]
+                result = validate_brief(brief, [source])
+                self.assertEqual(result["journey"][0]["status"], "executive")
+
+    def test_an_explicitly_denied_action_stays_an_assumption(self):
+        for action in ("Buy premium plan", "Buys premium plan"):
+            with self.subTest(action=action):
+                source = "Customers use premium plan but do not buy."
+                brief = self.brief()
+                brief["journey"] = [
+                    {
+                        "id": "buy",
+                        "actor": "Customers",
+                        "text": action,
+                        "status": "executive",
+                        "quote": source,
+                    }
+                ]
+                self.assertEqual(
+                    validate_brief(brief, [source])["journey"][0]["status"],
+                    "assumption",
+                )
+
+    def test_real_actor_does_not_make_an_invented_action_a_fact(self):
+        brief = self.brief()
+        source = "Texas homeowners visit our tariff page, request a quote, then sign a supply contract."
+        brief["journey"] = [
+            {
+                "id": "accept",
+                "actor": "Texas homeowners",
+                "text": "Accept message",
+                "status": "executive",
+                "quote": source,
+            }
+        ]
+        result = validate_brief(brief, [source])
+        self.assertEqual(result["journey"][0]["status"], "assumption")
+        self.assertNotIn("quote", result["journey"][0])
+
     def test_actor_requires_a_nonempty_whole_phrase_in_its_source(self):
         source = "Customers paid for the completed order and received a receipt."
         for actor in ["AI", "   "]:
