@@ -366,8 +366,8 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
     return result
 
 
-def needs_completion(value: dict) -> bool:
-    """A structured objective needs usable drivers, even without numeric targets."""
+def needs_completion(value: dict, statements: list[str] | None = None) -> bool:
+    """Require the final journey at the existing five-answer discovery boundary."""
     objective = value.get("objective", {})
     return bool(
         objective.get("status") == "executive"
@@ -380,6 +380,11 @@ def needs_completion(value: dict) -> bool:
             not value.get("keyResults")
             or not (value.get("model") or {}).get("inputs")
             or (len(value.get("journey", [])) >= 2 and not value.get("transitions"))
+            or (
+                statements is not None
+                and len(statements) >= 5
+                and len(value.get("journey", [])) < 2
+            )
         )
     )
 
@@ -437,9 +442,11 @@ def prepare_validated_brief(
                 raise ValueError("Invalid tool payload")
             value["version"] = 2
             brief = validate_brief(value, statements)
-            if needs_completion(brief):
+            if needs_completion(brief, statements):
                 raise ValueError(
-                    "A structured objective requires key results and named model inputs; a supplied journey also requires transitions"
+                    "A structured objective requires key results and named model inputs; a supplied journey also requires transitions. "
+                    "At the fifth executive answer, retain the supplied customer stages and transitions. "
+                    "Keep unsupported paths as assumptions and missing facts unknown."
                 )
             return brief
         except ValueError as error:

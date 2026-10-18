@@ -71,7 +71,7 @@ def turn_guidance(
     if not model_review:
         attention_budget = (
             "Use at most 30 spoken words. State uncertainty as a statement, not another question. "
-            "Keep explicitly fixed scenario inputs fixed; do not ask whether they will remain unchanged. "
+            "Keep explicitly fixed inputs fixed and explicit exclusions excluded; do not revisit either. "
             "Use a supplied overall rate directly; unknown intermediate rates or unmeasured intervention effects do not block the first model. Do not ask the executive to guess them. "
             + attention_budget
         )
@@ -157,9 +157,8 @@ def turn_guidance(
     ):
         question_guidance = (
             "The saved draft has an executive goal and named measure, but its customer journey is incomplete. "
-            "If the source answers, including the latest reply, already supply or select the path, retain it and do not ask the path question. "
+            "If the source answers, including the latest reply, already supply or select the path or explicitly keep it unknown, retain it and do not ask the path question. "
             "Otherwise: Ask only one customer decision-path question before another operating-number question. "
-            "Ask for their actors and decisions, or let them confirm or correct a clearly attributed proposal. "
             "Do not ask about economics, capacity, price, margin, or utilization. "
             "Do not invent an industry funnel or treat company research as their private customer behavior."
         )
