@@ -49,6 +49,11 @@ class ProfileTests(unittest.TestCase):
         self.assertIn("customer journey", guidance)
         self.assertIn("before another operating-number question", guidance)
         self.assertIn("confirm or correct", guidance)
+        self.assertIn("Ask only one customer decision-path question", guidance)
+        self.assertIn(
+            "Do not ask about economics, capacity, price, margin, or utilization",
+            guidance,
+        )
         self.assertNotIn("Question budget: zero", guidance)
 
     def test_latest_journey_answer_takes_precedence_over_an_incomplete_saved_draft(
@@ -78,6 +83,28 @@ class ProfileTests(unittest.TestCase):
         self.assertNotIn(
             "The next missing connection is the customer journey", guidance
         )
+        self.assertIn(
+            "If the latest reply already supplies or selects the path, retain it and do not ask the path question",
+            guidance,
+        )
+
+    def test_missing_journey_never_overrides_a_discovery_stop(self):
+        draft = {
+            "objective": {"status": "executive"},
+            "keyResults": [{"metric": "Annual contribution", "unit": "USD"}],
+            "journey": [],
+        }
+        for turn, answer in (
+            (5, "Ten consultants."),
+            (3, "No more questions."),
+            (4, "That is unknown."),
+        ):
+            with self.subTest(turn=turn, answer=answer):
+                guidance = turn_guidance(turn, answer, draft=draft)
+                self.assertIn("Question budget: zero", guidance)
+                self.assertNotIn(
+                    "Ask only one customer decision-path question", guidance
+                )
 
     def test_journey_priority_does_not_wait_for_a_saved_extraction(self):
         guidance = turn_guidance(

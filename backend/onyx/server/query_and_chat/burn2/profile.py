@@ -146,6 +146,23 @@ def turn_guidance(
             "Only an application receipt can establish that the model was created or saved. "
             "Use at most 45 spoken words and end with a statement, not a question or invitation."
         )
+    elif (
+        draft
+        and draft.get("objective", {}).get("status") == "executive"
+        and any(
+            kr.get("metric", "").strip() and kr.get("unit", "").strip()
+            for kr in draft.get("keyResults", [])
+        )
+        and (len(draft.get("journey", [])) < 2 or not draft.get("transitions"))
+    ):
+        question_guidance = (
+            "The saved draft has an executive goal and named measure, but its customer journey is incomplete. "
+            "If the latest reply already supplies or selects the path, retain it and do not ask the path question. "
+            "Otherwise: Ask only one customer decision-path question before another operating-number question. "
+            "Ask for their actors and decisions, or let them confirm or correct a clearly attributed proposal. "
+            "Do not ask about economics, capacity, price, margin, or utilization. "
+            "Do not invent an industry funnel or treat company research as their private customer behavior."
+        )
     else:
         question_guidance = (
             "One concise answer, at most one material question. Use the supplied prepared dossier "
