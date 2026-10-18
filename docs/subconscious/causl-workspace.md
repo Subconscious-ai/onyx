@@ -23,19 +23,27 @@ reference files, and turn guidance. It excludes personal MemoryTool writes. Supp
 changes use the existing source-bound Library proposal and review/save path. Permissions and
 admission rules are unchanged. Workspace mode keeps its stricter private-context exclusions.
 
+The initial snapshot is bounded. Existing Library `market_search` retrieves accepted facts
+outside that snapshot, including journey stages, transitions and product definitions. It applies
+the text filter before sampling and retains source identities. Beca must search before asking
+for an absent fact. A missed search is inconclusive; omitted results call for a narrower query.
+The brief displays a bounded Postgres view, not a complete copy of organization memory.
+
 Paired [causl-KB #714](https://github.com/Subconscious-ai/causl-kb/issues/714) tests one approved
 chat fact through fresh authorized contexts and the model request. Its reader preserves approved
 excerpts and prioritizes recently corrected records. Focused database and HTTP tests are separate
 from authenticated hosted QA. This change does not prove automatic admission of every interview
 field or the 60-second onboarding target. Keep the paired PRs unmerged until owner QA.
 
-October 18 agent-dev QA used Onyx `622f335e19` and KB `1c6587b`. A standard member saved
-three reviewed journey stages and two transitions from a retained synthetic interview. A separate
-empty native chat retrieved the committed fact and original source identity in 0.552 seconds.
-The selected model context returned the same fact and evidence in 0.186 seconds. Exact model
-readback, anonymous denial and both browser views passed. This test reused the previously
-calculated model; it made no new research or model-generation call. It does not prove a fresh
-60-second interview. The QA entry remains [Beca on agent-dev](https://agent-dev.taila3aadb.ts.net:3011/app?agentId=2).
+October 18 agent-dev QA used Onyx `f10a31555b` and KB `a884ab3`. A standard member saved
+three reviewed stages and two transitions from a retained synthetic interview. After newer
+records displaced the original stage from the snapshot, a separate empty chat's actual native
+Library tool retrieved it and its accepted source in 0.736 seconds. The model route's existing
+market-scoped Postgres reader returned the same fact and evidence in 0.106 seconds. Authenticated
+selection returned the saved model and exact stage in 0.272 seconds. Exact model reopen, no
+copied transcript, anonymous denial and both browser views passed. This test reused the
+previously calculated model; it made no new research or model-generation call. It does not
+prove the fresh 60-second interview. QA: [Beca on agent-dev](https://agent-dev.taila3aadb.ts.net:3011/app?agentId=2).
 
 ## Configuration
 

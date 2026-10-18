@@ -1,5 +1,9 @@
 # Burn 2.0 on native Onyx
 
+The current shared-memory candidate and its QA boundary are in
+[Shared market memory](causl-workspace.md#shared-market-memory-in-native-interviews).
+The dated results below describe earlier candidates.
+
 ## October 14 agent-dev QA
 
 The paired QA runtime is [Beca on agent-dev](https://agent-dev.taila3aadb.ts.net:3011/app?agentId=2).
