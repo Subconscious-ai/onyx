@@ -377,7 +377,9 @@ def needs_completion(value: dict) -> bool:
             or len(value.get("journey", [])) >= 2
         )
         and (
-            not value.get("keyResults") or not (value.get("model") or {}).get("inputs")
+            not value.get("keyResults")
+            or not (value.get("model") or {}).get("inputs")
+            or (len(value.get("journey", [])) >= 2 and not value.get("transitions"))
         )
     )
 
@@ -437,7 +439,7 @@ def prepare_validated_brief(
             brief = validate_brief(value, statements)
             if needs_completion(brief):
                 raise ValueError(
-                    "A structured objective requires key results and named model inputs"
+                    "A structured objective requires key results and named model inputs; a supplied journey also requires transitions"
                 )
             return brief
         except ValueError as error:

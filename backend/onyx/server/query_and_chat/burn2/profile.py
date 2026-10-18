@@ -72,6 +72,7 @@ def turn_guidance(
         attention_budget = (
             "Use at most 30 spoken words. State uncertainty as a statement, not another question. "
             "Keep explicitly fixed scenario inputs fixed; do not ask whether they will remain unchanged. "
+            "Use a supplied overall rate directly; unknown intermediate rates or unmeasured intervention effects do not block the first model. Do not ask the executive to guess them. "
             + attention_budget
         )
     conclude = bool(

@@ -6,6 +6,67 @@ from onyx.server.query_and_chat.burn2.validation import validate_brief
 
 
 class StructuredBriefTest(unittest.TestCase):
+    def test_existing_repair_connects_a_supplied_journey_before_saving(self):
+        from onyx.server.query_and_chat.burn2.validation import prepare_validated_brief
+
+        calls = []
+
+        def generate(feedback):
+            calls.append(feedback)
+            brief = self.brief()
+            unknown = {
+                "text": "Unknown",
+                "status": "unknown",
+                "sourceMessageIndex": None,
+            }
+            brief["journey"] = [
+                {
+                    "id": name,
+                    "actor": "Customer",
+                    "text": name,
+                    "status": "assumption",
+                    "sourceMessageIndex": None,
+                }
+                for name in ("review", "renew")
+            ]
+            brief["keyResults"] = [
+                {
+                    "id": "renewal",
+                    "metric": "Renewal rate",
+                    "unit": "%",
+                    "direction": "increase",
+                    "baseline": unknown,
+                    "target": unknown,
+                    "deadline": unknown,
+                    "journeyIds": ["review", "renew"],
+                }
+            ]
+            brief["model"]["inputs"] = [
+                {"id": "rate", "name": "Renewal rate", "unit": "%", "value": unknown}
+            ]
+            if feedback:
+                brief["transitions"] = [
+                    {
+                        "id": "review_renew",
+                        "from": "review",
+                        "to": "renew",
+                        "behavior": {
+                            "text": "Renew",
+                            "status": "assumption",
+                            "sourceMessageIndex": None,
+                        },
+                        "metric": "Renewal rate",
+                    }
+                ]
+            return brief
+
+        result = prepare_validated_brief(
+            generate, ["The objective is increasing renewals."]
+        )
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(result["transitions"]), 1)
+        self.assertEqual(result["transitions"][0]["behavior"]["status"], "assumption")
+
     def test_schema_repair_names_missing_fields_without_echoing_source_data(self):
         brief = self.brief()
         del brief["company"]
