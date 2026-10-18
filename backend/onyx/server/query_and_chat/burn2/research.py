@@ -127,7 +127,9 @@ def research_receipt(raw: str) -> dict[str, Any]:
         "report": content[:16000],
         "source_urls": urls[:12],
         "research_id": str(data.get("research_id", ""))[:100],
-        "truncated": len(content) > 16000 or len(urls) > 12,
+        "truncated": data.get("truncated") is True
+        or len(content) > 16000
+        or len(urls) > 12,
     }
 
 

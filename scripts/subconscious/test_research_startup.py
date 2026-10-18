@@ -15,6 +15,23 @@ from onyx.server.query_and_chat.burn2.research import (
 
 
 class ResearchStartupTests(unittest.TestCase):
+    def test_source_truncation_survives_a_short_report_receipt(self):
+        result = research_receipt(
+            json.dumps(
+                {
+                    "success": True,
+                    "data": {
+                        "context": ["A sourced product description."],
+                        "source_urls": ["https://example.com/product"],
+                        "truncated": True,
+                    },
+                }
+            )
+        )
+        self.assertTrue(result["truncated"])
+        self.assertEqual(result["report"], "A sourced product description.")
+        self.assertEqual(result["source_urls"], ["https://example.com/product"])
+
     def test_unknown_brief_retains_preparation_without_applying_employer_to_client(
         self,
     ):
