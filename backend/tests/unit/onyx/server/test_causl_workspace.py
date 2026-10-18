@@ -146,6 +146,8 @@ def test_new_interviews_read_the_same_committed_market_fact_without_chat_history
         assert binding is not None, "A native interview must read shared KB memory"
         assert binding.mode == "interview"
         assert prompt is not None and "Accepted B fact" in prompt
+        assert "market_search" in prompt
+        assert "before asking" in prompt
         bindings.append(binding)
     assert bindings[0].chat_id != bindings[1].chat_id
     assert len(requests) == 2, "Each new conversation reads committed Postgres context"
