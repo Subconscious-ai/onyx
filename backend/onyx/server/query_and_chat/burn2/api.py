@@ -92,7 +92,11 @@ def _prepare_brief(
             cached = validate_brief(saved, snapshot["statements"])
         except (ValueError, IndexError):
             cached = None
-        if cached and cached == saved and not needs_completion(cached):
+        if (
+            cached
+            and cached == saved
+            and not needs_completion(cached, snapshot["statements"])
+        ):
             return PreparedBrief(
                 message_id=snapshot["last_id"],
                 saved=True,
@@ -209,7 +213,7 @@ Proposed interventions remain hypotheses. Jokes, confidence, and rejected third-
     try:
         brief = (
             cached
-            if cached and not needs_completion(cached)
+            if cached and not needs_completion(cached, snapshot["statements"])
             else prepare_validated_brief(generate, snapshot["statements"])
         )
     except Exception as error:
@@ -377,7 +381,7 @@ def read_executive_brief(
                 .split("</interview-brief>", 1)[0]
             )
             brief = validate_brief(saved, snapshot["statements"])
-            if not needs_completion(brief):
+            if not needs_completion(brief, snapshot["statements"]):
                 if brief != saved:
                     return {"saved": False, "background": False}
                 return {

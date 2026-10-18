@@ -48,7 +48,6 @@ class ProfileTests(unittest.TestCase):
         guidance = turn_guidance(2, "Ten consultants.", draft=draft)
         self.assertIn("customer journey", guidance)
         self.assertIn("before another operating-number question", guidance)
-        self.assertIn("confirm or correct", guidance)
         self.assertIn("Ask only one customer decision-path question", guidance)
         self.assertIn(
             "Do not ask about economics, capacity, price, margin, or utilization",

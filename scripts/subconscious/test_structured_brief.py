@@ -6,6 +6,132 @@ from onyx.server.query_and_chat.burn2.validation import validate_brief
 
 
 class StructuredBriefTest(unittest.TestCase):
+    def test_fifth_answer_repairs_a_dropped_implementation_journey_once(self):
+        from onyx.server.query_and_chat.burn2.validation import prepare_validated_brief
+
+        statements = [
+            "I lead an implementation consultancy. Our target is $2 million annual contribution next year, not revenue. I want a model that recognizes delivery capacity.",
+            "Enterprise sponsors approve a scoped implementation, our consultants deliver it, then the sponsor accepts completion. Demand is sufficient to fill capacity in this scenario.",
+            "Each project earns $100,000 revenue and incurs $60,000 variable delivery cost. Exclude fixed costs explicitly.",
+            "Assume the target is achievable without adding capacity. Show me whether that assumption actually holds; don't just agree.",
+            "We have 10 consultants with 1,200 available delivery hours each annually. Each project uses 300 hours.",
+        ]
+        calls = []
+
+        def generate(feedback):
+            calls.append(feedback)
+            brief = self.partial_contribution_brief(statements[0])
+            if feedback:
+                brief["journey"] = [
+                    {
+                        "id": name,
+                        "actor": actor,
+                        "text": text,
+                        "status": "executive",
+                        "sourceMessageIndex": 1,
+                    }
+                    for name, actor, text in (
+                        (
+                            "approved",
+                            "Enterprise sponsors",
+                            "approve a scoped implementation",
+                        ),
+                        ("delivered", "consultants", "deliver it"),
+                        ("accepted", "sponsor", "accepts completion"),
+                    )
+                ]
+                brief["transitions"] = [
+                    {
+                        "id": "approval_delivery",
+                        "from": "approved",
+                        "to": "delivered",
+                        "behavior": {
+                            "text": "deliver it",
+                            "status": "executive",
+                            "sourceMessageIndex": 1,
+                        },
+                        "metric": "Annual contribution",
+                    },
+                    {
+                        "id": "delivery_acceptance",
+                        "from": "delivered",
+                        "to": "accepted",
+                        "behavior": {
+                            "text": "accepts completion",
+                            "status": "executive",
+                            "sourceMessageIndex": 1,
+                        },
+                        "metric": "Annual contribution",
+                    },
+                ]
+            return brief
+
+        result = prepare_validated_brief(generate, statements)
+
+        self.assertEqual(len(calls), 2)
+        self.assertIsNone(calls[0])
+        self.assertEqual(
+            [stage["id"] for stage in result["journey"]],
+            ["approved", "delivered", "accepted"],
+        )
+        self.assertEqual(len(result["transitions"]), 2)
+        self.assertTrue(
+            all(stage["status"] == "assumption" for stage in result["journey"])
+        )
+
+    def test_early_partial_draft_does_not_spend_an_extra_repair_for_missing_journey(
+        self,
+    ):
+        from onyx.server.query_and_chat.burn2.validation import prepare_validated_brief
+
+        source = "Our target is $2 million annual contribution next year."
+        calls = []
+
+        def generate(feedback):
+            calls.append(feedback)
+            return self.partial_contribution_brief(source)
+
+        result = prepare_validated_brief(
+            generate, [source, "I do not know the customer steps yet."]
+        )
+
+        self.assertEqual(calls, [None])
+        self.assertEqual(result["journey"], [])
+
+    def partial_contribution_brief(self, source):
+        brief = self.brief()
+        unknown = {"text": "Unknown", "status": "unknown"}
+        brief["objective"] = {
+            "text": "Our target is $2 million annual contribution next year",
+            "status": "executive",
+            "quote": source,
+        }
+        brief["keyResults"] = [
+            {
+                "id": "contribution",
+                "metric": "Annual contribution",
+                "unit": "USD",
+                "direction": "increase",
+                "baseline": unknown,
+                "target": unknown,
+                "deadline": unknown,
+                "journeyIds": [],
+            }
+        ]
+        brief["model"]["inputs"] = [
+            {
+                "id": "capacity",
+                "name": "Delivery capacity",
+                "unit": "projects",
+                "value": unknown,
+            }
+        ]
+        brief["model"]["equation"] = {
+            "text": "Delivery capacity times contribution per project",
+            "status": "assumption",
+        }
+        return brief
+
     def test_existing_repair_connects_a_supplied_journey_before_saving(self):
         from onyx.server.query_and_chat.burn2.validation import prepare_validated_brief
 
