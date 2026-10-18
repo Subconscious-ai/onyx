@@ -27,6 +27,7 @@ from onyx.db.models import (
     User,
     User__UserGroup,
 )
+from onyx.db.persona import user_can_access_persona
 from onyx.server.features.mcp.models import MCPConnectionData
 from onyx.utils.logger import setup_logger
 
@@ -150,6 +151,26 @@ def user_can_access_mcp_server(user: User, server_id: int, db_session: Session) 
         select(MCPServer.id).where(MCPServer.id == server_id), user
     )
     return db_session.scalar(stmt) is not None
+
+
+def user_can_authenticate_attached_mcp_server(
+    user: User, server_id: int, db_session: Session
+) -> bool:
+    """Permit OAuth for enabled tools on a currently accessible agent, not attachment."""
+    persona_ids = db_session.scalars(
+        select(Persona.id)
+        .join(Persona.tools)
+        .where(
+            Tool.mcp_server_id == server_id,
+            Tool.enabled.is_(True),
+            Persona.deleted.is_(False),
+        )
+        .distinct()
+    ).all()
+    return any(
+        user_can_access_persona(db_session, persona_id, user)
+        for persona_id in persona_ids
+    )
 
 
 def affected_user_ids_for_mcp_server(
