@@ -53,11 +53,17 @@ grant is missing, **Connect workspace** opens the existing OAuth flow. The origi
 draft and queued message stay in their native tab. A successful connection resumes
 that submission once; cancellation leaves the text available for editing.
 
+Library OAuth accepts a standard member who can view an agent with an enabled
+Library tool. Server attachment uses its existing, separate permission check.
+OAuth completion checks agent access again, so revoked access cannot accept tokens.
+
 Fresh-user QA must use a standard member with no prior Library grant. A connected
 account can prove memory readback but cannot prove first-send onboarding. Inspect
 native stream packets: HTTP 200 can contain an `UNAUTHENTICATED` error and is not
 proof of a saved message. Require the exact persisted human message, a real saved
 assistant reply, and normal model save/reopen before handing off the QA link.
+Observe popup pages with Playwright events. Wrapping native Window handles changes
+`postMessage` source identity and invalidates the handoff test.
 
 ## Configuration
 
