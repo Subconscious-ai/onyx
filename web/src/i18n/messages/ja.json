@@ -1,5 +1,9 @@
 {
   "causlWorkspace": {
+    "cancelConnection": "編集を続ける",
+    "connectWorkspace": "ワークスペースを接続",
+    "connectionRequired": "続行するにはワークスペースを接続してください。メッセージは保持されます。",
+    "connectionFailed": "接続に失敗しました。メッセージは保持されています。もう一度お試しください。",
     "notConfigured": "causl-kbのワークスペースからアシスタントを開いてください。引き続き利用できない場合は管理者にお問い合わせください。",
     "signin": "causl-kbと同じ組織アカウントでログインしてから、この会話を開き直してください。",
     "signInAction": "Onyxにログイン",

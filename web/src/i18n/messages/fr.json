@@ -1,5 +1,9 @@
 {
   "causlWorkspace": {
+    "cancelConnection": "Continuer la rédaction",
+    "connectWorkspace": "Connecter l’espace de travail",
+    "connectionRequired": "Connectez votre espace de travail pour continuer. Votre message est conservé.",
+    "connectionFailed": "La connexion a échoué. Votre message est conservé. Réessayez.",
     "notConfigured": "Ouvrez l’assistant depuis votre espace causl-kb. S’il reste indisponible, contactez votre administrateur.",
     "signin": "Connectez-vous avec le même compte d’organisation que dans causl-kb. Puis rouvrez cette conversation.",
     "signInAction": "Se connecter à Onyx",

@@ -1,5 +1,9 @@
 {
   "causlWorkspace": {
+    "cancelConnection": "Keep editing",
+    "connectWorkspace": "Connect workspace",
+    "connectionRequired": "Connect your workspace to continue. Your message is retained.",
+    "connectionFailed": "The workspace connection failed. Your message is retained. Try again.",
     "notConfigured": "Open this assistant from your causl-kb workspace. If it remains unavailable, contact your administrator.",
     "signin": "Sign in with the same organization account you use in causl-kb. Then reopen this conversation.",
     "signInAction": "Sign in to Onyx",

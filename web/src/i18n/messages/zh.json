@@ -1,5 +1,9 @@
 {
   "causlWorkspace": {
+    "cancelConnection": "继续编辑",
+    "connectWorkspace": "连接工作区",
+    "connectionRequired": "连接工作区以继续。您的消息会保留。",
+    "connectionFailed": "工作区连接失败。您的消息已保留。请重试。",
     "notConfigured": "请从causl-kb工作区打开助手。如果仍无法使用，请联系管理员。",
     "signin": "请使用与causl-kb相同的组织账户登录，然后重新打开此对话。",
     "signInAction": "登录Onyx",

@@ -90,6 +90,8 @@ export interface AppInputBarProps {
   ) => void;
   /** The workspace clears its draft only after context authorization succeeds. */
   embeddedWorkspace?: boolean;
+  /** Keep a standalone interview draft until its workspace connection is ready. */
+  deferInputClear?: boolean;
   workspaceDraft?: CauslDraft;
   onWorkspaceDraftConsumed?: (id: string) => void;
   llmManager: LlmManager;
@@ -123,6 +125,7 @@ const AppInputBar = React.memo(
     initialMessage = "",
     stopGenerating,
     onSubmit,
+    deferInputClear = false,
     embeddedWorkspace = false,
     workspaceDraft,
     onWorkspaceDraftConsumed,
@@ -316,10 +319,17 @@ const AppInputBar = React.memo(
         if (!text.trim()) {
           return;
         }
+        if (deferInputClear) saveChatHandoff(text, "workspace-send");
         handleSubmit(text);
-        if (!embeddedWorkspace) clearChatDraft();
+        if (!embeddedWorkspace && !deferInputClear) clearChatDraft();
       },
-      [handleSubmit, clearChatDraft, embeddedWorkspace]
+      [
+        handleSubmit,
+        clearChatDraft,
+        embeddedWorkspace,
+        deferInputClear,
+        saveChatHandoff,
+      ]
     );
 
     // Expose reset and focus methods to parent via ref
@@ -466,7 +476,7 @@ const AppInputBar = React.memo(
         const nextMessage = queued.text;
         isAutoSending.current = true;
         stopTTS();
-        if (embeddedWorkspace) {
+        if (embeddedWorkspace || deferInputClear) {
           const sessionId = useChatSessionStore.getState().currentSessionId;
           onSubmit(nextMessage, {
             onInputAccepted: () => {
@@ -500,6 +510,7 @@ const AppInputBar = React.memo(
       stopTTS,
       onSubmit,
       embeddedWorkspace,
+      deferInputClear,
     ]);
 
     // Animate attached files wrapper to its content height so CSS transitions
