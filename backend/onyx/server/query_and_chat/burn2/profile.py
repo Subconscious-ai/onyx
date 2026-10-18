@@ -63,7 +63,13 @@ def select_profile(payload: dict) -> dict[str, Any] | None:
 def turn_guidance(
     turn: int, text: str, *, model_review: bool = False, draft: dict | None = None
 ) -> str:
-    attention_budget = "No unsolicited KPI lists, invented target placeholders or full repeated brief. "
+    attention_budget = (
+        "No unsolicited KPI lists, invented target placeholders or full repeated brief. "
+        "Apply the latest executive answer before choosing a gap: the saved draft may lag behind it. "
+        "Never ask to confirm a path already supplied or selected, invent extra steps, or request an answered or explicitly unknown value. "
+    )
+    if not model_review:
+        attention_budget = "Use at most 30 spoken words. " + attention_budget
     conclude = bool(
         re.search(
             r"\b(?:no(?: extra| more| further)? questions?|without (?:another |a |any )?questions?|conclude|summari[sz]e|print)\b",
@@ -112,7 +118,8 @@ def turn_guidance(
         and not draft.get("conflicts")
     ):
         question_guidance = (
-            "Question budget: zero. The saved draft already contains the three essentials. "
+            "Question budget: zero for the existing scope. The saved draft contains the three essentials. "
+            "If an explicit correction changes the goal or journey, apply it first; ask at most one question only if an essential connection is now missing. "
             "Do not ask for optional economics, capacity, churn, or another confirmation. "
             "Give one brief insight or acknowledge the latest correction in at most 30 words. "
             "Keep proposed journey steps and relationships labeled as assumptions. "
@@ -139,30 +146,12 @@ def turn_guidance(
             "One concise answer, at most one material question. Use the supplied prepared dossier "
             "and matching company research before asking for a private gap. Capture the goal, "
             "named success measure and customer journey within four discovery questions. "
-            "When the executive already supplied a named measurable goal, capture the actual customer journey before asking about economics. "
+            "When the executive supplied a named measurable goal, capture the customer journey before another operating-number question. "
+            "Only if neither the source answers nor the latest reply supplies or selects a path, "
+            "propose a short hypothesis from matching research and ask them to confirm or correct it once. "
             "Stop earlier when those essentials suffice for a first symbolic model. "
             "Keep unavailable numbers unknown."
         )
-        if (
-            draft
-            and draft.get("objective", {}).get("status") == "executive"
-            and any(
-                item.get("metric", "").lower() not in {"", "unknown"}
-                and item.get("unit", "").lower() not in {"", "unknown"}
-                and any(
-                    item.get(note, {}).get("status") == "executive"
-                    for note in ("baseline", "target")
-                )
-                for item in draft.get("keyResults", [])
-            )
-            and (len(draft.get("journey", [])) < 2 or not draft.get("transitions"))
-        ):
-            question_guidance = (
-                "The next missing connection is the customer journey. Capture it before another operating-number question. "
-                "Propose two or three relevant customer decisions from matching research, labeled as a hypothesis, "
-                "and ask the executive to confirm or correct their actual path. Do not invent confirmation. "
-                + question_guidance
-            )
     return (
         attention_budget
         + humor

@@ -46,10 +46,52 @@ class ProfileTests(unittest.TestCase):
             "journey": [],
         }
         guidance = turn_guidance(2, "Ten consultants.", draft=draft)
-        self.assertIn("next missing connection is the customer journey", guidance)
+        self.assertIn("customer journey", guidance)
         self.assertIn("before another operating-number question", guidance)
         self.assertIn("confirm or correct", guidance)
         self.assertNotIn("Question budget: zero", guidance)
+
+    def test_latest_journey_answer_takes_precedence_over_an_incomplete_saved_draft(
+        self,
+    ):
+        guidance = turn_guidance(
+            4,
+            "Texas homeowners visit our tariff page, request a quote, then sign a contract.",
+            draft={
+                "objective": {"status": "executive"},
+                "keyResults": [
+                    {
+                        "metric": "Contracts",
+                        "unit": "%",
+                        "target": {"status": "executive"},
+                    }
+                ],
+                "journey": [],
+            },
+        )
+        self.assertIn(
+            "Apply the latest executive answer before choosing a gap", guidance
+        )
+        self.assertIn(
+            "Never ask to confirm a path already supplied or selected", guidance
+        )
+        self.assertNotIn(
+            "The next missing connection is the customer journey", guidance
+        )
+
+    def test_journey_priority_does_not_wait_for_a_saved_extraction(self):
+        guidance = turn_guidance(
+            2,
+            "Our target is $2 million annual contribution next year.",
+        )
+        self.assertIn("before another operating-number question", guidance)
+        self.assertIn("at most 30 spoken words", guidance)
+
+    def test_saved_model_review_keeps_the_requested_answer_length(self):
+        guidance = turn_guidance(
+            2, "Explain all three saved scenarios in detail.", model_review=True
+        )
+        self.assertNotIn("at most 30 spoken words", guidance)
 
     def test_complete_connections_stop_discovery_without_another_question(self):
         draft = {
