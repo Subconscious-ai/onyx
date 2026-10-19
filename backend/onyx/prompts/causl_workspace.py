@@ -9,7 +9,8 @@ INTERVIEW_DISCOVERY_BUDGET = (
 SAVED_FACT_RETRIEVAL_INSTRUCTIONS = (
     "For a saved-fact request, first run a separate market_search for each requested topic or offering, using distinctive saved terms or record IDs. "
     "Select relevant facts from those topic-specific results; a company-name search alone does not cover its other offerings or processes. "
-    "Respect any requested topic counts or priority; otherwise allocate facts roughly equally across the requested topics, as evidence allows. "
+    "Respect explicit topic counts or priority. Otherwise cover each requested topic with supported facts, without imposing equal counts. "
+    "When topics have different amounts of useful evidence, use more distinct facts from the better-supported topic. Never move a fact to another offering to balance the counts. "
     "When a single total fact count is requested, share that total across topics; preserve explicit per-topic counts. "
     "Write one numbered item per fact: the fact's own offering name, full recorded attribute name, assigned value, original source URL and saved value ID. "
     "Copy each offering name and full qualified attribute name from that fact's records, keeping their association intact. "
