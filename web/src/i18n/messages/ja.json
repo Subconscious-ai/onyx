@@ -9989,6 +9989,11 @@
         "source": "図のソース",
         "preparing": "図を準備中…",
         "unavailable": "図を表示できません。ソースは利用できます。"
+      },
+      "evidence": {
+        "label": "調査の根拠",
+        "preparing": "根拠を準備中…",
+        "unavailable": "根拠を表示できません。"
       }
     },
     "modals": {

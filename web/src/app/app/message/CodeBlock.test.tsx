@@ -64,3 +64,37 @@ it("never paints an old render over a newer streamed diagram", async () => {
     expect(screen.queryByText("Old render")).not.toBeInTheDocument()
   );
 });
+
+it("draws a Rehoboam evidence view from its chat file and fetches nothing else", async () => {
+  const view = require("@tests/fixtures/rehoboam-effect-view-973cdbb7.json");
+  const fetchMock = jest
+    .fn()
+    .mockResolvedValue({ ok: true, json: async () => view });
+  global.fetch = fetchMock as unknown as typeof fetch;
+  render(
+    <CodeBlock
+      className="language-rehoboam-view"
+      codeText="/api/chat/file/9f2c-effect"
+    />
+  );
+  expect(
+    await screen.findByRole("toolbar", { name: "Filter and sort effects" })
+  ).toBeInTheDocument();
+  expect(fetchMock).toHaveBeenCalledWith("/api/chat/file/9f2c-effect", {
+    credentials: "include",
+  });
+
+  fetchMock.mockClear();
+  render(
+    <CodeBlock
+      className="language-rehoboam-view"
+      codeText="https://example.com/view.json"
+    />
+  );
+  await waitFor(() =>
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Evidence unavailable"
+    )
+  );
+  expect(fetchMock).not.toHaveBeenCalled();
+});

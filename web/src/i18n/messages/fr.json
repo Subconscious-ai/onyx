@@ -9989,6 +9989,11 @@
         "source": "Source du diagramme",
         "preparing": "Préparation du diagramme…",
         "unavailable": "Diagramme indisponible. La source reste disponible."
+      },
+      "evidence": {
+        "label": "Preuves de l’étude",
+        "preparing": "Préparation des preuves…",
+        "unavailable": "Preuves indisponibles."
       }
     },
     "modals": {

@@ -9989,6 +9989,11 @@
         "source": "图表源码",
         "preparing": "正在准备图表…",
         "unavailable": "图表暂不可用。源码仍可查看。"
+      },
+      "evidence": {
+        "label": "研究证据",
+        "preparing": "正在准备证据…",
+        "unavailable": "证据暂不可用。"
       }
     },
     "modals": {

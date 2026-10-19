@@ -8,6 +8,8 @@ and handles connection initialization, session management, and protocol communic
 import base64
 from collections.abc import Callable, Coroutine
 from enum import Enum
+from io import BytesIO
+import json
 from typing import Any, Dict, TypeVar
 
 from mcp import ClientSession
@@ -235,9 +237,34 @@ def _save_mcp_image(block: ImageContent) -> str:
     return f"![Analysis chart]({build_frontend_file_url(file_id)})"
 
 
+def _save_mcp_evidence_views(structured_content: object) -> list[str]:
+    """Keep each Rehoboam evidence view as a chat file the web chat draws."""
+    from onyx.configs.constants import FileOrigin
+    from onyx.file_store.file_store import get_default_file_store
+    from onyx.file_store.utils import build_frontend_file_url
+
+    data = (
+        structured_content.get("data") if isinstance(structured_content, dict) else None
+    )
+    charts = data.get("charts") if isinstance(data, dict) else None
+    blocks = []
+    for chart in charts[:4] if isinstance(charts, list) else []:
+        view = chart.get("view") if isinstance(chart, dict) else None
+        if not isinstance(view, dict) or not isinstance(view.get("id"), str):
+            continue
+        # Same store and access class as the MCP chart images above.
+        file_id = get_default_file_store().save_file(
+            content=BytesIO(json.dumps(view).encode()),
+            display_name="EvidenceView",
+            file_origin=FileOrigin.CHAT_IMAGE_GEN,
+            file_type="application/json",
+        )
+        blocks.append(f"```rehoboam-view\n{build_frontend_file_url(file_id)}\n```")
+    return blocks
+
+
 def process_mcp_result(call_tool_result: CallToolResult) -> str:
     """Keep MCP text and bounded raster charts in native conversation storage."""
-    # TODO: use structured_content if available
     parts = []
     image_count = 0
     image_bytes = 0
@@ -271,6 +298,11 @@ def process_mcp_result(call_tool_result: CallToolResult) -> str:
                 f"link: {content_block.uri} title: {content_block.title} description: {content_block.description}"
             )
         # TODO: handle other content block types
+    if not call_tool_result.isError:
+        try:
+            parts.extend(_save_mcp_evidence_views(call_tool_result.structuredContent))
+        except Exception as error:
+            logger.warning("MCP evidence view unavailable: %s", type(error).__name__)
 
     result = "\n\n".join(p for p in parts if p) or str(
         call_tool_result.structuredContent

@@ -9989,6 +9989,11 @@
         "source": "Código del diagrama",
         "preparing": "Preparando diagrama…",
         "unavailable": "Diagrama no disponible. El código sigue disponible."
+      },
+      "evidence": {
+        "label": "Evidencia del estudio",
+        "preparing": "Preparando evidencia…",
+        "unavailable": "Evidencia no disponible."
       }
     },
     "modals": {
