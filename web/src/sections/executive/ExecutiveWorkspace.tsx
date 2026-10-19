@@ -184,11 +184,13 @@ export default function ExecutiveWorkspace({
   children: React.ReactNode;
 }) {
   const t = useTranslations("executive");
+  const [contextRevision, setContextRevision] = useState<string>();
   const preparation = useAutomaticBrief({
     active: active && !preview,
     chatId,
     busy,
     messages,
+    contextRevision,
   });
   const savedMessages = useMemo(
     () =>
@@ -243,8 +245,18 @@ export default function ExecutiveWorkspace({
       modelHandoff.current = null;
     };
   }, [active, preview, chatId, t, onModelContext]);
-  const { profileStatus, profile, dossier, research, reload, refreshing } =
-    useExecutiveContext(active && !preview, preparation.savedMessage);
+  const {
+    profileStatus,
+    profile,
+    dossier,
+    research,
+    reload,
+    refreshing,
+    contextRevision: completedContextRevision,
+  } = useExecutiveContext(active && !preview, preparation.savedMessage);
+  useEffect(() => {
+    if (completedContextRevision) setContextRevision(completedContextRevision);
+  }, [completedContextRevision]);
 
   const [view, setView] = useState<
     "journey" | "evidence" | "decisions" | "model"

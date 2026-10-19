@@ -122,7 +122,7 @@ it.each(["error", "updating"])(
     expect(props.onRetry).not.toHaveBeenCalled();
   }
 );
-it("shows missing work and routes help to the existing chat", () => {
+it("allows a symbolic model while showing the journey is still missing", () => {
   render(
     <InterviewProgress
       {...props}
@@ -130,6 +130,11 @@ it("shows missing work and routes help to the existing chat", () => {
     />
   );
   expect(screen.getByText("2 of 3 essentials captured")).toBeVisible();
+  expect(screen.getByRole("progressbar")).toHaveAttribute("value", "2");
+  const build = screen.getByRole("button", { name: "Build business model" });
+  expect(build).toBeEnabled();
+  fireEvent.click(build);
+  expect(props.onOpen).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole("button", { name: /Customer journey/ }));
   expect(props.onAsk).toHaveBeenCalledWith(
     expect.stringContaining("customer journey")

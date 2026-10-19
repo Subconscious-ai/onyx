@@ -1,6 +1,7 @@
 """Run in the native backend environment; no database or provider calls."""
 
 import copy
+import hashlib
 import json
 import unittest
 from contextlib import ExitStack
@@ -9,6 +10,7 @@ from uuid import uuid4
 
 from celery.exceptions import Retry
 from fastapi import HTTPException
+from redis.exceptions import RedisError
 
 from onyx.background.celery.tasks.burn2.tasks import prepare_saved_brief
 
@@ -57,7 +59,9 @@ class BriefModelPolicyTests(unittest.TestCase):
                     "last_text": "The follow-up effect is unknown.<interview-brief>"
                     + json.dumps(saved)
                     + "</interview-brief>",
-                    "transcript": [],
+                    "transcript": [
+                        {"id": 7, "type": "assistant", "message": "Saved answer"}
+                    ],
                     "statements": statements,
                 }
                 llm = MagicMock()
@@ -96,6 +100,11 @@ class BriefModelPolicyTests(unittest.TestCase):
                 )
                 stack.enter_context(
                     patch("onyx.db.burn2_research.read_research", return_value=None)
+                )
+                stack.enter_context(
+                    patch(
+                        "onyx.db.causl_workspace.read_causl_binding", return_value=None
+                    )
                 )
                 extract = stack.enter_context(
                     patch.object(
@@ -179,7 +188,7 @@ class BriefModelPolicyTests(unittest.TestCase):
             "persona_id": 5,
             "last_id": 1,
             "last_text": "A saved answer",
-            "transcript": [],
+            "transcript": [{"id": 1, "type": "assistant", "message": "A saved answer"}],
             "statements": ["Improve customer retention"],
         }
         persona = MagicMock()
@@ -209,6 +218,9 @@ class BriefModelPolicyTests(unittest.TestCase):
             )
             stack.enter_context(
                 patch("onyx.db.burn2_research.read_research", return_value=None)
+            )
+            stack.enter_context(
+                patch("onyx.db.causl_workspace.read_causl_binding", return_value=None)
             )
             stack.enter_context(
                 patch.object(
@@ -248,6 +260,212 @@ class BriefModelPolicyTests(unittest.TestCase):
         )
         self.assertEqual(resolved, ReasoningEffort.LOW)
 
+    def test_library_write_uses_validated_brief_and_preserves_native_source_ids(self):
+        self.library_preparation()
+
+    def test_library_failure_cannot_save_a_completed_native_projection(self):
+        from onyx.error_handling.error_codes import OnyxErrorCode
+        from onyx.error_handling.exceptions import OnyxError
+
+        self.library_preparation(OnyxError(OnyxErrorCode.BAD_GATEWAY))
+
+    def test_worker_prepares_native_projection_without_a_request_identity(self):
+        self.library_preparation(publish_memory=False)
+
+    def test_optional_marker_failure_cannot_lose_a_saved_projection(self):
+        self.library_preparation(marker_failure=RedisError("Cache unavailable"))
+
+    def library_preparation(
+        self, library_failure=None, *, publish_memory=True, marker_failure=None
+    ):
+        from onyx.server.query_and_chat.burn2 import api
+
+        user, db, cache = MagicMock(), MagicMock(), MagicMock()
+        cache.set.side_effect = marker_failure
+        user.id = uuid4()
+        chat_id = uuid4()
+        transcript = [
+            {"id": 31, "type": "user", "message": "Raise conversion to 7%."},
+            {"id": 34, "type": "tool", "message": "Private tool transport"},
+            {"id": 32, "type": "assistant", "message": "The baseline stays unknown."},
+        ]
+        snapshot = {
+            "persona_id": 5,
+            "last_id": 32,
+            "last_text": transcript[-1]["message"],
+            "transcript": transcript,
+            "statements": [transcript[0]["message"]],
+        }
+        brief = {"objective": {"status": "executive", "text": transcript[0]["message"]}}
+        persona, llm, binding = MagicMock(), MagicMock(), MagicMock()
+        persona.name = "Burn 2.0"
+        llm.config.model_provider = "bedrock"
+        order = []
+        with ExitStack() as stack:
+            stack.enter_context(
+                patch.dict(
+                    "os.environ",
+                    {"BURN2_ENABLED": "true", "BURN2_BRIEF_MODEL_CONFIGURATION_ID": ""},
+                )
+            )
+            for name, value in {
+                "get_cache_backend": cache,
+                "is_chat_session_processing": False,
+                "owned_snapshot": snapshot,
+                "get_persona_by_id": persona,
+                "check_token_rate_limits": None,
+                "get_llm_for_persona": llm,
+                "check_llm_cost_limit_for_provider": None,
+                "get_llm_token_counter": lambda _: 1,
+                "latest_saved_brief": None,
+            }.items():
+                stack.enter_context(patch.object(api, name, return_value=value))
+            stack.enter_context(
+                patch("onyx.db.burn2_profile.read_profile", return_value={})
+            )
+            stack.enter_context(
+                patch("onyx.db.burn2_research.read_research", return_value=None)
+            )
+            stack.enter_context(
+                patch(
+                    "onyx.db.causl_workspace.read_causl_binding", return_value=binding
+                )
+            )
+
+            def validated(*_):
+                order.append("validate")
+                return brief
+
+            stack.enter_context(
+                patch.object(api, "prepare_validated_brief", side_effect=validated)
+            )
+
+            def publish(*_, **__):
+                order.append("publish")
+                if library_failure is not None:
+                    raise library_failure
+                return {"statements": 1, "stages": 0, "transitions": 0}
+
+            publish_mock = stack.enter_context(
+                patch(
+                    "onyx.server.query_and_chat.causl.context.save_interview_context",
+                    side_effect=publish,
+                )
+            )
+            save = stack.enter_context(
+                patch.object(
+                    api, "save_brief", side_effect=lambda *_: order.append("save") or 32
+                )
+            )
+            if library_failure is not None:
+                with self.assertRaises(type(library_failure)):
+                    api._prepare_brief(api.PrepareBrief(chat_id=chat_id), user, db)
+                save.assert_not_called()
+                cache.set.assert_not_called()
+                self.assertEqual(order, ["validate", "publish"])
+            else:
+                result = api._prepare_brief(
+                    api.PrepareBrief(chat_id=chat_id),
+                    user,
+                    db,
+                    publish_memory=publish_memory,
+                )
+                self.assertTrue(result.saved)
+                prepared_transcript = copy.deepcopy(transcript)
+                prepared_transcript[-1]["message"] = result.message
+                cache.set.assert_called_once_with(
+                    api._prepared_brief_key(api.PrepareBrief(chat_id=chat_id), user),
+                    hashlib.sha256(
+                        json.dumps(prepared_transcript, sort_keys=True).encode()
+                    ).hexdigest(),
+                    ex=300,
+                )
+                if not publish_memory:
+                    self.assertIsNone(result.memory_saved)
+                    self.assertEqual(order, ["validate", "save"])
+                    publish_mock.assert_not_called()
+                    return
+                self.assertTrue(result.memory_saved)
+                self.assertEqual(order, ["validate", "publish", "save"])
+                sent = publish_mock.call_args.args[3]
+                self.assertEqual(len(sent), 2)
+                self.assertEqual(sent[0], transcript[0])
+                self.assertEqual(sent[1]["id"], 32)
+                self.assertEqual(sent[1]["type"], "assistant")
+                self.assertTrue(
+                    sent[1]["message"].startswith(transcript[-1]["message"])
+                )
+                self.assertEqual(
+                    json.loads(
+                        sent[1]["message"]
+                        .split("<interview-brief>")[1]
+                        .split("</interview-brief>")[0]
+                    ),
+                    brief,
+                )
+                self.assertEqual(
+                    transcript[-1]["message"], "The baseline stays unknown."
+                )
+
+    def test_only_a_server_prepared_transcript_can_skip_extraction(self):
+        for digest in (
+            None,
+            b"another-transcript",
+            b"prepared-transcript",
+            RedisError("Cache unavailable"),
+        ):
+            with self.subTest(digest=digest):
+                self.cached_preparation(digest)
+
+    def test_new_turn_during_cached_publication_returns_conflict(self):
+        self.cached_preparation(b"prepared-transcript", changed=True)
+
+    def cached_preparation(self, digest, *, changed=False):
+        from onyx.server.query_and_chat.burn2 import api
+
+        user, db, cache = MagicMock(), MagicMock(), MagicMock()
+        user.id = uuid4()
+        if isinstance(digest, RedisError):
+            cache.get.side_effect = digest
+        else:
+            cache.get.return_value = digest
+        snapshot = {
+            "last_id": 32,
+            "last_text": "<interview-brief>{}</interview-brief>",
+            "digest": "prepared-transcript",
+            "statements": ["Improve conversion"],
+        }
+        current = {"saved": True, "message_id": 32, "message": snapshot["last_text"]}
+        final = {**snapshot, "digest": "new-turn"} if changed else snapshot
+        result = api.PreparedBrief(message_id=32, saved=True, message="extracted")
+        with (
+            patch.object(api, "get_cache_backend", return_value=cache),
+            patch.object(api, "is_chat_session_processing", return_value=False),
+            patch.object(api, "read_executive_brief", return_value=current),
+            patch.object(api, "owned_snapshot", side_effect=[snapshot, final]),
+            patch.object(api, "validate_brief", return_value={}),
+            patch.object(api, "_publish_interview", return_value=True) as publish,
+            patch.object(api, "_prepare_brief", return_value=result) as extract,
+            patch("onyx.db.burn2_profile.read_profile", return_value={}),
+            patch("onyx.db.burn2_research.read_research", return_value=None),
+        ):
+            body = api.PrepareBrief(chat_id=uuid4())
+            if changed:
+                with self.assertRaises(HTTPException) as error:
+                    api._locked_prepare(body, user, db, publish_memory=True)
+                self.assertEqual(error.exception.status_code, 409)
+                extract.assert_not_called()
+            else:
+                prepared = api._locked_prepare(body, user, db, publish_memory=True)
+                if digest == b"prepared-transcript":
+                    self.assertTrue(prepared.memory_saved)
+                    publish.assert_called_once()
+                    extract.assert_not_called()
+                else:
+                    self.assertEqual(prepared, result)
+                    extract.assert_called_once_with(body, user, db, publish_memory=True)
+                    publish.assert_not_called()
+
 
 class BriefBackgroundTests(unittest.TestCase):
     def invoke(self, failure=None, allowed=True, retries=0, provider_failures=0):
@@ -268,7 +486,7 @@ class BriefBackgroundTests(unittest.TestCase):
             ) as session,
             patch("onyx.auth.permissions.has_global_permission", return_value=allowed),
             patch(
-                "onyx.server.query_and_chat.burn2.api.prepare_brief",
+                "onyx.server.query_and_chat.burn2.api.prepare_background_brief",
                 side_effect=failure,
             ) as prepare,
             patch.object(prepare_saved_brief, "retry", side_effect=Retry()) as retry,
@@ -307,7 +525,7 @@ class BriefBackgroundTests(unittest.TestCase):
             ) as session,
             patch("onyx.auth.permissions.has_global_permission", return_value=True),
             patch(
-                "onyx.server.query_and_chat.burn2.api.prepare_brief",
+                "onyx.server.query_and_chat.burn2.api.prepare_background_brief",
                 side_effect=HTTPException(status, "Synthetic transient failure"),
             ),
         ):

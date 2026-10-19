@@ -57,7 +57,7 @@ class BriefGenerationTests(unittest.TestCase):
             patch("onyx.auth.permissions.has_global_permission", return_value=True)
         )
         self.prepare = self.stack.enter_context(
-            patch("onyx.server.query_and_chat.burn2.api.prepare_brief")
+            patch("onyx.server.query_and_chat.burn2.api.prepare_background_brief")
         )
         self.retry = self.stack.enter_context(
             patch.object(prepare_saved_brief, "retry", side_effect=Retry())

@@ -239,6 +239,57 @@ describe("hypothesis attribution", () => {
       },
     ],
   };
+  test("a later demand scenario does not erase the stated implementation journey", () => {
+    const journey =
+      "Enterprise sponsors approve a scoped implementation, our consultants deliver it, then the sponsor accepts completion.";
+    const source =
+      journey + " Demand is sufficient to fill capacity in this scenario.";
+    const result = projectBrief([
+      { type: "user", message: source },
+      answer({
+        ...draft,
+        journey: [
+          {
+            id: "approval",
+            actor: "Enterprise sponsors",
+            text: "approve a scoped implementation",
+            status: "executive",
+            quote: source,
+          },
+        ],
+      }),
+    ]);
+    expect(result.brief?.journey[0]?.status).toBe("executive");
+    expect(result.brief?.journey[0]?.quote).toBe(journey);
+  });
+  test.each([
+    `For a hypothetical scenario, use the following journey. ${quote}`,
+    `In this scenario, ${quote}`,
+    `A competitor describes their sales process. ${quote} Demand fills capacity in this scenario.`,
+    `A colleague quotes a competitor: "Their sales process follows. ${quote}" Demand fills capacity in this scenario.`,
+    `A competitor says ${quote} Demand fills capacity in this scenario.`,
+    `"${quote.slice(0, -1)}". Demand fills capacity in this scenario.`,
+    `'${quote.slice(0, -1)}'. Demand fills capacity in this scenario.`,
+    `“${quote.slice(0, -1)}”. Demand fills capacity in this scenario.`,
+  ])(
+    "clause recovery does not promote hypothetical or external journey: %s",
+    (source) => {
+      const result = projectBrief([
+        { type: "user", message: source },
+        answer({
+          ...proposed,
+          journey: [
+            {
+              ...proposed.journey[0]!,
+              text: quote.slice(0, -1),
+              quote: source,
+            },
+          ],
+        }),
+      ]);
+      expect(result.brief?.journey[0]?.status).toBe("assumption");
+    }
+  );
   test("a quoted scenario cannot become observed customer behavior", () => {
     const result = projectBrief([
       { type: "user", message: `For a scenario only: ${quote}` },
@@ -362,6 +413,50 @@ describe("Burn 2.0 model handoff", () => {
     expect(symbolic?.keyResults?.[0]?.target.status).toBe("unknown");
     expect(
       modelReadiness(symbolic && { ...symbolic, keyResults: [] }).ready
+    ).toBe(false);
+  });
+  test("allows a sourced symbolic model while customer behavior remains unknown", () => {
+    const symbolic = projectBrief([
+      ...history,
+      answer({
+        ...v2,
+        journey: [],
+        transitions: [],
+        keyResults: [{ ...v2.keyResults[0], journeyIds: [] }],
+      }),
+    ]).brief;
+    expect(symbolic?.objective.status).toBe("executive");
+    expect(symbolic?.journey).toEqual([]);
+    expect(symbolic?.transitions).toEqual([]);
+    expect(symbolic?.keyResults?.[0]?.journeyIds).toEqual([]);
+    expect(symbolic?.model?.inputs[0]?.value.status).toBe("unknown");
+    expect(modelReadiness(symbolic)).toEqual({ ready: true, missing: [] });
+    expect(
+      modelReadiness(
+        symbolic && {
+          ...symbolic,
+          objective: { ...symbolic.objective, status: "assumption" },
+        }
+      ).ready
+    ).toBe(false);
+    expect(
+      modelReadiness(symbolic && { ...symbolic, keyResults: [] }).ready
+    ).toBe(false);
+    expect(
+      modelReadiness(symbolic && { ...symbolic, model: undefined }).ready
+    ).toBe(false);
+    expect(
+      modelReadiness(
+        symbolic && {
+          ...symbolic,
+          conflicts: [
+            {
+              text: "Which statement is correct?",
+              quotes: ["First statement", "Conflicting statement"],
+            },
+          ],
+        }
+      ).ready
     ).toBe(false);
   });
   test("a quoted scenario cannot become a company baseline or target", () => {

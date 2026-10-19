@@ -5,6 +5,7 @@ import time
 import unittest
 
 from onyx.server.query_and_chat.burn2.research import (
+    model_business_context,
     prepared_company_context,
     public_research_query,
     research_context,
@@ -15,6 +16,65 @@ from onyx.server.query_and_chat.burn2.research import (
 
 
 class ResearchStartupTests(unittest.TestCase):
+    def test_model_context_retains_only_bounded_matching_attributed_sources(self):
+        profile = {
+            "status": "ready",
+            "profile": {
+                "name": "Pat Example",
+                "company": "Acme",
+                "website": "acme.com",
+                "product": "widgets",
+                "customer_segment": "procurement teams",
+                "skills": ["not part of the handoff"],
+                "experience": [{"company": "Previous Employer"}],
+            },
+            "correction": {"revision": 1},
+            "worker_secret": "not part of the handoff",
+        }
+        research = {
+            "status": "ready",
+            "query": public_research_query(profile),
+            "checked_at": time.time(),
+            "report": "Acme makes widgets. " * 1000,
+            "source_urls": [f"https://acme.com/source/{i}" for i in range(13)],
+            "job_id": "not part of the handoff",
+        }
+        value = model_business_context(profile, research, "acme")
+        self.assertEqual(value["profileSource"], "executive_correction")
+        self.assertEqual(
+            value["profile"],
+            {
+                key: field
+                for key, field in profile["profile"].items()
+                if key not in {"skills", "experience"}
+            },
+        )
+        self.assertEqual(len(value["research"]["report"]), 16000)
+        self.assertEqual(len(value["research"]["source_urls"]), 12)
+        self.assertEqual(value["research"]["checked_at"], research["checked_at"])
+        self.assertTrue(value["research"]["truncated"])
+        for private in ("worker_secret", "job_id", "Previous Employer"):
+            self.assertNotIn(private, json.dumps(value))
+        self.assertIsNone(model_business_context(profile, research, "Different Client"))
+
+    def test_model_context_does_not_mark_stale_or_wrong_query_research_ready(self):
+        profile = {
+            "status": "ready",
+            "profile": {"company": "Acme", "website": "acme.com"},
+        }
+        research = {
+            "status": "ready",
+            "query": public_research_query(profile),
+            "checked_at": time.time() - 22000,
+            "report": "Old company context.",
+            "source_urls": ["https://acme.com/product"],
+        }
+        for change in ({}, {"checked_at": time.time(), "query": "another company"}):
+            value = model_business_context(profile, {**research, **change}, "Acme")
+            self.assertEqual(value["profileSource"], "pdl")
+            self.assertEqual(value["research"], {"status": "unavailable"})
+        self.assertIsNone(model_business_context(None, research, "Acme"))
+
     def test_source_truncation_survives_a_short_report_receipt(self):
         result = research_receipt(
             json.dumps(
@@ -31,6 +91,93 @@ class ResearchStartupTests(unittest.TestCase):
         self.assertTrue(result["truncated"])
         self.assertEqual(result["report"], "A sourced product description.")
         self.assertEqual(result["source_urls"], ["https://example.com/product"])
+
+    def test_native_curator_source_records_preserve_content_and_original_provenance(
+        self,
+    ):
+        result = research_receipt(
+            json.dumps(
+                {
+                    "success": True,
+                    "data": {
+                        "research_id": "native-curated-receipt",
+                        "context": [
+                            {
+                                "Title": "Original product page",
+                                "Content": "Published product evidence.",
+                                "Source": "https://example.com/product",
+                            },
+                            "A second original string context.",
+                            {
+                                "Title": "An unsupported source",
+                                "Content": "Do not retain unlisted provenance.",
+                                "Source": "https://unlisted.example.com/product",
+                            },
+                            {"Content": "Do not retain missing provenance."},
+                        ],
+                        "source_urls": ["https://example.com/product"],
+                    },
+                }
+            )
+        )
+        self.assertEqual(
+            result["report"],
+            "Title: Original product page\nContent: Published product evidence.\n"
+            "Source: https://example.com/product\n\nA second original string context.",
+        )
+        self.assertEqual(result["source_urls"], ["https://example.com/product"])
+        self.assertEqual(result["research_id"], "native-curated-receipt")
+
+    def test_native_curator_lowercase_records_preserve_only_listed_sources(self):
+        # Real retained GPT Researcher context uses lowercase keys.
+        result = research_receipt(
+            json.dumps(
+                {
+                    "success": True,
+                    "data": {
+                        "research_id": "retained-native-lowercase",
+                        "context": [
+                            {
+                                "title": "Original product page",
+                                "content": "Published company evidence.",
+                                "source": "https://example.com/product",
+                            },
+                            {
+                                "title": "Unlisted source",
+                                "content": "Do not retain unlisted provenance.",
+                                "source": "https://unlisted.example.com/product",
+                            },
+                            {"content": "Do not retain missing provenance."},
+                        ],
+                        "source_urls": ["https://example.com/product"],
+                    },
+                }
+            )
+        )
+        self.assertEqual(
+            result["report"],
+            "Title: Original product page\nContent: Published company evidence.\n"
+            "Source: https://example.com/product",
+        )
+        self.assertEqual(result["source_urls"], ["https://example.com/product"])
+        self.assertEqual(result["research_id"], "retained-native-lowercase")
+
+    def test_native_curator_records_cannot_supply_missing_original_source_urls(self):
+        with self.assertRaisesRegex(ValueError, "original-source URLs"):
+            research_receipt(
+                json.dumps(
+                    {
+                        "context": [
+                            {
+                                "Title": "Unverified page",
+                                "Content": "Not source-backed.",
+                                "Source": "https://example.com/product",
+                            }
+                        ],
+                        "source_urls": [],
+                    }
+                )
+            )
 
     def test_unknown_brief_retains_preparation_without_applying_employer_to_client(
         self,

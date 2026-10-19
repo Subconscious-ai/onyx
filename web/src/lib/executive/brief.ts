@@ -232,20 +232,38 @@ export function projectBrief(
   const sources = new Map<string, string>();
   const quoteTurn = (quote?: string) =>
     quote && normalized(quote).length >= 12
-      ? statements.findLastIndex((text) => text.includes(normalized(quote)))
+      ? statements.findLastIndex((text) =>
+          normalized(text).includes(normalized(quote))
+        )
       : -1;
   const quoted = (quote?: string) => quoteTurn(quote) >= 0;
-  const observedQuote = (quote?: string) => {
-    const turn = quoteTurn(quote);
-    if (turn < 0) return false;
+  const observedQuote = (note: BriefNote) => {
+    const turn = quoteTurn(note.quote);
+    if (turn < 0) return undefined;
     // Exact text alone cannot promote explicitly hypothetical or external-case input.
     const context = statements[turn]!;
-    return !/\b(?:scenario|hypothetical|hypothesis|assume|suppose|public case|case study|benchmark)\b/.test(
-      context
+    const hypothetical =
+      /\b(?:scenario|hypothetical|hypothesis|assume|suppose|public case|case study|benchmark)\b/i;
+    if (!hypothetical.test(context)) return note.quote;
+    const literal = new RegExp(
+      `(?<!\\w)${normalized(note.text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?!\\w)`
     );
+    // Hypothetical, quoted and external scopes carry to the following clauses.
+    for (const clause of context.split(/(?<=[.!?;])\s+|\n/)) {
+      if (hypothetical.test(clause)) break;
+      if (
+        /["“”‘’]|(?:^|\s)'|\b(?:competitor|their|told|reported|says|said)\b/i.test(
+          clause
+        )
+      )
+        break;
+      if (literal.test(normalized(clause))) return clause;
+    }
+    return undefined;
   };
   const ground = <T extends BriefNote>(note: T): T => {
-    if (note.status === "executive" && observedQuote(note.quote)) return note;
+    const quote = note.status === "executive" ? observedQuote(note) : undefined;
+    if (quote) return { ...note, quote };
     const url = safeSourceUrl(note.url);
     if (
       note.status === "research" &&
@@ -259,7 +277,7 @@ export function projectBrief(
     return { ...note, status: "assumption", quote: undefined, url: undefined };
   };
   for (const message of messages) {
-    if (message.type === "user") statements.push(normalized(message.message));
+    if (message.type === "user") statements.push(message.message);
     if (message.type !== "assistant") continue;
     for (const doc of message.documents ?? []) {
       const url = safeSourceUrl(doc.link);
@@ -430,10 +448,6 @@ export function modelReadiness(brief: InterviewBrief | null): ModelReadiness {
     missing.push("An executive objective");
   if (!brief?.keyResults?.some((kr) => kr.metric.trim() && kr.unit.trim()))
     missing.push("A named success measure");
-  if ((brief?.journey.length ?? 0) < 2)
-    missing.push("Customer behavior before and after a decision");
-  if (!brief?.transitions?.length)
-    missing.push("A behavior transition linked to a measure");
   if (!brief?.model?.equation.text || !brief.model.inputs.length)
     missing.push("A proposed driver equation and named inputs");
   if (brief?.conflicts.length)

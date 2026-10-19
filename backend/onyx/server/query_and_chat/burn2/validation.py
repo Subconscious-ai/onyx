@@ -242,6 +242,26 @@ def conflict_sources(statements: list[str]) -> list[str]:
     return sources
 
 
+def observed_quote(note: dict[str, Any], source: str) -> str | None:
+    if not _HYPOTHETICAL.search(source):
+        return note["quote"]
+    # A later scenario does not change an earlier, literal observation.
+    # Hypothetical, quoted and external scopes carry to the following clauses.
+    literal = re.compile(
+        r"(?<!\w)" + re.escape(" ".join(note["text"].lower().split())) + r"(?!\w)"
+    )
+    for clause in conflict_sources([source])[1:]:
+        if re.search(
+            r"[\"“”‘’]|(?:^|\s)'|\b(?:competitor|their|told|reported|says|said)\b",
+            clause,
+            re.I,
+        ):
+            break
+        if literal.search(" ".join(clause.lower().split())):
+            return clause
+    return None
+
+
 def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
     value = optional_evidence(value)
 
@@ -269,8 +289,6 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
     def normal(text: str) -> str:
         return " ".join(text.lower().split())
 
-    sources = [normal(text) for text in statements]
-
     def ground(note: dict[str, Any]) -> None:
         quote = normal(note.get("quote", ""))
         if 3 <= len(quote) < 12 and quote == normal(note["text"]):
@@ -287,12 +305,17 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
             if original:
                 note["quote"] = original
                 quote = normal(original)
-        matched = [source for source in sources if len(quote) >= 12 and quote in source]
+        matched = [
+            source
+            for source in statements
+            if len(quote) >= 12 and quote in normal(source)
+        ]
         if (
             note["status"] == "executive"
             and matched
-            and not _HYPOTHETICAL.search(matched[-1])
+            and (supported := observed_quote(note, matched[-1]))
         ):
+            note["quote"] = supported
             return
         if note["status"] != "unknown":
             note["status"] = "assumption"

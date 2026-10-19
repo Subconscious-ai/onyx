@@ -30,6 +30,52 @@ class ProfileTests(unittest.TestCase):
         self.assertNotIn("at most one material question", guidance)
         self.assertIn("assumptions", guidance)
 
+    def test_usable_draft_still_answers_a_requested_capacity_challenge(self):
+        draft = {
+            "objective": {
+                "status": "executive",
+                "text": "Reach $2 million contribution",
+            },
+            "keyResults": [{"metric": "Annual contribution", "unit": "USD"}],
+            "journey": [{"id": "approve"}, {"id": "deliver"}],
+            "transitions": [{"from": "approve", "to": "deliver"}],
+            "model": {
+                "equation": {"text": "projects * contribution_per_project"},
+                "inputs": [
+                    {"name": "delivery_capacity", "value": {"status": "unknown"}}
+                ],
+            },
+            "conflicts": [],
+        }
+        for request in (
+            "Assume the target is achievable without adding capacity. Show me whether that assumption actually holds; don't just agree.",
+            "Does the contribution target contradict our available delivery capacity?",
+            "How much capacity do we need?",
+        ):
+            with self.subTest(request=request):
+                guidance = turn_guidance(4, request, draft=draft)
+                self.assertIn("at most one material private-input question", guidance)
+                self.assertIn(
+                    "can change the requested feasibility or conflict result", guidance
+                )
+                self.assertIn("already supplied or explicitly unknown", guidance)
+                self.assertIn("Do not restart discovery", guidance)
+                self.assertNotIn(
+                    "Do not ask for optional economics, capacity", guidance
+                )
+                self.assertIn("The application shows the real inline action", guidance)
+        for request in (
+            "Thanks.",
+            "Delivery capacity is unknown. Keep it unknown.",
+            "Show capacity, but no more questions.",
+        ):
+            with self.subTest(request=request):
+                guidance = turn_guidance(4, request, draft=draft)
+                self.assertIn("Question budget: zero", guidance)
+                self.assertNotIn(
+                    "at most one material private-input question", guidance
+                )
+
     def test_known_goal_prioritizes_missing_journey_before_more_economics(self):
         draft = {
             "objective": {

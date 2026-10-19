@@ -3,6 +3,7 @@
 import os
 import re
 from dataclasses import dataclass
+from typing import Any
 from urllib.parse import urlsplit
 
 import httpx
@@ -25,6 +26,7 @@ from onyx.server.features.mcp.credentials import (
 from onyx.server.features.mcp.oauth import refresh_mcp_oauth_token_if_expired
 from onyx.server.query_and_chat.causl.models import (
     CauslActor,
+    CauslChatBinding,
     CauslContextEnvelope,
     CauslSelection,
 )
@@ -328,3 +330,79 @@ def load_interview_context(
         )
     _validate(envelope, envelope.actor, selection)
     return AuthorizedCauslContext(config, envelope)
+
+
+def save_interview_context(
+    db: Session,
+    user: User,
+    binding: CauslChatBinding,
+    messages: list[dict],
+    business_context: dict | None = None,
+) -> dict:
+    """Commit sourced native testimony through the same per-user Library door."""
+    config = configuration()
+    identity = require_session_identity(user.id)
+    if (
+        binding.user_id != user.id
+        or binding.actor.user_id != identity.subject
+        or binding.issuer != identity.issuer
+        or binding.library_server_id != config.library_server_id
+    ):
+        raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+    server = _library_server(db, user, config)
+    payload: dict[str, Any] = {
+        "handoff": {
+            "format": "burn/onyx-interview",
+            "version": 1,
+            "chatId": str(binding.chat_id),
+            "messages": messages,
+        }
+    }
+    if business_context is not None:
+        payload["handoff"]["businessContext"] = business_context
+    if binding.market_id:
+        payload["marketId"] = binding.market_id
+    try:
+        with httpx.Client(timeout=5, follow_redirects=False) as client:
+            with client.stream(
+                "POST",
+                context_url(server.server_url),
+                headers=_headers(db, user, server, binding.actor, identity.issuer),
+                json=payload,
+            ) as response:
+                if response.status_code != 200:
+                    raise OnyxError(
+                        OnyxErrorCode.UNAUTHORIZED
+                        if response.status_code in (401, 403)
+                        else OnyxErrorCode.BAD_GATEWAY,
+                        "The Library could not save the interview evidence.",
+                    )
+                body = bytearray()
+                for chunk in response.iter_bytes(chunk_size=4096):
+                    body.extend(chunk)
+                    if len(body) > MAX_CONTEXT_BYTES:
+                        raise OnyxError(OnyxErrorCode.PAYLOAD_TOO_LARGE)
+        import json
+
+        result = json.loads(body)
+        envelope = CauslContextEnvelope.model_validate(
+            {key: result[key] for key in ("issuer", "actor", "context")}
+        )
+        selection = CauslSelection(
+            page="models" if binding.market_id else "workspace",
+            market_id=binding.market_id,
+        )
+        _validate(envelope, binding.actor, selection)
+        saved = result["saved"]
+        if envelope.issuer != identity.issuer or not isinstance(saved, dict):
+            raise ValueError("Invalid Library save receipt")
+        if any(
+            type(saved.get(key)) is not int or saved[key] < 0
+            for key in ("statements", "stages", "transitions")
+        ):
+            raise ValueError("Invalid Library save counts")
+        return saved
+    except (httpx.HTTPError, ValidationError, ValueError, KeyError, TypeError):
+        raise OnyxError(
+            OnyxErrorCode.BAD_GATEWAY, "The Library save could not be confirmed."
+        ) from None

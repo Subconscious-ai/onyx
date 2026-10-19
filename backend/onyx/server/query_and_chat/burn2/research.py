@@ -112,8 +112,6 @@ def research_receipt(raw: str) -> dict[str, Any]:
         ):
             raise ValueError("Research did not complete")
     content = data.get("context", data.get("report"))
-    if isinstance(content, list):
-        content = "\n\n".join(part for part in content if isinstance(part, str))
     candidates = data.get("source_urls", data.get("sources", []))
     urls = []
     for source in candidates if isinstance(candidates, list) else []:
@@ -122,6 +120,22 @@ def research_receipt(raw: str) -> dict[str, Any]:
         )
         if url and url not in urls:
             urls.append(url)
+    if isinstance(content, list):
+        parts = []
+        for part in content:
+            if isinstance(part, str):
+                parts.append(part)
+            elif isinstance(part, dict):
+                source = part.get("Source", part.get("source"))
+                body = part.get("Content", part.get("content"))
+                if source not in urls or not isinstance(body, str) or not body.strip():
+                    continue
+                title = part.get("Title", part.get("title", ""))
+                parts.append(
+                    f"Title: {title if isinstance(title, str) else ''}\n"
+                    f"Content: {body}\nSource: {source}"
+                )
+        content = "\n\n".join(parts)
     if not isinstance(content, str) or not content.strip() or not urls:
         raise ValueError("Research needs content and original-source URLs")
     return {
@@ -207,3 +221,54 @@ def prepared_company_context(
             ],
         )
     )
+
+
+def model_business_context(
+    profile: dict | None, research: dict | None, company: str | None
+) -> dict | None:
+    """Reuse the browser handoff's bounded source shape for the Library write."""
+    if not profile or profile.get("status") != "ready":
+        return None
+    if (
+        company
+        and company.strip().lower() != "unknown"
+        and not research_matches_company(profile, company)
+    ):
+        return None
+    fields: dict[str, str] = {}
+    for key in (
+        "name",
+        "role",
+        "company",
+        "industry",
+        "website",
+        "product",
+        "customer_segment",
+    ):
+        value = (profile.get("profile") or {}).get(key)
+        if isinstance(value, str):
+            fields[key] = value[: 2048 if key == "website" else 500]
+    source = (
+        "executive_correction"
+        if profile.get("correction", {}).get("revision", 0)
+        else "pdl"
+    )
+    status = (research or {}).get("status", "unavailable")
+    result: dict[str, Any] = {
+        "status": status
+        if status in {"pending", "queued", "running", "unavailable", "needs_company"}
+        else "unavailable"
+    }
+    query = public_research_query(profile)
+    if research and query and research_reusable(research, query) and status == "ready":
+        try:
+            receipt = research_receipt(json.dumps(research))
+        except (TypeError, ValueError):
+            pass
+        else:
+            result = {
+                "status": "ready",
+                **{key: receipt[key] for key in ("report", "source_urls", "truncated")},
+                "checked_at": research["checked_at"],
+            }
+    return {"profile": fields, "profileSource": source, "research": result}

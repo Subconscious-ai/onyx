@@ -124,8 +124,54 @@ class StructuredBriefTest(unittest.TestCase):
         )
         self.assertEqual(len(result["transitions"]), 2)
         self.assertTrue(
-            all(stage["status"] == "assumption" for stage in result["journey"])
+            all(stage["status"] == "executive" for stage in result["journey"])
         )
+        self.assertTrue(
+            all(
+                edge["behavior"]["status"] == "executive"
+                for edge in result["transitions"]
+            )
+        )
+        self.assertTrue(
+            all("scenario" not in stage["quote"] for stage in result["journey"])
+        )
+
+    def test_clause_recovery_keeps_hypothetical_and_external_journeys_assumed(self):
+        journey = "Enterprise sponsors approve a scoped implementation."
+        for source in (
+            "For a hypothetical scenario, use the following journey. " + journey,
+            "In this scenario, " + journey,
+            "A competitor describes their sales process. "
+            + journey
+            + " Demand fills capacity in this scenario.",
+            'A colleague quotes a competitor: "Their sales process follows. '
+            + journey
+            + '" Demand fills capacity in this scenario.',
+            'A competitor said: "'
+            + journey
+            + '" Demand fills capacity in this scenario.',
+            '"' + journey + '" Demand fills capacity in this scenario.',
+            "'" + journey + "' Demand fills capacity in this scenario.",
+            "“" + journey + "” Demand fills capacity in this scenario.",
+            "'"
+            + journey.removesuffix(".")
+            + "'. Demand fills capacity in this scenario.",
+            "A competitor says " + journey + " Demand fills capacity in this scenario.",
+        ):
+            with self.subTest(source=source):
+                brief = self.brief()
+                brief["journey"] = [
+                    {
+                        "id": "approval",
+                        "actor": "Enterprise sponsors",
+                        "text": "approve a scoped implementation",
+                        "status": "executive",
+                        "sourceMessageIndex": 0,
+                    }
+                ]
+                result = validate_brief(brief, [source])
+                self.assertEqual(result["journey"][0]["status"], "assumption")
+                self.assertNotIn("quote", result["journey"][0])
 
     def test_early_partial_draft_does_not_spend_an_extra_repair_for_missing_journey(
         self,

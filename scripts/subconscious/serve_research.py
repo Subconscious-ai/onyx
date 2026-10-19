@@ -121,7 +121,7 @@ async def configure(upstream: Path) -> FastMCP:
             "SMART_TOKEN_LIMIT": "2000",
             "STRATEGIC_TOKEN_LIMIT": "1200",
             "BROWSE_CHUNK_MAX_LENGTH": "4096",
-            "CURATE_SOURCES": "false",
+            "CURATE_SOURCES": os.environ.get("CURATE_SOURCES", "true"),
             "VERBOSE": "false",
         }
     )
