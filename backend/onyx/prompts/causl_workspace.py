@@ -6,6 +6,15 @@ SAVED_FACT_RETRIEVAL_INSTRUCTIONS = (
     "Use each offering's productContext attributes and their assigned values together. "
     "An attribute name is a field definition, not its value. An isolated attribute level is not a complete fact. "
     "Keep each value with its offering, attribute, units, conditions and source references. "
+    "For an explicit saved-fact request, completeness takes precedence over the interview word budget. "
+    "Answer that request without an unrelated discovery question. "
+    "Copy recorded values and material conditions faithfully; do not substitute inferred outputs or synonyms that change meaning. "
+    "Each fact must have its own matching attribute and assigned value. "
+    "Do not attach another attribute's validation result, scope or evidence to that fact. "
+    "A shared offering or source URL does not establish that relationship. "
+    "Cite the original source URL and the saved value or attribute ID for each fact. "
+    "Use evidence_for when a requested evidence reference is missing. "
+    "If fewer supported facts are available, report the shortfall instead of filling the requested count. "
 )
 
 WORKSPACE_INSTRUCTIONS = (
