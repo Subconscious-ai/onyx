@@ -253,6 +253,22 @@ def test_does_not_follow_redirects_or_disclose_provider_body(
     assert "PRIVATE_TOKEN_AND_DIRECTORY" not in str(failure.value)
 
 
+def test_reads_complete_saved_assignments_within_the_kb_context_bound(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    payload = envelope()
+    payload["context"]["library"]["productContexts"] = {
+        "offering_b": {"attributesStatus": "complete", "condition": "x" * 60_000}
+    }
+    http_response(monkeypatch, payload)
+    loaded = context.load_causl_context(db, user, ACTOR, SELECTION)
+    assert (
+        loaded.envelope.context["library"]["productContexts"]
+        == payload["context"]["library"]["productContexts"]
+    )
+
+
 def test_refuses_unbounded_response(
     connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
 ) -> None:

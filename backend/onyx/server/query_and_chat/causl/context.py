@@ -29,7 +29,8 @@ from onyx.server.query_and_chat.causl.models import (
     CauslSelection,
 )
 
-MAX_CONTEXT_BYTES = 36_000
+# KB context is capped at 64 KB; leave room for the verified actor envelope.
+MAX_CONTEXT_BYTES = 68_000
 
 
 @dataclass(frozen=True)
