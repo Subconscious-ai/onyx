@@ -7,13 +7,16 @@ INTERVIEW_DISCOVERY_BUDGET = (
 )
 
 SAVED_FACT_RETRIEVAL_INSTRUCTIONS = (
+    "For a saved-fact request, identify every requested topic or offering before selecting facts. "
+    "Divide the requested count among those topics; include supported facts from each topic before filling the count. "
+    "Group the answer under headings for the requested topics and name the offering for each fact. "
+    "If a requested topic is absent, search that topic with market_search; if still unsupported, state that topic's shortfall. "
     "When answering a request for saved facts, search the company or offering with market_search "
     "if the snapshot is truncated or lacks the assigned attribute values. Do this before answering. "
     "Use each offering's productContext attributes and their assigned values together. "
     "An attribute name is a field definition, not its value. An isolated attribute level is not a complete fact. "
     "Keep each value with its offering, attribute, units, conditions and source references. "
     "Preserve the full recorded attribute name, including qualifiers in parentheses; those qualifiers are material conditions even without a separate conditions field. "
-    "Cover every topic or offering requested; search missing topics separately rather than filling the count from one offering. "
     "Count distinct information, not overlapping descriptions of the same fact. "
     "For an explicit saved-fact request, completeness takes precedence over the interview word budget. "
     "Answer that request without an unrelated discovery question. "
