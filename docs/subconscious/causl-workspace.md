@@ -37,7 +37,7 @@ field or the 60-second onboarding target. The owner authorized publication and m
 October 18; required review and checks remain release gates. Current candidates are
 [Onyx #71 — share accepted facts across interviews](https://github.com/Subconscious-ai/onyx/pull/71)
 and [KB #715 — preserve shared facts and model inputs](https://github.com/Subconscious-ai/causl-kb/pull/715).
-Closed PRs #48 and KB #675 were not merged; the current candidates retain their source.
+The shared-memory candidates retain the original interview and model implementations from PRs #48 and KB #675.
 
 The latest first-send proof used Onyx `1e2a9d7` and KB `f18c36a`. Standard-member OAuth,
 exactly one saved human message, a real saved reply, model save and independent reopen passed.

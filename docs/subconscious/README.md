@@ -7,7 +7,7 @@ The dated results below describe earlier candidates.
 ## October 18 release boundary
 
 [PR #71 — connect native interviews to shared market memory](https://github.com/Subconscious-ai/onyx/pull/71)
-is the current main-based candidate. It retains the source from closed, unmerged PR #48.
+is the shared-memory candidate. It retains the executive interview implementation from PR #48.
 The owner authorized publication and merge on October 18. Required checks and review still apply.
 
 The running agent-dev pins remain Onyx `1e2a9d7` and KB `f18c36a` until explicitly replaced.
