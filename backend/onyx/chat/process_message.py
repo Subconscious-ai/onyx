@@ -672,7 +672,9 @@ def build_chat_turn(
         and all(
             re.search(pattern, message_text, re.I)
             for pattern in (
-                r"^\s*(?:please\s+)?(?:show|list|retrieve|give|summari[sz]e|what|which)\b",
+                r"^\s*(?:(?:using|from)\s+only\s+(?:(?:our|the|my)\s+)?"
+                r"(?:saved\s+)?library\s*[,:]\s*)?(?:please\s+)?"
+                r"(?:show|list|retrieve|give|brief|summari[sz]e|what|which)\b",
                 r"\b(?:saved|recorded|accepted|library)\b",
                 r"\bfacts?\b",
             )

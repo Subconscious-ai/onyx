@@ -30,6 +30,7 @@ from onyx.server.query_and_chat.models import SendMessageRequest
         "Raise conversion to 7% in three months.",
         "Show me ten useful facts saved in our Library about products, study capabilities and Enterprise process.",
         "What facts are saved in our Library about Enterprise?",
+        "Using only our saved Library, brief me on Enterprise. Give one complete, sourced fact for each question. Do not research again.",
         "Our goal is to give executives ten saved facts in sixty seconds. Help me model that customer journey.",
         "Do not show saved facts yet. Capture my goal and customer journey first.",
     ],
@@ -138,7 +139,7 @@ def test_bound_turn_uses_current_shared_context_without_losing_interview_prepara
         assert setup.causl_original_message == request.message
         if mode == "interview":
             assert setup.trusted_turn_instructions
-            if message.startswith(("Show", "What")):
+            if message.startswith(("Show", "What", "Using")):
                 assert setup.saved_fact_request is True
                 assert context == current_fact
                 assert workspace_turn.call_args.kwargs["saved_fact_request"] is True
