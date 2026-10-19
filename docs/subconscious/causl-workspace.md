@@ -33,7 +33,19 @@ Paired [causl-KB #714](https://github.com/Subconscious-ai/causl-kb/issues/714) t
 chat fact through fresh authorized contexts and the model request. Its reader preserves approved
 excerpts and prioritizes recently corrected records. Focused database and HTTP tests are separate
 from authenticated hosted QA. This change does not prove automatic admission of every interview
-field or the 60-second onboarding target. Keep the paired PRs unmerged until owner QA.
+field or the 60-second onboarding target. The owner authorized publication and merge on
+October 18; required review and checks remain release gates. Current candidates are
+[Onyx #71 — share accepted facts across interviews](https://github.com/Subconscious-ai/onyx/pull/71)
+and [KB #715 — preserve shared facts and model inputs](https://github.com/Subconscious-ai/causl-kb/pull/715).
+Closed PRs #48 and KB #675 were not merged; the current candidates retain their source.
+
+The latest first-send proof used Onyx `1e2a9d7` and KB `f18c36a`. Standard-member OAuth,
+exactly one saved human message, a real saved reply, model save and independent reopen passed.
+One prepared answer took 65.489 seconds after login. Calculation matched 550 baseline and
+700 target contracts. A fresh empty chat retrieved the same accepted fact/source through
+its actual Library tool in 2.074 seconds; model-context readback took 0.239 seconds.
+Agent-dev still runs these tested pins. Source integration and CI do not update that runtime.
+Fresh PDL/research, realistic executive response time and full six-case timing remain unproven.
 
 October 18 agent-dev QA used Onyx `f10a31555b` and KB `a884ab3`. A standard member saved
 three reviewed stages and two transitions from a retained synthetic interview. After newer
