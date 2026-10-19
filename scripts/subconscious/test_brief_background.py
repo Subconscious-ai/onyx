@@ -1,5 +1,7 @@
 """Run in the native backend environment; no database or provider calls."""
 
+import copy
+import json
 import unittest
 from contextlib import ExitStack
 from unittest.mock import MagicMock, patch
@@ -12,6 +14,123 @@ from onyx.background.celery.tasks.burn2.tasks import prepare_saved_brief
 
 
 class BriefModelPolicyTests(unittest.TestCase):
+    def test_complete_inline_draft_still_extracts_the_latest_journey_correction(self):
+        from onyx.server.query_and_chat.burn2 import api
+
+        statements = [
+            "Increase quote-to-order wins from 25% to 30% next quarter.",
+            "Industrial procurement teams send a qualified RFQ, receive a quote, then place an order.",
+            "Our actual observed quote-to-order win rate remains 25%.",
+        ]
+        cached = {
+            "company": "Unknown",
+            "objective": {"status": "executive", "text": statements[0]},
+            "keyResults": [{"metric": "Quote-to-order wins"}],
+            "journey": [
+                {"id": name}
+                for name in (
+                    "quote_request",
+                    "sales_followup",
+                    "proposal_review",
+                    "order_placement",
+                )
+            ],
+            "transitions": [{"from": "quote_request", "to": "sales_followup"}],
+            "model": {"inputs": [{"name": "win_rate"}]},
+        }
+        corrected = copy.deepcopy(cached)
+        corrected["journey"] = [
+            {"id": name} for name in ("qualified_rfq", "quote", "order")
+        ]
+        corrected["transitions"] = [
+            {"from": "qualified_rfq", "to": "quote"},
+            {"from": "quote", "to": "order"},
+        ]
+        for revalidated in (False, True):
+            with self.subTest(revalidated=revalidated), ExitStack() as stack:
+                saved = copy.deepcopy(cached)
+                if revalidated:
+                    saved["company"] = "Unconfirmed old company"
+                snapshot = {
+                    "persona_id": 5,
+                    "last_id": 7,
+                    "last_text": "The follow-up effect is unknown.<interview-brief>"
+                    + json.dumps(saved)
+                    + "</interview-brief>",
+                    "transcript": [],
+                    "statements": statements,
+                }
+                llm = MagicMock()
+                llm.config.model_provider = "bedrock"
+                call = MagicMock()
+                call.function.name = "prepare_model_brief"
+                call.function.arguments = json.dumps(corrected)
+                llm.invoke.return_value.choice.message.tool_calls = [call]
+                persona = MagicMock()
+                persona.name = "Burn 2.0"
+                stack.enter_context(
+                    patch.dict(
+                        "os.environ",
+                        {
+                            "BURN2_ENABLED": "true",
+                            "BURN2_BRIEF_MODEL_CONFIGURATION_ID": "",
+                        },
+                    )
+                )
+                replacements = {
+                    "get_cache_backend": MagicMock(),
+                    "is_chat_session_processing": False,
+                    "owned_snapshot": snapshot,
+                    "get_persona_by_id": persona,
+                    "validate_brief": copy.deepcopy(cached),
+                    "check_token_rate_limits": None,
+                    "get_llm_for_persona": llm,
+                    "check_llm_cost_limit_for_provider": None,
+                    "get_llm_token_counter": lambda _: 1,
+                    "latest_saved_brief": copy.deepcopy(cached),
+                }
+                for name, value in replacements.items():
+                    stack.enter_context(patch.object(api, name, return_value=value))
+                stack.enter_context(
+                    patch("onyx.db.burn2_profile.read_profile", return_value={})
+                )
+                stack.enter_context(
+                    patch("onyx.db.burn2_research.read_research", return_value=None)
+                )
+                extract = stack.enter_context(
+                    patch.object(
+                        api,
+                        "prepare_validated_brief",
+                        side_effect=lambda generate, _: generate(None),
+                    )
+                )
+                save = stack.enter_context(
+                    patch.object(api, "save_brief", return_value=7)
+                )
+                result = api._prepare_brief(
+                    api.PrepareBrief(chat_id=uuid4()), MagicMock(), MagicMock()
+                )
+
+                extract.assert_called_once()
+                self.assertEqual(extract.call_args.args[1], statements)
+                self.assertEqual(save.call_args.args[3], corrected)
+                returned = json.loads(
+                    result.message.split("<interview-brief>")[1].split(
+                        "</interview-brief>"
+                    )[0]
+                )
+                self.assertEqual(
+                    [stage["id"] for stage in returned["journey"]],
+                    ["qualified_rfq", "quote", "order"],
+                )
+                payload = json.loads(llm.invoke.call_args.kwargs["prompt"][1].content)
+                self.assertEqual(
+                    payload["executive_messages"][1]["text"], statements[1]
+                )
+                self.assertEqual(
+                    payload["executive_messages"][-1]["text"], statements[-1]
+                )
+
     def test_revalidated_cache_must_be_saved_before_reporting_completion(self):
         import json
 

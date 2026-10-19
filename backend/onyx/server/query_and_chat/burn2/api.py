@@ -81,28 +81,6 @@ def _prepare_brief(
     persona = get_persona_by_id(snapshot["persona_id"], user, db, is_for_edit=False)
     if persona.name not in EXECUTIVE_INTERVIEW_PERSONA_NAMES:
         raise HTTPException(404, "Executive conversation required")
-    cached = None
-    if "</interview-brief>" in snapshot["last_text"]:
-        saved = None
-        try:
-            saved = json.loads(
-                snapshot["last_text"]
-                .split("<interview-brief>", 1)[1]
-                .split("</interview-brief>", 1)[0]
-            )
-            cached = validate_brief(saved, snapshot["statements"])
-        except (ValueError, IndexError):
-            cached = None
-        if (
-            cached
-            and cached == saved
-            and not needs_completion(cached, snapshot["statements"])
-        ):
-            return PreparedBrief(
-                message_id=snapshot["last_id"],
-                saved=True,
-                message=snapshot["last_text"],
-            )
     check_token_rate_limits(user)
     configured = os.environ.get("BURN2_BRIEF_MODEL_CONFIGURATION_ID")
     override = None
@@ -212,11 +190,9 @@ Proposed interventions remain hypotheses. Jokes, confidence, and rejected third-
         return json.loads(calls[0].function.arguments or "")
 
     try:
-        brief = (
-            cached
-            if cached and not needs_completion(cached, snapshot["statements"])
-            else prepare_validated_brief(generate, snapshot["statements"])
-        )
+        # A complete inline draft can predate the latest executive correction.
+        # Reuse it as context above, never as proof extraction is current.
+        brief = prepare_validated_brief(generate, snapshot["statements"])
     except Exception as error:
         logger.warning(
             "Burn model brief preparation failed (%s): %s",
