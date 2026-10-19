@@ -229,6 +229,19 @@ def ground_literal_goal(note: dict[str, Any], statements: list[str]) -> None:
         return
 
 
+def conflict_sources(statements: list[str]) -> list[str]:
+    """Keep measured claims when another sentence discusses a scenario."""
+    sources: list[str] = []
+    for text in statements:
+        trusted: str = _UNTRUSTED_INSTRUCTION_SPAN.sub(" ", text)
+        sources.append(trusted)
+        for clause in re.split(r"(?<=[.!?;])\s+|\n", trusted):
+            if _HYPOTHETICAL.search(clause):
+                break
+            sources.append(clause)
+    return sources
+
+
 def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
     value = optional_evidence(value)
 
@@ -348,9 +361,7 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
     equation.pop("url", None)
     if any(item["journeyId"] not in ids for item in result["interventions"]):
         raise ValueError("Unknown intervention journey reference")
-    conflict_sources = [
-        normal(_UNTRUSTED_INSTRUCTION_SPAN.sub(" ", text)) for text in statements
-    ]
+    sources: list[str] = [normal(text) for text in conflict_sources(statements)]
     result["conflicts"] = [
         item
         for item in result["conflicts"]
@@ -358,7 +369,7 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
         and all(
             any(
                 normal(quote) in source and not _HYPOTHETICAL.search(source)
-                for source in conflict_sources
+                for source in sources
             )
             for quote in item["quotes"]
         )
@@ -366,8 +377,8 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
     return result
 
 
-def needs_completion(value: dict, statements: list[str] | None = None) -> bool:
-    """Require the final journey at the existing five-answer discovery boundary."""
+def needs_completion(value: dict) -> bool:
+    """Require links for supplied structure, not an invented customer journey."""
     objective = value.get("objective", {})
     return bool(
         objective.get("status") == "executive"
@@ -380,11 +391,6 @@ def needs_completion(value: dict, statements: list[str] | None = None) -> bool:
             not value.get("keyResults")
             or not (value.get("model") or {}).get("inputs")
             or (len(value.get("journey", [])) >= 2 and not value.get("transitions"))
-            or (
-                statements is not None
-                and len(statements) >= 5
-                and len(value.get("journey", [])) < 2
-            )
         )
     )
 
@@ -442,7 +448,14 @@ def prepare_validated_brief(
                 raise ValueError("Invalid tool payload")
             value["version"] = 2
             brief = validate_brief(value, statements)
-            if needs_completion(brief, statements):
+            if attempt == 0 and len(statements) >= 5 and len(brief["journey"]) < 2:
+                # Recover an omitted supplied path once. A still-valid partial
+                # draft must save even when the path remains unknown.
+                raise ValueError(
+                    "Recover supplied customer stages and transitions if available. "
+                    "Otherwise keep the journey unknown; do not invent a path."
+                )
+            if needs_completion(brief):
                 raise ValueError(
                     "A structured objective requires key results and named model inputs; a supplied journey also requires transitions. "
                     "At the fifth executive answer, retain the supplied customer stages and transitions. "

@@ -103,6 +103,25 @@ const props = {
   onReview: jest.fn(),
 };
 beforeEach(() => jest.clearAllMocks());
+it.each(["error", "updating"])(
+  "keeps a recovered model action during %s",
+  (phase) => {
+    render(
+      <InterviewProgress
+        {...props}
+        modelConnected
+        stale
+        phase={phase}
+        contextPending
+      />
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Build business model" })
+    );
+    expect(props.onOpen).toHaveBeenCalledTimes(1);
+    expect(props.onRetry).not.toHaveBeenCalled();
+  }
+);
 it("shows missing work and routes help to the existing chat", () => {
   render(
     <InterviewProgress

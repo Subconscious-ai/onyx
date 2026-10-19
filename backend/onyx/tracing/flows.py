@@ -17,6 +17,8 @@ class LLMFlow(StrEnum):
     # Chat / agent
     CHAT_RESPONSE = "chat_response"
     CHAT_HISTORY_SUMMARIZATION = "chat_history_summarization"
+    INTERVIEW_EVALUATION = "interview_evaluation"
+    INTERVIEW_COMPARISON = "interview_comparison"
 
     # Secondary LLM flows
     SEMANTIC_QUERY_REPHRASE = "semantic_query_rephrase"
