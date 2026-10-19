@@ -1,4 +1,6 @@
 import * as yup from "yup";
+import remarkParse from "remark-parse";
+import { unified } from "unified";
 
 // A display projection of a saved Onyx conversation, never an accepted ontology.
 const noteSchema = yup.object({
@@ -142,12 +144,46 @@ export function visibleInterviewText(text: string): string {
       part.startsWith("`") ? part : part.replace(/\s*—\s*/g, ", ")
     )
     .join("");
+  text = linkSourceMarkers(text);
   const index = text.indexOf(OPEN);
   if (index >= 0) return text.slice(0, index).trimEnd();
   // A streaming packet can end anywhere inside the marker.
   for (let size = Math.min(OPEN.length - 1, text.length); size >= 2; size--) {
     if (text.endsWith(OPEN.slice(0, size)))
       return text.slice(0, -size).trimEnd();
+  }
+  return text;
+}
+
+const sourceParser = unified().use(remarkParse);
+type SourceNode = {
+  type: string;
+  position?: { start: { offset?: number }; end: { offset?: number } };
+  children?: SourceNode[];
+};
+
+function linkSourceMarkers(text: string): string {
+  if (!text.includes("【http")) return text;
+  const ranges: { start: number; end: number }[] = [];
+  const collect = (node: SourceNode) => {
+    if (["link", "linkReference", "image"].includes(node.type)) return;
+    const start = node.position?.start.offset;
+    const end = node.position?.end.offset;
+    if (node.type === "text" && start !== undefined && end !== undefined) {
+      ranges.push({ start, end });
+    }
+    node.children?.forEach(collect);
+  };
+  // Reuse the renderer's Markdown parser so code and existing link labels stay literal.
+  collect(sourceParser.parse(text));
+  for (const { start, end } of ranges.reverse()) {
+    const linked = text
+      .slice(start, end)
+      .replace(/【(https?:\/\/[^\s【】]+)】/g, (marker, href: string) => {
+        const url = safeSourceUrl(href);
+        return url ? `[${new URL(url).hostname}](<${url}>)` : marker;
+      });
+    text = text.slice(0, start) + linked + text.slice(end);
   }
   return text;
 }

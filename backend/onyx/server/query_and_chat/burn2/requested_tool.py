@@ -4,6 +4,8 @@ import re
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from onyx.server.query_and_chat.burn2 import EXECUTIVE_INTERVIEW_PERSONA_NAMES
+
 if TYPE_CHECKING:
     from onyx.tools.interface import Tool
 
@@ -43,7 +45,7 @@ def initial_profile_tool(
     """Bootstrap through native REQUIRED selection, never a synthetic tool execution."""
     if (
         not enabled
-        or persona_name not in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
+        or persona_name not in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         or user_id is None
         or incognito
         or forced_tool_id is not None

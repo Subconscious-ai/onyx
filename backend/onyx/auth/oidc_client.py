@@ -121,6 +121,7 @@ class VerifiedEmailOpenID(OpenID):
         name: str = "openid",
         base_scopes: list[str] | None = BASE_SCOPES,
         require_verified_email: bool = False,
+        auto_join_verified_email_domains: list[str] | None = None,
     ):
         super().__init__(
             client_id,
@@ -130,6 +131,7 @@ class VerifiedEmailOpenID(OpenID):
             base_scopes=base_scopes,
         )
         self.require_verified_email = require_verified_email
+        self.auto_join_verified_email_domains = auto_join_verified_email_domains or []
         validate_issuer_owns_config_url(
             self.openid_configuration.get("issuer"), openid_configuration_endpoint
         )
@@ -139,6 +141,15 @@ class VerifiedEmailOpenID(OpenID):
         """The issuer this client is pinned to, for callers that validate
         tokens or store per-provider metadata."""
         return str(self.openid_configuration["issuer"])
+
+    def allows_verified_email_to_join(self, email: str) -> bool:
+        """Call only after get_id_email succeeds for this login."""
+        return (
+            self.require_verified_email
+            and email.count("@") == 1
+            and not any(character.isspace() for character in email)
+            and email.rsplit("@", 1)[1].lower() in self.auto_join_verified_email_domains
+        )
 
     async def get_id_email(self, token: str) -> tuple[str, str | None]:
         async with self.get_httpx_client() as client:

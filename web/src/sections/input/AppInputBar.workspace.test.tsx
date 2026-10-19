@@ -1,4 +1,4 @@
-import React, { createRef } from "react";
+import React from "react";
 import {
   act,
   render,
@@ -9,7 +9,7 @@ import {
 import AppInputBar, {
   type AppInputBarHandle,
   type AppInputBarProps,
-} from "./AppInputBar";
+} from "@/sections/input/AppInputBar";
 import { useChatSessionStore } from "@/app/app/stores/useChatSessionStore";
 import { draftKey } from "@/hooks/useDraft";
 import { useInterviewLibrary } from "@/lib/executive/library-connection";
@@ -300,45 +300,33 @@ test("ignores host questions on the ordinary standalone native input", async () 
   expect(submit).not.toHaveBeenCalled();
 });
 
-test.each(["accepted", "refused"] as const)(
-  "retains independent draft while queued preparation is %s",
-  async (result) => {
-    const ref = createRef<AppInputBarHandle>();
-    const submit = jest.fn<
-      ReturnType<AppInputBarProps["onSubmit"]>,
-      Parameters<AppInputBarProps["onSubmit"]>
-    >();
+test.each([true, false])(
+  "only ordinary native chat sends a queued follow-up when the reply completes (embedded: %s)",
+  async (embeddedWorkspace) => {
+    const submit = jest.fn();
     const initial = props(submit);
-    const rendered = render(<AppInputBar {...initial} ref={ref} />);
+    const rendered = render(
+      <AppInputBar {...initial} embeddedWorkspace={embeddedWorkspace} />
+    );
     act(() => {
       useChatSessionStore
         .getState()
         .setLatestMessageRenderComplete("workspace-chat", true);
     });
-    rendered.rerender(<AppInputBar {...initial} chatState="input" ref={ref} />);
-    await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
-    const [text, callbacks] = submit.mock.calls[0]!;
-    expect(text).toBe("Queued message Q");
+    rendered.rerender(
+      <AppInputBar
+        {...initial}
+        embeddedWorkspace={embeddedWorkspace}
+        chatState="input"
+      />
+    );
+    expect(submit).toHaveBeenCalledTimes(embeddedWorkspace ? 0 : 1);
+    if (!embeddedWorkspace)
+      expect(submit).toHaveBeenCalledWith("Queued message Q");
     expect(
       useChatSessionStore.getState().sessions.get("workspace-chat")!
         .queuedMessages
-    ).toHaveLength(1);
-    expect(
-      rendered.container.querySelector('[contenteditable="true"]')
-    ).toHaveTextContent("Independent draft D");
-    act(() => {
-      if (result === "accepted") {
-        // The native controller resets the input before acknowledging acceptance.
-        ref.current!.reset();
-        callbacks!.onInputAccepted!();
-      } else {
-        callbacks!.onInputRejected!();
-      }
-    });
-    expect(
-      useChatSessionStore.getState().sessions.get("workspace-chat")!
-        .queuedMessages
-    ).toHaveLength(result === "accepted" ? 0 : 1);
+    ).toHaveLength(embeddedWorkspace ? 1 : 0);
     expect(
       rendered.container.querySelector('[contenteditable="true"]')
     ).toHaveTextContent("Independent draft D");
@@ -349,6 +337,34 @@ test.each(["accepted", "refused"] as const)(
     );
   }
 );
+
+test("keeps an embedded follow-up as a draft on Enter and preserves it when stopping the reply", async () => {
+  const submit = jest.fn();
+  const initial = props(submit);
+  const rendered = render(<AppInputBar {...initial} />);
+  const input = rendered.container.querySelector<HTMLElement>(
+    '[contenteditable="true"]'
+  )!;
+  await waitFor(() => expect(input).toHaveTextContent("Independent draft D"));
+  const user = setupUser();
+  await user.click(input);
+  await user.keyboard("{Enter}");
+  expect(input).toHaveTextContent("Independent draft D");
+  expect(
+    useChatSessionStore.getState().sessions.get("workspace-chat")!
+      .queuedMessages
+  ).toHaveLength(1);
+  expect(submit).not.toHaveBeenCalled();
+
+  await user.click(document.getElementById("onyx-chat-input-send-button")!);
+  expect(initial.stopGenerating).toHaveBeenCalledTimes(1);
+  expect(input).toHaveTextContent("Independent draft D");
+  expect(
+    useChatSessionStore.getState().sessions.get("workspace-chat")!
+      .queuedMessages
+  ).toHaveLength(1);
+  expect(submit).not.toHaveBeenCalled();
+});
 
 test("keeps an unaccepted workspace draft in storage after send", async () => {
   const submit = jest.fn<

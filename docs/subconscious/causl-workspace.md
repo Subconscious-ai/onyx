@@ -109,8 +109,10 @@ navigation preserve it. Unchanged renders do not restart context requests.
 Native sign-in and Library OAuth recovery open a separate window. The customer then
 reopens the conversation. Preferences and administrator recovery also stay outside
 the embedded conversation.
-Draft and queued text remain available when workspace preparation refuses a send.
-Queued acceptance uses the native controller acknowledgment after its input reset.
+Draft text remains available when workspace preparation refuses a send.
+While a reply runs, follow-up text stays a draft until the customer sends it.
+Existing queued text remains available for manual recovery. Embedded chat never sends it automatically.
+Ordinary native chat keeps its existing queue behavior.
 
 ## Identity and storage
 

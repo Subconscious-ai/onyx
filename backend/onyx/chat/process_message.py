@@ -120,7 +120,9 @@ from onyx.llm.utils import (
 )
 from onyx.natural_language_processing.utils import get_tokenizer
 from onyx.onyxbot.slack.models import SlackContext
+from onyx.prompts.causl_workspace import WORKSPACE_INSTRUCTIONS
 from onyx.prompts.prompt_utils import substitute_user_placeholders
+from onyx.server.query_and_chat.burn2 import EXECUTIVE_INTERVIEW_PERSONA_NAMES
 from onyx.server.query_and_chat.causl.turn import workspace_turn
 from onyx.server.query_and_chat.chat_utils import mime_type_to_chat_file_type
 from onyx.server.query_and_chat.models import (
@@ -840,7 +842,7 @@ def build_chat_turn(
         tuple(chat_history)
         if os.environ.get("BURN2_ENABLED") == "true"
         and interview_mode
-        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
+        and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and user is not None
         else ()
     )
@@ -898,7 +900,13 @@ def build_chat_turn(
     # run_llm_loop sends to the model — so long directory values can't
     # invalidate the reservation.
     max_reserved_system_prompt_tokens_str = substitute_user_placeholders(
-        (persona.system_prompt or "") + (custom_agent_prompt or ""),
+        (persona.system_prompt or "")
+        + (custom_agent_prompt or "")
+        + (
+            WORKSPACE_INSTRUCTIONS
+            if causl_binding is not None and not interview_mode
+            else ""
+        ),
         user_memory_context.user_info.placeholder_values,
     )
     reserved_token_count = calculate_reserved_tokens(
@@ -957,7 +965,7 @@ def build_chat_turn(
     if (
         os.environ.get("BURN2_ENABLED") == "true"
         and interview_mode
-        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
+        and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and forced_tool_id is None
     ):
         from onyx.server.query_and_chat.burn2.requested_tool import requested_tool
@@ -1033,7 +1041,7 @@ def build_chat_turn(
     if (
         os.environ.get("BURN2_ENABLED") == "true"
         and interview_mode
-        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
+        and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and user is not None
     ):
         from onyx.db.burn2_profile import read_profile
@@ -1174,7 +1182,7 @@ def build_chat_turn(
     if (
         os.environ.get("BURN2_ENABLED") == "true"
         and interview_mode
-        and persona.name in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
+        and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and user is not None
     ):
         from onyx.server.query_and_chat.burn2.profile import project_chat_history
@@ -1465,8 +1473,7 @@ def _run_models(
         if (
             os.environ.get("BURN2_ENABLED") == "true"
             and (setup.causl_binding is None or setup.causl_binding.mode == "interview")
-            and setup.persona.name
-            in {"Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"}
+            and setup.persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
             and setup.incognito_record_mode is None
             and any(model_succeeded)
         ):
@@ -1590,6 +1597,10 @@ def _run_models(
                     include_citations=setup.new_msg_req.include_citations,
                     all_injected_file_metadata=setup.all_injected_file_metadata,
                     inject_memories_in_prompt=user.use_memories,
+                    workspace_instructions=WORKSPACE_INSTRUCTIONS
+                    if setup.causl_binding is not None
+                    and setup.causl_binding.mode == "workspace"
+                    else None,
                 )
 
             model_succeeded[model_idx] = True

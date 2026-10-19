@@ -963,6 +963,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         is_verified_by_default: bool = False,
         allowed_email_domains_override: Sequence[str] | None = None,
         enforce_verified_domain: bool = False,
+        auto_join_verified_email: bool = False,
     ) -> User:
         referral_source = (
             getattr(request.state, "referral_source", None)  # ods: ignore[getattr]
@@ -990,7 +991,10 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
             raise HTTPException(status_code=401, detail="User not found")
 
         async with self._tenant_session_with_bound_user_db(tenant_id) as db_session:
-            verify_email_in_whitelist(account_email, tenant_id, oauth_name, account_id)
+            if not auto_join_verified_email:
+                verify_email_in_whitelist(
+                    account_email, tenant_id, oauth_name, account_id
+                )
             oauth_security_settings = get_security_settings()
             effective_valid_email_domains = (
                 allowed_email_domains_override
@@ -2661,6 +2665,11 @@ async def complete_login_flow(
             is_verified_by_default=is_verified_by_default,
             allowed_email_domains_override=allowed_email_domains_override,  # ty: ignore[unknown-argument]
             enforce_verified_domain=enforce_verified_domain,  # ty: ignore[unknown-argument]
+            # Only the strict, configured OIDC client can authorize this path.
+            auto_join_verified_email=(  # ty: ignore[unknown-argument]
+                isinstance(oauth_client, VerifiedEmailOpenID)
+                and oauth_client.allows_verified_email_to_join(account_email)
+            ),
         )
     except UserAlreadyExists:
         raise OnyxError(
