@@ -13,6 +13,7 @@ from onyx.prompts.causl_workspace import (
 )
 from onyx.server.query_and_chat.burn2 import EXECUTIVE_INTERVIEW_PERSONA_NAMES
 from onyx.server.query_and_chat.causl.context import (
+    configuration,
     load_causl_context,
     load_interview_context,
 )
@@ -40,7 +41,7 @@ def read_workspace_context(
         and chat.persona is not None
         and chat.persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
     ):
-        loaded = load_interview_context(db, user, start_research=start_research)
+        loaded = load_interview_context(db, user)
         if loaded.configuration.persona_id != chat.persona_id:
             raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
         binding = bind_interview_chat(
@@ -51,7 +52,8 @@ def read_workspace_context(
             loaded.envelope.issuer,
             loaded.configuration.library_server_id,
         )
-        return binding, loaded.envelope
+        if not start_research:
+            return binding, loaded.envelope
     if binding is None:
         if selection is not None:
             raise OnyxError(
@@ -59,10 +61,14 @@ def read_workspace_context(
             )
         return None, None
     current = selection or binding.selection
+    config = configuration()
     if (
         chat.user_id != user.id
         or current.market_id != binding.market_id
         or chat.project_id is not None
+        or chat.incognito_record_mode is not None
+        or config.persona_id != chat.persona_id
+        or config.library_server_id != binding.library_server_id
     ):
         raise OnyxError(
             OnyxErrorCode.UNAUTHORIZED,

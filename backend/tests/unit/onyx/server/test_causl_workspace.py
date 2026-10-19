@@ -163,10 +163,10 @@ def test_new_interviews_read_the_same_committed_market_fact_without_chat_history
         assert WORKSPACE_INSTRUCTIONS not in prompt
         bindings.append(binding)
     assert bindings[0].chat_id != bindings[1].chat_id
-    assert len(requests) == 2, "Each new conversation reads committed Postgres context"
+    assert len(requests) == 4, "Each new interview validates before activating research"
     assert "x-causl-expected-organization" not in requests[0].headers
     assert requests[0].headers["x-causl-expected-subject"] == ACTOR.user_id
-    assert all(request.method == "POST" for request in requests), (
+    assert [request.method for request in requests] == ["GET", "POST", "GET", "POST"], (
         "An ordinary interview turn starts or resumes bounded research"
     )
 
@@ -189,9 +189,18 @@ def test_memory_reads_do_not_activate_interview_research(
         persona=Persona(id=11, name="Executive interview"),
     )
 
-    turn.read_workspace_context(db, user, chat, None)
+    binding, _ = turn.read_workspace_context(db, user, chat, None)
 
     assert [request.method for request in requests] == ["GET"]
+
+    monkeypatch.setattr(turn, "read_causl_binding", lambda *_args: binding)
+    restored, prompt = turn.workspace_turn(db, user, chat, None)
+
+    assert restored == binding
+    assert prompt is not None
+    assert [request.method for request in requests] == ["GET", "POST"], (
+        "Reading memory first must not prevent the actual interview from starting research"
+    )
 
 
 def test_native_interview_refuses_a_library_login_for_another_person(
@@ -203,7 +212,7 @@ def test_native_interview_refuses_a_library_login_for_another_person(
     payload = envelope()
     payload["actor"]["userId"] = "auth0|somebody_else"
     payload["context"].update(page="workspace", market=None)
-    http_response(monkeypatch, payload)
+    requests = http_response(monkeypatch, payload)
     chat = ChatSession(
         id=uuid4(),
         user_id=user.id,
@@ -212,6 +221,7 @@ def test_native_interview_refuses_a_library_login_for_another_person(
     )
     with pytest.raises(OnyxError):
         turn.workspace_turn(db, user, chat, None)
+    assert [request.method for request in requests] == ["GET"]
 
 
 def test_existing_unbound_history_is_retained_without_guessing_its_organization(
@@ -224,7 +234,7 @@ def test_existing_unbound_history_is_retained_without_guessing_its_organization(
     monkeypatch.setattr(db, "scalar", lambda *_args: 42)
     payload = envelope()
     payload["context"].update(page="workspace", market=None)
-    http_response(monkeypatch, payload)
+    requests = http_response(monkeypatch, payload)
     chat = ChatSession(
         id=uuid4(),
         user_id=user.id,
@@ -233,6 +243,44 @@ def test_existing_unbound_history_is_retained_without_guessing_its_organization(
     )
     with pytest.raises(OnyxError, match="Start a new interview"):
         turn.workspace_turn(db, user, chat, None)
+    assert [request.method for request in requests] == ["GET"], (
+        "Rejected history must not start research"
+    )
+
+
+@pytest.mark.parametrize("invalid", ["persona", "server", "project", "incognito"])
+def test_bound_interview_checks_local_authority_before_activating_research(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+    invalid: str,
+) -> None:
+    db, user, _server = connected
+    chat = ChatSession(id=uuid4(), user_id=user.id, persona_id=11)
+    binding = CauslChatBinding(
+        user_id=user.id,
+        issuer="https://auth.example/",
+        actor=ACTOR,
+        market_id=None,
+        chat_id=chat.id,
+        selection=CauslSelection(page="workspace"),
+        library_server_id=22,
+        mode="interview",
+    )
+    if invalid == "persona":
+        chat.persona_id = 12
+    elif invalid == "server":
+        monkeypatch.setenv("CAUSL_KB_MCP_SERVER_ID", "23")
+    elif invalid == "project":
+        chat.project_id = 99
+    else:
+        chat.incognito_record_mode = "not_stored"
+    monkeypatch.setattr(turn, "read_causl_binding", lambda *_args: binding)
+    requests = http_response(monkeypatch, envelope())
+
+    with pytest.raises(OnyxError):
+        turn.workspace_turn(db, user, chat, None)
+
+    assert not requests, "A rejected binding must not activate research"
 
 
 @pytest.mark.parametrize(
