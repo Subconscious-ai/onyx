@@ -26,6 +26,7 @@ class ResearchDeadlineTests(unittest.IsolatedAsyncioTestCase):
             patch.dict(os.environ, environment, clear=True),
             patch("serve_research.runpy.run_path", return_value={"mcp": upstream}),
             patch("serve_research.install_source_limit", create=True),
+            patch("serve_research.install_website_source"),
         ):
             server = await configure(Path("/unused"))
             self.assertIs(server, upstream)

@@ -81,6 +81,33 @@ class AdaptiveTesterTests(unittest.TestCase):
         )
         self.assertEqual(key, "goal")
 
+    def test_speaker_lens_does_not_change_the_actual_question_intent(self):
+        for label in (
+            "Sarah · Journey",
+            "Frankie · Business model",
+            "Mei · Market challenge",
+        ):
+            with self.subTest(label=label):
+                reply, key = choose_reply(
+                    self.case,
+                    f"{label}: What is the desired outcome of optimizing marketing messaging?",
+                    {"journey"},
+                )
+                self.assertEqual(key, "goal")
+                self.assertEqual(reply, "Target 7% in three months.")
+        _, key = choose_reply(
+            self.case,
+            "Sarah · Journey: What are the key customer decisions in your marketing funnel?",
+            {"journey"},
+        )
+        self.assertEqual(key, "repeat:journey")
+        _, key = choose_reply(
+            self.case,
+            "Jerry: What is the desired outcome of optimizing marketing messaging?",
+            {"journey"},
+        )
+        self.assertEqual(key, "passive_probe")
+
     def test_short_confirmation_refers_to_the_proposed_journey(self):
         _, key = choose_reply(
             self.case, "Proposed journey: page, quote, contract. Does that fit?", set()

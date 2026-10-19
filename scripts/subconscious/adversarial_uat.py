@@ -36,6 +36,12 @@ def choose_reply(case: dict, answer: str, revealed: set[str]) -> tuple[str, str]
             re.I,
         )
         asked = " ".join(requests)
+    asked = re.sub(
+        r"\b(?:Sarah\s*·\s*Journey|Frankie\s*·\s*Business model|Mei\s*·\s*Market challenge)\s*:\s*",
+        "",
+        asked,
+        flags=re.I,
+    )
     if asked:
         if re.search(
             r"\b(?:maximum|capacity|staffing|resource limits?)\b", asked, re.I
