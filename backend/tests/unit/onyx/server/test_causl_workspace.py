@@ -768,3 +768,60 @@ def test_denies_same_subject_from_another_identity_issuer(
     with pytest.raises(OnyxError) as failure:
         context.load_causl_context(db, user, ACTOR, SELECTION)
     assert failure.value.status_code == 403
+
+
+def test_hands_the_prepared_interview_brief_to_the_library(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    chat_id = uuid4()
+    binding = CauslChatBinding(
+        user_id=user.id,
+        actor=ACTOR,
+        issuer="https://auth.example/",
+        market_id=None,
+        chat_id=chat_id,
+        selection=SELECTION,
+        library_server_id=22,
+        mode="interview",
+    )
+    transcript = [
+        {"id": 1, "type": "system", "message": "private instructions"},
+        {"id": 2, "type": "user", "message": "Clinics sign a yearly contract."},
+        {
+            "id": 3,
+            "type": "assistant",
+            "message": "<interview-brief>{}</interview-brief>",
+        },
+    ]
+    monkeypatch.setattr(context, "read_causl_binding", lambda *_args: binding)
+    monkeypatch.setattr(
+        context, "owned_snapshot", lambda *_args: {"transcript": transcript}
+    )
+    requests = http_response(monkeypatch, {"marketId": "m", "accepted": {}})
+
+    context.send_interview_brief(db, user, chat_id)
+
+    assert [str(request.url) for request in requests] == [
+        "https://kb.example/api/assistant/onyx-brief"
+    ]
+    assert requests[0].headers["authorization"] == "Bearer test-credential"
+    assert requests[0].headers["x-causl-expected-organization"] == "org_b"
+    assert requests[0].headers["x-causl-expected-subject"] == "auth0|alice"
+    assert json.loads(requests[0].content) == {
+        "format": "burn/onyx-interview",
+        "version": 1,
+        "chatId": str(chat_id),
+        "messages": [
+            {"type": "user", "message": "Clinics sign a yearly contract."},
+            {"type": "assistant", "message": "<interview-brief>{}</interview-brief>"},
+        ],
+    }, "Only the conversation reaches the Library, never system instructions"
+
+    monkeypatch.setattr(
+        context,
+        "read_causl_binding",
+        lambda *_args: binding.model_copy(update={"mode": "workspace"}),
+    )
+    context.send_interview_brief(db, user, chat_id)
+    assert len(requests) == 1, "A workspace chat is not an interview to save"

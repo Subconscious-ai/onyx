@@ -160,6 +160,7 @@ def prepare_saved_brief(
     from onyx.auth.permissions import has_global_permission
     from onyx.db.enums import Permission
     from onyx.server.query_and_chat.burn2.api import PrepareBrief, prepare_brief
+    from onyx.server.query_and_chat.causl.context import send_interview_brief
 
     with get_session_with_current_tenant() as db:
         user = db.get(User, UUID(user_id))
@@ -200,3 +201,12 @@ def prepare_saved_brief(
             logger.warning(
                 "Burn background brief unavailable: %s", type(error).__name__
             )
+        else:
+            try:
+                send_interview_brief(db, user, UUID(chat_id))
+            except Exception as error:
+                # The browser handoff still carries the same brief to the Library.
+                logger.warning(
+                    "Burn brief Library handoff unavailable: %s",
+                    type(error).__name__,
+                )
