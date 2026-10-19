@@ -1275,6 +1275,7 @@ def build_chat_turn(
         causl_original_message=causl_original_message,
         trusted_turn_instructions=trusted_turn_instructions,
         use_persona_prompt=not saved_fact_request,
+        saved_fact_request=saved_fact_request,
     )
 
 
@@ -1559,6 +1560,12 @@ def _run_models(
                 initial_profile_tool,
             )
 
+            forced_tool_id = setup.forced_tool_id
+            if setup.saved_fact_request and forced_tool_id is None:
+                forced_tool_id = next(
+                    (tool.id for tool in model_tools if tool.name == "market_search"),
+                    None,
+                )
             forced_tool_id = initial_profile_tool(
                 enabled=os.environ.get("BURN2_ENABLED") == "true"
                 and (
@@ -1570,7 +1577,7 @@ def _run_models(
                 user_id=None if user.is_anonymous else user.id,
                 incognito=setup.incognito_record_mode is not None,
                 tools=model_tools,
-                forced_tool_id=setup.forced_tool_id,
+                forced_tool_id=forced_tool_id,
             )
             if forced_tool_id and forced_tool_id not in {
                 tool.id for tool in model_tools

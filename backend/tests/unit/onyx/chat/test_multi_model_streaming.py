@@ -288,6 +288,7 @@ def _make_setup(n_models: int = 1) -> MagicMock:
     setup.mcp_headers = None
     setup.causl_binding = None
     setup.causl_original_message = None
+    setup.saved_fact_request = False
     return setup
 
 
@@ -304,6 +305,43 @@ class TestRunModels:
     All external dependencies (LLM, DB, tools) are patched out.  Worker threads
     still run but return immediately since run_llm_loop is mocked.
     """
+
+    @pytest.mark.parametrize(
+        ("saved_fact_request", "requested_tool_id", "expected_tool_id"),
+        [(True, None, 67), (False, None, None), (True, 44, 44)],
+    )
+    def test_saved_fact_readout_requires_library_search_before_answering(
+        self,
+        saved_fact_request: bool,
+        requested_tool_id: int | None,
+        expected_tool_id: int | None,
+    ) -> None:
+        setup = _make_setup()
+        setup.saved_fact_request = saved_fact_request
+        setup.forced_tool_id = requested_tool_id
+        library = MagicMock(id=67)
+        library.name = "market_search"
+        other = MagicMock(id=44)
+        other.name = "other_tool"
+        with (
+            patch("onyx.chat.process_message.run_llm_loop") as run,
+            patch(
+                "onyx.chat.process_message.construct_tools",
+                return_value={67: [library], 44: [other]},
+            ),
+            patch("onyx.chat.process_message.llm_loop_completion_handle"),
+            patch(
+                "onyx.chat.process_message.get_llm_token_counter",
+                return_value=lambda _: 0,
+            ),
+            patch(
+                "onyx.server.query_and_chat.burn2.requested_tool.initial_profile_tool",
+                side_effect=lambda **kwargs: kwargs["forced_tool_id"],
+            ) as bootstrap,
+        ):
+            _run_models_collect(setup)
+        assert bootstrap.call_args.kwargs["forced_tool_id"] == expected_tool_id
+        assert run.call_args.kwargs["forced_tool_id"] == expected_tool_id
 
     @pytest.mark.parametrize("workspace_bound", [False, True])
     def test_workspace_turn_cannot_bootstrap_a_personal_company_profile(
