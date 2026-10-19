@@ -182,9 +182,6 @@ def turn_guidance(
         question_guidance = (
             "The saved draft has an executive goal and named measure, but its customer journey is incomplete. "
             "If the source answers, including the latest reply, already supply or select the path or explicitly keep it unknown, retain it and do not ask the path question. "
-            "An answer such as 'I do not know' or 'keep it unknown' does not reject an existing named proposed path. "
-            "Retain that path as a draft assumption; its actual use and unmeasured rates stay unknown. Do not repeat the path question. "
-            "An explicit 'no, that is wrong', 'not our path', or a correction removes the rejected structure. "
             "Otherwise: Ask only one customer decision-path question before another operating-number question. "
             "Do not ask about economics, capacity, price, margin, or utilization. "
             "Do not invent an industry funnel or treat company research as their private customer behavior."

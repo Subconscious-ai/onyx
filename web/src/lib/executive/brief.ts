@@ -448,10 +448,6 @@ export function modelReadiness(brief: InterviewBrief | null): ModelReadiness {
     missing.push("An executive objective");
   if (!brief?.keyResults?.some((kr) => kr.metric.trim() && kr.unit.trim()))
     missing.push("A named success measure");
-  if ((brief?.journey.length ?? 0) < 2)
-    missing.push("Customer behavior before and after a decision");
-  if (!brief?.transitions?.length)
-    missing.push("A behavior transition linked to a measure");
   if (!brief?.model?.equation.text || !brief.model.inputs.length)
     missing.push("A proposed driver equation and named inputs");
   if (brief?.conflicts.length)

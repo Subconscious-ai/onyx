@@ -415,6 +415,50 @@ describe("Burn 2.0 model handoff", () => {
       modelReadiness(symbolic && { ...symbolic, keyResults: [] }).ready
     ).toBe(false);
   });
+  test("allows a sourced symbolic model while customer behavior remains unknown", () => {
+    const symbolic = projectBrief([
+      ...history,
+      answer({
+        ...v2,
+        journey: [],
+        transitions: [],
+        keyResults: [{ ...v2.keyResults[0], journeyIds: [] }],
+      }),
+    ]).brief;
+    expect(symbolic?.objective.status).toBe("executive");
+    expect(symbolic?.journey).toEqual([]);
+    expect(symbolic?.transitions).toEqual([]);
+    expect(symbolic?.keyResults?.[0]?.journeyIds).toEqual([]);
+    expect(symbolic?.model?.inputs[0]?.value.status).toBe("unknown");
+    expect(modelReadiness(symbolic)).toEqual({ ready: true, missing: [] });
+    expect(
+      modelReadiness(
+        symbolic && {
+          ...symbolic,
+          objective: { ...symbolic.objective, status: "assumption" },
+        }
+      ).ready
+    ).toBe(false);
+    expect(
+      modelReadiness(symbolic && { ...symbolic, keyResults: [] }).ready
+    ).toBe(false);
+    expect(
+      modelReadiness(symbolic && { ...symbolic, model: undefined }).ready
+    ).toBe(false);
+    expect(
+      modelReadiness(
+        symbolic && {
+          ...symbolic,
+          conflicts: [
+            {
+              text: "Which statement is correct?",
+              quotes: ["First statement", "Conflicting statement"],
+            },
+          ],
+        }
+      ).ready
+    ).toBe(false);
+  });
   test("a quoted scenario cannot become a company baseline or target", () => {
     const quote = "Assume a renewal baseline of 80 percent for a scenario.";
     const result = projectBrief([
