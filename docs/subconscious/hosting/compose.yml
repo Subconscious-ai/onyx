@@ -143,13 +143,37 @@ services:
       # Preserve the native entrypoint's /var/run/docker.sock detection while
       # allowing the rootless daemon to replace the socket after a restart.
       - /run/burn-executor:/var/run:ro
+  mcp_server:
+    image: onyx-burn2:prototype18-cdde871372
+    command: ["python", "-m", "onyx.mcp_server_main"]
+    environment:
+      MCP_SERVER_ENABLED: "true"
+      MCP_SERVER_HOST: "0.0.0.0"
+      MCP_SERVER_PORT: "8090"
+      API_SERVER_URL_OVERRIDE_FOR_HTTP_REQUESTS: "http://api_server:8080"
+      LOG_LEVEL: "WARNING"
+      LOG_TO_FILE: "false"
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: 0.5
+    depends_on: [api_server]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
   gateway:
     image: nginx:1.25.5-alpine
     restart: unless-stopped
     mem_limit: 64m
     ports: ["127.0.0.1:3176:8085"]
     volumes: ["./gateway.conf:/etc/nginx/nginx.conf:ro"]
-    depends_on: [api_server, research]
+    depends_on: [api_server, research, mcp_server]
   research:
     image: burn-research:durable-6388477
     build:
