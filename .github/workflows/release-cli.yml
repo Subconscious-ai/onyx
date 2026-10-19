@@ -193,6 +193,7 @@ jobs:
           gh release upload cli-latest --clobber latest-dist/*
 
   docker-amd64:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-x64
@@ -249,6 +250,7 @@ jobs:
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
   docker-arm64:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-arm64
@@ -305,6 +307,7 @@ jobs:
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
   merge-docker:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     needs:
       - docker-amd64
       - docker-arm64

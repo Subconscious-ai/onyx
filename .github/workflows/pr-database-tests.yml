@@ -49,7 +49,7 @@ jobs:
 
   database-tests:
     needs: changes
-    if: needs.changes.outputs.db == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.changes.outputs.db == 'true') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-arm64

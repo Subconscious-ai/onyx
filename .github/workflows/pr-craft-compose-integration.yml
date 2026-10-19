@@ -140,7 +140,7 @@ jobs:
     # ECR repo so each test shard pulls prebuilt images instead of cold-building.
     name: build-image (${{ matrix.image }})
     needs: changes
-    if: needs.changes.outputs.craft_compose == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.changes.outputs.craft_compose == 'true') # upstream-only runner; this fork has none
     strategy:
       fail-fast: false
       matrix:
@@ -210,7 +210,7 @@ jobs:
   craft-compose-integration-test:
     name: craft-compose (${{ matrix.test-file.name }})
     needs: [changes, discover-test-files, build-images]
-    if: needs.changes.outputs.craft_compose == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.changes.outputs.craft_compose == 'true') # upstream-only runner; this fork has none
     permissions:
       contents: read
       id-token: write
@@ -427,7 +427,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [changes, discover-test-files, build-images, craft-compose-integration-test]
-    if: ${{ always() }}
+    if: github.repository == 'onyx-dot-app/onyx' && always() # suite runs only upstream; skipped reports success here
     steps:
       - name: Check job status
         env:

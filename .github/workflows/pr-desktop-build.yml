@@ -32,19 +32,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: linux
-            os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            args: "--bundles deb,rpm"
-          - platform: macos
-            os: macos-latest
-            target: universal-apple-darwin
-            args: "--target universal-apple-darwin"
-          - platform: windows
-            os: windows-latest
-            target: x86_64-pc-windows-msvc
-            args: ""
+        # macOS/Windows bundles serve upstream releases only; this fork builds
+        # Linux. (A matrix `exclude` cannot remove `include`-only entries.)
+        include: ${{ fromJSON(github.repository == 'onyx-dot-app/onyx' && '[{"platform":"linux","os":"ubuntu-latest","target":"x86_64-unknown-linux-gnu","args":"--bundles deb,rpm"},{"platform":"macos","os":"macos-latest","target":"universal-apple-darwin","args":"--target universal-apple-darwin"},{"platform":"windows","os":"windows-latest","target":"x86_64-pc-windows-msvc","args":""}]' || '[{"platform":"linux","os":"ubuntu-latest","target":"x86_64-unknown-linux-gnu","args":"--bundles deb,rpm"}]') }}
 
     steps:
       - name: Checkout code

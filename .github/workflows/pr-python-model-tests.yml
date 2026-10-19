@@ -23,6 +23,7 @@ env:
 
 jobs:
   model-check:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     # See https://runs-on.com/runners/linux/
     runs-on:
       - runs-on

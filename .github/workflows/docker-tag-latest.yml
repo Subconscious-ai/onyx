@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   tag:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     # See https://runs-on.com/runners/linux/
     # use a lower powered instance since this just does i/o to docker hub
     runs-on: [runs-on, runner=2cpu-linux-x64, "run-id=${{ github.run_id }}-tag"]
