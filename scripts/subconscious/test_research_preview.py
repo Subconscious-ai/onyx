@@ -13,6 +13,34 @@ from serve_research import ResearchDeadline, configure
 
 
 class ResearchDeadlineTests(unittest.IsolatedAsyncioTestCase):
+    async def test_native_curation_defaults_on_and_respects_explicit_configuration(
+        self,
+    ):
+        for configured, expected in (
+            (None, "true"),
+            ("false", "false"),
+            ("true", "true"),
+        ):
+            with self.subTest(configured=configured):
+                environment = {
+                    "AWS_BEARER_TOKEN_BEDROCK": "test-bearer",
+                    "AWS_DEFAULT_REGION": "us-east-1",
+                    "EXA_API_KEY": "test-search",
+                    "GPTR_PREVIEW_TOKEN": "t" * 40,
+                }
+                if configured is not None:
+                    environment["CURATE_SOURCES"] = configured
+                upstream = FastMCP("Native source curation")
+                with (
+                    patch.dict(os.environ, environment, clear=True),
+                    patch(
+                        "serve_research.runpy.run_path", return_value={"mcp": upstream}
+                    ),
+                    patch("serve_research.install_source_limit", create=True),
+                ):
+                    await configure(Path("/unused"))
+                    self.assertEqual(os.environ["CURATE_SOURCES"], expected)
+
     async def test_duckduckgo_uses_selected_retriever_without_an_exa_key(self):
         environment = {
             "AWS_BEARER_TOKEN_BEDROCK": "test-bearer",

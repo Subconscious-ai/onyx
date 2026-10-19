@@ -92,6 +92,59 @@ class ResearchStartupTests(unittest.TestCase):
         self.assertEqual(result["report"], "A sourced product description.")
         self.assertEqual(result["source_urls"], ["https://example.com/product"])
 
+    def test_native_curator_source_records_preserve_content_and_original_provenance(
+        self,
+    ):
+        result = research_receipt(
+            json.dumps(
+                {
+                    "success": True,
+                    "data": {
+                        "research_id": "native-curated-receipt",
+                        "context": [
+                            {
+                                "Title": "Original product page",
+                                "Content": "Published product evidence.",
+                                "Source": "https://example.com/product",
+                            },
+                            "A second original string context.",
+                            {
+                                "Title": "An unsupported source",
+                                "Content": "Do not retain unlisted provenance.",
+                                "Source": "https://unlisted.example.com/product",
+                            },
+                            {"Content": "Do not retain missing provenance."},
+                        ],
+                        "source_urls": ["https://example.com/product"],
+                    },
+                }
+            )
+        )
+        self.assertEqual(
+            result["report"],
+            "Title: Original product page\nContent: Published product evidence.\n"
+            "Source: https://example.com/product\n\nA second original string context.",
+        )
+        self.assertEqual(result["source_urls"], ["https://example.com/product"])
+        self.assertEqual(result["research_id"], "native-curated-receipt")
+
+    def test_native_curator_records_cannot_supply_missing_original_source_urls(self):
+        with self.assertRaisesRegex(ValueError, "original-source URLs"):
+            research_receipt(
+                json.dumps(
+                    {
+                        "context": [
+                            {
+                                "Title": "Unverified page",
+                                "Content": "Not source-backed.",
+                                "Source": "https://example.com/product",
+                            }
+                        ],
+                        "source_urls": [],
+                    }
+                )
+            )
+
     def test_unknown_brief_retains_preparation_without_applying_employer_to_client(
         self,
     ):

@@ -112,8 +112,6 @@ def research_receipt(raw: str) -> dict[str, Any]:
         ):
             raise ValueError("Research did not complete")
     content = data.get("context", data.get("report"))
-    if isinstance(content, list):
-        content = "\n\n".join(part for part in content if isinstance(part, str))
     candidates = data.get("source_urls", data.get("sources", []))
     urls = []
     for source in candidates if isinstance(candidates, list) else []:
@@ -122,6 +120,23 @@ def research_receipt(raw: str) -> dict[str, Any]:
         )
         if url and url not in urls:
             urls.append(url)
+    if isinstance(content, list):
+        parts = []
+        for part in content:
+            if isinstance(part, str):
+                parts.append(part)
+            elif (
+                isinstance(part, dict)
+                and part.get("Source") in urls
+                and isinstance(part.get("Content"), str)
+                and part["Content"].strip()
+            ):
+                title = part.get("Title", "")
+                parts.append(
+                    f"Title: {title if isinstance(title, str) else ''}\n"
+                    f"Content: {part['Content']}\nSource: {part['Source']}"
+                )
+        content = "\n\n".join(parts)
     if not isinstance(content, str) or not content.strip() or not urls:
         raise ValueError("Research needs content and original-source URLs")
     return {
