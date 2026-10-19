@@ -128,6 +128,40 @@ class ResearchStartupTests(unittest.TestCase):
         self.assertEqual(result["source_urls"], ["https://example.com/product"])
         self.assertEqual(result["research_id"], "native-curated-receipt")
 
+    def test_native_curator_lowercase_records_preserve_only_listed_sources(self):
+        # Real retained GPT Researcher context uses lowercase keys.
+        result = research_receipt(
+            json.dumps(
+                {
+                    "success": True,
+                    "data": {
+                        "research_id": "retained-native-lowercase",
+                        "context": [
+                            {
+                                "title": "Original product page",
+                                "content": "Published company evidence.",
+                                "source": "https://example.com/product",
+                            },
+                            {
+                                "title": "Unlisted source",
+                                "content": "Do not retain unlisted provenance.",
+                                "source": "https://unlisted.example.com/product",
+                            },
+                            {"content": "Do not retain missing provenance."},
+                        ],
+                        "source_urls": ["https://example.com/product"],
+                    },
+                }
+            )
+        )
+        self.assertEqual(
+            result["report"],
+            "Title: Original product page\nContent: Published company evidence.\n"
+            "Source: https://example.com/product",
+        )
+        self.assertEqual(result["source_urls"], ["https://example.com/product"])
+        self.assertEqual(result["research_id"], "retained-native-lowercase")
+
     def test_native_curator_records_cannot_supply_missing_original_source_urls(self):
         with self.assertRaisesRegex(ValueError, "original-source URLs"):
             research_receipt(

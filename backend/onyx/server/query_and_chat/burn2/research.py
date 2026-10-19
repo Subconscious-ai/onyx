@@ -125,16 +125,15 @@ def research_receipt(raw: str) -> dict[str, Any]:
         for part in content:
             if isinstance(part, str):
                 parts.append(part)
-            elif (
-                isinstance(part, dict)
-                and part.get("Source") in urls
-                and isinstance(part.get("Content"), str)
-                and part["Content"].strip()
-            ):
-                title = part.get("Title", "")
+            elif isinstance(part, dict):
+                source = part.get("Source", part.get("source"))
+                body = part.get("Content", part.get("content"))
+                if source not in urls or not isinstance(body, str) or not body.strip():
+                    continue
+                title = part.get("Title", part.get("title", ""))
                 parts.append(
                     f"Title: {title if isinstance(title, str) else ''}\n"
-                    f"Content: {part['Content']}\nSource: {part['Source']}"
+                    f"Content: {body}\nSource: {source}"
                 )
         content = "\n\n".join(parts)
     if not isinstance(content, str) or not content.strip() or not urls:
