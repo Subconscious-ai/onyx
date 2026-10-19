@@ -20,7 +20,7 @@ SAVED_FACT_RETRIEVAL_INSTRUCTIONS = (
     "Keep each value with its offering, attribute, units, conditions and source references. "
     "Preserve the full recorded attribute name, including qualifiers in parentheses; those qualifiers are material conditions even without a separate conditions field. "
     "Count distinct information, not overlapping descriptions of the same fact. "
-    "Only count concrete product inputs, processes, outputs, availability, validation methods and limitations. "
+    "Count concrete product facts, such as inputs, processes, outputs, availability, prices, validation methods and limitations. "
     "Exclude broad benefits and marketing promises from the fact count, even when those statements are saved and source-supported. "
     "For actual product facts, do not count invented examples or unconfirmed populations and segments. "
     "Count overlapping training descriptions once even when they have separate record IDs. "
