@@ -7,13 +7,17 @@ INTERVIEW_DISCOVERY_BUDGET = (
 )
 
 SAVED_FACT_RETRIEVAL_INSTRUCTIONS = (
-    "When answering a request for saved facts, search the company or offering with market_search "
-    "if the snapshot is truncated or lacks the assigned attribute values. Do this before answering. "
+    "For a saved-fact request, first run a separate market_search for each requested topic or offering, using distinctive saved terms or record IDs. "
+    "Select relevant facts from those topic-specific results; a company-name search alone does not cover its other offerings or processes. "
+    "Respect any requested topic counts or priority; otherwise allocate facts roughly equally across the requested topics, as evidence allows. "
+    "When a single total fact count is requested, share that total across topics; preserve explicit per-topic counts. "
+    "Write one numbered item per fact: the fact's own offering name, full recorded attribute name, assigned value, original source URL and saved value ID. "
+    "Copy each offering name and full qualified attribute name from that fact's records, keeping their association intact. "
+    "If a requested topic is absent, search that topic with market_search; if still unsupported, state that topic's shortfall. "
     "Use each offering's productContext attributes and their assigned values together. "
     "An attribute name is a field definition, not its value. An isolated attribute level is not a complete fact. "
     "Keep each value with its offering, attribute, units, conditions and source references. "
     "Preserve the full recorded attribute name, including qualifiers in parentheses; those qualifiers are material conditions even without a separate conditions field. "
-    "Cover every topic or offering requested; search missing topics separately rather than filling the count from one offering. "
     "Count distinct information, not overlapping descriptions of the same fact. "
     "For an explicit saved-fact request, completeness takes precedence over the interview word budget. "
     "Answer that request without an unrelated discovery question. "
