@@ -51,8 +51,10 @@ def choose_reply(case: dict, answer: str, revealed: set[str]) -> tuple[str, str]
             asked,
             re.I,
         ) or (
-            re.search(r"journey|customer path", answer, re.I)
-            and re.search(r"fit|match|confirm|correct|accurate", asked, re.I)
+            re.search(r"journey|customer path|customer decision flow", answer, re.I)
+            and re.search(
+                r"fit|match|confirm|correct|accurate|capture|reflect", asked, re.I
+            )
         ):
             intent = "journey"
         elif any(f["id"] == "goal" for f in case["facts"]) and re.search(

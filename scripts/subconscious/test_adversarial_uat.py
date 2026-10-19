@@ -87,6 +87,23 @@ class AdaptiveTesterTests(unittest.TestCase):
         )
         self.assertEqual(key, "journey")
 
+    def test_capture_and_reflect_confirmations_answer_the_proposed_customer_path(self):
+        answers = [
+            "To model renewal, we need the customer decision flow. A typical path is usage, value realization, reminder, renewal. Does this capture your renewal process?",
+            "Sarah · Journey: inquiry, quote, booking. Does this reflect your sales flow?",
+            "Sarah · Journey hypothesis: use, recommendation, approval, renewal. Does this reflect your renewal flow?",
+        ]
+        for answer in answers:
+            with self.subTest(answer=answer):
+                reply, key = choose_reply(self.case, answer, set())
+                self.assertEqual(key, "journey")
+                self.assertEqual(reply, "Homeowners visit, request a quote, then sign.")
+                repeated_reply, repeated_key = choose_reply(
+                    self.case, answer, {"journey"}
+                )
+                self.assertEqual(repeated_key, "repeat:journey")
+                self.assertIn("already supplied", repeated_reply)
+
     def test_single_number_selection_is_a_goal_question(self):
         _, key = choose_reply(
             self.case,
