@@ -226,6 +226,7 @@ def test_native_messages_scope_workspace_rules_without_changing_persona(
         llm=llm,
         token_counter=len,
         workspace_instructions=WORKSPACE_INSTRUCTIONS if workspace_bound else None,
+        trusted_turn_instructions="Question budget: one.",
     )
     system = captured[0]
     reminder = captured[-1]
@@ -233,6 +234,8 @@ def test_native_messages_scope_workspace_rules_without_changing_persona(
     assert reminder.message_type == MessageType.USER_REMINDER
     assert (WORKSPACE_INSTRUCTIONS in system.message) is workspace_bound
     assert (WORKSPACE_INSTRUCTIONS in reminder.message) is workspace_bound
+    assert "Question budget: one." in system.message
+    assert "Question budget: one." in reminder.message
     assert (
         "Always ask three discovery questions." in reminder.message
     ) is not workspace_bound

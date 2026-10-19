@@ -1,9 +1,9 @@
-# Preparation-module overlay over a verified, fully configured native image.
+# Preparation modules and shared persona gate over a verified native image.
 ARG BURN_BASE_IMAGE
 FROM ${BURN_BASE_IMAGE}
 COPY --link backend/onyx/server/query_and_chat/burn2/api.py /app/onyx/server/query_and_chat/burn2/api.py
+COPY --link backend/onyx/server/query_and_chat/burn2/__init__.py /app/onyx/server/query_and_chat/burn2/__init__.py
 COPY --link backend/onyx/server/query_and_chat/burn2/profile.py /app/onyx/server/query_and_chat/burn2/profile.py
 COPY --link backend/onyx/server/query_and_chat/burn2/research.py /app/onyx/server/query_and_chat/burn2/research.py
 COPY --link backend/onyx/server/query_and_chat/burn2/validation.py /app/onyx/server/query_and_chat/burn2/validation.py
-COPY --link backend/onyx/server/query_and_chat/burn2/__init__.py /app/onyx/server/query_and_chat/burn2/__init__.py
 RUN python -c "from onyx.server.query_and_chat.burn2 import EXECUTIVE_INTERVIEW_PERSONA_NAMES; assert len(EXECUTIVE_INTERVIEW_PERSONA_NAMES) == 3"

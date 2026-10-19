@@ -1,5 +1,9 @@
 {
   "causlWorkspace": {
+    "cancelConnection": "Weiter bearbeiten",
+    "connectWorkspace": "Arbeitsbereich verbinden",
+    "connectionRequired": "Verbinden Sie Ihren Arbeitsbereich, um fortzufahren. Ihre Nachricht bleibt erhalten.",
+    "connectionFailed": "Die Verbindung ist fehlgeschlagen. Ihre Nachricht bleibt erhalten. Versuchen Sie es erneut.",
     "notConfigured": "Öffnen Sie den Assistenten in Ihrem causl-kb-Arbeitsbereich. Falls er nicht verfügbar bleibt, wenden Sie sich an die Administration.",
     "signin": "Melden Sie sich mit demselben Organisationskonto wie in causl-kb an. Öffnen Sie danach diese Unterhaltung erneut.",
     "signInAction": "Bei Onyx anmelden",
@@ -13850,6 +13854,13 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "Quelle: {quote}",
+    "savedMarketFacts": "Gespeicherte Marktfakten",
+    "marketMemoryUnavailable": "Der gemeinsame Marktspeicher ist nicht verfügbar.",
+    "marketMemoryLoading": "Gespeicherte Marktfakten werden gelesen…",
+    "marketMemorySource": "Bestätigte Fakten aus der gemeinsamen Marktbibliothek.",
+    "marketMemoryEmpty": "Noch keine bestätigten Marktfakten. Interviewnotizen bleiben bis zur Prüfung Entwürfe.",
+    "marketMemoryBounded": "Begrenzte Ansicht. Beca kann weitere Fakten aus der Bibliothek abrufen.",
     "companyProfile": {
       "title": "Unternehmensprofil",
       "description": "Ihre Korrekturen haben Vorrang vor PDL. Dies ist Ihr privates Arbeitsprofil, kein gemeinsamer Unternehmensdatensatz.",

@@ -251,6 +251,7 @@ def _construct_tools_impl(
         if (
             custom_tool_config
             and custom_tool_config.causl_binding
+            and custom_tool_config.causl_binding.mode == "workspace"
             and not db_tool_model.in_code_tool_id
             and db_tool_model.mcp_server_id
             != custom_tool_config.causl_binding.library_server_id
@@ -587,7 +588,11 @@ def _construct_tools_impl(
 
     # Always inject MemoryTool when the user has the memory tool enabled,
     # bypassing persona tool associations and allowed_tool_ids filtering
-    if allow_user_context and user.enable_memory_tool:
+    if (
+        allow_user_context
+        and user.enable_memory_tool
+        and not (custom_tool_config and custom_tool_config.causl_binding)
+    ):
         try:
             memory_tool_db_model = get_builtin_tool(db_session, MemoryTool)
             memory_tool = MemoryTool(

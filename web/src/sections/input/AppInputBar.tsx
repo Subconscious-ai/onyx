@@ -90,6 +90,8 @@ export interface AppInputBarProps {
   ) => void;
   /** The workspace clears its draft only after context authorization succeeds. */
   embeddedWorkspace?: boolean;
+  /** Keep a standalone interview draft until its workspace connection is ready. */
+  deferInputClear?: boolean;
   workspaceDraft?: CauslDraft;
   onWorkspaceDraftConsumed?: (id: string) => void;
   llmManager: LlmManager;
@@ -123,6 +125,7 @@ const AppInputBar = React.memo(
     initialMessage = "",
     stopGenerating,
     onSubmit,
+    deferInputClear = false,
     embeddedWorkspace = false,
     workspaceDraft,
     onWorkspaceDraftConsumed,
@@ -316,10 +319,18 @@ const AppInputBar = React.memo(
         if (!text.trim() || (embeddedWorkspace && chatState !== "input")) {
           return;
         }
+        if (deferInputClear) saveChatHandoff(text, "workspace-send");
         handleSubmit(text);
-        if (!embeddedWorkspace) clearChatDraft();
+        if (!embeddedWorkspace && !deferInputClear) clearChatDraft();
       },
-      [handleSubmit, clearChatDraft, embeddedWorkspace, chatState]
+      [
+        handleSubmit,
+        clearChatDraft,
+        embeddedWorkspace,
+        chatState,
+        deferInputClear,
+        saveChatHandoff,
+      ]
     );
 
     // Expose reset and focus methods to parent via ref
@@ -467,9 +478,32 @@ const AppInputBar = React.memo(
         isReady &&
         queuedMessages.length > 0
       ) {
-        const nextMessage = queuedMessages[0]!.text;
+        const queued = queuedMessages[0]!;
+        const nextMessage = queued.text;
         isAutoSending.current = true;
         stopTTS();
+        if (deferInputClear) {
+          const sessionId = useChatSessionStore.getState().currentSessionId;
+          onSubmit(nextMessage, {
+            onInputAccepted: () => {
+              isAutoSending.current = false;
+              const store = useChatSessionStore.getState();
+              const index = sessionId
+                ? (store.sessions
+                    .get(sessionId)
+                    ?.queuedMessages.findIndex(
+                      (item) => item.id === queued.id
+                    ) ?? -1)
+                : -1;
+              if (sessionId && index >= 0)
+                store.removeQueuedMessage(sessionId, index);
+            },
+            onInputRejected: () => {
+              isAutoSending.current = false;
+            },
+          });
+          return;
+        }
         onSubmit(nextMessage);
         isAutoSending.current = false;
         removeCurrentQueuedMessage(0);
@@ -482,6 +516,7 @@ const AppInputBar = React.memo(
       stopTTS,
       onSubmit,
       embeddedWorkspace,
+      deferInputClear,
     ]);
 
     // Animate attached files wrapper to its content height so CSS transitions

@@ -1,5 +1,9 @@
 {
   "causlWorkspace": {
+    "cancelConnection": "متابعة التحرير",
+    "connectWorkspace": "ربط مساحة العمل",
+    "connectionRequired": "اربط مساحة العمل للمتابعة. سيتم الاحتفاظ برسالتك.",
+    "connectionFailed": "فشل الاتصال بمساحة العمل. تم الاحتفاظ برسالتك. حاول مرة أخرى.",
     "notConfigured": "افتح المساعد من مساحة عمل causl-kb. إذا ظل غير متاح، فاتصل بالمسؤول.",
     "signin": "سجّل الدخول بحساب المؤسسة نفسه الذي تستخدمه في causl-kb، ثم أعد فتح هذه المحادثة.",
     "signInAction": "تسجيل الدخول إلى Onyx",
@@ -13850,6 +13854,13 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "المصدر: {quote}",
+    "savedMarketFacts": "حقائق السوق المحفوظة",
+    "marketMemoryUnavailable": "ذاكرة السوق المشتركة غير متاحة.",
+    "marketMemoryLoading": "جارٍ قراءة حقائق السوق المحفوظة…",
+    "marketMemorySource": "حقائق معتمدة من مكتبة السوق المشتركة.",
+    "marketMemoryEmpty": "لا توجد حقائق سوق معتمدة بعد. تبقى ملاحظات المقابلة مسودات حتى مراجعتها.",
+    "marketMemoryBounded": "هذا عرض محدود. يمكن لبيكا استرجاع مزيد من الحقائق من المكتبة.",
     "companyProfile": {
       "title": "ملف الشركة",
       "description": "تتقدم تصحيحاتك على اقتراحات PDL. هذا ملف عمل خاص بك، وليس سجلاً مشتركاً للشركة.",

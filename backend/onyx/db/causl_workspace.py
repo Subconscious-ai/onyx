@@ -5,12 +5,13 @@ import json
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
+from onyx.configs.constants import MessageType
 from onyx.db.chat import create_chat_session, get_chat_session_by_id
-from onyx.db.models import EncryptedKeyValueStore, User
+from onyx.db.models import ChatMessage, ChatSession, EncryptedKeyValueStore, User
 from onyx.db.persona import user_can_access_persona
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
@@ -50,6 +51,64 @@ def _scope_key(
 ) -> str:
     scope = json.dumps([str(user_id), issuer, actor.org_id, actor.user_id, market_id])
     return f"causl:scope:{hashlib.sha256(scope.encode()).hexdigest()}"
+
+
+def bind_interview_chat(
+    db: Session,
+    user: User,
+    chat: ChatSession,
+    actor: CauslActor,
+    issuer: str,
+    library_server_id: int,
+) -> CauslChatBinding:
+    if (
+        chat.user_id != user.id
+        or chat.project_id is not None
+        or chat.incognito_record_mode is not None
+    ):
+        raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+    db.execute(
+        text("select pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+        {"key": f"causl:chat:{chat.id}"},
+    )
+    existing = read_causl_binding(db, user.id, chat.id)
+    if existing is not None:
+        if (
+            existing.actor != actor
+            or existing.issuer != issuer
+            or existing.library_server_id != library_server_id
+        ):
+            raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+        db.commit()
+        return existing
+    if (
+        db.scalar(
+            select(ChatMessage.id)
+            .where(
+                ChatMessage.chat_session_id == chat.id,
+                ChatMessage.message_type.in_([MessageType.USER, MessageType.ASSISTANT]),
+            )
+            .limit(1)
+        )
+        is not None
+    ):
+        raise OnyxError(
+            OnyxErrorCode.UNAUTHORIZED,
+            "Start a new interview to connect shared market memory. Your existing chat is retained.",
+        )
+    binding = CauslChatBinding(
+        user_id=user.id,
+        actor=actor,
+        issuer=issuer,
+        market_id=None,
+        chat_id=chat.id,
+        selection=CauslSelection(page="workspace"),
+        library_server_id=library_server_id,
+        mode="interview",
+    )
+    _write(db, f"causl:chat:{chat.id}", binding.model_dump(mode="json"))
+    db.commit()
+    return binding
 
 
 def open_causl_chat(

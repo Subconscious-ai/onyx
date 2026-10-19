@@ -1,5 +1,9 @@
 {
   "causlWorkspace": {
+    "cancelConnection": "編集を続ける",
+    "connectWorkspace": "ワークスペースを接続",
+    "connectionRequired": "続行するにはワークスペースを接続してください。メッセージは保持されます。",
+    "connectionFailed": "接続に失敗しました。メッセージは保持されています。もう一度お試しください。",
     "notConfigured": "causl-kbのワークスペースからアシスタントを開いてください。引き続き利用できない場合は管理者にお問い合わせください。",
     "signin": "causl-kbと同じ組織アカウントでログインしてから、この会話を開き直してください。",
     "signInAction": "Onyxにログイン",
@@ -13850,6 +13854,13 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "出典: {quote}",
+    "savedMarketFacts": "保存済みの市場情報",
+    "marketMemoryUnavailable": "共有市場メモリを利用できません。",
+    "marketMemoryLoading": "保存済みの市場情報を読み込み中…",
+    "marketMemorySource": "共有市場ライブラリで承認された情報です。",
+    "marketMemoryEmpty": "承認された市場情報はまだありません。インタビューのメモは確認されるまで下書きです。",
+    "marketMemoryBounded": "一部の情報を表示しています。Beca はライブラリから追加の情報を取得できます。",
     "companyProfile": {
       "title": "会社プロフィール",
       "description": "あなたの修正はPDLより優先されます。これは個人用の作業プロフィールであり、会社の共有記録ではありません。",

@@ -1029,9 +1029,6 @@ def run_llm_loop(
                     )
                     custom_agent_prompt_msg = None
 
-            system_prompt = apply_turn_instructions(
-                system_prompt, trusted_turn_instructions, token_counter
-            )
             if workspace_instructions:
                 system_text = "\n\n".join(
                     filter(
@@ -1047,6 +1044,9 @@ def run_llm_loop(
                     token_count=token_counter(system_text),
                     message_type=MessageType.SYSTEM,
                 )
+            system_prompt = apply_turn_instructions(
+                system_prompt, trusted_turn_instructions, token_counter
+            )
 
             processed_task_prompt = (
                 process_prompt_template(

@@ -1,5 +1,9 @@
 {
   "causlWorkspace": {
+    "cancelConnection": "继续编辑",
+    "connectWorkspace": "连接工作区",
+    "connectionRequired": "连接工作区以继续。您的消息会保留。",
+    "connectionFailed": "工作区连接失败。您的消息已保留。请重试。",
     "notConfigured": "请从causl-kb工作区打开助手。如果仍无法使用，请联系管理员。",
     "signin": "请使用与causl-kb相同的组织账户登录，然后重新打开此对话。",
     "signInAction": "登录Onyx",
@@ -13850,6 +13854,13 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "来源：{quote}",
+    "savedMarketFacts": "已保存的市场事实",
+    "marketMemoryUnavailable": "共享市场记忆暂不可用。",
+    "marketMemoryLoading": "正在读取已保存的市场事实…",
+    "marketMemorySource": "来自共享市场资料库的已确认事实。",
+    "marketMemoryEmpty": "尚无已确认的市场事实。访谈记录在审核前仍为草稿。",
+    "marketMemoryBounded": "当前仅显示部分内容。Beca 可以从资料库中检索更多事实。",
     "companyProfile": {
       "title": "公司资料",
       "description": "您的更正优先于PDL建议。这是您的私人工作资料，并非公司的共享记录。",

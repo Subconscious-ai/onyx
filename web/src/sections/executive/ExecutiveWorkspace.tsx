@@ -1,5 +1,6 @@
 "use client";
 import CompanyProfile from "@/sections/executive/CompanyProfile";
+import SharedMarketMemory from "@/sections/executive/SharedMarketMemory";
 import InterviewProgress from "@/sections/executive/InterviewProgress";
 
 import { Wordmark } from "@/sections/brand/wordmark";
@@ -421,6 +422,13 @@ export default function ExecutiveWorkspace({
                       </Button>
                     )}
                 </div>
+              )}
+              {!preview && (
+                <SharedMarketMemory
+                  chatId={chatId ?? null}
+                  revision={messages.length}
+                  busy={busy}
+                />
               )}
               <details className="executive-context">
                 <summary>{t("researchContextAndLenses")}</summary>

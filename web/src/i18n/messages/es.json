@@ -1,5 +1,9 @@
 {
   "causlWorkspace": {
+    "cancelConnection": "Seguir editando",
+    "connectWorkspace": "Conectar espacio de trabajo",
+    "connectionRequired": "Conecta tu espacio de trabajo para continuar. Tu mensaje se conserva.",
+    "connectionFailed": "La conexión falló. Tu mensaje se conserva. Inténtalo de nuevo.",
     "notConfigured": "Abra el asistente desde su espacio de causl-kb. Si sigue sin estar disponible, contacte con su administrador.",
     "signin": "Inicie sesión con la misma cuenta de organización que usa en causl-kb. Después, vuelva a abrir esta conversación.",
     "signInAction": "Iniciar sesión en Onyx",
@@ -13850,6 +13854,13 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "Fuente: {quote}",
+    "savedMarketFacts": "Hechos de mercado guardados",
+    "marketMemoryUnavailable": "La memoria compartida del mercado no está disponible.",
+    "marketMemoryLoading": "Leyendo hechos de mercado guardados…",
+    "marketMemorySource": "Hechos aceptados de la biblioteca de mercado compartida.",
+    "marketMemoryEmpty": "Aún no hay hechos de mercado aceptados. Las notas de la entrevista son borradores hasta su revisión.",
+    "marketMemoryBounded": "Se muestra una vista limitada. Beca puede recuperar más hechos de la biblioteca.",
     "companyProfile": {
       "title": "Perfil de empresa",
       "description": "Tus correcciones tienen prioridad sobre PDL. Este es tu perfil privado de trabajo, no un registro compartido de la empresa.",

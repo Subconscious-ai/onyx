@@ -1,5 +1,27 @@
 # Burn 2.0 on native Onyx
 
+The current shared-memory candidate and its QA boundary are in
+[Shared market memory](causl-workspace.md#shared-market-memory-in-native-interviews).
+The dated results below describe earlier candidates.
+
+## October 18 release boundary
+
+[PR #71 — connect native interviews to shared market memory](https://github.com/Subconscious-ai/onyx/pull/71)
+is the shared-memory candidate. It retains the executive interview implementation from PR #48.
+The owner authorized publication and merge on October 18. Required checks and review still apply.
+
+The running agent-dev pins remain Onyx `1e2a9d7` and KB `f18c36a` until explicitly replaced.
+A standard member completed Library OAuth, saved exactly one first message and a real reply,
+then saved and reopened the model. One prepared answer took 65.489 seconds after login.
+Independent calculation matched 550 baseline and 700 target contracts. A fresh chat retrieved
+the same accepted fact and source through its actual Library tool in 2.074 seconds.
+The model context returned the same evidence in 0.239 seconds.
+
+These receipts prove the retained-data path at those pins. They do not prove the integrated
+release candidate, fresh PDL/research, realistic executive response time, or the full six-case
+60-second objective. See [Shared market memory](causl-workspace.md#shared-market-memory-in-native-interviews)
+for ownership, first-send recovery and the acceptance boundary.
+
 ## October 14 agent-dev QA
 
 The paired QA runtime is [Beca on agent-dev](https://agent-dev.taila3aadb.ts.net:3011/app?agentId=2).
