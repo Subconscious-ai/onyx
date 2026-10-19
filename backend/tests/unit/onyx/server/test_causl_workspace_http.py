@@ -124,8 +124,15 @@ def test_http_open_and_stream_keep_two_native_callers_separate(
     reads: list[str] = []
 
     def read_kb(
-        _url: str, headers: dict[str, str], selection: CauslSelection
+        _url: str,
+        headers: dict[str, str],
+        selection: CauslSelection,
+        *,
+        start_research: bool = False,
     ) -> CauslContextEnvelope:
+        assert not start_research, (
+            "Workspace model turns never activate initial interview discovery"
+        )
         reads.append(headers["subject"])
         return CauslContextEnvelope(
             issuer=headers["issuer"],

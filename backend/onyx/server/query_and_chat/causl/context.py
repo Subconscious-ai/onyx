@@ -29,7 +29,8 @@ from onyx.server.query_and_chat.causl.models import (
     CauslSelection,
 )
 
-MAX_CONTEXT_BYTES = 36_000
+# KB context is capped at 64 KB; leave room for the verified actor envelope.
+MAX_CONTEXT_BYTES = 68_000
 
 
 @dataclass(frozen=True)
@@ -138,12 +139,19 @@ def _headers(
 
 
 def _read(
-    url: str, headers: dict[str, str], selection: CauslSelection
+    url: str,
+    headers: dict[str, str],
+    selection: CauslSelection,
+    *,
+    start_research: bool = False,
 ) -> CauslContextEnvelope:
     try:
         with httpx.Client(timeout=10, follow_redirects=False) as client:
             with client.stream(
-                "GET", url, headers=headers, params=selection.query()
+                "POST" if start_research else "GET",
+                url,
+                headers=headers,
+                params=selection.query(),
             ) as response:
                 if response.status_code != 200:
                     code = (
@@ -268,7 +276,12 @@ def _validate(
 
 
 def load_causl_context(
-    db: Session, user: User, actor: CauslActor, selection: CauslSelection
+    db: Session,
+    user: User,
+    actor: CauslActor,
+    selection: CauslSelection,
+    *,
+    start_research: bool = False,
 ) -> AuthorizedCauslContext:
     config = configuration()
     identity = require_session_identity(user.id)
@@ -279,7 +292,12 @@ def load_causl_context(
         )
     server = _library_server(db, user, config)
     url = context_url(server.server_url)
-    envelope = _read(url, _headers(db, user, server, actor, identity.issuer), selection)
+    envelope = _read(
+        url,
+        _headers(db, user, server, actor, identity.issuer),
+        selection,
+        start_research=start_research,
+    )
     _validate(envelope, actor, selection)
     if envelope.issuer != identity.issuer:
         raise OnyxError(
@@ -289,7 +307,9 @@ def load_causl_context(
     return AuthorizedCauslContext(config, envelope)
 
 
-def load_interview_context(db: Session, user: User) -> AuthorizedCauslContext:
+def load_interview_context(
+    db: Session, user: User, *, start_research: bool = False
+) -> AuthorizedCauslContext:
     """The verified Library token selects the initial organization, never the email."""
     config = configuration()
     identity = require_session_identity(user.id)
@@ -299,6 +319,7 @@ def load_interview_context(db: Session, user: User) -> AuthorizedCauslContext:
         context_url(server.server_url),
         _headers(db, user, server, None, identity.issuer),
         selection,
+        start_research=start_research,
     )
     if envelope.actor.user_id != identity.subject or envelope.issuer != identity.issuer:
         raise OnyxError(

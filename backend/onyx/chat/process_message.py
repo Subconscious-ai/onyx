@@ -120,7 +120,10 @@ from onyx.llm.utils import (
 )
 from onyx.natural_language_processing.utils import get_tokenizer
 from onyx.onyxbot.slack.models import SlackContext
-from onyx.prompts.causl_workspace import WORKSPACE_INSTRUCTIONS
+from onyx.prompts.causl_workspace import (
+    SAVED_FACT_RETRIEVAL_INSTRUCTIONS,
+    WORKSPACE_INSTRUCTIONS,
+)
 from onyx.prompts.prompt_utils import substitute_user_placeholders
 from onyx.server.query_and_chat.burn2 import EXECUTIVE_INTERVIEW_PERSONA_NAMES
 from onyx.server.query_and_chat.causl.turn import workspace_turn
@@ -1088,6 +1091,8 @@ def build_chat_turn(
             draft=draft,
         )
         trusted_turn_instructions = guidance
+        if causl_binding is not None:
+            trusted_turn_instructions += "\n" + SAVED_FACT_RETRIEVAL_INSTRUCTIONS
         logger.info(
             "Burn interview turn policy: turn=%s, has_brief=%s, model_review=%s, "
             "profile_status=%s, research_status=%s, research_included=%s, research_sources=%s",

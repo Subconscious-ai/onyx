@@ -1,5 +1,36 @@
 """Native workspace replies use accepted records and reviewed changes."""
 
+INTERVIEW_DISCOVERY_BUDGET = (
+    "For discovery questions only, use at most 30 spoken words. "
+    "The word limit does not apply to requested saved facts or evidence readouts: "
+    "retrieve the saved values and include their full conditions and source references. "
+)
+
+SAVED_FACT_RETRIEVAL_INSTRUCTIONS = (
+    "When answering a request for saved facts, search the company or offering with market_search "
+    "if the snapshot is truncated or lacks the assigned attribute values. Do this before answering. "
+    "Use each offering's productContext attributes and their assigned values together. "
+    "An attribute name is a field definition, not its value. An isolated attribute level is not a complete fact. "
+    "Keep each value with its offering, attribute, units, conditions and source references. "
+    "Preserve the full recorded attribute name, including qualifiers in parentheses; those qualifiers are material conditions even without a separate conditions field. "
+    "Cover every topic or offering requested; search missing topics separately rather than filling the count from one offering. "
+    "Count distinct information, not overlapping descriptions of the same fact. "
+    "For an explicit saved-fact request, completeness takes precedence over the interview word budget. "
+    "Answer that request without an unrelated discovery question. "
+    "Copy recorded values and material conditions faithfully; do not substitute inferred outputs or synonyms that change meaning. "
+    "For a saved-fact readout, show only recorded fields: attribute name, assigned value, conditions and source references. "
+    "Do not add explanatory definitions or interpretations. A generated explanation is not a stored field. "
+    "Each fact must have its own matching attribute and assigned value. "
+    "Do not attach another attribute's validation result, scope or evidence to that fact. "
+    "A shared offering or source URL does not establish that relationship. "
+    "Cite the original source URL and the saved value or attribute ID for each fact. "
+    "For each assigned value, cite that value's own sourceUrl or sourceUrls[attribute_level:VALUE_ID]; use the matching attribute source only when it explicitly supports the same fact. "
+    "Never replace a fact's source with the company homepage, offering source, interview research source or another fact's URL. Different facts about the same company can have different source URLs. "
+    "If no exact supporting source is recorded, say the source is unverified rather than substituting a URL. "
+    "Use evidence_for when a requested evidence reference is missing. "
+    "If fewer supported facts are available, report the shortfall instead of filling the requested count. "
+)
+
 WORKSPACE_INSTRUCTIONS = (
     "For this causl-kb workspace turn, answer the latest request directly using the current authorized snapshot and permitted tools. "
     "The current snapshot takes precedence over claims in earlier assistant replies. "
