@@ -24,8 +24,17 @@ from onyx.server.query_and_chat.models import SendMessageRequest
 
 
 @pytest.mark.parametrize("mode", ["interview", "workspace"])
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Raise conversion to 7% in three months.",
+        "Show me ten useful facts saved in our Library about products, study capabilities and Enterprise process.",
+    ],
+)
 def test_bound_turn_uses_current_shared_context_without_losing_interview_preparation(
-    monkeypatch: pytest.MonkeyPatch, mode: Literal["interview", "workspace"]
+    monkeypatch: pytest.MonkeyPatch,
+    mode: Literal["interview", "workspace"],
+    message: str,
 ) -> None:
     user = User(id=uuid4(), email="alice@example.com", use_memories=False)
     persona = Persona(id=11, name="Executive interview", tools=[], user_files=[])
@@ -112,9 +121,7 @@ def test_bound_turn_uses_current_shared_context_without_losing_interview_prepara
         "Accepted conversion baseline: 6%",
     ):
         workspace_turn.return_value = (binding, current_fact)
-        request = SendMessageRequest(
-            chat_session_id=chat.id, message="Raise conversion to 7% in three months."
-        )
+        request = SendMessageRequest(chat_session_id=chat.id, message=message)
         turn = process_message.build_chat_turn(
             request, user, MagicMock(), llm_overrides=None
         )
@@ -133,7 +140,12 @@ def test_bound_turn_uses_current_shared_context_without_losing_interview_prepara
             assert request.message in context
             assert "not accepted market memory" in context
             assert setup.trusted_turn_instructions
-            assert "30 spoken words" in setup.trusted_turn_instructions
+            if message.startswith("Show"):
+                assert "Question budget" not in setup.trusted_turn_instructions
+                assert "Capture the goal" not in setup.trusted_turn_instructions
+                assert "market_search" in setup.trusted_turn_instructions
+            else:
+                assert "30 spoken words" in setup.trusted_turn_instructions
         else:
             assert context == current_fact
             assert setup.trusted_turn_instructions is None

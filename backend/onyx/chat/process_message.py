@@ -1092,7 +1092,19 @@ def build_chat_turn(
         )
         trusted_turn_instructions = guidance
         if causl_binding is not None:
-            trusted_turn_instructions += "\n" + SAVED_FACT_RETRIEVAL_INSTRUCTIONS
+            saved_fact_request = all(
+                re.search(pattern, message_text, re.I)
+                for pattern in (
+                    r"\b(?:show|list|retrieve|give|summari[sz]e)\b",
+                    r"\b(?:saved|recorded|accepted|library)\b",
+                    r"\bfacts?\b",
+                )
+            )
+            trusted_turn_instructions = (
+                SAVED_FACT_RETRIEVAL_INSTRUCTIONS
+                if saved_fact_request
+                else guidance + "\n" + SAVED_FACT_RETRIEVAL_INSTRUCTIONS
+            )
         logger.info(
             "Burn interview turn policy: turn=%s, has_brief=%s, model_review=%s, "
             "profile_status=%s, research_status=%s, research_included=%s, research_sources=%s",
