@@ -27,7 +27,7 @@ import { useUser } from "@/providers/UserProvider";
 import { useCurrentUser } from "@/lib/users/hooks";
 import { NoAgentModal } from "@/lib/agents/components";
 import PreviewModal from "@/sections/modals/PreviewModal";
-import { Modal } from "@opal/components";
+import { Modal, Text } from "@opal/components";
 import { useSendMessageToParent } from "@/lib/extension/hooks";
 import { SourceMetadata } from "@/lib/search/interfaces";
 import { FederatedConnectorDetail, ValidSources } from "@/lib/types";
@@ -91,8 +91,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { useTranslations } from "next-intl";
 import ExecutiveWorkspace, {
   ExecutiveWelcome,
+  ExecutiveModelAction,
 } from "@/sections/executive/ExecutiveWorkspace";
 import { isExecutiveAgent } from "@/lib/executive/brief";
+import { useInterviewLibrary } from "@/lib/executive/library-connection";
 import { consultingRole } from "@/lib/agents/consulting";
 
 interface FadeProps {
@@ -459,6 +461,10 @@ export default function AppPage({
   });
   const [workspacePreparing, setWorkspacePreparing] = useState(false);
   const workspacePreparingRef = useRef(false);
+  const interviewLibrary = useInterviewLibrary(
+    !causlWorkspace && isExecutiveAgent(activeAgent) ? activeAgent : undefined,
+    currentChatSessionId
+  );
   const onSubmit = useCallback(
     async (params: OnSubmitProps) => {
       if (causlWorkspace) {
@@ -490,12 +496,20 @@ export default function AppPage({
         modelContext?.chatId === currentChatSessionId
           ? modelChatContext(modelContext.value)
           : undefined;
-      return submitNative({
+      const prepared = {
         ...params,
         additionalContext:
           [params.additionalContext, receipt].filter(Boolean).join("\n\n") ||
           undefined,
-      });
+      };
+      if (isExecutiveAgent(activeAgent)) {
+        await interviewLibrary.prepare(
+          () => submitNative(prepared),
+          params.onInputRejected
+        );
+        return;
+      }
+      return submitNative(prepared);
     },
     [
       activeAgent,
@@ -504,6 +518,7 @@ export default function AppPage({
       submitNative,
       causlWorkspace,
       workspaceLabels,
+      interviewLibrary.prepare,
     ]
   );
 
@@ -602,10 +617,11 @@ export default function AppPage({
 
   const onChat = useCallback(
     (message: string) => {
+      if (isLoadingAgents || !activeAgent) return;
       if (multiModel.isMultiModelActive) {
         foldSidebarForMultiModel();
       }
-      resetInputBar();
+      if (!isExecutiveAgent(activeAgent)) resetInputBar();
       onSubmit({
         message,
         currentMessageFiles,
@@ -621,6 +637,8 @@ export default function AppPage({
       }
     },
     [
+      isLoadingAgents,
+      activeAgent,
       resetInputBar,
       onSubmit,
       currentMessageFiles,
@@ -667,10 +685,14 @@ export default function AppPage({
       message: string,
       callbacks?: Pick<OnSubmitProps, "onInputAccepted" | "onInputRejected">
     ) => {
+      if (isLoadingAgents || !activeAgent) {
+        callbacks?.onInputRejected?.();
+        return;
+      }
       // If we're in an existing chat session, always use chat mode
       // (appMode only applies to new sessions)
       if (currentChatSessionId) {
-        if (!causlWorkspace) resetInputBar();
+        if (!causlWorkspace && !isExecutiveAgent(activeAgent)) resetInputBar();
         onSubmit({
           ...callbacks,
           message,
@@ -702,6 +724,8 @@ export default function AppPage({
       await submitQuery(message, onChat);
     },
     [
+      isLoadingAgents,
+      activeAgent,
       currentChatSessionId,
       causlWorkspace,
       submitQuery,
@@ -855,6 +879,7 @@ export default function AppPage({
         ))}
 
       <ExecutiveWorkspace
+        email={user?.email}
         onModelContext={receiveModelContext}
         active={!causlWorkspace && isExecutiveAgent(activeAgent)}
         messages={messageHistory}
@@ -920,6 +945,9 @@ export default function AppPage({
                           selectedModels={multiModel.selectedModels}
                           fullWidthChat={fullWidthActive}
                         />
+                        {isExecutiveAgent(activeAgent) && (
+                          <ExecutiveModelAction />
+                        )}
                       </ChatScrollContainer>
                     </Fade>
 
@@ -1070,6 +1098,46 @@ export default function AppPage({
                       top padding during chat to compensate for this extra space.
                     */}
                       <div className={cn(onboardingVisible && "shrink-0 pt-6")}>
+                        {(interviewLibrary.needed ||
+                          interviewLibrary.failed) && (
+                          <div
+                            role="status"
+                            className="flex flex-col items-start gap-2 p-2"
+                          >
+                            <Text as="p" font="secondary-body">
+                              {workspaceLabels(
+                                interviewLibrary.failed
+                                  ? "connectionFailed"
+                                  : "connectionRequired"
+                              )}
+                            </Text>
+                            {interviewLibrary.needed && (
+                              <div className="flex gap-2">
+                                <Button
+                                  disabled={interviewLibrary.connecting}
+                                  onClick={() =>
+                                    void interviewLibrary.connect(
+                                      window.location.pathname +
+                                        window.location.search
+                                    )
+                                  }
+                                >
+                                  {workspaceLabels(
+                                    interviewLibrary.connecting
+                                      ? "connecting"
+                                      : "connectWorkspace"
+                                  )}
+                                </Button>
+                                <Button
+                                  prominence="tertiary"
+                                  onClick={interviewLibrary.cancel}
+                                >
+                                  {workspaceLabels("cancelConnection")}
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                         <div
                           className={cn(
                             "transition-all duration-150 ease-in-out overflow-hidden",
@@ -1077,6 +1145,9 @@ export default function AppPage({
                           )}
                         />
                         <AppInputBar
+                          deferInputClear={
+                            !causlWorkspace && isExecutiveAgent(activeAgent)
+                          }
                           embeddedWorkspace={Boolean(causlWorkspace)}
                           workspaceDraft={causlWorkspace?.draft}
                           onWorkspaceDraftConsumed={
@@ -1109,7 +1180,11 @@ export default function AppPage({
                           // Intentionally enabled during name-only onboarding (showOnboarding=false)
                           // since LLM providers are already configured and the user can chat.
                           disabled={
+                            isLoadingAgents ||
+                            !activeAgent ||
                             workspacePreparing ||
+                            interviewLibrary.preparing ||
+                            interviewLibrary.needed ||
                             (!llmManager.isLoadingProviders &&
                               llmManager.hasAnyProvider === false) ||
                             (showOnboarding &&

@@ -31,12 +31,12 @@ def ensure_research(user_id: UUID) -> dict:
     lock = get_cache_backend().lock(f"burn2:research:{user_id}", timeout=20)
     if not lock.acquire(blocking=False):
         state = read_research(user_id)
-        return (
-            state if state and research_reusable(state, query) else {"status": "queued"}
-        )
+        if state is not None and research_reusable(state, query):
+            return state
+        return {"status": "queued"}
     try:
         state = read_research(user_id)
-        if research_reusable(state, query):
+        if state is not None and research_reusable(state, query):
             return state
         # Prevent background refresh from repeatedly retrying a failed provider.
         if (
@@ -86,16 +86,24 @@ def enqueue_brief(user_id: UUID, chat_id: UUID) -> None:
     if os.environ.get("BURN2_BACKGROUND_PREPARATION") != "true":
         return
     try:
+        tenant_id = get_current_tenant_id()
+        generation = uuid4().hex
+        get_cache_backend().set(
+            f"burn2:brief-generation:{tenant_id}:{user_id}:{chat_id}",
+            generation,
+            ex=300,
+        )
         client_app.send_task(
             BRIEF_TASK,
             kwargs={
                 "user_id": str(user_id),
                 "chat_id": str(chat_id),
-                "tenant_id": get_current_tenant_id(),
+                "tenant_id": tenant_id,
+                "generation": generation,
             },
             queue=OnyxCeleryQueues.PRIMARY,
             expires=300,
-            countdown=1,
+            countdown=3,
         )
     except Exception as error:
         logger.warning("Burn brief scheduling unavailable: %s", type(error).__name__)

@@ -6,9 +6,13 @@ import {
   setupUser,
   waitFor,
 } from "@tests/setup/test-utils";
-import AppInputBar, { type AppInputBarProps } from "./AppInputBar";
+import AppInputBar, {
+  type AppInputBarHandle,
+  type AppInputBarProps,
+} from "@/sections/input/AppInputBar";
 import { useChatSessionStore } from "@/app/app/stores/useChatSessionStore";
 import { draftKey } from "@/hooks/useDraft";
+import { useInterviewLibrary } from "@/lib/executive/library-connection";
 
 jest.mock("@/lib/position/hooks", () => ({
   useAppPosition: () => ({
@@ -383,3 +387,138 @@ test("keeps an unaccepted workspace draft in storage after send", async () => {
   ).toBe("Independent draft D");
   expect(screen.getByText("Independent draft D")).toBeVisible();
 });
+
+test("retains a Beca first message synchronously before workspace authorization", async () => {
+  const key = draftKey("chat", "workspace-chat");
+  const submit = jest.fn(() => {
+    expect(JSON.parse(sessionStorage.getItem(key)!)).toMatchObject({
+      value: "Independent draft D",
+    });
+  });
+  const rendered = render(
+    <AppInputBar
+      {...props(submit)}
+      embeddedWorkspace={false}
+      deferInputClear
+      chatState="input"
+    />
+  );
+  await setupUser().click(
+    document.getElementById("onyx-chat-input-send-button")!
+  );
+  expect(submit).toHaveBeenCalledTimes(1);
+  expect(
+    rendered.container.querySelector('[contenteditable="true"]')
+  ).toHaveTextContent("Independent draft D");
+  expect(JSON.parse(sessionStorage.getItem(key)!)).toMatchObject({
+    value: "Independent draft D",
+  });
+});
+
+test.each(["accepted", "cancelled"] as const)(
+  "keeps independent text and the queued Beca message until authorization is %s",
+  async (outcome) => {
+    let connected = false;
+    const fetch = jest
+      .spyOn(global, "fetch")
+      .mockImplementation(async (url) => {
+        if (url === "/api/mcp/oauth/connect") {
+          connected = true;
+          return {
+            ok: true,
+            json: async () => ({
+              status: "already_authenticated",
+              redirect_url: "/app?chatId=workspace-chat",
+            }),
+          } as Response;
+        }
+        return {
+          ok: true,
+          json: async () => ({
+            mcp_servers: [{ id: 22, user_can_authenticate: connected }],
+          }),
+        } as Response;
+      });
+    const popup = { closed: false, location: { href: "" }, close: jest.fn() };
+    const open = jest
+      .spyOn(window, "open")
+      .mockReturnValue(popup as unknown as Window);
+    const sent = jest.fn();
+    const agent = {
+      id: 2,
+      tools: [{ name: "library_snapshot", mcp_server_id: 22 }],
+    };
+    function InterviewInput({
+      chatState,
+    }: {
+      chatState: AppInputBarProps["chatState"];
+    }) {
+      const ref = React.useRef<AppInputBarHandle>(null);
+      const library = useInterviewLibrary(agent, "workspace-chat");
+      const submit: AppInputBarProps["onSubmit"] = (text, callbacks) => {
+        void library.prepare(() => {
+          sent(text);
+          ref.current!.reset();
+          callbacks?.onInputAccepted?.();
+        }, callbacks?.onInputRejected);
+      };
+      return (
+        <>
+          <AppInputBar
+            {...props(submit)}
+            ref={ref}
+            embeddedWorkspace={false}
+            deferInputClear
+            chatState={chatState}
+          />
+          {library.needed && (
+            <button
+              onClick={() =>
+                outcome === "accepted"
+                  ? void library.connect("/app?chatId=workspace-chat")
+                  : library.cancel()
+              }
+            >
+              Resolve connection
+            </button>
+          )}
+        </>
+      );
+    }
+    const rendered = render(<InterviewInput chatState="streaming" />);
+    act(() => {
+      useChatSessionStore
+        .getState()
+        .setLatestMessageRenderComplete("workspace-chat", true);
+    });
+    rendered.rerender(<InterviewInput chatState="input" />);
+    await screen.findByRole("button", { name: "Resolve connection" });
+    expect(sent).not.toHaveBeenCalled();
+    expect(
+      useChatSessionStore.getState().sessions.get("workspace-chat")!
+        .queuedMessages
+    ).toHaveLength(1);
+    await setupUser().click(
+      screen.getByRole("button", { name: "Resolve connection" })
+    );
+    await waitFor(() =>
+      expect(
+        useChatSessionStore.getState().sessions.get("workspace-chat")!
+          .queuedMessages
+      ).toHaveLength(outcome === "accepted" ? 0 : 1)
+    );
+    expect(sent.mock.calls).toEqual(
+      outcome === "accepted" ? [["Queued message Q"]] : []
+    );
+    expect(
+      rendered.container.querySelector('[contenteditable="true"]')
+    ).toHaveTextContent("Independent draft D");
+    await waitFor(() =>
+      expect(
+        JSON.parse(sessionStorage.getItem(draftKey("chat", "workspace-chat"))!)
+      ).toBe("Independent draft D")
+    );
+    fetch.mockRestore();
+    open.mockRestore();
+  }
+);

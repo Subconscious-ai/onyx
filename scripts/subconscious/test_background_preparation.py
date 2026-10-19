@@ -45,15 +45,28 @@ class BackgroundPreparationTests(unittest.TestCase):
                 ("get_cache_backend", lambda: self.cache),
                 ("read_profile", lambda _uid: self.profile),
                 ("read_research", lambda _uid: self.state),
-                ("save_research", self.save),
                 ("research_connection", self.connection),
                 ("get_current_tenant_id", lambda: "public"),
             ):
                 self.stack.enter_context(patch.object(module, name, value))
+        self.stack.enter_context(patch.object(background, "save_research", self.save))
+        self.stack.enter_context(
+            patch.object(tasks, "update_research_if_current", self.update)
+        )
 
     def save(self, uid, value):
         self.assertEqual(uid, self.user)
         self.state = dict(value)
+
+    def update(self, uid, value, *, job_id, status):
+        if (
+            not self.state
+            or self.state.get("job_id") != job_id
+            or self.state.get("status") != status
+        ):
+            return False
+        self.save(uid, value)
+        return True
 
     def run_research(self):
         tasks.research_company.run(
@@ -167,10 +180,13 @@ class BackgroundPreparationTests(unittest.TestCase):
     def test_brief_enqueue_is_bounded_and_carries_native_identity(self):
         chat = uuid4()
         background.enqueue_brief(self.user, chat)
-        self.assertEqual(
-            self.queue.call_args.kwargs["kwargs"],
-            {"user_id": str(self.user), "chat_id": str(chat), "tenant_id": "public"},
-        )
+        queued = self.queue.call_args.kwargs["kwargs"]
+        self.assertEqual(queued["user_id"], str(self.user))
+        self.assertEqual(queued["chat_id"], str(chat))
+        self.assertEqual(queued["tenant_id"], "public")
+        self.assertIsInstance(queued["generation"], str)
+        self.assertTrue(queued["generation"])
+        self.assertEqual(self.cache.set.call_args.args[1], queued["generation"])
         self.assertEqual(self.queue.call_args.kwargs["expires"], 300)
 
 

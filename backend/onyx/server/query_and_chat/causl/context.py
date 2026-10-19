@@ -104,7 +104,7 @@ def _library_server(db: Session, user: User, config: CauslConfiguration) -> MCPS
 
 
 def _headers(
-    db: Session, user: User, server: MCPServer, actor: CauslActor, issuer: str
+    db: Session, user: User, server: MCPServer, actor: CauslActor | None, issuer: str
 ) -> dict[str, str]:
     try:
         credentials = resolve_mcp_credentials(server, user, db)
@@ -127,8 +127,12 @@ def _headers(
     if not headers.get("authorization", "").lower().startswith("bearer "):
         raise OnyxError(OnyxErrorCode.UNAUTHENTICATED, "Connect your Library account.")
     # Stored and client headers cannot override the server-bound actor.
-    headers["x-causl-expected-organization"] = actor.org_id
-    headers["x-causl-expected-subject"] = actor.user_id
+    headers.pop("x-causl-expected-organization", None)
+    if actor is not None:
+        headers["x-causl-expected-organization"] = actor.org_id
+    headers["x-causl-expected-subject"] = (
+        actor.user_id if actor else require_session_identity(user.id).subject
+    )
     headers["x-causl-expected-issuer"] = issuer
     return headers
 
@@ -282,4 +286,24 @@ def load_causl_context(
             OnyxErrorCode.UNAUTHORIZED,
             "Your Library account does not match your Onyx sign-in.",
         )
+    return AuthorizedCauslContext(config, envelope)
+
+
+def load_interview_context(db: Session, user: User) -> AuthorizedCauslContext:
+    """The verified Library token selects the initial organization, never the email."""
+    config = configuration()
+    identity = require_session_identity(user.id)
+    server = _library_server(db, user, config)
+    selection = CauslSelection(page="workspace")
+    envelope = _read(
+        context_url(server.server_url),
+        _headers(db, user, server, None, identity.issuer),
+        selection,
+    )
+    if envelope.actor.user_id != identity.subject or envelope.issuer != identity.issuer:
+        raise OnyxError(
+            OnyxErrorCode.UNAUTHORIZED,
+            "Your Library account does not match your sign-in.",
+        )
+    _validate(envelope, envelope.actor, selection)
     return AuthorizedCauslContext(config, envelope)

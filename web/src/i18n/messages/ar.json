@@ -1,5 +1,9 @@
 {
   "causlWorkspace": {
+    "cancelConnection": "متابعة التحرير",
+    "connectWorkspace": "ربط مساحة العمل",
+    "connectionRequired": "اربط مساحة العمل للمتابعة. سيتم الاحتفاظ برسالتك.",
+    "connectionFailed": "فشل الاتصال بمساحة العمل. تم الاحتفاظ برسالتك. حاول مرة أخرى.",
     "notConfigured": "افتح المساعد من مساحة عمل causl-kb. إذا ظل غير متاح، فاتصل بالمسؤول.",
     "signin": "سجّل الدخول بحساب المؤسسة نفسه الذي تستخدمه في causl-kb، ثم أعد فتح هذه المحادثة.",
     "signInAction": "تسجيل الدخول إلى Onyx",
@@ -13850,6 +13854,13 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "المصدر: {quote}",
+    "savedMarketFacts": "حقائق السوق المحفوظة",
+    "marketMemoryUnavailable": "ذاكرة السوق المشتركة غير متاحة.",
+    "marketMemoryLoading": "جارٍ قراءة حقائق السوق المحفوظة…",
+    "marketMemorySource": "حقائق معتمدة من مكتبة السوق المشتركة.",
+    "marketMemoryEmpty": "لا توجد حقائق سوق معتمدة بعد. تبقى ملاحظات المقابلة مسودات حتى مراجعتها.",
+    "marketMemoryBounded": "هذا عرض محدود. يمكن لبيكا استرجاع مزيد من الحقائق من المكتبة.",
     "companyProfile": {
       "title": "ملف الشركة",
       "description": "تتقدم تصحيحاتك على اقتراحات PDL. هذا ملف عمل خاص بك، وليس سجلاً مشتركاً للشركة.",
@@ -13935,6 +13946,10 @@
     "sourceDisclosure": "Source",
     "automaticDraftBoundary": "The draft updates after each answer. Market evidence changes only after review.",
     "reviewInGuesstimate": "Open business model",
+    "openingSpeaker": "سارة · رحلة العميل",
+    "openingQuestion": "أنا بيكا. ما الذي ترغب أكثر في تغييره في عملك؟",
+    "interviewTeam": "فريق المقابلة",
+    "retryDraft": "إعادة محاولة تحديث المسودة",
     "becaName": "Beca",
     "whatNeedsToChange": "ما الذي يجب تغييره؟",
     "researchContextAndLenses": "سياق البحث ووجهات نظر المتخصصين",
@@ -13956,6 +13971,36 @@
       "interview": "مقابلة تنفيذية",
       "design": "تصميم التجارب",
       "analytics": "تحليل التجارب"
+    },
+    "progress": {
+      "title": "نموذجك الأول",
+      "count": "تم تسجيل {count} من 3 عناصر أساسية",
+      "essentials": "المعلومات الأساسية",
+      "goal": "الهدف",
+      "measure": "مقياس النجاح",
+      "journey": "رحلة العميل",
+      "captured": "تم التسجيل",
+      "missing": "يحتاج إلى تفاصيل",
+      "goalNext": "ما النتيجة التجارية التي تريد تحسينها؟",
+      "measureNext": "كيف ستقيس النجاح، وبحلول متى؟",
+      "journeyNext": "كيف يصل العميل حالياً إلى الشراء أو الاستخدام؟",
+      "goalAsk": "بناءً على ما شاركته، اطرح سؤالاً واحداً يساعد على توضيح الهدف.",
+      "measureAsk": "بناءً على ما شاركته، اطرح سؤالاً واحداً يساعد على تحديد مقياس النجاح والموعد.",
+      "journeyAsk": "بناءً على ما شاركته، اطرح سؤالاً واحداً يساعد على توضيح رحلة العميل.",
+      "failed": "تم حفظ إجاباتك. تحتاج المسودة إلى إعادة المحاولة.",
+      "updating": "جارٍ تحديث المسودة…",
+      "ready": "لدينا ما يكفي لبناء نموذج أولي.",
+      "conflict": "نحتاج إلى توضيح نقطة واحدة قبل فتح النموذج.",
+      "connecting": "جارٍ ربط المعلومات المسجلة بالنموذج.",
+      "retry": "إعادة محاولة تحديث المسودة",
+      "open": "Build business model",
+      "build": "Complete model brief",
+      "conflictAsk": "اطرح سؤالاً واحداً عن التعارض الذي يجب حله لبناء النموذج.",
+      "buildAsk": "أنشئ نموذج أعمال أولياً مما شاركته. أبقِ الأرقام المفقودة وآثار التجارب غير المقاسة مجهولة. إذا غابت معلومة أساسية عن العميل، اطرح السؤال الضروري التالي فقط.",
+      "hint": "يمكن إضافة الأرقام المجهولة لاحقاً.",
+      "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
+      "contextUpdating": "Finishing company research…",
+      "email": "يبدأ البحث من {email}"
     }
   }
 }

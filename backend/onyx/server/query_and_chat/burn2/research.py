@@ -76,7 +76,8 @@ def public_research_query(profile: dict[str, Any] | None) -> str | None:
         ):
             person_query += f" Check {linkedin[:180]}."
     query = (
-        f"Research the public business at https://{host}. Identify products, buyers, "
+        f"Research the public business exactly at https://{host}; "
+        "ignore similarly-named companies with different domains. Identify products, buyers, "
         "pricing/revenue model, competitors and customer buying journey. "
         "Offer two plausible journey structures and relevant success measures, clearly labeled as proposals. "
         "Cite original URLs; distinguish published facts from hypotheses. "
@@ -127,7 +128,9 @@ def research_receipt(raw: str) -> dict[str, Any]:
         "report": content[:16000],
         "source_urls": urls[:12],
         "research_id": str(data.get("research_id", ""))[:100],
-        "truncated": len(content) > 16000 or len(urls) > 12,
+        "truncated": data.get("truncated") is True
+        or len(content) > 16000
+        or len(urls) > 12,
     }
 
 

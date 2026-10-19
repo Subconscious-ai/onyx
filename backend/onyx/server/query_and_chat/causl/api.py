@@ -1,18 +1,52 @@
+from typing import Any
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
 from onyx.auth.permissions import require_permission
 from onyx.db.causl_workspace import open_causl_chat
+from onyx.db.chat import get_chat_session_by_id
 from onyx.db.engine.sql_engine import get_session
 from onyx.db.enums import Permission
 from onyx.db.models import User
+from onyx.error_handling.error_codes import OnyxErrorCode
+from onyx.error_handling.exceptions import OnyxError
 from onyx.server.query_and_chat.causl.context import load_causl_context
 from onyx.server.query_and_chat.causl.models import (
     CauslWorkspaceRequest,
     CauslWorkspaceResponse,
 )
+from onyx.server.query_and_chat.causl.turn import read_workspace_context
 
 router = APIRouter()
+
+
+@router.get("/causl-memory")
+def read_memory(
+    chat_id: UUID,
+    response: Response,
+    user: User = Depends(require_permission(Permission.WRITE_CHAT)),
+    db_session: Session = Depends(get_session),
+) -> dict[str, Any]:
+    try:
+        chat = get_chat_session_by_id(
+            chat_id, user.id, db_session, eager_load_persona=True
+        )
+    except ValueError:
+        raise OnyxError(OnyxErrorCode.NOT_FOUND) from None
+    if chat.user_id != user.id:
+        raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+    _, envelope = read_workspace_context(db_session, user, chat, None)
+    if envelope is None:
+        raise OnyxError(
+            OnyxErrorCode.NOT_FOUND, "Shared market memory is not connected."
+        )
+    response.headers["Cache-Control"] = "private, no-store"
+    return {
+        "library": envelope.context["library"],
+        "digest": envelope.context["digest"],
+    }
 
 
 @router.post("/causl-workspace")

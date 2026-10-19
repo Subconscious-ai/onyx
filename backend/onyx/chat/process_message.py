@@ -665,7 +665,8 @@ def build_chat_turn(
     causl_binding, workspace_context = workspace_turn(
         db_session, user, chat_session, new_msg_req.causl_selection
     )
-    if causl_binding is not None:
+    interview_mode = causl_binding is None or causl_binding.mode == "interview"
+    if causl_binding is not None and not interview_mode:
         additional_context = workspace_context
     message_text = new_msg_req.message
 
@@ -840,7 +841,7 @@ def build_chat_turn(
     executive_history = (
         tuple(chat_history)
         if os.environ.get("BURN2_ENABLED") == "true"
-        and causl_binding is None
+        and interview_mode
         and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and user is not None
         else ()
@@ -901,7 +902,11 @@ def build_chat_turn(
     max_reserved_system_prompt_tokens_str = substitute_user_placeholders(
         (persona.system_prompt or "")
         + (custom_agent_prompt or "")
-        + (WORKSPACE_INSTRUCTIONS if causl_binding is not None else ""),
+        + (
+            WORKSPACE_INSTRUCTIONS
+            if causl_binding is not None and not interview_mode
+            else ""
+        ),
         user_memory_context.user_info.placeholder_values,
     )
     reserved_token_count = calculate_reserved_tokens(
@@ -917,7 +922,7 @@ def build_chat_turn(
     # Only the default persona inside a project uses the project's files.
     context_user_files = (
         []
-        if causl_binding is not None
+        if causl_binding is not None and not interview_mode
         else resolve_context_user_files(
             persona=persona,
             project_id=chat_session.project_id,
@@ -943,7 +948,7 @@ def build_chat_turn(
     )
 
     # Also grant access to persona-attached user files for FileReaderTool
-    if causl_binding is None and persona.user_files:
+    if interview_mode and persona.user_files:
         existing = set(available_files.user_file_ids)
         for uf in persona.user_files:
             if uf.id not in existing:
@@ -959,7 +964,7 @@ def build_chat_turn(
     forced_tool_id = new_msg_req.forced_tool_id
     if (
         os.environ.get("BURN2_ENABLED") == "true"
-        and causl_binding is None
+        and interview_mode
         and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and forced_tool_id is None
     ):
@@ -1032,9 +1037,10 @@ def build_chat_turn(
     )
 
     model_review_context: str | None = None
+    trusted_turn_instructions: str | None = None
     if (
         os.environ.get("BURN2_ENABLED") == "true"
-        and causl_binding is None
+        and interview_mode
         and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and user is not None
     ):
@@ -1075,14 +1081,31 @@ def build_chat_turn(
         model_review_context = (
             requested_context if is_model_review_context(requested_context) else None
         )
-        guidance = turn_guidance(turns, message_text)
+        guidance = turn_guidance(
+            turns,
+            message_text,
+            model_review=model_review_context is not None,
+            draft=draft,
+        )
+        trusted_turn_instructions = guidance
+        logger.info(
+            "Burn interview turn policy: turn=%s, has_brief=%s, model_review=%s, "
+            "profile_status=%s, research_status=%s, research_included=%s, research_sources=%s",
+            turns,
+            draft is not None,
+            model_review_context is not None,
+            profile.get("status"),
+            (research or {}).get("status"),
+            "Public company research follows" in context,
+            len((research or {}).get("source_urls", [])),
+        )
         additional_context = "\n".join(
             filter(
                 None,
                 [
+                    workspace_context,
                     additional_context or new_msg_req.additional_context,
                     context,
-                    guidance,
                     interview_context(
                         statements,
                         [
@@ -1158,7 +1181,7 @@ def build_chat_turn(
 
     if (
         os.environ.get("BURN2_ENABLED") == "true"
-        and causl_binding is None
+        and interview_mode
         and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and user is not None
     ):
@@ -1232,6 +1255,7 @@ def build_chat_turn(
         mcp_headers=mcp_headers,
         causl_binding=causl_binding,
         causl_original_message=causl_original_message,
+        trusted_turn_instructions=trusted_turn_instructions,
     )
 
 
@@ -1448,7 +1472,7 @@ def _run_models(
 
         if (
             os.environ.get("BURN2_ENABLED") == "true"
-            and setup.causl_binding is None
+            and (setup.causl_binding is None or setup.causl_binding.mode == "interview")
             and setup.persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
             and setup.incognito_record_mode is None
             and any(model_succeeded)
@@ -1503,7 +1527,10 @@ def _run_models(
                 ),
                 allowed_tool_ids=setup.new_msg_req.allowed_tool_ids,
                 search_usage_forcing_setting=setup.search_params.search_usage,
-                allow_user_context=setup.causl_binding is None,
+                allow_user_context=(
+                    setup.causl_binding is None
+                    or setup.causl_binding.mode == "interview"
+                ),
             )
             model_tools = [
                 tool for tool_list in thread_tool_dict.values() for tool in tool_list
@@ -1515,7 +1542,10 @@ def _run_models(
 
             forced_tool_id = initial_profile_tool(
                 enabled=os.environ.get("BURN2_ENABLED") == "true"
-                and setup.causl_binding is None
+                and (
+                    setup.causl_binding is None
+                    or setup.causl_binding.mode == "interview"
+                )
                 and not setup.new_msg_req.deep_research,
                 persona_name=setup.persona.name,
                 user_id=None if user.is_anonymous else user.id,
@@ -1555,6 +1585,7 @@ def _run_models(
                     custom_agent_prompt=setup.custom_agent_prompt,
                     context_files=setup.extracted_context_files,
                     persona=setup.persona,
+                    trusted_turn_instructions=setup.trusted_turn_instructions,
                     user_memory_context=setup.user_memory_context,
                     llm=model_llm,
                     token_counter=get_llm_token_counter(model_llm),
@@ -1568,6 +1599,7 @@ def _run_models(
                     inject_memories_in_prompt=user.use_memories,
                     workspace_instructions=WORKSPACE_INSTRUCTIONS
                     if setup.causl_binding is not None
+                    and setup.causl_binding.mode == "workspace"
                     else None,
                 )
 

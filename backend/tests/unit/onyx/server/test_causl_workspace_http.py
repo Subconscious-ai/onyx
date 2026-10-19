@@ -91,7 +91,11 @@ def test_http_open_and_stream_keep_two_native_callers_separate(
     app = FastAPI()
     register_onyx_exception_handlers(app)
     selected_router = APIRouter()
-    selected_paths = {"/chat/causl-workspace", "/chat/send-chat-message"}
+    selected_paths = {
+        "/chat/causl-workspace",
+        "/chat/causl-memory",
+        "/chat/send-chat-message",
+    }
     for route in chat_backend.router.routes:
         if isinstance(route, APIRoute) and route.path in selected_paths:
             selected_router.routes.append(route)
@@ -169,6 +173,16 @@ def test_http_open_and_stream_keep_two_native_callers_separate(
     monkeypatch.setattr(
         turn, "read_causl_binding", lambda _db, _user_id, chat_id: bindings[chat_id]
     )
+
+    def saved_chat(
+        chat_id: UUID, user_id: UUID, *_args: Any, **_kwargs: Any
+    ) -> ChatSession:
+        binding = bindings[chat_id]
+        if binding.user_id != user_id:
+            raise ValueError("Not this caller's chat")
+        return ChatSession(id=chat_id, user_id=user_id, persona_id=11)
+
+    monkeypatch.setattr(api, "get_chat_session_by_id", saved_chat)
     monkeypatch.setattr(chat_backend, "mt_cloud_telemetry", lambda **_kwargs: None)
     monkeypatch.setattr(chat_backend, "get_current_tenant_id", lambda: "public")
 
@@ -229,6 +243,20 @@ def test_http_open_and_stream_keep_two_native_callers_separate(
             json=open_body("alice"),
         )
         assert password.status_code == 401
+        memory = client.get(
+            "/chat/causl-memory",
+            params={"chat_id": alice.json()["chatId"]},
+            headers={"x-test-session": "alice"},
+        )
+        assert memory.status_code == 200
+        assert memory.json() == {"library": {}, "digest": "c" * 64}
+        assert memory.headers["cache-control"] == "private, no-store"
+        foreign_memory = client.get(
+            "/chat/causl-memory",
+            params={"chat_id": alice.json()["chatId"]},
+            headers={"x-test-session": "bob"},
+        )
+        assert foreign_memory.status_code == 404
         for name, opened in (("bob", bob), ("alice", alice)):
             result = client.post(
                 "/chat/send-chat-message",
@@ -251,4 +279,10 @@ def test_http_open_and_stream_keep_two_native_callers_separate(
             },
         )
         assert "error" in foreign.json()
-    assert reads == ["auth0|alice", "auth0|bob", "auth0|bob", "auth0|alice"]
+    assert reads == [
+        "auth0|alice",
+        "auth0|bob",
+        "auth0|alice",
+        "auth0|bob",
+        "auth0|alice",
+    ]

@@ -14,6 +14,36 @@ describe("automatic saved evidence", () => {
     { type: "user", message: "Reach $10 million by 2027" },
     { type: "assistant", message: "Which customer decision matters?" },
   ];
+  it("recovers a stalled background brief through the existing locked POST", async () => {
+    const fetcher = jest.spyOn(global, "fetch").mockImplementation(
+      async (_url, init) =>
+        ({
+          ok: true,
+          status: 200,
+          json: async () =>
+            init?.method === "POST"
+              ? { saved: true, message: "latest saved evidence" }
+              : { saved: false, background: true },
+        }) as Response
+    );
+    const { result } = renderHook(() =>
+      useAutomaticBrief({
+        active: true,
+        chatId: "stalled-chat",
+        busy: false,
+        messages,
+      })
+    );
+    for (let i = 0; i < 7; i++) {
+      await act(async () => {
+        jest.advanceTimersByTime(2000);
+      });
+    }
+    expect(
+      fetcher.mock.calls.filter(([, init]) => init?.method === "POST")
+    ).toHaveLength(1);
+    expect(result.current.savedMessage).toBe("latest saved evidence");
+  });
   it("waits for streaming and prepares once without a page reload", async () => {
     const fetcher = jest.spyOn(global, "fetch").mockResolvedValue({
       ok: true,
@@ -170,6 +200,44 @@ describe("automatic saved evidence", () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(schedule).toHaveBeenCalledTimes(allocations);
   });
+  it("refreshes agent-corrected company context after a newly saved brief", async () => {
+    jest
+      .spyOn(global, "fetch")
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: "not_found",
+          research: { status: "needs_company" },
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: "ready",
+          profile: { company: "Confirmed company" },
+          correction: { revision: 1 },
+          research: {
+            status: "ready",
+            report: "Fresh research",
+            source_urls: ["https://example.com"],
+          },
+        }),
+      } as Response);
+    const { result, rerender } = renderHook(
+      ({ brief }) => useExecutiveContext(true, brief),
+      { initialProps: { brief: "" } }
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.dossier).toBeNull();
+    rerender({ brief: "newly saved brief after company tool" });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.dossier?.profile.company).toBe("Confirmed company");
+    expect(result.current.research.report).toBe("Fresh research");
+  });
   it("loads persisted public sources after profile startup without repeating enrichment", async () => {
     const fetcher = jest
       .spyOn(global, "fetch")
@@ -194,6 +262,10 @@ describe("automatic saved evidence", () => {
     });
     expect(result.current.research.status).toBe("queued");
     expect(result.current.profile).toBeNull(); // Older APIs cannot save corrections.
+    expect(result.current.dossier).toEqual({
+      profile: { company: "Example" },
+      source: "pdl",
+    });
     await act(async () => {
       jest.advanceTimersByTime(2000);
     });

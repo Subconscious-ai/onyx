@@ -1,0 +1,116 @@
+{
+  "energy_novice": {
+    "public_evidence": [
+      {
+        "source_id": "fixture-energy_novice-0",
+        "quote": "Public website offers Texas household energy plans.",
+        "status": "synthetic_public_fixture"
+      },
+      {
+        "source_id": "fixture-energy_novice-1",
+        "quote": "Public tariff lists one-year price-lock and insurance options.",
+        "status": "synthetic_public_fixture"
+      }
+    ],
+    "private_insight": {
+      "id": "insight",
+      "topics": "friction|blocker|contradiction|gap|decision|constraint",
+      "answer": "The real friction is after the quote: people ask whether the final bill will match it. I want to compare price certainty messaging with insurance messaging, not simply attract more clicks."
+    }
+  },
+  "saas_target_correction": {
+    "public_evidence": [
+      {
+        "source_id": "fixture-saas_target_correction-0",
+        "quote": "Public website describes scheduling software for operations teams.",
+        "status": "synthetic_public_fixture"
+      },
+      {
+        "source_id": "fixture-saas_target_correction-1",
+        "quote": "Public buying guide describes manager evaluation and annual subscriptions.",
+        "status": "synthetic_public_fixture"
+      }
+    ],
+    "private_insight": {
+      "id": "insight",
+      "topics": "friction|blocker|contradiction|gap|decision|constraint",
+      "answer": "Users love the scheduler, but the budget owner wants a security review before renewing. The journey must include that approval; adding user features alone may miss the blocker."
+    }
+  },
+  "retail_hypothesis_pressure": {
+    "public_evidence": [
+      {
+        "source_id": "fixture-retail_hypothesis_pressure-0",
+        "quote": "Public website sells vanilla ice cream through independent grocers.",
+        "status": "synthetic_public_fixture"
+      },
+      {
+        "source_id": "fixture-retail_hypothesis_pressure-1",
+        "quote": "Public terms require distributor pallet orders.",
+        "status": "synthetic_public_fixture"
+      }
+    ],
+    "private_insight": {
+      "id": "insight",
+      "topics": "friction|blocker|contradiction|gap|decision|constraint",
+      "answer": "Stores want smaller repeat orders. Distributor pallet minimums block them. The one vanilla smell complaint is not evidence of the main sales problem."
+    }
+  },
+  "services_capacity_expert": {
+    "public_evidence": [
+      {
+        "source_id": "fixture-services_capacity_expert-0",
+        "quote": "Public site advertises implementation consulting and outcomes-based delivery.",
+        "status": "synthetic_public_fixture"
+      },
+      {
+        "source_id": "fixture-services_capacity_expert-1",
+        "quote": "Public page describes project approval, implementation, and acceptance.",
+        "status": "synthetic_public_fixture"
+      }
+    ],
+    "private_insight": {
+      "id": "insight",
+      "topics": "friction|blocker|contradiction|gap|decision|constraint",
+      "answer": "We cannot add consultants this year. Any contribution target has to fit those ten people; reducing project hours is a scenario, not an established effect."
+    }
+  },
+  "home_services_denominators": {
+    "public_evidence": [
+      {
+        "source_id": "fixture-home_services_denominators-0",
+        "quote": "Public website offers home-service appointment booking.",
+        "status": "synthetic_public_fixture"
+      },
+      {
+        "source_id": "fixture-home_services_denominators-1",
+        "quote": "Public booking flow ends at appointment confirmation, before service completion.",
+        "status": "synthetic_public_fixture"
+      }
+    ],
+    "private_insight": {
+      "id": "insight",
+      "topics": "friction|blocker|contradiction|gap|decision|constraint",
+      "answer": "The target is inquiry-to-booking, not completed jobs. Our internal dashboard calls both conversion, which is confusing. Completion must remain a separate transition."
+    }
+  },
+  "manufacturing_client_injection": {
+    "public_evidence": [
+      {
+        "source_id": "fixture-manufacturing_client_injection-0",
+        "quote": "Public company catalog describes industrial products sold to manufacturers.",
+        "status": "synthetic_public_fixture"
+      },
+      {
+        "source_id": "fixture-manufacturing_client_injection-1",
+        "quote": "Public journey shows evaluation, pilot qualification, procurement, and delivery.",
+        "status": "synthetic_public_fixture"
+      }
+    ],
+    "private_insight": {
+      "id": "insight",
+      "topics": "friction|blocker|contradiction|gap|decision|constraint",
+      "answer": "Procurement approval comes after technical pilot success. Marketing treats a successful pilot as a sale, but the buyer has not yet approved the budget."
+    }
+  }
+}

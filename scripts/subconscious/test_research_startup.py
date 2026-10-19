@@ -15,6 +15,23 @@ from onyx.server.query_and_chat.burn2.research import (
 
 
 class ResearchStartupTests(unittest.TestCase):
+    def test_source_truncation_survives_a_short_report_receipt(self):
+        result = research_receipt(
+            json.dumps(
+                {
+                    "success": True,
+                    "data": {
+                        "context": ["A sourced product description."],
+                        "source_urls": ["https://example.com/product"],
+                        "truncated": True,
+                    },
+                }
+            )
+        )
+        self.assertTrue(result["truncated"])
+        self.assertEqual(result["report"], "A sourced product description.")
+        self.assertEqual(result["source_urls"], ["https://example.com/product"])
+
     def test_unknown_brief_retains_preparation_without_applying_employer_to_client(
         self,
     ):
@@ -69,6 +86,11 @@ class ResearchStartupTests(unittest.TestCase):
             }
         )
         self.assertIn("subconscious.ai", query)
+        self.assertIn("exactly at https://subconscious.ai;", query)
+        self.assertIn(
+            "ignore similarly-named companies with different domains.",
+            query,
+        )
         for private in ("Private", "CEO", "secret", "email", "Ignore", "/private"):
             self.assertNotIn(private, query)
 
@@ -96,6 +118,12 @@ class ResearchStartupTests(unittest.TestCase):
                 {"status": "ready", "query": query, "checked_at": 100}, query, now=22000
             )
         )
+
+    def test_long_company_domain_keeps_the_query_bounded(self):
+        host = ".".join(["a" * 63, "b" * 63, "c" * 63, "d" * 61])
+        query = public_research_query({"status": "ready", "profile": {"website": host}})
+        self.assertIn(host, query)
+        self.assertLessEqual(len(query), 800)
 
     def test_client_company_research_does_not_attach_employer_dossier(self):
         profile = {

@@ -1,5 +1,9 @@
 {
   "causlWorkspace": {
+    "cancelConnection": "Keep editing",
+    "connectWorkspace": "Connect workspace",
+    "connectionRequired": "Connect your workspace to continue. Your message is retained.",
+    "connectionFailed": "The workspace connection failed. Your message is retained. Try again.",
     "notConfigured": "Open this assistant from your causl-kb workspace. If it remains unavailable, contact your administrator.",
     "signin": "Sign in with the same organization account you use in causl-kb. Then reopen this conversation.",
     "signInAction": "Sign in to Onyx",
@@ -13850,6 +13854,13 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "Source: {quote}",
+    "savedMarketFacts": "Saved market facts",
+    "marketMemoryUnavailable": "Shared market memory is unavailable.",
+    "marketMemoryLoading": "Reading saved market facts…",
+    "marketMemorySource": "Accepted facts from the shared market Library.",
+    "marketMemoryEmpty": "No accepted market facts yet. Interview notes remain drafts until reviewed.",
+    "marketMemoryBounded": "Showing a limited view. Beca can retrieve more facts through the Library.",
     "companyProfile": {
       "title": "Company profile",
       "description": "Your corrections take precedence over PDL. This is your private working profile, not a shared company record.",
@@ -13935,6 +13946,10 @@
     "sourceDisclosure": "Source",
     "automaticDraftBoundary": "The draft updates after each answer. Market evidence changes only after review.",
     "reviewInGuesstimate": "Open business model",
+    "openingSpeaker": "Sarah · Customer journey",
+    "openingQuestion": "I’m Beca. What would you most like to change about your business?",
+    "interviewTeam": "Interview team",
+    "retryDraft": "Retry draft update",
     "becaName": "Beca",
     "whatNeedsToChange": "What needs to change?",
     "researchContextAndLenses": "Research context and specialist lenses",
@@ -13956,6 +13971,36 @@
       "interview": "Executive interview",
       "design": "Experiment design",
       "analytics": "Experiment analytics"
+    },
+    "progress": {
+      "title": "Your first model",
+      "count": "{count} of 3 essentials captured",
+      "essentials": "Model essentials",
+      "goal": "Goal",
+      "measure": "Success measure",
+      "journey": "Customer journey",
+      "captured": "Captured",
+      "missing": "Needs detail",
+      "goalNext": "What would you like to improve?",
+      "measureNext": "What outcome and timeframe would make this a success?",
+      "journeyNext": "Who is the customer, and how do they reach the decision?",
+      "goalAsk": "Help me clarify the business goal. Use my answers and ask only the most useful missing question.",
+      "measureAsk": "Help me define the success measure and timeframe. Use what I have already told you.",
+      "journeyAsk": "Help me outline the customer journey. Use my answers and ask only the most useful missing question.",
+      "failed": "Your answers are saved. The brief needs another attempt.",
+      "updating": "Updating your brief…",
+      "ready": "Enough for a first model.",
+      "conflict": "One point needs clarification before the model.",
+      "connecting": "Your essentials are captured. Connect them into a first model.",
+      "retry": "Retry brief update",
+      "open": "Build business model",
+      "build": "Complete model brief",
+      "conflictAsk": "Help me resolve the conflicting statements in the saved brief. Ask one clear question; do not choose an answer for me.",
+      "buildAsk": "Build a first business model from what I have shared. Keep missing numbers and unmeasured experiment effects unknown. If a critical piece of customer context is missing, ask only that next question.",
+      "hint": "Unknown numbers can wait.",
+      "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
+      "contextUpdating": "Finishing company research…",
+      "email": "Research starts from {email}"
     }
   }
 }

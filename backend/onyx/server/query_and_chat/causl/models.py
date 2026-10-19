@@ -66,6 +66,7 @@ class CauslChatBinding(BaseModel):
     chat_id: UUID
     selection: CauslSelection
     library_server_id: int
+    mode: Literal["workspace", "interview"] = "workspace"
 
 
 class CauslWorkspaceResponse(BaseModel):

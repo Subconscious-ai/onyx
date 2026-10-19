@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import json
 import os
 import re
 import runpy
@@ -13,6 +14,37 @@ from fastmcp.server.auth.providers.jwt import StaticTokenVerifier
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools.tool import ToolResult
 from mcp.types import CallToolRequestParams
+
+SOURCE_LIMIT = 8000
+SOURCE_LIMIT_NOTICE = "Research input was limited to 8,000 characters per source before relevance selection; later details may be omitted."
+
+
+def install_source_limit() -> None:
+    from gpt_researcher.skills.context_manager import ContextManager
+
+    compress = ContextManager.get_similar_content_by_query
+    if (compress.__module__, compress.__name__) == (__name__, "bounded_context"):
+        return
+
+    async def bounded_context(
+        manager: object, query: str, pages: list[dict[str, object]]
+    ) -> str:
+        bounded = [
+            {**page, "raw_content": content[:SOURCE_LIMIT]}
+            if isinstance(content := page.get("raw_content"), str)
+            else page
+            for page in pages
+        ]
+        context = await compress(manager, query, bounded)
+        if any(
+            isinstance(content := page.get("raw_content"), str)
+            and len(content) > SOURCE_LIMIT
+            for page in pages
+        ):
+            return context + "\n\n" + SOURCE_LIMIT_NOTICE
+        return context
+
+    ContextManager.get_similar_content_by_query = bounded_context
 
 
 class ResearchDeadline(Middleware):
@@ -33,7 +65,19 @@ class ResearchDeadline(Middleware):
             )
         try:
             async with asyncio.timeout(self.seconds):
-                return await call_next(context)
+                result = await call_next(context)
+                receipt = result.structured_content
+                if isinstance(receipt, dict):
+                    data = receipt.get("data", receipt)
+                    if isinstance(data, dict) and SOURCE_LIMIT_NOTICE in json.dumps(
+                        data.get("context", [])
+                    ):
+                        data = {**data, "truncated": True}
+                        receipt = (
+                            {**receipt, "data": data} if "data" in receipt else data
+                        )
+                        return ToolResult(content=receipt, structured_content=receipt)
+                return result
         except TimeoutError:
             receipt = {
                 "status": "unavailable",
@@ -67,6 +111,7 @@ async def configure(upstream: Path) -> FastMCP:
             "SMART_LLM": "bedrock:us.amazon.nova-pro-v1:0",
             "STRATEGIC_LLM": "bedrock:us.amazon.nova-pro-v1:0",
             "EMBEDDING": "bedrock:amazon.titan-embed-text-v2:0",
+            "SIMILARITY_THRESHOLD": "0.2",
             "RETRIEVER": "exa",
             "MAX_ITERATIONS": "2",
             "MAX_SEARCH_RESULTS_PER_QUERY": "3",
@@ -82,6 +127,7 @@ async def configure(upstream: Path) -> FastMCP:
     # Import the pinned upstream server; collection and source retrieval stay upstream.
     sys.path.insert(0, str(upstream.resolve()))
     server: FastMCP = runpy.run_path(str(upstream / "server.py"))["mcp"]
+    install_source_limit()
     server.auth = StaticTokenVerifier(
         tokens={token: {"client_id": "onyx-executive-preview", "scopes": ["research"]}}
     )

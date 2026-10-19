@@ -5,6 +5,78 @@ The integration binds native conversations to an authorized organization and mar
 The paired KB panel keeps the native chat mounted across page navigation and collapse.
 This source change does not establish a hosted release or complete the full customer journey.
 
+## Shared market memory in native interviews
+
+[Onyx #70](https://github.com/Subconscious-ai/onyx/issues/70) connects configured native Beca
+interviews to the same per-user Library OAuth and fresh KB context reader. The verified Library
+response selects the initial organization. The native conversation retains that binding and
+rechecks it on later turns. Existing unbound conversations retain their transcripts; start a new
+interview to connect shared memory instead of guessing their historical organization.
+
+Accepted facts live in causal-KB Postgres. The brief's **Saved market facts** view reads that
+database and shows current values separately from approved source excerpts. The native
+`<interview-brief>` payload remains a working draft, not accepted business memory. No extractor
+claim, PDL result, or public research report silently becomes an accepted fact.
+
+Interview mode retains native PDL/research preparation, configured research tools, attached
+reference files, and turn guidance. It excludes personal MemoryTool writes. Supported fact
+changes use the existing source-bound Library proposal and review/save path. Permissions and
+admission rules are unchanged. Workspace mode keeps its stricter private-context exclusions.
+
+The initial snapshot is bounded. Existing Library `market_search` retrieves accepted facts
+outside that snapshot, including journey stages, transitions and product definitions. It applies
+the text filter before sampling and retains source identities. Beca must search before asking
+for an absent fact. A missed search is inconclusive; omitted results call for a narrower query.
+The brief displays a bounded Postgres view, not a complete copy of organization memory.
+
+Paired [causl-KB #714](https://github.com/Subconscious-ai/causl-kb/issues/714) tests one approved
+chat fact through fresh authorized contexts and the model request. Its reader preserves approved
+excerpts and prioritizes recently corrected records. Focused database and HTTP tests are separate
+from authenticated hosted QA. This change does not prove automatic admission of every interview
+field or the 60-second onboarding target. The owner authorized publication and merge on
+October 18; required review and checks remain release gates. Current candidates are
+[Onyx #71 — share accepted facts across interviews](https://github.com/Subconscious-ai/onyx/pull/71)
+and [KB #715 — preserve shared facts and model inputs](https://github.com/Subconscious-ai/causl-kb/pull/715).
+The shared-memory candidates retain the original interview and model implementations from PRs #48 and KB #675.
+
+The latest first-send proof used Onyx `1e2a9d7` and KB `f18c36a`. Standard-member OAuth,
+exactly one saved human message, a real saved reply, model save and independent reopen passed.
+One prepared answer took 65.489 seconds after login. Calculation matched 550 baseline and
+700 target contracts. A fresh empty chat retrieved the same accepted fact/source through
+its actual Library tool in 2.074 seconds; model-context readback took 0.239 seconds.
+Agent-dev still runs these tested pins. Source integration and CI do not update that runtime.
+Fresh PDL/research, realistic executive response time and full six-case timing remain unproven.
+
+October 18 agent-dev QA used Onyx `f10a31555b` and KB `a884ab3`. A standard member saved
+three reviewed stages and two transitions from a retained synthetic interview. After newer
+records displaced the original stage from the snapshot, a separate empty chat's actual native
+Library tool retrieved it and its accepted source in 0.736 seconds. The model route's existing
+market-scoped Postgres reader returned the same fact and evidence in 0.106 seconds. Authenticated
+selection returned the saved model and exact stage in 0.272 seconds. Exact model reopen, no
+copied transcript, anonymous denial and both browser views passed. This test reused the
+previously calculated model; it made no new research or model-generation call. It does not
+prove the fresh 60-second interview. QA: [Beca on agent-dev](https://agent-dev.taila3aadb.ts.net:3011/app?agentId=2).
+
+## First-send workspace connection
+
+Native sign-in does not create a per-user Library OAuth grant. Before a standalone
+Beca send, the frontend checks the existing persona MCP connection status. If the
+grant is missing, **Connect workspace** opens the existing OAuth flow. The original
+draft and queued message stay in their native tab. A successful connection resumes
+that submission once; cancellation leaves the text available for editing.
+
+Library OAuth accepts a standard member who can view an agent with an enabled
+Library tool. Server attachment uses its existing, separate permission check.
+OAuth completion checks agent access again, so revoked access cannot accept tokens.
+
+Fresh-user QA must use a standard member with no prior Library grant. A connected
+account can prove memory readback but cannot prove first-send onboarding. Inspect
+native stream packets: HTTP 200 can contain an `UNAUTHENTICATED` error and is not
+proof of a saved message. Require the exact persisted human message, a real saved
+assistant reply, and normal model save/reopen before handing off the QA link.
+Observe popup pages with Playwright events. Wrapping native Window handles changes
+`postMessage` source identity and invalidates the handoff test.
+
 ## Configuration
 
 Keep both settings unset to leave ordinary Onyx authentication unchanged.

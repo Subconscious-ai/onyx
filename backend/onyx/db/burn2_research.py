@@ -1,12 +1,14 @@
 """User-scoped research in native encrypted Postgres, with native tool access."""
 
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
+
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from onyx.db.encrypted_kv_store import load_encrypted_kv, upsert_encrypted_kv
 from onyx.db.engine.sql_engine import get_session_with_current_tenant
 from onyx.db.enums import MCPTransport
-from onyx.db.models import MCPServer, User
+from onyx.db.models import EncryptedKeyValueStore, MCPServer, User
 from onyx.db.persona import get_persona_by_id
 from onyx.key_value_store.interface import KvKeyNotFoundError
 from onyx.server.features.mcp.credentials import resolve_mcp_credentials
@@ -14,13 +16,46 @@ from onyx.server.features.mcp.credentials import resolve_mcp_credentials
 
 def read_research(user_id: UUID) -> dict[str, Any] | None:
     try:
-        return dict(load_encrypted_kv(f"burn2:research:{user_id}"))
+        value = load_encrypted_kv(f"burn2:research:{user_id}")
+        if not isinstance(value, dict):
+            raise ValueError("Saved research must be an object")
+        return cast(dict[str, Any], value)
     except KvKeyNotFoundError:
         return None
 
 
 def save_research(user_id: UUID, value: dict[str, Any]) -> None:
     upsert_encrypted_kv(f"burn2:research:{user_id}", value)
+
+
+def update_research_if_current(
+    user_id: UUID,
+    value: dict[str, Any],
+    *,
+    job_id: str,
+    status: str,
+) -> bool:
+    """Serialize worker transitions against replacement jobs in the same row."""
+    key = f"burn2:research:{user_id}"
+    with get_session_with_current_tenant() as db:
+        row = (
+            db.query(EncryptedKeyValueStore)
+            .filter_by(key=key)
+            .with_for_update()
+            .first()
+        )
+        if row is None:
+            return False
+        current = row.value.get_value(apply_mask=False)
+        if current.get("job_id") != job_id or current.get("status") != status:
+            return False
+        db.execute(
+            pg_insert(EncryptedKeyValueStore)
+            .values(key=key, value=value)
+            .on_conflict_do_update(index_elements=["key"], set_={"value": value})
+        )
+        db.commit()
+    return True
 
 
 def research_connection(

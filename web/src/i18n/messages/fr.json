@@ -1,5 +1,9 @@
 {
   "causlWorkspace": {
+    "cancelConnection": "Continuer la rédaction",
+    "connectWorkspace": "Connecter l’espace de travail",
+    "connectionRequired": "Connectez votre espace de travail pour continuer. Votre message est conservé.",
+    "connectionFailed": "La connexion a échoué. Votre message est conservé. Réessayez.",
     "notConfigured": "Ouvrez l’assistant depuis votre espace causl-kb. S’il reste indisponible, contactez votre administrateur.",
     "signin": "Connectez-vous avec le même compte d’organisation que dans causl-kb. Puis rouvrez cette conversation.",
     "signInAction": "Se connecter à Onyx",
@@ -13850,6 +13854,13 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "Source : {quote}",
+    "savedMarketFacts": "Faits de marché enregistrés",
+    "marketMemoryUnavailable": "La mémoire partagée du marché est indisponible.",
+    "marketMemoryLoading": "Lecture des faits de marché enregistrés…",
+    "marketMemorySource": "Faits acceptés de la bibliothèque de marché partagée.",
+    "marketMemoryEmpty": "Aucun fait de marché accepté. Les notes restent des brouillons avant révision.",
+    "marketMemoryBounded": "Vue limitée. Beca peut consulter davantage de faits dans la bibliothèque.",
     "companyProfile": {
       "title": "Profil de l’entreprise",
       "description": "Vos corrections priment sur PDL. Il s’agit de votre profil de travail privé, pas d’un dossier partagé de l’entreprise.",
@@ -13935,6 +13946,10 @@
     "sourceDisclosure": "Source",
     "automaticDraftBoundary": "The draft updates after each answer. Market evidence changes only after review.",
     "reviewInGuesstimate": "Vérifier dans business model",
+    "openingSpeaker": "Sarah · Parcours client",
+    "openingQuestion": "Je suis Beca. Que souhaitez-vous changer en priorité dans votre entreprise ?",
+    "interviewTeam": "Équipe d’entretien",
+    "retryDraft": "Réessayer la mise à jour du brouillon",
     "becaName": "Beca",
     "whatNeedsToChange": "Que faut-il changer ?",
     "researchContextAndLenses": "Contexte de recherche et perspectives spécialisées",
@@ -13956,6 +13971,36 @@
       "interview": "Entretien de direction",
       "design": "Conception d’expériences",
       "analytics": "Analyse d’expériences"
+    },
+    "progress": {
+      "title": "Votre premier modèle",
+      "count": "{count} éléments sur 3 recueillis",
+      "essentials": "Éléments du modèle",
+      "goal": "Objectif",
+      "measure": "Mesure de réussite",
+      "journey": "Parcours client",
+      "captured": "Recueilli",
+      "missing": "À préciser",
+      "goalNext": "Que souhaitez-vous améliorer ?",
+      "measureNext": "Quel résultat et quel délai définiraient la réussite ?",
+      "journeyNext": "Qui est le client et comment arrive-t-il à sa décision ?",
+      "goalAsk": "Aide-moi à clarifier l’objectif. Utilise mes réponses et pose uniquement la question manquante la plus utile.",
+      "measureAsk": "Aide-moi à définir la mesure de réussite et le délai avec les informations déjà fournies.",
+      "journeyAsk": "Aide-moi à décrire le parcours client. Utilise mes réponses et pose uniquement la question manquante la plus utile.",
+      "failed": "Vos réponses sont enregistrées. La synthèse doit être réessayée.",
+      "updating": "Mise à jour de votre synthèse…",
+      "ready": "Nous avons de quoi créer un premier modèle.",
+      "conflict": "Un point doit être clarifié avant le modèle.",
+      "connecting": "Les éléments sont recueillis. Reliez-les dans un premier modèle.",
+      "retry": "Réessayer la mise à jour",
+      "open": "Build business model",
+      "build": "Complete model brief",
+      "conflictAsk": "Aide-moi à résoudre les contradictions dans la synthèse enregistrée. Pose une question claire sans choisir la réponse à ma place.",
+      "buildAsk": "Crée un premier modèle avec mes informations. Laisse inconnus les chiffres manquants et les effets non mesurés. Si un contexte client essentiel manque, demande uniquement ce point.",
+      "hint": "Les chiffres inconnus peuvent attendre.",
+      "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
+      "contextUpdating": "Finishing company research…",
+      "email": "La recherche commence avec {email}"
     }
   }
 }

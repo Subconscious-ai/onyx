@@ -129,6 +129,7 @@ def questions(text: str) -> list[str]:
     # Jerry's single-line rhetorical punchline is not an interview question.
     prose = re.sub(r"(?im)^\s*\*{0,2}Jerry\s*\*{0,2}:.*$", "", text)
     prose = re.sub(r"https?://[^\s)]+", "", prose)
+    prose = re.sub(r"\b(?:e\.g\.|i\.e\.)", "for example", prose, flags=re.I)
     prose = re.sub(r"(?<=\|)\s*\?\s*(?=\|)", " unknown ", prose)
     return [
         part.strip().lower()
@@ -454,7 +455,7 @@ def allowed_bedrock_models(providers: list[dict]) -> set[int]:
         for provider in providers
         if provider["provider"] == "bedrock"
         for model in provider["model_configurations"]
-        if model.get("name") and not re.search(r"anthropic|claude", model["name"], re.I)
+        if model.get("name")
     }
 
 
@@ -523,9 +524,7 @@ def main() -> None:
     with api("/llm/provider") as response:
         providers = json.load(response)["providers"]
     if selected_model not in allowed_bedrock_models(providers):
-        raise ValueError(
-            "Interview evaluation requires an explicit non-Anthropic AWS Bedrock model"
-        )
+        raise ValueError("Interview evaluation requires an explicit AWS Bedrock model")
     allowed_tools = []
     if args.scenario_file:
         allowed_tools = [

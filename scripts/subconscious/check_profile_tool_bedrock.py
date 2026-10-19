@@ -10,12 +10,14 @@ from uuid import uuid4
 
 from onyx.db.burn2_profile import read_profile
 from onyx.db.encrypted_kv_store import delete_encrypted_kv
-from onyx.db.engine.sql_engine import SqlEngine
+from onyx.db.engine.sql_engine import SqlEngine, get_session_with_current_tenant
+from onyx.db.models import Persona
 from onyx.key_value_store.interface import KvKeyNotFoundError
 from onyx.llm.factory import get_llm_for_contextual_rag
 from onyx.llm.models import (
     AssistantMessage,
     ChatCompletionMessage,
+    SystemMessage,
     ToolCall,
     ToolMessage,
     UserMessage,
@@ -25,13 +27,26 @@ from onyx.tools.models import ToolCallException
 from onyx.tools.tool_implementations.company_profile.company_profile_tool import (
     CompanyProfileTool,
 )
+from onyx.tools.tool_implementations.memory.memory_tool import MemoryTool
 
 
 def main() -> None:
     SqlEngine.init_engine(pool_size=2, max_overflow=0)
     llm = get_llm_for_contextual_rag(8)
     assert "bedrock" in llm.config.model_provider and "gpt-oss" in llm.config.model_name
+    with get_session_with_current_tenant() as db:
+        persona = db.get(Persona, 5)
+        assert persona and persona.name in {"Burn 2.0", "Executive interview"}
+        instructions = f"{persona.system_prompt or ''}\n{persona.task_prompt or ''}"
     cases = [
+        (
+            "I am the CEO of Northstar Test at https://northstar.example. Please save that company context and research it while we talk.",
+            {
+                "company": "Northstar Test",
+                "website": "https://northstar.example",
+                "role": "CEO",
+            },
+        ),
         ("Correct my company to Northstar Test.", {"company": "Northstar Test"}),
         (
             "Correct my product to scheduling software and customer segment to operations managers.",
@@ -44,12 +59,16 @@ def main() -> None:
     for message, expected in cases:
         owner = uuid4()
         tool = CompanyProfileTool(tool_id=123, user_id=owner, emitter=MagicMock())
-        history: list[ChatCompletionMessage] = [UserMessage(content=message)]
+        memory = MemoryTool(tool_id=124, emitter=MagicMock(), llm=llm)
+        history: list[ChatCompletionMessage] = [
+            SystemMessage(content=instructions),
+            UserMessage(content=message),
+        ]
         try:
             for index in range(3):
                 response = llm.invoke(
                     history,
-                    tools=[tool.tool_definition()],
+                    tools=[tool.tool_definition(), memory.tool_definition()],
                     max_tokens=1024,
                     timeout_override=45,
                 )
@@ -104,7 +123,7 @@ def main() -> None:
                 except KvKeyNotFoundError:
                     pass
     print(
-        "PASS: two real Bedrock conversations saved and reloaded exact synthetic corrections. Test keys removed."
+        "PASS: three real Bedrock conversations used company_profile despite general memory availability, and reloaded exact synthetic corrections. Test keys removed."
     )
 
 

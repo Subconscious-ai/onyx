@@ -1,5 +1,9 @@
 {
   "causlWorkspace": {
+    "cancelConnection": "Continuar editando",
+    "connectWorkspace": "Conectar espaço de trabalho",
+    "connectionRequired": "Conecte seu espaço de trabalho para continuar. Sua mensagem está preservada.",
+    "connectionFailed": "A conexão falhou. Sua mensagem está preservada. Tente novamente.",
     "notConfigured": "Abra o assistente pelo seu espaço no causl-kb. Se continuar indisponível, contacte o administrador.",
     "signin": "Entre com a mesma conta da organização que usa no causl-kb. Depois, reabra esta conversa.",
     "signInAction": "Entrar no Onyx",
@@ -13850,6 +13854,13 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "Fonte: {quote}",
+    "savedMarketFacts": "Fatos de mercado salvos",
+    "marketMemoryUnavailable": "A memória compartilhada do mercado está indisponível.",
+    "marketMemoryLoading": "Lendo fatos de mercado salvos…",
+    "marketMemorySource": "Fatos aceitos da biblioteca de mercado compartilhada.",
+    "marketMemoryEmpty": "Ainda não há fatos de mercado aceitos. As notas da entrevista são rascunhos até a revisão.",
+    "marketMemoryBounded": "Exibindo uma visão limitada. Beca pode recuperar mais fatos da biblioteca.",
     "companyProfile": {
       "title": "Perfil da empresa",
       "description": "Suas correções têm prioridade sobre o PDL. Este é seu perfil privado de trabalho, não um registro compartilhado da empresa.",
@@ -13935,6 +13946,10 @@
     "sourceDisclosure": "Source",
     "automaticDraftBoundary": "The draft updates after each answer. Market evidence changes only after review.",
     "reviewInGuesstimate": "Revisar no business model",
+    "openingSpeaker": "Sarah · Jornada do cliente",
+    "openingQuestion": "Sou a Beca. O que mais gostaria de mudar no seu negócio?",
+    "interviewTeam": "Equipe de entrevista",
+    "retryDraft": "Tentar atualizar o rascunho novamente",
     "becaName": "Beca",
     "whatNeedsToChange": "O que precisa mudar?",
     "researchContextAndLenses": "Contexto da pesquisa e perspectivas especializadas",
@@ -13956,6 +13971,36 @@
       "interview": "Entrevista executiva",
       "design": "Desenho de experimentos",
       "analytics": "Análise de experimentos"
+    },
+    "progress": {
+      "title": "Seu primeiro modelo",
+      "count": "{count} de 3 elementos registrados",
+      "essentials": "Elementos do modelo",
+      "goal": "Objetivo",
+      "measure": "Medida de sucesso",
+      "journey": "Jornada do cliente",
+      "captured": "Registrado",
+      "missing": "Faltam detalhes",
+      "goalNext": "O que você gostaria de melhorar?",
+      "measureNext": "Qual resultado e prazo definiriam o sucesso?",
+      "journeyNext": "Quem é o cliente e como ele chega à decisão?",
+      "goalAsk": "Ajude-me a esclarecer o objetivo. Use minhas respostas e pergunte apenas o ponto mais importante que falta.",
+      "measureAsk": "Ajude-me a definir a medida de sucesso e o prazo com o que já informei.",
+      "journeyAsk": "Ajude-me a descrever a jornada do cliente. Use minhas respostas e pergunte apenas o ponto mais importante que falta.",
+      "failed": "Suas respostas estão salvas. É preciso tentar atualizar o resumo novamente.",
+      "updating": "Atualizando seu resumo…",
+      "ready": "Já temos o suficiente para um primeiro modelo.",
+      "conflict": "Um ponto precisa ser esclarecido antes do modelo.",
+      "connecting": "Os elementos estão registrados. Conecte-os em um primeiro modelo.",
+      "retry": "Tentar atualizar novamente",
+      "open": "Build business model",
+      "build": "Complete model brief",
+      "conflictAsk": "Ajude-me a resolver as contradições no resumo salvo. Faça uma pergunta clara; não escolha a resposta por mim.",
+      "buildAsk": "Crie um primeiro modelo com o que compartilhei. Mantenha desconhecidos os números ausentes e os efeitos não medidos. Se faltar contexto essencial do cliente, pergunte apenas isso.",
+      "hint": "Números desconhecidos podem esperar.",
+      "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
+      "contextUpdating": "Finishing company research…",
+      "email": "A pesquisa começa com {email}"
     }
   }
 }
