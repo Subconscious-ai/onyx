@@ -1,8 +1,12 @@
 """Root conftest — shared fixtures available to all test directories."""
 
+import os
 from collections.abc import Generator
 
 import pytest
+
+# Test failures must not reach an inherited service's Sentry project.
+os.environ.pop("SENTRY_DSN", None)
 
 from onyx.utils.variable_functionality import (
     fetch_versioned_implementation,
