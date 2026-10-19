@@ -130,7 +130,9 @@ def test_http_open_and_stream_keep_two_native_callers_separate(
         *,
         start_research: bool = False,
     ) -> CauslContextEnvelope:
-        assert not start_research, "Workspace model turns never activate initial interview discovery"
+        assert not start_research, (
+            "Workspace model turns never activate initial interview discovery"
+        )
         reads.append(headers["subject"])
         return CauslContextEnvelope(
             issuer=headers["issuer"],
