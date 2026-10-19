@@ -6,9 +6,10 @@ import sys
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from fastmcp import Client, FastMCP
+from fastmcp.exceptions import ToolError
 from serve_research import ResearchDeadline, configure
 
 
@@ -44,6 +45,115 @@ class ResearchDeadlineTests(unittest.IsolatedAsyncioTestCase):
         ):
             await configure(Path("/unused"))
 
+    async def test_company_website_uses_native_scraper_and_retains_research_receipt(
+        self,
+    ):
+        upstream = FastMCP("Native website research")
+        upstream.researchers = {}
+
+        @upstream.tool()
+        async def deep_research(query: str):
+            return {"status": "success", "query": query, "legacy": True}
+
+        @upstream.tool()
+        async def get_research_sources(research_id: str):
+            return {"sources": upstream.researchers[research_id].get_research_sources()}
+
+        class NativeResearcher:
+            def __init__(self, query, **kwargs):
+                self.query = query
+                self.options = kwargs
+                self.completed = False
+
+            async def conduct_research(self):
+                self.completed = True
+
+            def get_research_context(self):
+                return "Company website evidence, even when search finds no pages."
+
+            def get_research_sources(self):
+                return [{"url": "https://example.com", "title": "Company website"}]
+
+            def get_source_urls(self):
+                return ["https://example.com"]
+
+        factory = MagicMock(side_effect=NativeResearcher)
+        store = MagicMock()
+        namespace = {
+            "mcp": upstream,
+            "deep_research": deep_research,
+            "GPTResearcher": factory,
+            "store_research_results": store,
+            "create_success_response": lambda data: {"status": "success", **data},
+            "format_sources_for_response": lambda sources: sources,
+            "handle_exception": lambda _error, _operation: {"status": "error"},
+        }
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "AWS_BEARER_TOKEN_BEDROCK": "test-bearer",
+                    "AWS_DEFAULT_REGION": "us-east-1",
+                    "EXA_API_KEY": "test-search",
+                    "GPTR_PREVIEW_TOKEN": "t" * 40,
+                },
+                clear=True,
+            ),
+            patch("serve_research.runpy.run_path", return_value=namespace),
+            patch("serve_research.install_source_limit"),
+        ):
+            server = await configure(Path("/unused"))
+            async with Client(server) as client:
+                for urls in (
+                    ["https://127.0.0.1"],
+                    ["https://metadata.internal"],
+                    ["https://example.com/private?email=secret@example.com"],
+                    ["https://user:password@example.com"],
+                    ["https://example.com", "https://other.com"],
+                ):
+                    with self.assertRaises(ToolError):
+                        await client.call_tool(
+                            "deep_research",
+                            {
+                                "query": "Public company context",
+                                "source_urls": urls,
+                            },
+                        )
+                result = await client.call_tool(
+                    "deep_research",
+                    {
+                        "query": "Public company context",
+                        "source_urls": ["https://example.com"],
+                    },
+                )
+                legacy = await client.call_tool(
+                    "deep_research", {"query": "Other market"}
+                )
+                sources = await client.call_tool(
+                    "get_research_sources",
+                    {
+                        "research_id": result.data["research_id"],
+                    },
+                )
+
+        factory.assert_called_once_with(
+            "Public company context",
+            source_urls=["https://example.com"],
+            complement_source_urls=True,
+        )
+        researcher = upstream.researchers[result.data["research_id"]]
+        self.assertTrue(researcher.completed)
+        self.assertEqual(result.data["source_urls"], ["https://example.com"])
+        self.assertEqual(result.data["context"], researcher.get_research_context())
+        self.assertEqual(sources.data["sources"], researcher.get_research_sources())
+        self.assertTrue(legacy.data["legacy"])
+        store.assert_called_once_with(
+            "Public company context",
+            researcher.get_research_context(),
+            researcher.get_research_sources(),
+            ["https://example.com"],
+        )
+
     async def test_bedrock_bearer_auth_does_not_require_an_unrelated_iam_key_pair(self):
         environment = {
             "AWS_BEARER_TOKEN_BEDROCK": "test-bearer",
@@ -56,6 +166,7 @@ class ResearchDeadlineTests(unittest.IsolatedAsyncioTestCase):
             patch.dict(os.environ, environment, clear=True),
             patch("serve_research.runpy.run_path", return_value={"mcp": upstream}),
             patch("serve_research.install_source_limit", create=True),
+            patch("serve_research.install_website_source"),
         ):
             server = await configure(Path("/unused"))
             self.assertIs(server, upstream)
@@ -110,6 +221,7 @@ class ResearchDeadlineTests(unittest.IsolatedAsyncioTestCase):
                 clear=True,
             ),
             patch("serve_research.runpy.run_path", return_value={"mcp": upstream}),
+            patch("serve_research.install_website_source"),
             patch.dict(
                 sys.modules,
                 {

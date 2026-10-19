@@ -30,7 +30,7 @@ def public_source_url(value: object) -> str | None:
         return None
 
 
-def public_research_query(profile: dict[str, Any] | None) -> str | None:
+def public_research_website(profile: dict[str, Any] | None) -> str | None:
     if not profile or profile.get("status") != "ready":
         return None
     website = (profile.get("profile") or {}).get("website")
@@ -42,6 +42,14 @@ def public_research_query(profile: dict[str, Any] | None) -> str | None:
     host = urlsplit(url).hostname
     if not host or len(host) > 253:
         return None
+    return f"https://{host}"
+
+
+def public_research_query(profile: dict[str, Any] | None) -> str | None:
+    website = public_research_website(profile)
+    if not website or not profile:
+        return None
+    host = urlsplit(website).hostname or ""
     professional = profile.get("provider_profile") or {}
     person = professional.get("name", "")
     person_query = ""

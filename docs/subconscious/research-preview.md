@@ -24,6 +24,10 @@ Nova Pro performs research synthesis. Titan v2 supplies embeddings. Exa performs
 
 The adapter exposes `deep_research`, `get_research_sources` and `get_research_context`. Each call has a 120-second cancellation deadline. A timeout returns an explicit unavailable receipt with no source URLs. Public queries have an 800-character limit and reject email addresses. The email check does not detect every form of private information. The interview rubric restricts research requests to public company or category context.
 
+The background worker also sends the validated company website origin through optional `source_urls`. Private profile paths and query parameters stay excluded. The adapter uses native GPT Researcher `source_urls` with `complement_source_urls=True`. Native scraping reads the website before web search. Native receipt storage and source retrieval remain unchanged. Search can return no pages without preventing website collection. Website content must still pass native relevance selection and receipt validation.
+
+Deploy this adapter before the updated worker. The pinned upstream MCP tool accepts only `query` and rejects `source_urls`. The library supports website sources; the adapter exposes that existing capability.
+
 Upstream research context is generated synthesis. Source URLs support inspection of original material. A successful research receipt does not validate every generated claim.
 
 ## Native Onyx connection
