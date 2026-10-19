@@ -137,20 +137,22 @@ def test_bound_turn_uses_current_shared_context_without_losing_interview_prepara
         assert setup.causl_binding == binding
         assert setup.causl_original_message == request.message
         if mode == "interview":
-            assert "Alice" in context
-            assert research["report"] in context
-            assert "https://acme.com/plans" in context
-            assert request.message in context
-            assert "not accepted market memory" in context
             assert setup.trusted_turn_instructions
             if message.startswith(("Show", "What")):
                 assert setup.saved_fact_request is True
+                assert context == current_fact
+                assert workspace_turn.call_args.kwargs["saved_fact_request"] is True
                 assert setup.use_persona_prompt is False
                 assert "Question budget" not in setup.trusted_turn_instructions
                 assert "Capture the goal" not in setup.trusted_turn_instructions
                 assert "market_search" in setup.trusted_turn_instructions
             else:
                 assert setup.saved_fact_request is False
+                assert "Alice" in context
+                assert research["report"] in context
+                assert "https://acme.com/plans" in context
+                assert request.message in context
+                assert "not accepted market memory" in context
                 assert setup.use_persona_prompt is True
                 assert "30 spoken words" in setup.trusted_turn_instructions
         else:

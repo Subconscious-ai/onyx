@@ -175,6 +175,34 @@ def test_new_interviews_read_the_same_committed_market_fact_without_chat_history
     )
 
 
+def test_saved_fact_turn_fetches_facts_through_tools_without_starting_research(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    monkeypatch.setenv("BURN2_ENABLED", "true")
+    monkeypatch.setattr(turn, "read_causl_binding", lambda *_args: None)
+    monkeypatch.setattr(db, "get", lambda *_args: None)
+    monkeypatch.setattr(db, "scalar", lambda *_args: None)
+    payload = envelope()
+    payload["context"].update(page="workspace", market=None)
+    requests = http_response(monkeypatch, payload)
+    chat = ChatSession(
+        id=uuid4(),
+        user_id=user.id,
+        persona_id=11,
+        persona=Persona(id=11, name="Executive interview"),
+    )
+
+    binding, prompt = turn.workspace_turn(db, user, chat, None, saved_fact_request=True)
+
+    assert binding is not None and binding.mode == "interview"
+    assert [request.method for request in requests] == ["GET"]
+    assert prompt is not None and "market_search" in prompt
+    assert "Accepted B fact" not in prompt
+    assert ACTOR.org_id in prompt
+    assert payload["context"]["digest"] in prompt
+
+
 def test_memory_reads_do_not_activate_interview_research(
     connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
 ) -> None:

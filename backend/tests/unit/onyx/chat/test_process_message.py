@@ -159,7 +159,7 @@ def test_native_message_storage_keeps_executive_words_when_a_hook_adds_a_claim(
     monkeypatch.setattr(
         process_message,
         "workspace_turn",
-        lambda *_args: (binding if workspace_bound else None, "{}"),
+        lambda *_args, **_kwargs: (binding if workspace_bound else None, "{}"),
     )
     monkeypatch.setattr(process_message, "mt_cloud_telemetry", lambda **_kwargs: None)
     monkeypatch.setattr(

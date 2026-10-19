@@ -343,6 +343,26 @@ class TestRunModels:
         assert bootstrap.call_args.kwargs["forced_tool_id"] == expected_tool_id
         assert run.call_args.kwargs["forced_tool_id"] == expected_tool_id
 
+    def test_saved_fact_readout_reports_unavailable_library_without_generating(
+        self,
+    ) -> None:
+        setup = _make_setup()
+        setup.saved_fact_request = True
+        with (
+            patch("onyx.chat.process_message.run_llm_loop") as run,
+            patch("onyx.chat.process_message.construct_tools", return_value={}),
+            patch("onyx.chat.process_message.llm_loop_completion_handle"),
+            patch(
+                "onyx.chat.process_message.get_llm_token_counter",
+                return_value=lambda _: 0,
+            ),
+        ):
+            packets = _run_models_collect(setup)
+        run.assert_not_called()
+        errors = [packet for packet in packets if isinstance(packet, StreamingError)]
+        assert len(errors) == 1
+        assert "Library search is unavailable" in errors[0].error
+
     @pytest.mark.parametrize("workspace_bound", [False, True])
     def test_workspace_turn_cannot_bootstrap_a_personal_company_profile(
         self, monkeypatch: pytest.MonkeyPatch, workspace_bound: bool
