@@ -47,7 +47,7 @@ from onyx.llm.constants import LlmProviderNames
 from onyx.llm.exceptions import ClassifiedLLMError
 from onyx.llm.interfaces import LLM, LLMUserIdentity, ToolChoiceOptions
 from onyx.llm.model_capabilities import is_true_openai_model
-from onyx.llm.models import ReasoningEffort
+from onyx.llm.models import NamedToolChoice, ReasoningEffort, ToolChoice
 from onyx.llm.utils import model_supports_image_input
 from onyx.prompts.chat_prompts import (
     IMAGE_GEN_REMINDER,
@@ -102,7 +102,7 @@ class EmptyLLMResponseError(ClassifiedLLMError):
         *,
         provider: str,
         model: str,
-        tool_choice: ToolChoiceOptions,
+        tool_choice: ToolChoice,
         client_error_msg: str,
         error_code: str = "EMPTY_LLM_RESPONSE",
         is_retryable: bool = True,
@@ -147,7 +147,7 @@ _REFUSAL_FINISH_REASONS = {
 def _build_empty_llm_response_error(
     llm: LLM,
     llm_step_result: LlmStepResult,
-    tool_choice: ToolChoiceOptions,
+    tool_choice: ToolChoice,
 ) -> EmptyLLMResponseError:
     provider = llm.config.model_provider
     model = llm.config.model_name
@@ -213,7 +213,7 @@ def _build_empty_llm_response_error(
 
 def _try_fallback_tool_extraction(
     llm_step_result: LlmStepResult,
-    tool_choice: ToolChoiceOptions,
+    tool_choice: ToolChoice,
     fallback_extraction_attempted: bool,
     tool_defs: list[dict],
     turn_index: int,
@@ -249,7 +249,13 @@ def _try_fallback_tool_extraction(
         or _looks_like_xml_tool_call_payload(llm_step_result.reasoning)
     )
     should_try_fallback = (
-        (tool_choice == ToolChoiceOptions.REQUIRED and no_tool_calls)
+        (
+            (
+                tool_choice == ToolChoiceOptions.REQUIRED
+                or isinstance(tool_choice, NamedToolChoice)
+            )
+            and no_tool_calls
+        )
         or reasoning_but_no_answer_or_tools
         or xml_tool_call_text_detected
     )
@@ -860,7 +866,7 @@ def run_llm_loop(
         ) and not model_supports_image_input(
             llm.config.model_name, llm.config.model_provider, llm.config.deployment_name
         )
-        tool_choice: ToolChoiceOptions = ToolChoiceOptions.AUTO
+        tool_choice: ToolChoice = ToolChoiceOptions.AUTO
         # Initialize gathered_documents with project files if present
         gathered_documents: list[SearchDoc] | None = (
             list(project_citation_mapping.values())
@@ -930,7 +936,11 @@ def run_llm_loop(
                 final_tools = [tool for tool in tools if tool.id == forced_tool_id]
                 if not final_tools:
                     raise ValueError(f"Tool {forced_tool_id} not found in tools")
-                tool_choice = ToolChoiceOptions.REQUIRED
+                tool_choice = (
+                    NamedToolChoice(name="market_search")
+                    if final_tools[0].name == "market_search"
+                    else ToolChoiceOptions.REQUIRED
+                )
                 forced_tool_id = None
             elif out_of_cycles or ran_image_gen:
                 # Last cycle, no tools allowed, just answer!
@@ -1137,6 +1147,17 @@ def run_llm_loop(
             if attempted:
                 # To prevent the case of excessive looping with bad models, we only allow one fallback attempt
                 fallback_extraction_attempted = True
+
+            if isinstance(tool_choice, NamedToolChoice) and (
+                not llm_step_result.tool_calls
+                or any(
+                    call.tool_name != tool_choice.name
+                    for call in llm_step_result.tool_calls
+                )
+            ):
+                raise RuntimeError(
+                    "The model did not perform the required Library search."
+                )
 
             # Save citation mapping after each LLM step for incremental state updates
             state_container.set_citation_mapping(citation_processor.citation_to_doc)

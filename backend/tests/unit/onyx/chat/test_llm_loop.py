@@ -277,6 +277,80 @@ def test_native_messages_scope_workspace_rules_without_changing_persona(
                 )
 
 
+@pytest.mark.parametrize("tool_name", ["market_search", "unrelated_tool"])
+def test_forced_library_read_does_not_accept_an_unsearched_answer(
+    monkeypatch: pytest.MonkeyPatch, tool_name: str
+) -> None:
+    from onyx.llm.models import NamedToolChoice
+    from onyx.tools.interface import Tool
+
+    captured: list[object] = []
+
+    def step(**kwargs: Any) -> tuple[LlmStepResult, bool]:
+        captured.append(kwargs["tool_choice"])
+        return LlmStepResult(
+            reasoning=None,
+            answer="No Enterprise facts are saved.",
+            raw_answer="No Enterprise facts are saved.",
+            tool_calls=None,
+            finish_reason="stop",
+        ), False
+
+    monkeypatch.setattr(llm_loop, "run_llm_step", step)
+    monkeypatch.setattr(llm_loop, "trace", lambda *_args, **_kwargs: nullcontext())
+    monkeypatch.setattr(
+        llm_loop, "get_session_with_current_tenant", lambda: nullcontext(MagicMock())
+    )
+    monkeypatch.setattr(
+        llm_loop, "get_default_base_system_prompt", lambda _db: "Rules."
+    )
+    monkeypatch.setattr("onyx.chat.prompt_utils.get_company_context", lambda: None)
+    monkeypatch.setattr(
+        "onyx.llm.litellm_singleton.config.initialize_litellm", lambda: None
+    )
+    tool = MagicMock(spec=Tool)
+    tool.id = 67
+    tool.name = tool_name
+    tool.tool_definition.return_value = {
+        "type": "function",
+        "function": {
+            "name": tool_name,
+            "parameters": {"type": "object", "properties": {}},
+        },
+    }
+    llm = MagicMock(spec=LLM)
+    llm.config = LLMConfig(
+        model_provider="openai",
+        model_name="gpt-5-mini",
+        temperature=0,
+        max_input_tokens=16000,
+    )
+    expected = (
+        pytest.raises(RuntimeError, match="required Library search")
+        if tool_name == "market_search"
+        else nullcontext()
+    )
+    with expected:
+        llm_loop.run_llm_loop(
+            emitter=MagicMock(spec=Emitter),
+            state_container=MagicMock(spec=ChatStateContainer),
+            simple_chat_history=[create_message("Show saved facts", MessageType.USER)],
+            tools=[tool],
+            custom_agent_prompt=None,
+            context_files=create_context_files(),
+            persona=None,
+            user_memory_context=None,
+            llm=llm,
+            token_counter=len,
+            forced_tool_id=67,
+        )
+    assert captured == [
+        NamedToolChoice(name="market_search")
+        if tool_name == "market_search"
+        else ToolChoiceOptions.REQUIRED
+    ]
+
+
 class TestConstructMessageHistory:
     """Tests for the construct_message_history function."""
 

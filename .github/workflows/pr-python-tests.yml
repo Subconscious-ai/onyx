@@ -47,8 +47,8 @@ jobs:
   backend-check:
     needs: changes
     if: needs.changes.outputs.python == 'true'
-    # See https://runs-on.com/runners/linux/
-    runs-on: [runs-on, runner=4cpu-linux-arm64, "run-id=${{ github.run_id }}-backend-check"]
+    # The public fork cannot use the private AWS runner group. Keep the same ARM tests.
+    runs-on: ${{ fromJSON(github.repository == 'Subconscious-ai/onyx' && '["ubuntu-24.04-arm"]' || format('["runs-on","runner=4cpu-linux-arm64","run-id={0}-backend-check"]', github.run_id)) }}
     timeout-minutes: 10
 
 
@@ -62,6 +62,7 @@ jobs:
 
     steps:
     - uses: runs-on/action@4e5f72399b6b17f2e79c511c1b38a315a64d22dc
+      if: github.repository != 'Subconscious-ai/onyx'
 
     - name: Checkout code
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v6
