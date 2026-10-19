@@ -26,6 +26,12 @@ from eval_interview import (
 
 
 def choose_reply(case: dict, answer: str, revealed: set[str]) -> tuple[str, str]:
+    answer = re.sub(
+        r"\b(?:Sarah\s*·\s*Journey|Frankie\s*·\s*Business model|Mei\s*·\s*Market challenge)\s*:\s*",
+        "",
+        answer,
+        flags=re.I,
+    )
     asked = " ".join(questions(answer))
     if not asked:
         # An interviewer can ask with an imperative rather than a question mark.
@@ -36,12 +42,6 @@ def choose_reply(case: dict, answer: str, revealed: set[str]) -> tuple[str, str]
             re.I,
         )
         asked = " ".join(requests)
-    asked = re.sub(
-        r"\b(?:Sarah\s*·\s*Journey|Frankie\s*·\s*Business model|Mei\s*·\s*Market challenge)\s*:\s*",
-        "",
-        asked,
-        flags=re.I,
-    )
     if asked:
         if re.search(
             r"\b(?:maximum|capacity|staffing|resource limits?)\b", asked, re.I
@@ -52,22 +52,27 @@ def choose_reply(case: dict, answer: str, revealed: set[str]) -> tuple[str, str]
         # Prefer the question's intent over incidental words (e.g. 'target' in
         # 'Which customer segment should we target?' is not a numeric-goal ask).
         intent = None
+        goal_question = any(f["id"] == "goal" for f in case["facts"]) and re.search(
+            r"outcome|objective|success|which (?:single )?(?:number|result)|(?:what|which|how).*\b(?:percentage|percent|fraction|proportion)\b|sign.?ups.*(?:upgrades|renewals)",
+            asked,
+            re.I,
+        )
         if re.search(
             r"segment|population|audience|who |journey|steps|sequence|customer action|path from",
             asked,
             re.I,
         ) or (
-            re.search(r"journey|customer path|customer decision flow", answer, re.I)
+            not goal_question
+            and re.search(
+                r"journey|customer path|customer decision flow|sales flow", answer, re.I
+            )
+            and re.search(r"\b(?:this|that|these|those|it|flow|path)\b", asked, re.I)
             and re.search(
                 r"fit|match|confirm|correct|accurate|capture|reflect", asked, re.I
             )
         ):
             intent = "journey"
-        elif any(f["id"] == "goal" for f in case["facts"]) and re.search(
-            r"outcome|objective|success|which (?:single )?(?:number|result)|(?:what|which|how).*\b(?:percentage|percent|fraction|proportion)\b|sign.?ups.*(?:upgrades|renewals)",
-            asked,
-            re.I,
-        ):
+        elif goal_question:
             intent = "goal"
         elif re.search(r"why |reason|caus|influence|key factor", asked, re.I):
             return case.get(

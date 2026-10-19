@@ -108,11 +108,41 @@ class AdaptiveTesterTests(unittest.TestCase):
         )
         self.assertEqual(key, "passive_probe")
 
+    def test_speaker_label_does_not_turn_goal_confirmation_into_journey_repeat(self):
+        for label in (
+            "Sarah · Journey",
+            "Frankie · Business model",
+            "Mei · Market challenge",
+        ):
+            with self.subTest(label=label):
+                reply, key = choose_reply(
+                    self.case,
+                    f"{label}: Can you confirm your desired outcome is 7% conversion next quarter?",
+                    {"journey"},
+                )
+                self.assertEqual(key, "goal")
+                self.assertEqual(reply, "Target 7% in three months.")
+
     def test_short_confirmation_refers_to_the_proposed_journey(self):
         _, key = choose_reply(
             self.case, "Proposed journey: page, quote, contract. Does that fit?", set()
         )
         self.assertEqual(key, "journey")
+
+    def test_incidental_path_context_does_not_override_a_goal_question(self):
+        for context in ("sales flow", "customer journey"):
+            for question in (
+                "Can you confirm your desired outcome is 7% conversion next quarter?",
+                "What outcome and target should the model reflect?",
+            ):
+                with self.subTest(context=context, question=question):
+                    reply, key = choose_reply(
+                        self.case,
+                        f"Our research describes your {context}. {question}",
+                        {"journey"},
+                    )
+                    self.assertEqual(key, "goal")
+                    self.assertEqual(reply, "Target 7% in three months.")
 
     def test_capture_and_reflect_confirmations_answer_the_proposed_customer_path(self):
         answers = [
