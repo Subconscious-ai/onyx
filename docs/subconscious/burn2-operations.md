@@ -23,6 +23,12 @@ Burn 2.0 interviews an executive for customer behavior transitions and measurabl
   Clearing that safeguard restored the existing workflow without changing YAML or permissions.
 - Configure GPT Researcher through its native retriever settings. A completed job with no usable
   source context remains unavailable. Search-only results do not prove a completed research report.
+  Native web search and the separately deployed researcher can hold different provider credentials.
+  Check usable quota with a source-bearing native query, then verify a fresh retained research report
+  and its inclusion in prepared interview context. The October 19 QA repair reused the working native
+  Exa provider through `RETRIEVER=exa` and a private QA-only environment file, with a rollback copy.
+  Canonical service configuration stayed unchanged. Key presence, HTTP 200 and source counts do not
+  establish relevant research; inspect supporting source text. Research remains unaccepted source context.
 - Review actual question text and independent arithmetic alongside tester results.
   Speaker labels are not questions; a fraction, percentage and percentage-point gap use different units.
 

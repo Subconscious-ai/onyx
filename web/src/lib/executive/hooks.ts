@@ -2,12 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ExecutiveProfile, ProfileFields } from "@/lib/executive/profile";
-import {
-  interviewMessageText,
-  projectBrief,
-  modelReadiness,
-  type InterviewMessage,
-} from "./brief";
+import { interviewMessageText, type InterviewMessage } from "./brief";
 
 export interface PublicResearch {
   report?: string;
@@ -27,6 +22,11 @@ export function useExecutiveContext(
   } | null>(null);
   const [profile, setProfile] = useState<ExecutiveProfile | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  // Pending polls do not replace the last completed provider receipts.
+  const [completedReceipts, setCompletedReceipts] = useState<{
+    profile?: string;
+    research?: string;
+  }>({});
   const [checkedContext, setCheckedContext] = useState<{
     brief: typeof completedBrief;
     refresh: number;
@@ -92,6 +92,33 @@ export function useExecutiveContext(
         if (profile)
           setCheckedContext({ brief: completedBrief, refresh: refreshKey });
         const current = profile ? value.research : value;
+        const receipts = {
+          profile:
+            profile && value.status === "ready"
+              ? JSON.stringify([
+                  value.checked_at,
+                  value.correction?.revision,
+                  value.profile,
+                ])
+              : undefined,
+          research:
+            current?.status === "ready"
+              ? JSON.stringify([
+                  current.checked_at,
+                  current.source_urls,
+                  current.report,
+                ])
+              : undefined,
+        };
+        if (receipts.profile || receipts.research)
+          setCompletedReceipts((previous) => {
+            const profile = receipts.profile ?? previous.profile;
+            const research = receipts.research ?? previous.research;
+            return profile === previous.profile &&
+              research === previous.research
+              ? previous
+              : { profile, research };
+          });
         setResearch(current ?? { status: "unavailable" });
         if (["queued", "running"].includes(current?.status)) {
           if (Date.now() - started >= 180000)
@@ -119,6 +146,7 @@ export function useExecutiveContext(
       !checkedContext ||
       checkedContext.brief !== completedBrief ||
       checkedContext.refresh !== refreshKey,
+    contextRevision: JSON.stringify(completedReceipts),
     profileStatus,
     dossier,
     profile,
@@ -133,114 +161,113 @@ export function useAutomaticBrief({
   chatId,
   busy,
   messages,
+  contextRevision,
 }: {
   active: boolean;
   chatId: string | null;
   busy: boolean;
   messages: readonly InterviewMessage[];
+  contextRevision?: string;
 }) {
   const last = messages.at(-1);
   const lastText = last ? interviewMessageText(last) : "";
-  const key = JSON.stringify([
+  const transcriptKey = JSON.stringify([
     chatId,
     messages.filter((m) => m.type === "user").map((m) => m.message),
     lastText.split("<interview-brief>")[0],
   ]);
+  const key = JSON.stringify([transcriptKey, contextRevision ?? ""]);
   const completed =
     !!chatId &&
     last?.type === "assistant" &&
     !!lastText.trim() &&
     messages.some((m) => m.type === "user");
-  const stored =
-    lastText.includes("</interview-brief>") &&
-    modelReadiness(projectBrief(messages).brief).ready;
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<{
     key: string;
+    transcriptKey: string;
     phase: "updating" | "saved" | "error";
     message?: string;
-  }>({ key: "", phase: "saved" });
+  }>({ key: "", transcriptKey: "", phase: "saved" });
   const flight = useRef<Promise<Response> | null>(null);
+  const savedKey = useRef<string | null>(null);
   const latest = useRef(key);
   useEffect(() => {
     latest.current = key;
   }, [key]);
   // Cleanup owns both timers; the abort guard prevents allocation after async reads.
-  // The polling/unmount regression covers the async ownership the lint rule misses.
+  // The retry/unmount regression covers the async ownership the lint rule misses.
   // oxlint-disable-next-line react-doctor/effect-needs-cleanup
   useEffect(() => {
-    if (!active || busy || !completed || stored) return;
+    if (!active || busy || !completed || savedKey.current === key) return;
     const controller = new AbortController();
     const started = Date.now();
     let timer: ReturnType<typeof setTimeout>;
-    let manual = attempt > 0;
-    let recoveryRequested = false;
-    const poll = async () => {
-      setState({ key, phase: "updating" });
+    const synchronize = async () => {
+      setState((previous) => ({
+        key,
+        transcriptKey,
+        phase: "updating",
+        message:
+          previous.transcriptKey === transcriptKey
+            ? previous.message
+            : undefined,
+      }));
       try {
         if (flight.current) await flight.current.catch(() => undefined);
         if (controller.signal.aborted || latest.current !== key) return;
-        const request = manual
-          ? fetch("/api/chat/executive-brief", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ chat_id: chatId }),
-            })
-          : fetch(
-              `/api/chat/executive-brief?chat_id=${encodeURIComponent(chatId!)}`,
-              { method: "GET" }
-            );
+        const request = fetch("/api/chat/executive-brief", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId }),
+        });
         flight.current = request;
         const response = await request;
         const result = await response.json();
         if (controller.signal.aborted || latest.current !== key) return;
-        if (
-          !manual &&
-          (response.status === 405 ||
-            (response.ok && !result.saved && result.background === false) ||
-            (response.ok &&
-              !result.saved &&
-              result.background === true &&
-              !recoveryRequested &&
-              Date.now() - started >= 8000))
-        ) {
-          manual = true;
-          recoveryRequested = true;
-          timer = setTimeout(poll, 0);
-          return;
-        }
-        if (
-          (response.ok && !result.saved && result.background === true) ||
-          response.status === 409
-        ) {
-          manual = false;
+        if (response.status === 409) {
           if (Date.now() - started > 90000)
             throw new Error("Brief update unavailable");
-          timer = setTimeout(poll, 2000);
+          timer = setTimeout(synchronize, 2000);
           return;
         }
         if (!response.ok || !result.saved || typeof result.message !== "string")
           throw new Error("Brief update unavailable");
-        setState({ key, phase: "saved", message: result.message });
+        savedKey.current = key;
+        setState({
+          key,
+          transcriptKey,
+          phase: "saved",
+          message: result.message,
+        });
       } catch {
         if (!controller.signal.aborted && latest.current === key)
-          setState({ key, phase: "error" });
+          setState((previous) => ({
+            key,
+            transcriptKey,
+            phase: "error",
+            message:
+              previous.transcriptKey === transcriptKey
+                ? previous.message
+                : undefined,
+          }));
       }
     };
-    const debounce = setTimeout(poll, 1200);
+    const debounce = setTimeout(synchronize, 1200);
     return () => {
       clearTimeout(debounce);
       clearTimeout(timer);
       controller.abort();
     };
-  }, [active, busy, completed, stored, key, chatId, attempt]);
+  }, [active, busy, completed, key, transcriptKey, chatId, attempt]);
   return {
-    savedMessage: state.key === key ? (state.message ?? null) : null,
+    savedMessage:
+      state.transcriptKey === transcriptKey ? (state.message ?? null) : null,
     phase: busy
       ? "waiting"
       : state.key === key
         ? state.phase
-        : completed && !stored
+        : completed
           ? "updating"
           : "saved",
     retry: () => setAttempt((value) => value + 1),

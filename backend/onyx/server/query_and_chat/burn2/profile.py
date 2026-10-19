@@ -122,15 +122,39 @@ def turn_guidance(
         and draft.get("model", {}).get("inputs")
         and not draft.get("conflicts")
     ):
-        question_guidance = (
-            "Question budget: zero for the existing scope. The saved draft contains the three essentials. "
-            "If an explicit correction changes the goal or journey, apply it first; ask at most one question only if an essential connection is now missing. "
-            "Do not ask for optional economics, capacity, churn, or another confirmation. "
-            "Give one brief insight or acknowledge the latest correction in at most 30 words. "
+        requested_challenge = bool(
+            re.search(
+                r"\b(?:feasib\w*|achiev\w*|capacity|contradict\w*|inconsisten\w*)\b",
+                text,
+                re.I,
+            )
+            and re.search(
+                r"\?|\b(?:show|check|test|prove|whether|resolve|reconcile)\b",
+                text,
+                re.I,
+            )
+        )
+        if requested_challenge:
+            question_guidance = (
+                "Question budget: at most one material private-input question, only when its answer "
+                "can change the requested feasibility or conflict result. Do not restart discovery. "
+                "Use inputs already supplied or explicitly unknown; never re-ask either. "
+                "If those inputs suffice, answer the challenge without a question. "
+                "Otherwise name the missing constraint and ask only for the input that matters most. "
+                "Keep the first symbolic model available; unknowns do not block it. "
+            )
+        else:
+            question_guidance = (
+                "Question budget: zero for the existing scope. The saved draft contains the three essentials. "
+                "If an explicit correction changes the goal or journey, apply it first; ask at most one question only if an essential connection is now missing. "
+                "Do not prolong discovery for optional operating inputs or another confirmation. "
+                "Give one brief insight or acknowledge the latest correction in at most 30 words. "
+                "End with a statement. "
+            )
+        question_guidance += (
             "Keep proposed journey steps and relationships labeled as assumptions. "
             "The draft is not a saved business model: never claim model persistence, calculation, "
             "or direct the executive to a tab. The application shows the real inline action. "
-            "End with a statement."
         )
     elif turn >= 5 or (
         turn >= 4

@@ -121,6 +121,117 @@ def http_response(
     return requests
 
 
+def test_publishes_native_testimony_with_the_current_per_user_library_grant(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    chat_id = uuid4()
+    binding = CauslChatBinding(
+        user_id=user.id,
+        actor=ACTOR,
+        issuer="https://auth.example/",
+        market_id=None,
+        chat_id=chat_id,
+        selection=CauslSelection(page="workspace"),
+        library_server_id=22,
+        mode="interview",
+    )
+    payload = envelope()
+    payload["context"].update(page="workspace", market=None)
+    payload["saved"] = {
+        "statements": 1,
+        "stages": 0,
+        "transitions": 0,
+        "replayed": False,
+    }
+    requests = http_response(monkeypatch, payload)
+    messages = [{"id": 42, "type": "user", "message": "Our target is 7%."}]
+    saved = context.save_interview_context(db, user, binding, messages)
+    assert saved == payload["saved"]
+    assert len(requests) == 1
+    assert requests[0].method == "POST"
+    assert requests[0].headers["authorization"] == "Bearer test-credential"
+    assert requests[0].headers["x-causl-expected-organization"] == ACTOR.org_id
+    assert json.loads(requests[0].content) == {
+        "handoff": {
+            "format": "burn/onyx-interview",
+            "version": 1,
+            "chatId": str(chat_id),
+            "messages": messages,
+        }
+    }
+
+
+def test_testimony_write_rejects_foreign_native_owner_before_network(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    binding = CauslChatBinding(
+        user_id=uuid4(),
+        actor=ACTOR,
+        issuer="https://auth.example/",
+        market_id=None,
+        chat_id=uuid4(),
+        selection=CauslSelection(page="workspace"),
+        library_server_id=22,
+        mode="interview",
+    )
+    requests = http_response(monkeypatch, envelope())
+    with pytest.raises(OnyxError):
+        context.save_interview_context(db, user, binding, [])
+    assert requests == []
+
+
+@pytest.mark.parametrize("status", [302, 401, 403, 500])
+def test_testimony_write_does_not_follow_redirects_or_claim_failed_saves(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+    status: int,
+) -> None:
+    db, user, _server = connected
+    binding = CauslChatBinding(
+        user_id=user.id,
+        actor=ACTOR,
+        issuer="https://auth.example/",
+        market_id="market_b",
+        chat_id=uuid4(),
+        selection=SELECTION,
+        library_server_id=22,
+        mode="interview",
+    )
+    requests = http_response(monkeypatch, envelope(), status)
+    with pytest.raises(OnyxError):
+        context.save_interview_context(db, user, binding, [])
+    assert len(requests) == 1
+
+
+def test_testimony_write_checks_returned_subject_not_only_success_status(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    binding = CauslChatBinding(
+        user_id=user.id,
+        actor=ACTOR,
+        issuer="https://auth.example/",
+        market_id="market_b",
+        chat_id=uuid4(),
+        selection=SELECTION,
+        library_server_id=22,
+        mode="interview",
+    )
+    payload = envelope()
+    payload["actor"]["userId"] = "auth0|foreign"
+    payload["saved"] = {
+        "statements": 1,
+        "stages": 0,
+        "transitions": 0,
+        "replayed": False,
+    }
+    http_response(monkeypatch, payload)
+    with pytest.raises(OnyxError):
+        context.save_interview_context(db, user, binding, [])
+
+
 def test_reads_current_grant_and_supplies_narrowing_actor_headers(
     connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
 ) -> None:

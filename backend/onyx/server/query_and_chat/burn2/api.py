@@ -1,5 +1,6 @@
 """One explicit structured preparation call; ordinary native chat stays unchanged."""
 
+import hashlib
 import json
 import os
 import time
@@ -11,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from onyx.auth.permissions import require_permission
 from onyx.cache.factory import get_cache_backend
+from onyx.cache.interface import CACHE_TRANSIENT_ERRORS
 from onyx.chat.chat_processing_checker import is_chat_session_processing
 from onyx.db.burn2_brief import owned_snapshot, save_brief
 from onyx.db.engine.sql_engine import get_session
@@ -56,6 +58,11 @@ class PreparedBrief(BaseModel):
     message_id: int
     saved: bool
     message: str
+    memory_saved: bool | None = None
+
+
+def _prepared_brief_key(body: PrepareBrief, user: User) -> str:
+    return f"burn2:prepared-brief:{get_current_tenant_id()}:{user.id}:{body.chat_id}"
 
 
 def discard_unverified_anchors(previous: dict) -> None:
@@ -69,6 +76,8 @@ def _prepare_brief(
     body: PrepareBrief,
     user: User = Depends(require_permission(Permission.WRITE_CHAT)),
     db: Session = Depends(get_session),
+    *,
+    publish_memory: bool = True,
 ) -> PreparedBrief:
     if os.environ.get("BURN2_ENABLED") != "true":
         raise HTTPException(404, "Not found")
@@ -109,9 +118,11 @@ def _prepare_brief(
     from onyx.db.burn2_research import read_research
     from onyx.server.query_and_chat.burn2.research import prepared_company_context
 
+    profile = read_profile(user.id)
+    research = read_research(user.id)
     preparation: str = prepared_company_context(
-        read_profile(user.id),
-        read_research(user.id),
+        profile,
+        research,
         previous.get("company") if previous else None,
         has_draft=bool(previous),
     )
@@ -211,19 +222,74 @@ Proposed interventions remain hypotheses. Jokes, confidence, and rejected third-
     count = counter(
         snapshot["last_text"].split("<interview-brief>", 1)[0] + json.dumps(brief)
     )
-    try:
-        message_id = save_brief(body.chat_id, user.id, snapshot, brief, count, db)
-    except ValueError:
-        raise HTTPException(
-            409, "Conversation changed. Prepare the current model brief."
-        ) from None
     message = (
         snapshot["last_text"].split("<interview-brief>", 1)[0].rstrip()
         + "\n\n<interview-brief>"
         + json.dumps(brief, ensure_ascii=False)
         + "</interview-brief>"
     )
-    return PreparedBrief(message_id=message_id, saved=True, message=message)
+    # The brief remains the native chat projection. Its sourced testimony also
+    # enters the existing Library ontology, before the next executive answer.
+    memory_saved = None
+    if publish_memory:
+        memory_saved = _publish_interview(
+            body, user, db, snapshot, brief, message, profile, research
+        )
+    # A failed Library save leaves no completed projection to suppress retry.
+    # Native source messages remain saved, including during a concurrent turn.
+    try:
+        message_id = save_brief(body.chat_id, user.id, snapshot, brief, count, db)
+    except ValueError:
+        raise HTTPException(
+            409, "Conversation changed. Prepare the current model brief."
+        ) from None
+    # This optional marker proves extraction covered this exact native chain.
+    # It caches no facts or authorization and cannot substitute for Library auth.
+    transcript = [dict(row) for row in snapshot["transcript"]]
+    transcript[-1]["message"] = message
+    digest = hashlib.sha256(json.dumps(transcript, sort_keys=True).encode()).hexdigest()
+    try:
+        get_cache_backend().set(_prepared_brief_key(body, user), digest, ex=300)
+    except CACHE_TRANSIENT_ERRORS:
+        logger.warning("Burn prepared transcript marker unavailable")
+    return PreparedBrief(
+        message_id=message_id, saved=True, message=message, memory_saved=memory_saved
+    )
+
+
+def _publish_interview(
+    body: PrepareBrief,
+    user: User,
+    db: Session,
+    snapshot: dict,
+    brief: dict,
+    message: str,
+    profile: dict | None,
+    research: dict | None,
+) -> bool | None:
+    from onyx.db.causl_workspace import read_causl_binding
+    from onyx.server.query_and_chat.burn2.research import model_business_context
+    from onyx.server.query_and_chat.causl.context import save_interview_context
+
+    binding = read_causl_binding(db, user.id, body.chat_id)
+    if binding is None:
+        return None
+    messages = [
+        dict(row)
+        for row in snapshot["transcript"]
+        if row["type"] in ("user", "assistant")
+    ]
+    messages[-1]["message"] = message
+    save_interview_context(
+        db,
+        user,
+        binding,
+        messages,
+        business_context=model_business_context(
+            profile, research, brief.get("company")
+        ),
+    )
+    return True
 
 
 @router.post("/executive-profile")
@@ -380,11 +446,89 @@ def prepare_brief(
     user: User = Depends(require_permission(Permission.WRITE_CHAT)),
     db: Session = Depends(get_session),
 ) -> PreparedBrief:
+    return _locked_prepare(body, user, db, publish_memory=True)
+
+
+def prepare_background_brief(
+    body: PrepareBrief, user: User, db: Session
+) -> PreparedBrief:
+    """Workers prepare a draft; only a fresh authenticated request publishes it."""
+    return _locked_prepare(body, user, db, publish_memory=False)
+
+
+def _locked_prepare(
+    body: PrepareBrief, user: User, db: Session, *, publish_memory: bool
+) -> PreparedBrief:
     lock = get_cache_backend().lock(f"burn2:brief:{user.id}:{body.chat_id}", timeout=75)
     if not lock.acquire(blocking=False):
         raise HTTPException(409, "The business draft is already updating")
     try:
-        return _prepare_brief(body, user, db)
+        if publish_memory:
+            if is_chat_session_processing(body.chat_id, get_cache_backend()):
+                raise HTTPException(409, "Wait for the current answer")
+            # Only an exact server-prepared chain can skip extraction. Native
+            # inline drafts can predate the latest executive correction.
+            current = read_executive_brief(body.chat_id, user, db)
+            try:
+                prepared_digest = get_cache_backend().get(
+                    _prepared_brief_key(body, user)
+                )
+            except CACHE_TRANSIENT_ERRORS:
+                prepared_digest = None
+            if current["saved"] and prepared_digest is not None:
+                from onyx.db.burn2_profile import read_profile
+                from onyx.db.burn2_research import read_research
+
+                try:
+                    snapshot = owned_snapshot(body.chat_id, user.id, db)
+                except ValueError:
+                    raise HTTPException(
+                        409, "Conversation changed. Prepare the current model brief."
+                    ) from None
+                if (
+                    prepared_digest != snapshot["digest"].encode()
+                    or current["message_id"] != snapshot["last_id"]
+                    or current["message"] != snapshot["last_text"]
+                ):
+                    return _prepare_brief(body, user, db, publish_memory=True)
+                saved = json.loads(
+                    snapshot["last_text"]
+                    .split("<interview-brief>", 1)[1]
+                    .split("</interview-brief>", 1)[0]
+                )
+                brief = validate_brief(saved, snapshot["statements"])
+                memory_saved = _publish_interview(
+                    body,
+                    user,
+                    db,
+                    snapshot,
+                    brief,
+                    snapshot["last_text"],
+                    read_profile(user.id),
+                    read_research(user.id),
+                )
+                # Native Send does not share this preparation lock. Never
+                # return completion for an answer that changed during the POST.
+                db.expire_all()
+                try:
+                    fresh = owned_snapshot(body.chat_id, user.id, db)
+                except ValueError:
+                    raise HTTPException(
+                        409, "Conversation changed. Prepare the current model brief."
+                    ) from None
+                if fresh["digest"] != snapshot["digest"] or is_chat_session_processing(
+                    body.chat_id, get_cache_backend()
+                ):
+                    raise HTTPException(
+                        409, "Conversation changed. Prepare the current model brief."
+                    )
+                return PreparedBrief(
+                    message_id=snapshot["last_id"],
+                    saved=True,
+                    message=snapshot["last_text"],
+                    memory_saved=memory_saved,
+                )
+        return _prepare_brief(body, user, db, publish_memory=publish_memory)
     finally:
         if lock.owned():
             lock.release()

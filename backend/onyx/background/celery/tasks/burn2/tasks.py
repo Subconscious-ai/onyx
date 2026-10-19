@@ -159,7 +159,10 @@ def prepare_saved_brief(
         return
     from onyx.auth.permissions import has_global_permission
     from onyx.db.enums import Permission
-    from onyx.server.query_and_chat.burn2.api import PrepareBrief, prepare_brief
+    from onyx.server.query_and_chat.burn2.api import (
+        PrepareBrief,
+        prepare_background_brief,
+    )
 
     with get_session_with_current_tenant() as db:
         user = db.get(User, UUID(user_id))
@@ -170,7 +173,7 @@ def prepare_saved_brief(
         ):
             return
         try:
-            prepare_brief(PrepareBrief(chat_id=UUID(chat_id)), user, db)
+            prepare_background_brief(PrepareBrief(chat_id=UUID(chat_id)), user, db)
         except HTTPException as error:
             logger.warning(
                 "Burn background brief unavailable: HTTP %s", error.status_code

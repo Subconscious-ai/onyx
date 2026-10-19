@@ -5,6 +5,7 @@ import time
 import unittest
 
 from onyx.server.query_and_chat.burn2.research import (
+    model_business_context,
     prepared_company_context,
     public_research_query,
     research_context,
@@ -15,6 +16,65 @@ from onyx.server.query_and_chat.burn2.research import (
 
 
 class ResearchStartupTests(unittest.TestCase):
+    def test_model_context_retains_only_bounded_matching_attributed_sources(self):
+        profile = {
+            "status": "ready",
+            "profile": {
+                "name": "Pat Example",
+                "company": "Acme",
+                "website": "acme.com",
+                "product": "widgets",
+                "customer_segment": "procurement teams",
+                "skills": ["not part of the handoff"],
+                "experience": [{"company": "Previous Employer"}],
+            },
+            "correction": {"revision": 1},
+            "worker_secret": "not part of the handoff",
+        }
+        research = {
+            "status": "ready",
+            "query": public_research_query(profile),
+            "checked_at": time.time(),
+            "report": "Acme makes widgets. " * 1000,
+            "source_urls": [f"https://acme.com/source/{i}" for i in range(13)],
+            "job_id": "not part of the handoff",
+        }
+        value = model_business_context(profile, research, "acme")
+        self.assertEqual(value["profileSource"], "executive_correction")
+        self.assertEqual(
+            value["profile"],
+            {
+                key: field
+                for key, field in profile["profile"].items()
+                if key not in {"skills", "experience"}
+            },
+        )
+        self.assertEqual(len(value["research"]["report"]), 16000)
+        self.assertEqual(len(value["research"]["source_urls"]), 12)
+        self.assertEqual(value["research"]["checked_at"], research["checked_at"])
+        self.assertTrue(value["research"]["truncated"])
+        for private in ("worker_secret", "job_id", "Previous Employer"):
+            self.assertNotIn(private, json.dumps(value))
+        self.assertIsNone(model_business_context(profile, research, "Different Client"))
+
+    def test_model_context_does_not_mark_stale_or_wrong_query_research_ready(self):
+        profile = {
+            "status": "ready",
+            "profile": {"company": "Acme", "website": "acme.com"},
+        }
+        research = {
+            "status": "ready",
+            "query": public_research_query(profile),
+            "checked_at": time.time() - 22000,
+            "report": "Old company context.",
+            "source_urls": ["https://acme.com/product"],
+        }
+        for change in ({}, {"checked_at": time.time(), "query": "another company"}):
+            value = model_business_context(profile, {**research, **change}, "Acme")
+            self.assertEqual(value["profileSource"], "pdl")
+            self.assertEqual(value["research"], {"status": "unavailable"})
+        self.assertIsNone(model_business_context(None, research, "Acme"))
+
     def test_source_truncation_survives_a_short_report_receipt(self):
         result = research_receipt(
             json.dumps(
