@@ -109,7 +109,7 @@ def _prepare_brief(
     from onyx.db.burn2_research import read_research
     from onyx.server.query_and_chat.burn2.research import prepared_company_context
 
-    preparation = prepared_company_context(
+    preparation: str = prepared_company_context(
         read_profile(user.id),
         read_research(user.id),
         previous.get("company") if previous else None,
@@ -358,7 +358,7 @@ def read_executive_brief(
                 .split("</interview-brief>", 1)[0]
             )
             brief = validate_brief(saved, snapshot["statements"])
-            if not needs_completion(brief, snapshot["statements"]):
+            if not needs_completion(brief):
                 if brief != saved:
                     return {"saved": False, "background": False}
                 return {

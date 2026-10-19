@@ -15,6 +15,7 @@ interface InterviewProgressProps {
   chatId: string | null;
   hasAnswer: boolean;
   contextPending?: boolean;
+  modelConnected?: boolean;
   onOpen: () => void;
   onRetry: () => void;
   onAsk?: (message: string) => void;
@@ -30,6 +31,7 @@ export default function InterviewProgress({
   chatId,
   hasAnswer,
   contextPending = false,
+  modelConnected = false,
   onOpen,
   onRetry,
   onAsk,
@@ -65,8 +67,8 @@ export default function InterviewProgress({
   const failed = phase === "error";
   const briefReady =
     !stale && !updating && !failed && modelReadiness(brief).ready;
-  const waitingContext = briefReady && contextPending;
-  const ready = briefReady && !contextPending;
+  const waitingContext = !modelConnected && briefReady && contextPending;
+  const ready = modelConnected || (briefReady && !contextPending);
   const conflict = !!brief?.conflicts.length;
   const next = items.find((item) => !item.complete)?.id;
   const milestone = useRef({ chatId, celebrated: goal, interacted: false });
@@ -119,17 +121,20 @@ export default function InterviewProgress({
             : next
               ? t(`${next}Next`)
               : t("connecting");
-  const action = failed
-    ? t("retry")
-    : updating
-      ? t("updating")
-      : waitingContext
-        ? t("contextUpdating")
-        : ready
-          ? t("open")
-          : t("build");
+  const action = modelConnected
+    ? t("open")
+    : failed
+      ? t("retry")
+      : updating
+        ? t("updating")
+        : waitingContext
+          ? t("contextUpdating")
+          : ready
+            ? t("open")
+            : t("build");
   function advance() {
-    if (failed) onRetry();
+    if (modelConnected) onOpen();
+    else if (failed) onRetry();
     else if (ready) onOpen();
     else if (count === 3 && !conflict) onRetry();
     else onAsk?.(t(conflict ? "conflictAsk" : "buildAsk"));
@@ -175,7 +180,11 @@ export default function InterviewProgress({
             size="lg"
             prominence="primary"
             rightIcon={SvgArrowUpRight}
-            disabled={updating || waitingContext || (!hasAnswer && !failed)}
+            disabled={
+              busy ||
+              (!modelConnected &&
+                (updating || waitingContext || (!hasAnswer && !failed)))
+            }
             onClick={advance}
           >
             {action}

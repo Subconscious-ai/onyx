@@ -6,6 +6,54 @@ from onyx.server.query_and_chat.burn2.validation import validate_brief
 
 
 class StructuredBriefTest(unittest.TestCase):
+    def test_hypothetical_scope_carries_to_following_sentences(self):
+        hypothetical = "Our win rate is 25%."
+        measured = "Our audited win rate is 50%."
+        brief = self.brief()
+        brief["conflicts"] = [
+            {"text": "Measurements disagree", "quotes": [hypothetical, measured]}
+        ]
+        result = validate_brief(
+            brief,
+            [
+                "For a hypothetical scenario, use the following values. "
+                + hypothetical,
+                measured,
+            ],
+        )
+        self.assertEqual(result["conflicts"], [])
+
+    def test_unknown_journey_does_not_prevent_saving_fifth_answer(self):
+        from onyx.server.query_and_chat.burn2.validation import prepare_validated_brief
+
+        source = "Our target is $2 million annual contribution next year."
+        statements = [
+            source,
+            "The customer journey is unknown.",
+            "I do not know the steps.",
+            "Capacity is unknown.",
+            "Keep those facts unknown.",
+        ]
+        result = prepare_validated_brief(
+            lambda _feedback: self.partial_contribution_brief(source), statements
+        )
+        self.assertEqual(result["journey"], [])
+
+    def test_scenario_in_another_sentence_does_not_hide_measured_conflict(self):
+        first = "Our measured win rate is 25%."
+        second = "Our audited win rate is 50%."
+        brief = self.brief()
+        brief["conflicts"] = [
+            {"text": "Measurements disagree", "quotes": [first, second]}
+        ]
+        for suffix in (
+            "Keep hypothetical improvements separate.",
+            "For a scenario, assume 30%.",
+        ):
+            with self.subTest(suffix=suffix):
+                result = validate_brief(brief, [first + " " + suffix, second])
+                self.assertEqual(result["conflicts"], brief["conflicts"])
+
     def test_fifth_answer_repairs_a_dropped_implementation_journey_once(self):
         from onyx.server.query_and_chat.burn2.validation import prepare_validated_brief
 

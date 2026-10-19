@@ -4,6 +4,26 @@ The current shared-memory candidate and its QA boundary are in
 [Shared market memory](causl-workspace.md#shared-market-memory-in-native-interviews).
 The dated results below describe earlier candidates.
 
+## October 19 closeout
+
+The original interview and model receivers are merged in
+[Onyx #48 — retain interview answers through model handoff](https://github.com/Subconscious-ai/onyx/pull/48)
+and [KB #675 — save the interview business model](https://github.com/Subconscious-ai/causl-kb/pull/675).
+Follow-up repairs are
+[Onyx #74 — refresh briefs from the latest executive answers](https://github.com/Subconscious-ai/onyx/pull/74)
+and [KB #731 — retain company evidence and bind checked model inputs](https://github.com/Subconscious-ai/causl-kb/pull/731).
+Read each PR's state before treating a follow-up as merged or deployed.
+The dated sections below describe historical candidates, not the current merge state.
+
+The latest frozen six-case run saved four models. No case met full acceptance.
+Two builds failed validation; repeated questions, missing research and the 60-second target remain unresolved.
+All four saved models passed independent reopen, stale-write and foreign-organization denial checks.
+[#55 — verify the complete prepared interview](https://github.com/Subconscious-ai/onyx/issues/55#issuecomment-6258636790)
+owns the exact revisions, calculations and remaining acceptance gaps.
+Newer source changes do not inherit that runtime evidence.
+
+For runtime and CI recovery, use [Burn operations](burn2-operations.md#runtime-and-ci-recovery).
+
 ## October 18 release boundary
 
 [PR #71 — connect native interviews to shared market memory](https://github.com/Subconscious-ai/onyx/pull/71)
