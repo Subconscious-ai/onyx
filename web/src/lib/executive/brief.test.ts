@@ -239,6 +239,57 @@ describe("hypothesis attribution", () => {
       },
     ],
   };
+  test("a later demand scenario does not erase the stated implementation journey", () => {
+    const journey =
+      "Enterprise sponsors approve a scoped implementation, our consultants deliver it, then the sponsor accepts completion.";
+    const source =
+      journey + " Demand is sufficient to fill capacity in this scenario.";
+    const result = projectBrief([
+      { type: "user", message: source },
+      answer({
+        ...draft,
+        journey: [
+          {
+            id: "approval",
+            actor: "Enterprise sponsors",
+            text: "approve a scoped implementation",
+            status: "executive",
+            quote: source,
+          },
+        ],
+      }),
+    ]);
+    expect(result.brief?.journey[0]?.status).toBe("executive");
+    expect(result.brief?.journey[0]?.quote).toBe(journey);
+  });
+  test.each([
+    `For a hypothetical scenario, use the following journey. ${quote}`,
+    `In this scenario, ${quote}`,
+    `A competitor describes their sales process. ${quote} Demand fills capacity in this scenario.`,
+    `A colleague quotes a competitor: "Their sales process follows. ${quote}" Demand fills capacity in this scenario.`,
+    `A competitor says ${quote} Demand fills capacity in this scenario.`,
+    `"${quote.slice(0, -1)}". Demand fills capacity in this scenario.`,
+    `'${quote.slice(0, -1)}'. Demand fills capacity in this scenario.`,
+    `“${quote.slice(0, -1)}”. Demand fills capacity in this scenario.`,
+  ])(
+    "clause recovery does not promote hypothetical or external journey: %s",
+    (source) => {
+      const result = projectBrief([
+        { type: "user", message: source },
+        answer({
+          ...proposed,
+          journey: [
+            {
+              ...proposed.journey[0]!,
+              text: quote.slice(0, -1),
+              quote: source,
+            },
+          ],
+        }),
+      ]);
+      expect(result.brief?.journey[0]?.status).toBe("assumption");
+    }
+  );
   test("a quoted scenario cannot become observed customer behavior", () => {
     const result = projectBrief([
       { type: "user", message: `For a scenario only: ${quote}` },
