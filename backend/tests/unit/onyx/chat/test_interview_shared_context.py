@@ -144,10 +144,12 @@ def test_bound_turn_uses_current_shared_context_without_losing_interview_prepara
             assert "not accepted market memory" in context
             assert setup.trusted_turn_instructions
             if message.startswith(("Show", "What")):
+                assert setup.use_persona_prompt is False
                 assert "Question budget" not in setup.trusted_turn_instructions
                 assert "Capture the goal" not in setup.trusted_turn_instructions
                 assert "market_search" in setup.trusted_turn_instructions
             else:
+                assert setup.use_persona_prompt is True
                 assert "30 spoken words" in setup.trusted_turn_instructions
         else:
             assert context == current_fact

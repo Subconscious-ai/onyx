@@ -795,6 +795,7 @@ def run_llm_loop(
     all_injected_file_metadata: dict[str, FileToolMetadata] | None = None,
     inject_memories_in_prompt: bool = True,
     trusted_turn_instructions: str | None = None,
+    use_persona_prompt: bool = True,
     workspace_instructions: str | None = None,
 ) -> None:
     with trace(
@@ -899,6 +900,9 @@ def run_llm_loop(
             if user_memory_context
             else {}
         )
+        # Direct saved-fact requests must not restart the interview discovery policy.
+        if not use_persona_prompt:
+            custom_agent_prompt = None
         custom_agent_prompt = (
             substitute_user_placeholders(custom_agent_prompt, placeholder_values)
             if custom_agent_prompt
@@ -906,14 +910,14 @@ def run_llm_loop(
         )
         persona_system_prompt = (
             substitute_user_placeholders(persona.system_prompt, placeholder_values)
-            if persona and persona.system_prompt
+            if use_persona_prompt and persona and persona.system_prompt
             else None
         )
         persona_task_prompt = (
             workspace_instructions
             if workspace_instructions
             else substitute_user_placeholders(persona.task_prompt, placeholder_values)
-            if persona and persona.task_prompt
+            if use_persona_prompt and persona and persona.task_prompt
             else None
         )
 
@@ -941,7 +945,7 @@ def run_llm_loop(
             # now that project files are loaded in.
             persona_datetime_aware = persona.datetime_aware if persona else True
             cite_documents = should_cite_documents or always_cite_documents
-            if persona and persona.replace_base_system_prompt:
+            if use_persona_prompt and persona and persona.replace_base_system_prompt:
                 # Handles the case where user has checked off the "Replace base system prompt" checkbox
                 processed_system_prompt = (
                     process_prompt_template(

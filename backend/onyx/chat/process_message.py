@@ -1041,6 +1041,7 @@ def build_chat_turn(
 
     model_review_context: str | None = None
     trusted_turn_instructions: str | None = None
+    saved_fact_request = False
     if (
         os.environ.get("BURN2_ENABLED") == "true"
         and interview_mode
@@ -1273,6 +1274,7 @@ def build_chat_turn(
         causl_binding=causl_binding,
         causl_original_message=causl_original_message,
         trusted_turn_instructions=trusted_turn_instructions,
+        use_persona_prompt=not saved_fact_request,
     )
 
 
@@ -1603,6 +1605,7 @@ def _run_models(
                     context_files=setup.extracted_context_files,
                     persona=setup.persona,
                     trusted_turn_instructions=setup.trusted_turn_instructions,
+                    use_persona_prompt=setup.use_persona_prompt,
                     user_memory_context=setup.user_memory_context,
                     llm=model_llm,
                     token_counter=get_llm_token_counter(model_llm),
