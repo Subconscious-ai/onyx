@@ -70,7 +70,10 @@ def turn_guidance(
     )
     if not model_review:
         attention_budget = (
-            "Use at most 30 spoken words. State uncertainty as a statement, not another question. "
+            "For discovery questions only, use at most 30 spoken words. "
+            "The word limit does not apply to requested saved facts or evidence readouts: "
+            "retrieve the saved values and include their full conditions and source references. "
+            "State uncertainty as a statement, not another question. "
             "Keep explicitly fixed inputs fixed and explicit exclusions excluded; do not revisit either. "
             "Use a supplied overall rate directly; unknown intermediate rates or unmeasured intervention effects do not block the first model. Do not ask the executive to guess them. "
             + attention_budget

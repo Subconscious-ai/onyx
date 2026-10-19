@@ -119,6 +119,15 @@ class ProfileTests(unittest.TestCase):
         )
         self.assertNotIn("at most 30 spoken words", guidance)
 
+    def test_saved_fact_readout_is_not_limited_to_discovery_answer_length(self):
+        guidance = turn_guidance(
+            1,
+            "Give me ten saved facts with their conditions and sources. No questions.",
+        )
+        self.assertIn("For discovery questions only", guidance)
+        self.assertIn("word limit does not apply to requested saved facts", guidance)
+        self.assertIn("Question budget: zero", guidance)
+
     def test_complete_connections_stop_discovery_without_another_question(self):
         draft = {
             "objective": {"status": "executive", "text": "Improve conversion"},
