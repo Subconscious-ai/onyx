@@ -19,7 +19,6 @@ from onyx.db.models import User
 from onyx.server.features.mcp.client import call_mcp_tool
 from onyx.server.query_and_chat.burn2.research import (
     public_research_query,
-    public_research_website,
     research_receipt,
 )
 from onyx.utils.logger import setup_logger
@@ -93,8 +92,7 @@ def research_company(
             or state.get("status") != "queued"
         ):
             return
-        profile = read_profile(user_uuid)
-        query = public_research_query(profile)
+        query = public_research_query(read_profile(user_uuid))
         if query != state.get("query"):
             return
         state = {**state, "status": "running", "checked_at": time.time()}
@@ -104,14 +102,11 @@ def research_company(
             return
         try:
             url, headers, transport = research_connection(user_uuid, persona_id)
-            arguments: dict[str, object] = {"query": query}
-            if website := public_research_website(profile):
-                arguments["source_urls"] = [website]
             receipt = research_receipt(
                 call_mcp_tool(
                     url,
                     "deep_research",
-                    arguments,
+                    {"query": query},
                     connection_headers=headers,
                     transport=transport,
                 )

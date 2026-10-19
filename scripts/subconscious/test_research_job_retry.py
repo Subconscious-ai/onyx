@@ -97,26 +97,6 @@ class ResearchJobRetryTests(unittest.TestCase):
         self.assertEqual(self.save.call_args.args[1]["status"], "ready")
         self.lock.release.assert_called_once()
 
-    def test_worker_seeds_validated_company_origin_without_private_profile_details(
-        self,
-    ):
-        self.profile.return_value = {
-            "status": "ready",
-            "profile": {
-                "website": "https://example.com/private?email=secret@example.com",
-                "name": "Private Person",
-            },
-        }
-        self.invoke()
-        self.assertEqual(
-            self.call.call_args.args[2],
-            {
-                "query": "Client query",
-                "source_urls": ["https://example.com"],
-            },
-        )
-        self.assertEqual(self.save.call_args.args[1]["status"], "ready")
-
     def test_superseded_company_work_does_not_block_a_new_job(self):
         old_lock = MagicMock()
         old_lock.acquire.return_value = False
