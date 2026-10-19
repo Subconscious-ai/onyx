@@ -115,7 +115,11 @@ class EmptyLLMResponseError(ClassifiedLLMError):
         )
         self.provider = provider
         self.model = model
-        self.tool_choice = tool_choice
+        self.tool_choice = (
+            ToolChoiceOptions.REQUIRED
+            if isinstance(tool_choice, NamedToolChoice)
+            else tool_choice
+        )
         self.finish_reason = finish_reason
 
 

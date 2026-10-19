@@ -37,6 +37,18 @@ from onyx.server.query_and_chat.placement import Placement
 from onyx.tools.models import ToolCallKickoff
 
 
+def test_named_tool_empty_error_keeps_existing_serialized_choice() -> None:
+    from onyx.llm.models import NamedToolChoice
+
+    error = EmptyLLMResponseError(
+        provider="bedrock",
+        model="gpt-oss",
+        tool_choice=NamedToolChoice(name="market_search"),
+        client_error_msg="No response.",
+    )
+    assert error.tool_choice.value == "required"
+
+
 def test_application_turn_instructions_preserve_native_memory_and_do_not_promote_sources():
     system = create_message(
         "Native policy. Remember enterprise pricing context.", MessageType.SYSTEM
