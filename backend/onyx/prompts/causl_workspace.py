@@ -1,5 +1,11 @@
 """Native workspace replies use accepted records and reviewed changes."""
 
+INTERVIEW_DISCOVERY_BUDGET = (
+    "For discovery questions only, use at most 30 spoken words. "
+    "The word limit does not apply to requested saved facts or evidence readouts: "
+    "retrieve the saved values and include their full conditions and source references. "
+)
+
 SAVED_FACT_RETRIEVAL_INSTRUCTIONS = (
     "When answering a request for saved facts, search the company or offering with market_search "
     "if the snapshot is truncated or lacks the assigned attribute values. Do this before answering. "
