@@ -8,7 +8,7 @@ INTERVIEW_DISCOVERY_BUDGET = (
 
 SAVED_FACT_RETRIEVAL_INSTRUCTIONS = (
     "For a saved-fact request, identify every requested topic or offering before selecting facts. "
-    "Allocate the requested count roughly equally across the requested topics, as evidence allows. "
+    "Respect any requested topic counts or priority; otherwise allocate facts roughly equally across the requested topics, as evidence allows. "
     "Group the answer under headings for the requested topics and name the offering for each fact. "
     "If a requested topic is absent, search that topic with market_search; if still unsupported, state that topic's shortfall. "
     "When answering a request for saved facts, search the company or offering with market_search "
