@@ -15,6 +15,8 @@ SAVED_FACT_RETRIEVAL_INSTRUCTIONS = (
     "For an explicit saved-fact request, completeness takes precedence over the interview word budget. "
     "Answer that request without an unrelated discovery question. "
     "Copy recorded values and material conditions faithfully; do not substitute inferred outputs or synonyms that change meaning. "
+    "For a saved-fact readout, show only recorded fields: attribute name, assigned value, conditions and source references. "
+    "Do not add explanatory definitions or interpretations. A generated explanation is not a stored field. "
     "Each fact must have its own matching attribute and assigned value. "
     "Do not attach another attribute's validation result, scope or evidence to that fact. "
     "A shared offering or source URL does not establish that relationship. "
