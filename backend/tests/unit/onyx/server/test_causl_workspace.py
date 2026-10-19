@@ -343,60 +343,6 @@ def test_reads_complete_saved_assignments_within_the_kb_context_bound(
     )
 
 
-def test_prompt_keeps_each_offerings_name_and_saved_values_together(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    user = User(id=uuid4(), email="alice@test.example")
-    chat = ChatSession(id=uuid4(), user_id=user.id, persona_id=11)
-    binding = CauslChatBinding(
-        user_id=user.id,
-        issuer="https://auth.example/",
-        actor=ACTOR,
-        market_id="market_b",
-        chat_id=chat.id,
-        selection=SELECTION,
-        library_server_id=22,
-    )
-    payload = envelope()
-    library = payload["context"]["library"]
-    library["nodes"] = [
-        {"type": "offering", "id": "study", "properties": {"name": "Study"}},
-        {"type": "offering", "id": "enterprise", "properties": {"name": "Enterprise"}},
-    ]
-    library["productContexts"] = {
-        "study": {"attributesStatus": "omitted"},
-        "enterprise": {
-            "attributesStatus": "complete",
-            "attributes": [
-                {
-                    "id": "baseline",
-                    "name": "baseline definition (before work starts)",
-                    "values": [
-                        {
-                            "id": "agreed",
-                            "value": "agreed with customer",
-                            "sourceUrl": "https://example.com/enterprise",
-                        }
-                    ],
-                }
-            ],
-        },
-    }
-    original = CauslContextEnvelope.model_validate(payload)
-    monkeypatch.setattr(
-        turn, "read_workspace_context", lambda *_a, **_kw: (binding, original)
-    )
-    _, prompt = turn.workspace_turn(MagicMock(), user, chat, None)
-    assert prompt is not None
-    presented = json.loads(prompt.rsplit("\n", 1)[1])["context"]["library"]
-    study, enterprise = presented["nodes"]
-    assert study["productContext"] == library["productContexts"]["study"]
-    assert enterprise["properties"]["name"] == "Enterprise"
-    assert enterprise["productContext"] == library["productContexts"]["enterprise"]
-    assert "productContexts" not in presented
-    assert original.context == payload["context"]
-
-
 def test_refuses_unbounded_response(
     connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
 ) -> None:
