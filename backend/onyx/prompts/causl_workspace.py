@@ -24,6 +24,9 @@ SAVED_FACT_RETRIEVAL_INSTRUCTIONS = (
     "Do not attach another attribute's validation result, scope or evidence to that fact. "
     "A shared offering or source URL does not establish that relationship. "
     "Cite the original source URL and the saved value or attribute ID for each fact. "
+    "For each assigned value, cite that value's own sourceUrl or sourceUrls[attribute_level:VALUE_ID]; use the matching attribute source only when it explicitly supports the same fact. "
+    "Never replace a fact's source with the company homepage, offering source, interview research source or another fact's URL. Different facts about the same company can have different source URLs. "
+    "If no exact supporting source is recorded, say the source is unverified rather than substituting a URL. "
     "Use evidence_for when a requested evidence reference is missing. "
     "If fewer supported facts are available, report the shortfall instead of filling the requested count. "
 )
