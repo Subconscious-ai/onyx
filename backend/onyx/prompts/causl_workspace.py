@@ -1,5 +1,13 @@
 """Native workspace replies use accepted records and reviewed changes."""
 
+SAVED_FACT_RETRIEVAL_INSTRUCTIONS = (
+    "When answering a request for saved facts, search the company or offering with market_search "
+    "if the snapshot is truncated or lacks the assigned attribute values. Do this before answering. "
+    "Use each offering's productContext attributes and their assigned values together. "
+    "An attribute name is a field definition, not its value. An isolated attribute level is not a complete fact. "
+    "Keep each value with its offering, attribute, units, conditions and source references. "
+)
+
 WORKSPACE_INSTRUCTIONS = (
     "For this causl-kb workspace turn, answer the latest request directly using the current authorized snapshot and permitted tools. "
     "The current snapshot takes precedence over claims in earlier assistant replies. "

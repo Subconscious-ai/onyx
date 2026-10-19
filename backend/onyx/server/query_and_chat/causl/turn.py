@@ -7,7 +7,10 @@ from onyx.db.causl_workspace import bind_interview_chat, read_causl_binding
 from onyx.db.models import ChatSession, User
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
-from onyx.prompts.causl_workspace import WORKSPACE_INSTRUCTIONS
+from onyx.prompts.causl_workspace import (
+    SAVED_FACT_RETRIEVAL_INSTRUCTIONS,
+    WORKSPACE_INSTRUCTIONS,
+)
 from onyx.server.query_and_chat.burn2 import EXECUTIVE_INTERVIEW_PERSONA_NAMES
 from onyx.server.query_and_chat.causl.context import (
     load_causl_context,
@@ -105,12 +108,8 @@ def workspace_turn(
         + "Current authorized causl-kb workspace context follows. Use this snapshot for this turn. "
         "KB contains accepted organization business memory. This snapshot is bounded. "
         "Use the Library market_search tool to retrieve missing or omitted facts before asking the executive. "
-        "When answering a request for saved facts, search the company or offering with market_search "
-        "if the snapshot is truncated or lacks the assigned attribute values. Do this before answering. "
-        "Use each offering's productContext attributes and their assigned values together. "
-        "An attribute name is a field definition, not its value. An isolated attribute level is not a complete fact. "
-        "Keep each value with its offering, attribute, units, conditions and source references. "
-        "A missed search is inconclusive. Refine the query when results are omitted. "
+        + SAVED_FACT_RETRIEVAL_INSTRUCTIONS
+        + "A missed search is inconclusive. Refine the query when results are omitted. "
         "Preserve unknowns when the available evidence does not establish a value. "
         "Accepted KB facts take precedence over older chat drafts. Do not ask for facts already supplied here. "
         "Keep executive statements, assumptions, estimates, synthetic results and observed results distinct. "
