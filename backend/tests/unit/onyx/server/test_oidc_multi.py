@@ -66,6 +66,7 @@ def test_resolve_oidc_returns_config(monkeypatch: pytest.MonkeyPatch) -> None:
         **_OIDC_CONFIG,
         "legacy_callback": False,
         "require_verified_email": False,
+        "auto_join_verified_email_domains": [],
         "pkce_enabled": False,
         "scopes": [],
     }
@@ -394,19 +395,28 @@ def test_build_client_passes_require_verified_email(
         _config_url: str,
         *,
         require_verified_email: bool = False,
+        auto_join_verified_email_domains: list[str] | None = None,
         **_kwargs: Any,
     ) -> Any:
-        return SimpleNamespace(require_verified_email=require_verified_email)
+        return SimpleNamespace(
+            require_verified_email=require_verified_email,
+            auto_join_verified_email_domains=auto_join_verified_email_domains,
+        )
 
     monkeypatch.setattr(oidc_multi, "VerifiedEmailOpenID", _fake_openid)
     client = cast(
         Any,
         oidc_multi._build_client(
             _provider(name="entra"),
-            {**_OIDC_CONFIG, "require_verified_email": True},
+            {
+                **_OIDC_CONFIG,
+                "require_verified_email": True,
+                "auto_join_verified_email_domains": ["subconscious.ai"],
+            },
         ),
     )
     assert client.require_verified_email is True
+    assert client.auto_join_verified_email_domains == ["subconscious.ai"]
 
 
 def test_validate_config_rejects_legacy_callback_for_saml() -> None:

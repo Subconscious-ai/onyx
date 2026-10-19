@@ -10,6 +10,7 @@ import { useSendAuthRequiredMessage } from "@/lib/extension/hooks";
 import { Button, MessageCard } from "@opal/components";
 import { AuthLayouts } from "@opal/layouts";
 import { useTranslations } from "next-intl";
+import { automaticAuth0Provider } from "@/lib/auth/automatic-provider";
 
 interface LoginPageProps {
   authUrl: string | null;
@@ -18,6 +19,7 @@ interface LoginPageProps {
   hidePageRedirect?: boolean;
   verified?: boolean;
   isFirstUser?: boolean;
+  loggedOut?: boolean;
 }
 
 export default function LoginPage({
@@ -27,6 +29,7 @@ export default function LoginPage({
   hidePageRedirect,
   verified,
   isFirstUser,
+  loggedOut = false,
 }: LoginPageProps) {
   const t = useTranslations("auth");
   useSendAuthRequiredMessage();
@@ -39,6 +42,17 @@ export default function LoginPage({
   // Kill switch off: hide password login/signup. Backend refuses regardless.
   const passwordAuthEnabled = authTypeMetadata?.passwordAuthEnabled !== false;
   const orDivider = t("login.orDivider.text");
+  const automaticProvider = automaticAuth0Provider(authTypeMetadata, loggedOut);
+
+  if (automaticProvider) {
+    return (
+      <ProviderSignInButton
+        provider={automaticProvider}
+        nextUrl={effectiveNextUrl}
+        autoStart
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col w-full justify-center">

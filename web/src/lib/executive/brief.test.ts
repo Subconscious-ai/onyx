@@ -456,3 +456,36 @@ it("removes em dashes from spoken prose while retaining fenced code", () => {
     visibleInterviewText("Baseline unknown—target retained.\n```\nx = '—'\n```")
   ).toBe("Baseline unknown, target retained.\n```\nx = '—'\n```");
 });
+
+describe("source URL citations", () => {
+  const url = "https://example.org/experiments/result?view=summary#effect";
+  const marker = `【${url}】`;
+
+  test("makes a completed source marker usable by the native link renderer", () => {
+    expect(visibleInterviewText(`Source: experiment run${marker}`)).toBe(
+      `Source: experiment run[example.org](<${url}>)`
+    );
+  });
+
+  test("keeps source examples in code and unfinished streaming markers intact", () => {
+    const text = `\`${marker}\`\n\`\`\`text\n${marker}\n\`\`\`\nSource: 【${url}`;
+    expect(visibleInterviewText(text)).toBe(text);
+  });
+
+  test.each([
+    "``MARKER``",
+    "~~~text\nMARKER\n~~~",
+    "    MARKER",
+    "````text\nMARKER\n````",
+    "[MARKER](https://example.org/other)",
+  ])("keeps Markdown code and existing link labels intact: %s", (template) => {
+    const text = template.replace("MARKER", marker);
+    expect(visibleInterviewText(text)).toBe(text);
+  });
+
+  test("preserves numbered citations and refuses credential-bearing URL markers", () => {
+    const text =
+      "Result [[1]](https://example.org/run), 【2】, 【https://user:password@example.org/run】, 【javascript:alert(1)】";
+    expect(visibleInterviewText(text)).toBe(text);
+  });
+});

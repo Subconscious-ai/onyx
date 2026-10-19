@@ -8,6 +8,7 @@ from types import ModuleType, SimpleNamespace
 from unittest.mock import Mock, patch
 from uuid import uuid4
 
+from onyx.server.query_and_chat.burn2 import EXECUTIVE_INTERVIEW_PERSONA_NAMES
 from onyx.server.query_and_chat.burn2 import requested_tool as tool_selection
 from onyx.server.query_and_chat.burn2.requested_tool import initial_profile_tool
 
@@ -49,9 +50,11 @@ class InitialProfileToolTest(unittest.TestCase):
         self.read_profile.assert_called_once_with(self.arguments["user_id"])
         self.assertEqual(self.arguments["tools"], before)
 
-    def test_current_interview_name_starts_required_profile_tool(self):
-        self.arguments["persona_name"] = "Executive interview"
-        self.assertEqual(initial_profile_tool(**self.arguments), 937)
+    def test_interview_aliases_start_required_profile_tool(self):
+        for name in ("Executive interview", "Burn 2.0", "Burn 2.0 Nova QA"):
+            with self.subTest(name=name):
+                self.arguments["persona_name"] = name
+                self.assertEqual(initial_profile_tool(**self.arguments), 937)
 
     def test_current_interview_enters_native_context_and_preparation_gates(self):
         path = (
@@ -65,7 +68,7 @@ class InitialProfileToolTest(unittest.TestCase):
             and isinstance(node.left, ast.Attribute)
             and node.left.attr == "name"
             and "persona" in ast.unparse(node.left)
-            and "Burn 2.0" in ast.unparse(node)
+            and "EXECUTIVE_INTERVIEW_PERSONA_NAMES" in ast.unparse(node)
         ]
         self.assertEqual(len(gates), 5)
         for node in gates:
@@ -73,13 +76,16 @@ class InitialProfileToolTest(unittest.TestCase):
             for name, expected in [
                 ("Executive interview", True),
                 ("Burn 2.0", True),
+                ("Burn 2.0 Nova QA", True),
                 ("Other agent", False),
             ]:
                 persona = SimpleNamespace(name=name)
                 self.assertEqual(
                     eval(  # noqa: S307 - evaluate repository-owned persona gate only
                         predicate,
-                        {},
+                        {
+                            "EXECUTIVE_INTERVIEW_PERSONA_NAMES": EXECUTIVE_INTERVIEW_PERSONA_NAMES
+                        },
                         {"persona": persona, "setup": SimpleNamespace(persona=persona)},
                     ),
                     expected,
