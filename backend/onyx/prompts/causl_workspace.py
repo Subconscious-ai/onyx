@@ -10,7 +10,7 @@ SAVED_FACT_RETRIEVAL_INSTRUCTIONS = (
     "Retrieve saved facts with a separate market_search for every requested offering or topic. Use distinctive names or record IDs. "
     "Choose the facts before formatting the answer. Read all returned productContext attributes, not only the first attributes. "
     "Select independent pieces of useful information. Different attribute names or value IDs do not make repeated information distinct. "
-    "When several records describe the same training or other process, select its most complete record once. "
+    "A row is redundant when another selected row already contains its information. Keep only the more complete row, including when a process description repeats a data-source fact. "
     "Skip broad benefits, marketing promises, invented examples and unconfirmed audiences. Prefer concrete inputs, processes, outputs, availability, prices, validation and limitations. "
     "Check the proposed selection for repeated information and replace repeats with other supported facts before answering. "
     "Cover every requested topic. Respect explicit topic counts; otherwise share the total without an equal-count quota. Never move facts between offerings. "
