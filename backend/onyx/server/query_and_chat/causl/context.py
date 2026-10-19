@@ -4,12 +4,15 @@ import os
 import re
 from dataclasses import dataclass
 from urllib.parse import urlsplit
+from uuid import UUID
 
 import httpx
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from onyx.auth.session_identity import require_session_identity
+from onyx.db.burn2_brief import owned_snapshot
+from onyx.db.causl_workspace import read_causl_binding
 from onyx.db.enums import MCPAuthenticationPerformer, MCPAuthenticationType
 from onyx.db.mcp import get_mcp_servers_for_persona
 from onyx.db.models import MCPServer, User
@@ -328,3 +331,34 @@ def load_interview_context(
         )
     _validate(envelope, envelope.actor, selection)
     return AuthorizedCauslContext(config, envelope)
+
+
+def send_interview_brief(db: Session, user: User, chat_id: UUID) -> None:
+    """Hand the saved interview brief to the Library as soon as Onyx prepares it."""
+    binding = read_causl_binding(db, user.id, chat_id)
+    if binding is None or binding.mode != "interview":
+        return
+    server = _library_server(db, user, configuration())
+    if server.id != binding.library_server_id:
+        raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+    url = context_url(server.server_url).removesuffix("native-context") + "onyx-brief"
+    messages = [
+        {"type": row["type"], "message": row["message"]}
+        for row in owned_snapshot(chat_id, user.id, db)["transcript"]
+        if row["type"] in ("user", "assistant")
+    ]
+    with httpx.Client(timeout=10, follow_redirects=False) as client:
+        response = client.post(
+            url,
+            headers=_headers(db, user, server, binding.actor, binding.issuer),
+            json={
+                "format": "burn/onyx-interview",
+                "version": 1,
+                "chatId": str(chat_id),
+                "messages": messages,
+            },
+        )
+    if response.status_code != 200:
+        raise OnyxError(
+            OnyxErrorCode.BAD_GATEWAY, "The Library did not save the brief."
+        )
