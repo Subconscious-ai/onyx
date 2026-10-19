@@ -39,6 +39,7 @@ jobs:
           filters: |
             python:
               - 'backend/**'
+              - 'scripts/subconscious/**'
               - 'pyproject.toml'
               - '.github/workflows/pr-python-tests.yml'
               - '.github/actions/setup-python-and-install-dependencies/**'
@@ -78,4 +79,6 @@ jobs:
 
     - name: Run Tests
       shell: script -q -e -c "bash --noprofile --norc -eo pipefail {0}"
-      run: py.test -o junit_family=xunit2 -v -n auto backend/tests/unit
+      run: |
+        py.test -o junit_family=xunit2 -v -n auto backend/tests/unit
+        PYTHONPATH=backend:scripts/subconscious python -m unittest test_brief_background test_brief_generations test_research_job_retry test_research_state_update

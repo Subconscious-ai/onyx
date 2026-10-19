@@ -310,6 +310,7 @@ export default function ExecutiveWorkspace({
         <InterviewProgress
           email={email}
           brief={brief}
+          modelConnected={modelConnected}
           stale={projection.stale}
           phase={preparation.phase}
           busy={busy}

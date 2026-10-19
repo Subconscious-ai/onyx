@@ -13982,13 +13982,13 @@
       "conflict": "Hay un punto que aclarar antes del modelo.",
       "connecting": "Los elementos están recogidos. Conéctalos en un primer modelo.",
       "retry": "Reintentar actualización",
-      "open": "Build business model",
-      "build": "Complete model brief",
+      "open": "Crear modelo de negocio",
+      "build": "Completar el borrador del modelo",
       "conflictAsk": "Ayúdame a resolver las contradicciones del borrador guardado. Haz una pregunta clara; no elijas una respuesta por mí.",
       "buildAsk": "Crea un primer modelo con lo que he compartido. Mantén desconocidos los números que faltan y los efectos no medidos. Si falta contexto esencial del cliente, pregunta solo por eso.",
       "hint": "Los números desconocidos pueden esperar.",
-      "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
-      "contextUpdating": "Finishing company research…",
+      "readyHint": "Crea y guarda tu modelo privado. Los supuestos siguen identificados.",
+      "contextUpdating": "Terminando la investigación de la empresa…",
       "email": "La investigación parte de {email}"
     }
   }

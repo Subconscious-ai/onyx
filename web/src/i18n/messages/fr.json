@@ -13982,13 +13982,13 @@
       "conflict": "Un point doit être clarifié avant le modèle.",
       "connecting": "Les éléments sont recueillis. Reliez-les dans un premier modèle.",
       "retry": "Réessayer la mise à jour",
-      "open": "Build business model",
-      "build": "Complete model brief",
+      "open": "Créer le modèle économique",
+      "build": "Compléter le brouillon du modèle",
       "conflictAsk": "Aide-moi à résoudre les contradictions dans la synthèse enregistrée. Pose une question claire sans choisir la réponse à ma place.",
       "buildAsk": "Crée un premier modèle avec mes informations. Laisse inconnus les chiffres manquants et les effets non mesurés. Si un contexte client essentiel manque, demande uniquement ce point.",
       "hint": "Les chiffres inconnus peuvent attendre.",
-      "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
-      "contextUpdating": "Finishing company research…",
+      "readyHint": "Crée et enregistre votre modèle privé. Les hypothèses restent identifiées.",
+      "contextUpdating": "Finalisation de la recherche sur l’entreprise…",
       "email": "La recherche commence avec {email}"
     }
   }

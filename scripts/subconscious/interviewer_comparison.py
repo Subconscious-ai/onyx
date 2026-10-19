@@ -134,16 +134,30 @@ class Executive:
         self.budget = budget
 
     def json_call(self, customer: str, instruction: str, data: dict) -> dict:
-        text = json.dumps(data)
-        upper = (len(text.encode()) + len(instruction.encode())) / 1_000_000 + 0.015
+        from onyx.tracing.flows import LLMFlow
+        from onyx.tracing.llm_utils import traced_llm_call
+
+        text: str = json.dumps(data)
+        upper: float = (
+            len(text.encode()) + len(instruction.encode())
+        ) / 1_000_000 + 0.015
         self.budget.reserve(customer, "executive-or-evaluator", upper)
-        response = self.client.converse(
-            modelId="openai.gpt-oss-120b-1:0",
-            system=[{"text": instruction}],
-            messages=[{"role": "user", "content": [{"text": text}]}],
-            inferenceConfig={"maxTokens": 2500, "temperature": 0},
-        )
-        content = "".join(
+        with traced_llm_call(
+            flow=LLMFlow.INTERVIEW_EVALUATION,
+            model="openai.gpt-oss-120b-1:0",
+            provider="bedrock",
+            input_messages=[
+                {"role": "system", "content": instruction},
+                {"role": "user", "content": text},
+            ],
+        ):
+            response: dict[str, Any] = self.client.converse(
+                modelId="openai.gpt-oss-120b-1:0",
+                system=[{"text": instruction}],
+                messages=[{"role": "user", "content": [{"text": text}]}],
+                inferenceConfig={"maxTokens": 2500, "temperature": 0},
+            )
+        content: str = "".join(
             p.get("text", "") for p in response["output"]["message"]["content"]
         )
         # Ignore optional fenced JSON, but never repair a fabricated test answer.
@@ -345,6 +359,9 @@ class Parlant:
         import parlant.sdk as p
 
         if self.server is None:
+            from onyx.tracing.flows import LLMFlow
+            from onyx.tracing.llm_utils import traced_llm_call
+
             original = litellm.acompletion
             original_embed = litellm.aembedding
 
@@ -356,11 +373,25 @@ class Parlant:
                 # Bound retries and transport latency without changing provider logic.
                 kwargs["timeout"] = 45
                 kwargs["num_retries"] = 0
-                return await original(*args, **kwargs)
+                model: str = str(kwargs.get("model", args[0] if args else "unknown"))
+                with traced_llm_call(
+                    flow=LLMFlow.INTERVIEW_COMPARISON,
+                    model=model,
+                    provider=model.split("/", 1)[0],
+                    input_messages=kwargs.get("messages"),
+                ):
+                    return await original(*args, **kwargs)
 
             async def metered_embedding(*args, **kwargs):
                 self.budget.reserve(self.customer, "parlant-embedding", 0.005)
-                return await original_embed(*args, **kwargs)
+                model: str = str(kwargs.get("model", args[0] if args else "unknown"))
+                with traced_llm_call(
+                    flow=LLMFlow.EMBED_QUERY,
+                    model=model,
+                    provider=model.split("/", 1)[0],
+                    input_messages=kwargs.get("input"),
+                ):
+                    return await original_embed(*args, **kwargs)
 
             litellm.acompletion = metered_completion
             litellm.aembedding = metered_embedding

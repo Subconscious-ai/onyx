@@ -3,6 +3,7 @@
 import json
 import os
 import time
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -81,9 +82,9 @@ def _prepare_brief(
     persona = get_persona_by_id(snapshot["persona_id"], user, db, is_for_edit=False)
     if persona.name not in EXECUTIVE_INTERVIEW_PERSONA_NAMES:
         raise HTTPException(404, "Executive conversation required")
-    cached = None
+    cached: dict[str, Any] | None = None
     if "</interview-brief>" in snapshot["last_text"]:
-        saved = None
+        saved: dict[str, Any] | None = None
         try:
             saved = json.loads(
                 snapshot["last_text"]
@@ -93,11 +94,7 @@ def _prepare_brief(
             cached = validate_brief(saved, snapshot["statements"])
         except (ValueError, IndexError):
             cached = None
-        if (
-            cached
-            and cached == saved
-            and not needs_completion(cached, snapshot["statements"])
-        ):
+        if cached and cached == saved and not needs_completion(cached):
             return PreparedBrief(
                 message_id=snapshot["last_id"],
                 saved=True,
@@ -131,7 +128,7 @@ def _prepare_brief(
     from onyx.db.burn2_research import read_research
     from onyx.server.query_and_chat.burn2.research import prepared_company_context
 
-    preparation = prepared_company_context(
+    preparation: str = prepared_company_context(
         read_profile(user.id),
         read_research(user.id),
         previous.get("company") if previous else None,
@@ -214,7 +211,7 @@ Proposed interventions remain hypotheses. Jokes, confidence, and rejected third-
     try:
         brief = (
             cached
-            if cached and not needs_completion(cached, snapshot["statements"])
+            if cached and not needs_completion(cached)
             else prepare_validated_brief(generate, snapshot["statements"])
         )
     except Exception as error:
@@ -382,7 +379,7 @@ def read_executive_brief(
                 .split("</interview-brief>", 1)[0]
             )
             brief = validate_brief(saved, snapshot["statements"])
-            if not needs_completion(brief, snapshot["statements"]):
+            if not needs_completion(brief):
                 if brief != saved:
                     return {"saved": False, "background": False}
                 return {
