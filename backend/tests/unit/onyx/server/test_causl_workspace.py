@@ -166,6 +166,32 @@ def test_new_interviews_read_the_same_committed_market_fact_without_chat_history
     assert len(requests) == 2, "Each new conversation reads committed Postgres context"
     assert "x-causl-expected-organization" not in requests[0].headers
     assert requests[0].headers["x-causl-expected-subject"] == ACTOR.user_id
+    assert all(request.method == "POST" for request in requests), (
+        "An ordinary interview turn starts or resumes bounded research"
+    )
+
+
+def test_memory_reads_do_not_activate_interview_research(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    monkeypatch.setenv("BURN2_ENABLED", "true")
+    monkeypatch.setattr(turn, "read_causl_binding", lambda *_args: None)
+    monkeypatch.setattr(db, "get", lambda *_args: None)
+    monkeypatch.setattr(db, "scalar", lambda *_args: None)
+    payload = envelope()
+    payload["context"].update(page="workspace", market=None)
+    requests = http_response(monkeypatch, payload)
+    chat = ChatSession(
+        id=uuid4(),
+        user_id=user.id,
+        persona_id=11,
+        persona=Persona(id=11, name="Executive interview"),
+    )
+
+    turn.read_workspace_context(db, user, chat, None)
+
+    assert [request.method for request in requests] == ["GET"]
 
 
 def test_native_interview_refuses_a_library_login_for_another_person(

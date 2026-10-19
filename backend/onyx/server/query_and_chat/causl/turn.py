@@ -28,6 +28,8 @@ def read_workspace_context(
     user: User,
     chat: ChatSession,
     selection: CauslSelection | None,
+    *,
+    start_research: bool = False,
 ) -> tuple[CauslChatBinding | None, CauslContextEnvelope | None]:
     binding = read_causl_binding(db, user.id, chat.id)
     if (
@@ -38,7 +40,7 @@ def read_workspace_context(
         and chat.persona is not None
         and chat.persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
     ):
-        loaded = load_interview_context(db, user)
+        loaded = load_interview_context(db, user, start_research=start_research)
         if loaded.configuration.persona_id != chat.persona_id:
             raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
         binding = bind_interview_chat(
@@ -66,7 +68,13 @@ def read_workspace_context(
             OnyxErrorCode.UNAUTHORIZED,
             "This conversation belongs to another workspace.",
         )
-    loaded = load_causl_context(db, user, binding.actor, current)
+    loaded = load_causl_context(
+        db,
+        user,
+        binding.actor,
+        current,
+        start_research=start_research and binding.mode == "interview",
+    )
     if (
         loaded.envelope.issuer != binding.issuer
         or loaded.configuration.library_server_id != binding.library_server_id
@@ -82,7 +90,9 @@ def workspace_turn(
     chat: ChatSession,
     selection: CauslSelection | None,
 ) -> tuple[CauslChatBinding | None, str | None]:
-    binding, envelope = read_workspace_context(db, user, chat, selection)
+    binding, envelope = read_workspace_context(
+        db, user, chat, selection, start_research=True
+    )
     if binding is None or envelope is None:
         return None, None
     current = selection or binding.selection
