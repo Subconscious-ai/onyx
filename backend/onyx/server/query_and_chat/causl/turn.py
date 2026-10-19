@@ -90,6 +90,21 @@ def read_workspace_context(
     return binding, loaded.envelope
 
 
+def _prompt_envelope(envelope: CauslContextEnvelope) -> str:
+    payload = envelope.model_dump(mode="json", by_alias=True)
+    library = payload["context"].get("library")
+    if isinstance(library, dict):
+        contexts = library.get("productContexts")
+        if isinstance(contexts, dict):
+            # Keep offering names beside their values instead of requiring an ID join.
+            for node in library.get("nodes", []):
+                if node.get("type") == "offering" and node.get("id") in contexts:
+                    node["productContext"] = contexts.pop(node["id"])
+            if not contexts:
+                del library["productContexts"]
+    return json.dumps(payload, ensure_ascii=False)
+
+
 def workspace_turn(
     db: Session,
     user: User,
@@ -133,8 +148,6 @@ def workspace_turn(
         "Propose changes for human review through the existing KB interfaces. Conversation text does not accept changes. "
         "Never claim a save or completed analysis without a confirmed result.\n"
         + model_phase
-        + json.dumps(
-            envelope.model_dump(mode="json", by_alias=True), ensure_ascii=False
-        )
+        + _prompt_envelope(envelope)
     )
     return binding, prompt
