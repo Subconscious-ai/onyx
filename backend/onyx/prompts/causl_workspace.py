@@ -9,7 +9,9 @@ INTERVIEW_DISCOVERY_BUDGET = (
 SAVED_FACT_RETRIEVAL_INSTRUCTIONS = (
     "For a saved-fact request, identify every requested topic or offering before selecting facts. "
     "Respect any requested topic counts or priority; otherwise allocate facts roughly equally across the requested topics, as evidence allows. "
-    "Group the answer under headings for the requested topics and name the offering for each fact. "
+    "The requested fact count is the total across the whole answer, shared across topics. "
+    "Write one numbered item per fact: the fact's own offering name, full recorded attribute name, assigned value, original source URL and saved value ID. "
+    "Copy each offering name and full qualified attribute name from that fact's records, keeping their association intact. "
     "If a requested topic is absent, search that topic with market_search; if still unsupported, state that topic's shortfall. "
     "When answering a request for saved facts, search the company or offering with market_search "
     "if the snapshot is truncated or lacks the assigned attribute values. Do this before answering. "
