@@ -81,11 +81,55 @@ class AdaptiveTesterTests(unittest.TestCase):
         )
         self.assertEqual(key, "goal")
 
+    def test_speaker_lens_does_not_change_the_actual_question_intent(self):
+        for label in (
+            "Sarah · Journey",
+            "Frankie · Business model",
+            "Mei · Market challenge",
+        ):
+            with self.subTest(label=label):
+                reply, key = choose_reply(
+                    self.case,
+                    f"{label}: What is the desired outcome of optimizing marketing messaging?",
+                    {"journey"},
+                )
+                self.assertEqual(key, "goal")
+                self.assertEqual(reply, "Target 7% in three months.")
+        _, key = choose_reply(
+            self.case,
+            "Sarah · Journey: What are the key customer decisions in your marketing funnel?",
+            {"journey"},
+        )
+        self.assertEqual(key, "repeat:journey")
+        _, key = choose_reply(
+            self.case,
+            "Jerry: What is the desired outcome of optimizing marketing messaging?",
+            {"journey"},
+        )
+        self.assertEqual(key, "passive_probe")
+
     def test_short_confirmation_refers_to_the_proposed_journey(self):
         _, key = choose_reply(
             self.case, "Proposed journey: page, quote, contract. Does that fit?", set()
         )
         self.assertEqual(key, "journey")
+
+    def test_capture_and_reflect_confirmations_answer_the_proposed_customer_path(self):
+        answers = [
+            "To model renewal, we need the customer decision flow. A typical path is usage, value realization, reminder, renewal. Does this capture your renewal process?",
+            "Sarah · Journey: inquiry, quote, booking. Does this reflect your sales flow?",
+            "Sarah · Journey hypothesis: use, recommendation, approval, renewal. Does this reflect your renewal flow?",
+        ]
+        for answer in answers:
+            with self.subTest(answer=answer):
+                reply, key = choose_reply(self.case, answer, set())
+                self.assertEqual(key, "journey")
+                self.assertEqual(reply, "Homeowners visit, request a quote, then sign.")
+                repeated_reply, repeated_key = choose_reply(
+                    self.case, answer, {"journey"}
+                )
+                self.assertEqual(repeated_key, "repeat:journey")
+                self.assertIn("already supplied", repeated_reply)
 
     def test_single_number_selection_is_a_goal_question(self):
         _, key = choose_reply(
