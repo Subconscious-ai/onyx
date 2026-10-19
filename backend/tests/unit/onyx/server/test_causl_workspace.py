@@ -12,7 +12,11 @@ from sqlalchemy.orm import Session
 from onyx.auth.session_identity import SessionIdentity
 from onyx.chat import process_message
 from onyx.configs.constants import MessageType
-from onyx.db.enums import MCPAuthenticationPerformer, MCPAuthenticationType
+from onyx.db.enums import (
+    IncognitoRecordMode,
+    MCPAuthenticationPerformer,
+    MCPAuthenticationType,
+)
 from onyx.db.models import (
     ChatMessage,
     ChatSession,
@@ -273,7 +277,7 @@ def test_bound_interview_checks_local_authority_before_activating_research(
     elif invalid == "project":
         chat.project_id = 99
     else:
-        chat.incognito_record_mode = "not_stored"
+        chat.incognito_record_mode = IncognitoRecordMode.USAGE_ONLY
     monkeypatch.setattr(turn, "read_causl_binding", lambda *_args: binding)
     requests = http_response(monkeypatch, envelope())
 

@@ -2,10 +2,10 @@
 
 import hashlib
 import json
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
-from sqlalchemy import update
+from sqlalchemy import CursorResult, update
 from sqlalchemy.orm import Session
 
 from onyx.chat.chat_utils import create_chat_history_chain
@@ -23,7 +23,7 @@ def owned_snapshot(session_id: UUID, user_id: UUID, db: Session) -> dict[str, An
     )
     if not chain or chain[-1].message_type != MessageType.ASSISTANT:
         raise ValueError("Wait for the current answer before preparing the brief")
-    transcript = [
+    transcript: list[dict[str, Any]] = [
         {"id": row.id, "type": row.message_type.value, "message": row.message}
         for row in chain
     ]
@@ -70,7 +70,7 @@ def save_brief(
         )
         .values(message=text, token_count=token_count)
     )
-    if result.rowcount != 1:
+    if cast(CursorResult[Any], result).rowcount != 1:
         db.rollback()
         raise ValueError("Conversation changed; prepare the current model brief")
     db.commit()
