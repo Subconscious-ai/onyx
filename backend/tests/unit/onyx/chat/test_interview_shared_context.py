@@ -29,6 +29,9 @@ from onyx.server.query_and_chat.models import SendMessageRequest
     [
         "Raise conversion to 7% in three months.",
         "Show me ten useful facts saved in our Library about products, study capabilities and Enterprise process.",
+        "What facts are saved in our Library about Enterprise?",
+        "Our goal is to give executives ten saved facts in sixty seconds. Help me model that customer journey.",
+        "Do not show saved facts yet. Capture my goal and customer journey first.",
     ],
 )
 def test_bound_turn_uses_current_shared_context_without_losing_interview_preparation(
@@ -140,7 +143,7 @@ def test_bound_turn_uses_current_shared_context_without_losing_interview_prepara
             assert request.message in context
             assert "not accepted market memory" in context
             assert setup.trusted_turn_instructions
-            if message.startswith("Show"):
+            if message.startswith(("Show", "What")):
                 assert "Question budget" not in setup.trusted_turn_instructions
                 assert "Capture the goal" not in setup.trusted_turn_instructions
                 assert "market_search" in setup.trusted_turn_instructions

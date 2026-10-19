@@ -1095,7 +1095,7 @@ def build_chat_turn(
             saved_fact_request = all(
                 re.search(pattern, message_text, re.I)
                 for pattern in (
-                    r"\b(?:show|list|retrieve|give|summari[sz]e)\b",
+                    r"^\s*(?:please\s+)?(?:show|list|retrieve|give|summari[sz]e|what|which)\b",
                     r"\b(?:saved|recorded|accepted|library)\b",
                     r"\bfacts?\b",
                 )
