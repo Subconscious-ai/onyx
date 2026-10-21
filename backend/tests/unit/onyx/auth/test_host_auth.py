@@ -119,7 +119,9 @@ async def test_request_dependency_resets_host_identity_on_close(
     s = setup_host
     dependency = users.optional_user(s.request, s.db, None, s.manager)
     assert await anext(dependency) is s.user
-    assert host_auth.host_session_for(s.user.id).identity.subject == "auth0|alice"
+    session = host_auth.host_session_for(s.user.id)
+    assert session is not None
+    assert session.identity.subject == "auth0|alice"
     await dependency.aclose()
     assert host_auth.host_session_for(s.user.id) is None
 
