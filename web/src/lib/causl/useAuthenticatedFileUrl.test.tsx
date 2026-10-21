@@ -14,12 +14,10 @@ afterEach(() => {
 
 test("host file tags receive a fetched blob URL and release it on unmount", async () => {
   window.history.replaceState({}, "", "/causl?hostAuth=1");
-  global.fetch = jest
-    .fn()
-    .mockResolvedValue({
-      ok: true,
-      blob: async () => new Blob(["private image"]),
-    });
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: true,
+    blob: async () => new Blob(["private image"]),
+  });
   URL.createObjectURL = jest.fn().mockReturnValue("blob:private-image");
   URL.revokeObjectURL = jest.fn();
   const hook = renderHook(() =>
