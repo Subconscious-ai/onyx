@@ -1,7 +1,7 @@
 import React from "react";
 import { act, render, screen, waitFor } from "@tests/setup/test-utils";
 import WorkspaceChat from "./WorkspaceChat";
-import { openCauslWorkspace } from "./bridge";
+import { CauslWorkspaceError, openCauslWorkspace } from "./bridge";
 import type { CauslDraft } from "./types";
 
 const mockWorkspace = {
@@ -11,6 +11,7 @@ const mockWorkspace = {
   contextDigest: "c".repeat(64),
 };
 let mockConsume: ((id: string) => void) | undefined;
+let mockHostAuth = false;
 jest.mock("./bridge", () => ({
   ...jest.requireActual("./bridge"),
   openCauslWorkspace: jest.fn(),
@@ -18,7 +19,9 @@ jest.mock("./bridge", () => ({
 jest.mock("next/navigation", () => ({
   useRouter: () => mockRouter,
   useSearchParams: () =>
-    new URLSearchParams(`chatId=${mockWorkspace.chatId}&agentId=11`),
+    new URLSearchParams(
+      `chatId=${mockWorkspace.chatId}&agentId=11${mockHostAuth ? "&hostAuth=1" : ""}`
+    ),
 }));
 const mockRouter = { replace: jest.fn() };
 function mockWrapper({ children }: { children: React.ReactNode }) {
@@ -75,6 +78,7 @@ let parentDescriptor: PropertyDescriptor | undefined;
 let post: jest.SpyInstance;
 
 beforeEach(() => {
+  mockHostAuth = false;
   jest.mocked(openCauslWorkspace).mockResolvedValue(mockWorkspace);
   mockConsume = undefined;
   parentFrame = document.createElement("iframe");
@@ -170,3 +174,28 @@ test("invalidates a pending handoff before delayed input restoration on a new pa
     "No pending question"
   );
 });
+
+test.each(["signin", "access"] as const)(
+  "host authentication never offers a second login after a %s failure",
+  async (reason) => {
+    mockHostAuth = true;
+    jest
+      .mocked(openCauslWorkspace)
+      .mockRejectedValue(new CauslWorkspaceError(reason));
+    render(
+      <WorkspaceChat
+        parentOrigin="https://kb.example"
+        nonce="frame-nonce"
+        authenticated
+        libraryServerId={22}
+      />
+    );
+    receive(context);
+    await screen.findByText(
+      "The workspace context is unavailable. Your saved conversation is retained."
+    );
+    expect(screen.queryByText("Sign in to Onyx")).not.toBeInTheDocument();
+    expect(screen.queryByText("Connect Library")).not.toBeInTheDocument();
+    expect(screen.getByText("Reopen conversation")).toBeInTheDocument();
+  }
+);

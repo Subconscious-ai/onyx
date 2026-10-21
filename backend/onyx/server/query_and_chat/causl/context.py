@@ -116,7 +116,7 @@ def _headers(
         raise OnyxError(
             OnyxErrorCode.UNAUTHENTICATED, "Connect your Library account."
         ) from None
-    if not credentials.can_authenticate() or credentials.connection_config is None:
+    if not credentials.can_authenticate():
         raise OnyxError(OnyxErrorCode.UNAUTHENTICATED, "Connect your Library account.")
     headers = {key.lower(): value for key, value in credentials.build_headers().items()}
     if mcp_token_expired(extract_connection_data(credentials.connection_config)):

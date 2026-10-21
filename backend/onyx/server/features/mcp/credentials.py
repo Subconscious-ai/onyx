@@ -29,6 +29,7 @@ from mcp.shared.auth import OAuthClientInformationFull
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
+from onyx.auth.host_auth import library_host_token
 from onyx.db.enums import MCPAuthenticationPerformer, MCPAuthenticationType
 from onyx.db.mcp import get_user_connection_config
 from onyx.db.models import MCPConnectionConfig, MCPServer, User
@@ -242,6 +243,14 @@ def resolve_mcp_credentials(
     means no stored user values.
     """
     auth_template = get_mcp_auth_template(mcp_server)
+    host_token = library_host_token(user.id, mcp_server.id, mcp_server.server_url)
+    if host_token is not None:
+        return ResolvedMCPCredentials(
+            connection_config=None,
+            user_oauth_token=host_token,
+            auth_type=MCPAuthenticationType.OAUTH,
+            user_email=user.email,
+        )
     user_connection_config = (
         user_configs.get(mcp_server.id)
         if user_configs is not None
