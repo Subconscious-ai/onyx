@@ -18,6 +18,7 @@ import {
 import { fetchChatFile } from "@/lib/chat/svc";
 import { PreviewContext } from "@/sections/modals/PreviewModal/interfaces";
 import { resolveVariant } from "@/sections/modals/PreviewModal/variants";
+import { useAuthenticatedFileUrl } from "@/lib/causl/useAuthenticatedFileUrl";
 
 interface PreviewModalProps {
   presentingDocument: MinimalOnyxDocument;
@@ -30,7 +31,8 @@ export default function PreviewModal({
 }: PreviewModalProps) {
   const t = useTranslations("chat.modals.preview");
   const [fileContent, setFileContent] = useState("");
-  const [fileUrl, setFileUrl] = useState("");
+  const [fileUrlState, setFileUrl] = useState("");
+  const fileUrl = useAuthenticatedFileUrl(fileUrlState) ?? "";
   const [fileName, setFileName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);

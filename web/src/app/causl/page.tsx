@@ -22,16 +22,21 @@ export default async function CauslPage({
       ? query.bridge
       : null;
   if (!parentOrigin || !nonce) return <p>{t("notConfigured")}</p>;
-  const result = await requireAuth();
+  const hosted = query.hostAuth === "1";
+  const result = hosted ? null : await requireAuth();
   const libraryId = Number(process.env.CAUSL_KB_MCP_SERVER_ID);
   return (
     <WorkspaceChat
       parentOrigin={parentOrigin}
       nonce={nonce}
       authenticated={
-        !result.redirect &&
-        Boolean(result.user) &&
-        !result.user?.is_anonymous_user
+        hosted ||
+        Boolean(
+          result &&
+          !result.redirect &&
+          result.user &&
+          !result.user.is_anonymous_user
+        )
       }
       libraryServerId={
         Number.isSafeInteger(libraryId) && libraryId > 0 ? libraryId : null

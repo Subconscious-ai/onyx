@@ -68,6 +68,12 @@ from onyx.auth.email_utils import (
     send_forgot_password_email,
     send_user_verification_email,
 )
+from onyx.auth.host_auth import (
+    authenticate_host,
+    host_auth_requested,
+    host_request,
+    host_session_for,
+)
 from onyx.auth.invited_users import get_invited_users, remove_user_from_invited_users
 from onyx.auth.jwt import verify_jwt_token
 from onyx.auth.login_claims_capture import capture_oauth_login_claims
@@ -960,6 +966,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         request: Optional[Request] = None,
         *,
         associate_by_email: bool = False,
+        allow_email_link: bool = True,
         is_verified_by_default: bool = False,
         allowed_email_domains_override: Sequence[str] | None = None,
         enforce_verified_domain: bool = False,
@@ -1042,6 +1049,8 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
                     user = await self.user_db.get_by_email(account_email)
                     if user is None:
                         raise exceptions.UserNotExists()
+                    if not allow_email_link:
+                        raise exceptions.UserAlreadyExists()
                     # No link matched this subject, so any link this provider holds on
                     # the row is stale: the IdP re-issued its subjects (a new Entra
                     # app registration).
@@ -2131,7 +2140,11 @@ async def _check_for_saml_and_jwt(
     async_db_session: AsyncSession,
 ) -> User | None:
     # If user is None, check for JWT in Authorization header
-    if user is None and get_security_settings().jwt_public_key_url is not None:
+    if (
+        user is None
+        and get_security_settings().jwt_public_key_url is not None
+        and os.environ.get("CAUSL_KB_HOST_AUTH_ENABLED") != "true"
+    ):
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header[len("Bearer ") :].strip()
@@ -2215,6 +2228,15 @@ async def _resolve_optional_user(
     user: User | None,
     user_manager: BaseUserManager[User, uuid.UUID],
 ) -> User | None:
+    if host_auth_requested(request):
+        host_user, session = await authenticate_host(
+            request, async_db_session, cast(UserManager, user_manager)
+        )
+        request.state.causl_host_session = session
+        request.state.usage_credential = UsageCredentialIdentity(
+            UsageCredentialType.JWT
+        )
+        return host_user
     if user is not None:
         request.state.usage_credential = UsageCredentialIdentity(
             UsageCredentialType.SESSION
@@ -2290,7 +2312,8 @@ async def optional_user(
         getattr(request.state, "usage_credential", None)  # ods: ignore[getattr]
     )
     try:
-        yield user
+        with host_request(request.scope.get("state", {}).get("causl_host_session")):
+            yield user
     finally:
         CURRENT_USAGE_CREDENTIAL_CONTEXTVAR.reset(credential_token)
         CURRENT_USER_ID_CONTEXTVAR.reset(token)
@@ -2330,6 +2353,7 @@ async def double_check_user(
             user.oidc_expiry
             and user.oidc_expiry < datetime.now(timezone.utc)
             and not include_expired
+            and host_session_for(user.id) is None
         ):
             raise BasicAuthenticationError(
                 detail="Access denied. User's OIDC token has expired.",
