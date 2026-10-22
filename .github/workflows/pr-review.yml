@@ -93,7 +93,7 @@ jobs:
           claude_args: >-
             --model sonnet --effort medium --max-turns 16
             --restricted --strict-mcp-config --disable-slash-commands
-            --settings '{"disableAllHooks":true}'
+            --settings '{"disableAllHooks":true,"permissions":{"deny":["Read(./.git)","Read(./.git/**)"]}}'
             --tools "Read,Grep,Glob"
             --mcp-config '${{ steps.github_mcp.outputs.config }}'
             --allowedTools "Read,Grep,Glob,mcp__github_api__pull_request_read,mcp__github_api__issue_read,mcp__github_api__get_file_contents,mcp__github_api__add_issue_comment,mcp__github_inline_comment__create_inline_comment"
