@@ -116,5 +116,13 @@ export function track<E extends AnalyticsEvent>(
     : [event: E, properties: AnalyticsEventProperties[E]]
 ): void {
   const [event, properties] = args as [E, Record<string, unknown>?];
+  if (event === AnalyticsEvent.EXTENSION_CHAT_QUERY && properties) {
+    const { extension_context, ...safe } = properties;
+    posthog.capture(event, {
+      ...safe,
+      has_extension_context: Boolean(extension_context),
+    });
+    return;
+  }
   posthog.capture(event, properties ?? {});
 }
