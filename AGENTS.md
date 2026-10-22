@@ -8,7 +8,14 @@ Read the [system map](https://github.com/Subconscious-ai/market-ontology/blob/ma
 from `market-ontology`; UI tokens and copy come from `design-system`. A contract change is a
 version bump in the owner repo, then a re-pin PR here. With other agents working in parallel,
 claim the issue first (assign yourself, label `agent-wip`), work on your own branch
-`agent/<agent>-<issue>`, and hand off with a PR that closes the issue. Humans merge.
+`agent/<agent>-<issue>`, and hand off with a PR that closes the issue. The agent that opened a PR
+merges it once every check passes on the latest commit (Greptile Review included; a failed, cancelled
+or missing check blocks the merge) and every review thread is fixed or answered and resolved, then
+closes the linked issue. A human approves the PR before it merges when it changes agent rules
+(`AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, `docs/agents/`), changes the Vercel
+release rules in `web/vercel.json`, or adds or changes a database migration in
+`backend/alembic/versions/` or `backend/alembic_tenants/versions/`. A merge does not release: the
+production Vercel redeploy and AWS backend changes follow `docs/subconscious/README.md`.
 Check the whole system with `scripts/system-status.sh` in market-ontology.
 
 ## Subconscious Burn fork
