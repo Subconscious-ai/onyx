@@ -1,0 +1,26 @@
+name: PR review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: read
+
+concurrency:
+  group: claude-review-${{ github.repository }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # Dependabot cannot read Actions secrets; Datadog uses the shared allowlist.
+    if: github.actor != 'dependabot[bot]'
+    uses: Subconscious-ai/design-system/.github/workflows/claude-review.yml@b8ce1454342059683ed4efaa41cbc3bc2a7e3394
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_REVIEW_OAUTH_TOKEN }}
+    with:
+      # Pin shared review configuration and company context together.
+      review-ref: b8ce1454342059683ed4efaa41cbc3bc2a7e3394
+      review-drafts: true
