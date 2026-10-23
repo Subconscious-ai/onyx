@@ -551,6 +551,42 @@ describe("automatic saved evidence", () => {
     expect(result.current.profile?.correction.revision).toBe(2);
     expect(result.current.profileStatus).toContain("Your company context");
   });
+  it("refreshes completed source receipts when unchanged sources are saved to shared memory", async () => {
+    let memorySaved = false;
+    jest.spyOn(global, "fetch").mockImplementation(
+      async () =>
+        ({
+          ok: true,
+          json: async () => ({
+            status: "ready",
+            memory_saved: memorySaved,
+            checked_at: 100,
+            profile: { company: "Example" },
+            research: {
+              status: "ready",
+              checked_at: 101,
+              report: "Completed research",
+              source_urls: ["https://example.com/research"],
+            },
+          }),
+        }) as Response
+    );
+    const { result } = renderHook(() => useExecutiveContext(true));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const loaded = JSON.parse(result.current.contextRevision);
+    memorySaved = true;
+    act(() => result.current.reload());
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const saved = JSON.parse(result.current.contextRevision);
+    expect(saved.profile).not.toBe(loaded.profile);
+    expect(saved.research).not.toBe(loaded.research);
+    expect(result.current.dossier?.profile.company).toBe("Example");
+    expect(result.current.research.report).toBe("Completed research");
+  });
 });
 
 it("refreshes an incomplete saved brief instead of trapping the customer", async () => {

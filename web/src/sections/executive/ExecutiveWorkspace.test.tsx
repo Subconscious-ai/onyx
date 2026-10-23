@@ -5,6 +5,7 @@ import ExecutiveWorkspace, {
 } from "./ExecutiveWorkspace";
 import { useAutomaticBrief, useExecutiveContext } from "@/lib/executive/hooks";
 import { createModelHandoff } from "@/lib/executive/model-handoff";
+import { SWRConfig } from "swr";
 
 jest.mock("@/lib/executive/model-handoff", () => ({
   ...jest.requireActual("@/lib/executive/model-handoff"),
@@ -28,12 +29,16 @@ jest.mock("@opal/components", () => ({
     children,
     onClick,
     disabled,
+    href,
     "aria-expanded": expanded,
-  }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-    <button onClick={onClick} disabled={disabled} aria-expanded={expanded}>
-      {children}
-    </button>
-  ),
+  }: React.ButtonHTMLAttributes<HTMLButtonElement> & { href?: string }) =>
+    href ? (
+      <a href={href}>{children}</a>
+    ) : (
+      <button onClick={onClick} disabled={disabled} aria-expanded={expanded}>
+        {children}
+      </button>
+    ),
 }));
 jest.mock("@opal/layouts", () => ({ Content: () => null }));
 jest.mock("@opal/utils", () => ({
@@ -47,7 +52,7 @@ jest.mock("@opal/icons", () => ({
 }));
 
 describe("conversation-first brief access", () => {
-  it("does not ask the executive to select a capability", () => {
+  it("does not ask the executive to select a capability", async () => {
     render(
       <ExecutiveWorkspace active messages={[]}>
         <textarea aria-label="Message" />
@@ -58,6 +63,7 @@ describe("conversation-first brief access", () => {
       screen.queryByRole("button", { name: "actions.open" })
     ).not.toBeInTheDocument();
     expect(screen.getByLabelText("Message")).toBeVisible();
+    expect(await screen.findByText("marketMemorySource")).toBeInTheDocument();
   });
   const retry = jest.fn();
   beforeEach(() => {
@@ -69,7 +75,10 @@ describe("conversation-first brief access", () => {
     (useAutomaticBrief as jest.Mock).mockReturnValue({ phase: "idle", retry });
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ status: "not_found" }),
+      json: async () => ({
+        digest: "empty",
+        library: { nodes: [], omitted: 0, truncated: false },
+      }),
     });
   });
   it("shows extracted evidence alongside chat and preserves composer text on mobile return", async () => {
@@ -87,6 +96,111 @@ describe("conversation-first brief access", () => {
     fireEvent.click(screen.getByRole("button", { name: "Conversation" }));
     expect(screen.getByLabelText("Message")).toHaveValue("Retain this draft");
     expect(screen.getByLabelText("Message")).toBeVisible();
+  });
+  it("refreshes saved memory after provider publication without another chat message", async () => {
+    const messages = [
+      { type: "user", message: "We want more paid pilots." },
+      { type: "assistant", message: "I retained that objective." },
+    ];
+    (useAutomaticBrief as jest.Mock).mockReturnValue({
+      phase: "saved",
+      savedMessage: "I retained that objective.",
+      retry,
+    });
+    (useExecutiveContext as jest.Mock).mockReturnValue({
+      profileStatus: "PDL professional match loaded",
+      research: { status: "running" },
+      contextRevision: "pdl-ready",
+    });
+    const memory = (text: string) => ({
+      digest: text,
+      library: {
+        nodes: [
+          { id: "source", type: "message", properties: { text }, evidence: [] },
+        ],
+        omitted: 0,
+        truncated: false,
+      },
+    });
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => memory("Saved profile claim"),
+    });
+    const cache = new Map();
+    const workspace = () => (
+      <SWRConfig value={{ provider: () => cache, dedupingInterval: 0 }}>
+        <ExecutiveWorkspace
+          active
+          chatId="source-refresh-chat"
+          messages={messages}
+        >
+          <textarea aria-label="Message" />
+        </ExecutiveWorkspace>
+      </SWRConfig>
+    );
+    const result = render(workspace());
+    expect(await screen.findByText("Saved profile claim")).toBeInTheDocument();
+    (useAutomaticBrief as jest.Mock).mockReturnValue({
+      phase: "updating",
+      savedMessage: "I retained that objective.",
+      retry,
+    });
+    (useExecutiveContext as jest.Mock).mockReturnValue({
+      profileStatus: "PDL professional match loaded",
+      research: { status: "ready", report: "New research receipt" },
+      contextRevision: "pdl-ready,research-ready",
+    });
+    result.rerender(workspace());
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => memory("Saved research claim"),
+    });
+    (useAutomaticBrief as jest.Mock).mockReturnValue({
+      phase: "saved",
+      savedMessage: "I retained that objective.",
+      retry,
+    });
+    result.rerender(workspace());
+    expect(await screen.findByText("Saved research claim")).toBeInTheDocument();
+    expect(screen.queryByText("Saved profile claim")).not.toBeInTheDocument();
+  });
+  it("shows loaded profile and research as attributed source context before an interview exists", () => {
+    (useExecutiveContext as jest.Mock).mockReturnValue({
+      profileStatus: "PDL professional match loaded",
+      dossier: {
+        profile: { company: "Acme", role: "Founder" },
+        source: "pdl",
+      },
+      research: {
+        status: "ready",
+        report: "Acme sells paid pilots before broader contracts.",
+        source_urls: ["https://acme.example/research", "javascript:alert(1)"],
+      },
+    });
+    render(
+      <ExecutiveWorkspace active messages={[]}>
+        <textarea aria-label="Message" />
+      </ExecutiveWorkspace>
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Brief" }));
+    fireEvent.click(screen.getByRole("button", { name: "Evidence" }));
+    expect(screen.getByText("Acme")).toBeVisible();
+    expect(screen.getByText("Founder")).toBeVisible();
+    expect(screen.getByText("companyProfile.provider")).toBeVisible();
+    expect(screen.getByText("publicResearchSource")).toBeVisible();
+    expect(screen.getByText("providerClaimNotice")).toBeVisible();
+    expect(
+      screen.getByText("Acme sells paid pilots before broader contracts.")
+    ).toBeVisible();
+    expect(
+      screen
+        .getAllByRole("link", { name: "acme.example" })
+        .every(
+          (link) =>
+            link.getAttribute("href") === "https://acme.example/research"
+        )
+    ).toBe(true);
+    expect(document.querySelector('a[href^="javascript:"]')).toBeNull();
   });
   it("keeps extraction failure and retry reachable without a permanent chat footer", async () => {
     (useAutomaticBrief as jest.Mock).mockReturnValue({ phase: "error", retry });

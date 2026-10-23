@@ -5,6 +5,8 @@ Burn 2.0 interviews an executive for customer behavior transitions and measurabl
 ## Ownership and persistence
 
 - Native Onyx owns chat authentication, saved conversations, streaming, tools and AWS inference. Ordinary turns have no second extraction call.
+- Profile preparation publishes available PDL context through the existing per-user Library connection before a chat or brief exists. Ready research publishes through the same path. `memory_saved` confirms a verified save receipt, including an unchanged replay; provider readiness alone does not confirm Library retention.
+- Saved market facts can load organization memory before the first message. Evidence shows available source context separately from saved facts. Provider claims remain unaccepted and retain their original citations.
 - Automatic background preparation after a completed answer reads the owned native Postgres conversation, extracts a version-two brief, validates source quotes and identifiers, and saves the brief suffix in the latest assistant row. Original executive messages and spoken answers are preserved. A concurrent edit invalidates the save. A newer executive answer makes the brief stale.
 - **Open business model** transfers a reviewed conversation through an origin/nonce-bound browser handoff, with a downloaded JSON fallback. Onyx does not hold a causl-kb administrator credential.
 - causl-kb derives organization authority from the authenticated session. The private model and individually selected supported journey states/transitions commit through the existing tenant transaction and ontology safe door. Draft relationships and incomplete OKRs do not become accepted facts.
@@ -29,6 +31,7 @@ Burn 2.0 interviews an executive for customer behavior transitions and measurabl
   Exa provider through `RETRIEVER=exa` and a private QA-only environment file, with a rollback copy.
   Canonical service configuration stayed unchanged. Key presence, HTTP 200 and source counts do not
   establish relevant research; inspect supporting source text. Research remains unaccepted source context.
+- Restart long-running research workers after updating their Python dependencies. An API health check does not detect stale worker modules. Compare the worker start time with dependency installation times before changing provider settings.
 - Review actual question text and independent arithmetic alongside tester results.
   Speaker labels are not questions; a fraction, percentage and percentage-point gap use different units.
 

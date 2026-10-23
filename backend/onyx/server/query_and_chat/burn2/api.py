@@ -295,16 +295,45 @@ def _publish_interview(
 @router.post("/executive-profile")
 def prepare_profile(
     user: User = Depends(require_permission(Permission.WRITE_CHAT)),
+    db: Session = Depends(get_session),
 ) -> dict:
     from onyx.server.query_and_chat.burn2.background import ensure_research
 
     profile = _prepare_profile(user)
-    return {**profile, "research": ensure_research(user.id)}
+    research = ensure_research(user.id)
+    return {
+        **profile,
+        "research": research,
+        "memory_saved": _publish_preparation(db, user, profile, research),
+    }
+
+
+def _publish_preparation(
+    db: Session, user: User, profile: dict | None, research: dict | None
+) -> bool:
+    from onyx.server.query_and_chat.burn2.research import model_business_context
+    from onyx.server.query_and_chat.causl.context import save_preparation_context
+
+    context = model_business_context(profile, research, None)
+    if context is None or (
+        context["profileSource"] != "pdl"
+        and context["research"].get("status") != "ready"
+    ):
+        return False
+    try:
+        save_preparation_context(db, user, context)
+        return True
+    except Exception:
+        # A failed Library publication must not hide a valid provider receipt.
+        # Do not log provider content, OAuth tokens, or the executive's dossier.
+        logger.warning("Provider evidence could not be retained in the Library")
+        return False
 
 
 @router.get("/executive-research")
 def read_executive_research(
     user: User = Depends(require_permission(Permission.WRITE_CHAT)),
+    db: Session = Depends(get_session),
 ) -> dict:
     from onyx.db.burn2_profile import read_profile
     from onyx.db.burn2_research import read_research
@@ -315,15 +344,22 @@ def read_executive_research(
 
     if os.environ.get("BURN2_ENABLED") != "true":
         raise OnyxError(OnyxErrorCode.NOT_FOUND, "Not found")
-    query = public_research_query(read_profile(user.id))
+    profile = read_profile(user.id)
+    query = public_research_query(profile)
     if not query:
         return {"status": "needs_company"}
     research = read_research(user.id)
-    return (
+    result = (
         research
         if research and research_reusable(research, query)
         else {"status": "unavailable"}
     )
+    if result.get("status") == "ready":
+        return {
+            **result,
+            "memory_saved": _publish_preparation(db, user, profile, result),
+        }
+    return result
 
 
 @router.patch("/executive-profile")

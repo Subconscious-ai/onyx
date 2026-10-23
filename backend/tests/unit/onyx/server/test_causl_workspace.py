@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import httpx
 import pytest
+from fastapi import Response
 from sqlalchemy.orm import Session
 
 from onyx.auth.session_identity import SessionIdentity
@@ -26,7 +27,7 @@ from onyx.error_handling.exceptions import OnyxError
 from onyx.hooks.executor import HookSkipped
 from onyx.prompts.causl_workspace import WORKSPACE_INSTRUCTIONS
 from onyx.server.features.mcp.credentials import ResolvedMCPCredentials
-from onyx.server.query_and_chat.causl import context, turn
+from onyx.server.query_and_chat.causl import api, context, turn
 from onyx.server.query_and_chat.causl.models import (
     CauslActor,
     CauslChatBinding,
@@ -180,6 +181,76 @@ def test_testimony_write_rejects_foreign_native_owner_before_network(
     with pytest.raises(OnyxError):
         context.save_interview_context(db, user, binding, [])
     assert requests == []
+
+
+@pytest.mark.parametrize("valid_actor", [True, False])
+def test_preparation_retains_sources_without_a_chat_using_verified_library_scope(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+    valid_actor: bool,
+) -> None:
+    db, user, _server = connected
+    requests: list[httpx.Request] = []
+    client = httpx.Client
+    response = envelope()
+    response["context"].update(page="workspace", market=None)
+    if not valid_actor:
+        response["actor"]["userId"] = "auth0|foreign"
+    receipt = {"statements": 0, "stages": 0, "transitions": 0, "providerClaims": 1}
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json=response
+            if request.method == "GET"
+            else {**response, "saved": receipt},
+        )
+
+    monkeypatch.setattr(
+        context.httpx,
+        "Client",
+        lambda **kwargs: client(transport=httpx.MockTransport(handle), **kwargs),
+    )
+    business_context = {
+        "profile": {"company": "Acme"},
+        "profileSource": "pdl",
+        "research": {"status": "running"},
+    }
+    if not valid_actor:
+        with pytest.raises(OnyxError):
+            context.save_preparation_context(db, user, business_context)
+        assert [request.method for request in requests] == ["GET"]
+        return
+    assert context.save_preparation_context(db, user, business_context) == receipt
+    assert [request.method for request in requests] == ["GET", "POST"]
+    assert requests[1].headers["authorization"] == "Bearer test-credential"
+    assert requests[1].headers["x-causl-expected-organization"] == ACTOR.org_id
+    assert requests[1].headers["x-causl-expected-subject"] == ACTOR.user_id
+    assert json.loads(requests[1].content) == {
+        "preparation": {
+            "format": "burn/onyx-preparation",
+            "version": 1,
+            "preparationId": str(user.id),
+            "businessContext": business_context,
+        }
+    }
+
+
+def test_entry_reads_shared_market_memory_before_the_first_chat(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    payload = envelope()
+    payload["context"].update(page="workspace", market=None)
+    requests = http_response(monkeypatch, payload)
+    response = Response()
+    result = api.read_memory(response=response, user=user, db_session=db)
+    assert result["library"]["nodes"][0]["properties"]["name"] == "Accepted B fact"
+    assert response.headers["cache-control"] == "private, no-store"
+    assert len(requests) == 1
+    assert requests[0].headers["x-causl-expected-subject"] == ACTOR.user_id
+    assert dict(requests[0].url.params) == {"page": "workspace"}
 
 
 @pytest.mark.parametrize("status", [302, 401, 403, 500])

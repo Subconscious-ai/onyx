@@ -99,6 +99,7 @@ export function useExecutiveContext(
                   value.checked_at,
                   value.correction?.revision,
                   value.profile,
+                  value.memory_saved,
                 ])
               : undefined,
           research:
@@ -107,6 +108,7 @@ export function useExecutiveContext(
                   current.checked_at,
                   current.source_urls,
                   current.report,
+                  value.memory_saved,
                 ])
               : undefined,
         };

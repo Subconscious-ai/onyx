@@ -12,7 +12,10 @@ from onyx.db.enums import Permission
 from onyx.db.models import User
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
-from onyx.server.query_and_chat.causl.context import load_causl_context
+from onyx.server.query_and_chat.causl.context import (
+    load_causl_context,
+    load_interview_context,
+)
 from onyx.server.query_and_chat.causl.models import (
     CauslWorkspaceRequest,
     CauslWorkspaceResponse,
@@ -24,11 +27,18 @@ router = APIRouter()
 
 @router.get("/causl-memory")
 def read_memory(
-    chat_id: UUID,
     response: Response,
+    chat_id: UUID | None = None,
     user: User = Depends(require_permission(Permission.WRITE_CHAT)),
     db_session: Session = Depends(get_session),
 ) -> dict[str, Any]:
+    if chat_id is None:
+        loaded = load_interview_context(db_session, user)
+        response.headers["Cache-Control"] = "private, no-store"
+        return {
+            "library": loaded.envelope.context["library"],
+            "digest": loaded.envelope.context["digest"],
+        }
     try:
         chat = get_chat_session_by_id(
             chat_id, user.id, db_session, eager_load_persona=True

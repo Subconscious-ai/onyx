@@ -341,12 +341,60 @@ def save_interview_context(
         payload["handoff"]["businessContext"] = business_context
     if binding.market_id:
         payload["marketId"] = binding.market_id
+    return _save_context(
+        db,
+        user,
+        server,
+        binding.actor,
+        identity.issuer,
+        CauslSelection(
+            page="models" if binding.market_id else "workspace",
+            market_id=binding.market_id,
+        ),
+        payload,
+    )
+
+
+def save_preparation_context(db: Session, user: User, business_context: dict) -> dict:
+    """Retain sourced preparation before a chat exists, using the verified grant."""
+    authorized = load_interview_context(db, user)
+    server = _library_server(db, user, authorized.configuration)
+    return _save_context(
+        db,
+        user,
+        server,
+        authorized.envelope.actor,
+        authorized.envelope.issuer,
+        CauslSelection(page="workspace"),
+        {
+            "preparation": {
+                "format": "burn/onyx-preparation",
+                "version": 1,
+                "preparationId": str(user.id),
+                "businessContext": business_context,
+            }
+        },
+        provider_counts=True,
+    )
+
+
+def _save_context(
+    db: Session,
+    user: User,
+    server: MCPServer,
+    actor: CauslActor,
+    issuer: str,
+    selection: CauslSelection,
+    payload: dict,
+    *,
+    provider_counts: bool = False,
+) -> dict:
     try:
         with httpx.Client(timeout=5, follow_redirects=False) as client:
             with client.stream(
                 "POST",
                 context_url(server.server_url),
-                headers=_headers(db, user, server, binding.actor, identity.issuer),
+                headers=_headers(db, user, server, actor, issuer),
                 json=payload,
             ) as response:
                 if response.status_code != 200:
@@ -367,18 +415,14 @@ def save_interview_context(
         envelope = CauslContextEnvelope.model_validate(
             {key: result[key] for key in ("issuer", "actor", "context")}
         )
-        selection = CauslSelection(
-            page="models" if binding.market_id else "workspace",
-            market_id=binding.market_id,
-        )
-        _validate(envelope, binding.actor, selection)
+        _validate(envelope, actor, selection)
         saved = result["saved"]
-        if envelope.issuer != identity.issuer or not isinstance(saved, dict):
+        if envelope.issuer != issuer or not isinstance(saved, dict):
             raise ValueError("Invalid Library save receipt")
-        if any(
-            type(saved.get(key)) is not int or saved[key] < 0
-            for key in ("statements", "stages", "transitions")
-        ):
+        counts = ("statements", "stages", "transitions")
+        if provider_counts:
+            counts += ("providerClaims",)
+        if any(type(saved.get(key)) is not int or saved[key] < 0 for key in counts):
             raise ValueError("Invalid Library save counts")
         return saved
     except (httpx.HTTPError, ValidationError, ValueError, KeyError, TypeError):

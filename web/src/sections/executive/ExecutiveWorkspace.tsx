@@ -16,7 +16,7 @@ import {
 } from "react";
 import { useAutomaticBrief, useExecutiveContext } from "@/lib/executive/hooks";
 import type { PublicResearch } from "@/lib/executive/hooks";
-import type { ProfileFields } from "@/lib/executive/profile";
+import { profileFields, type ProfileFields } from "@/lib/executive/profile";
 import {
   createModelHandoff,
   modelBusinessContext,
@@ -257,6 +257,14 @@ export default function ExecutiveWorkspace({
   useEffect(() => {
     if (completedContextRevision) setContextRevision(completedContextRevision);
   }, [completedContextRevision]);
+  const researchSources = (research.source_urls ?? []).flatMap((value) => {
+    try {
+      const url = new URL(value);
+      return ["http:", "https:"].includes(url.protocol) ? [url] : [];
+    } catch {
+      return [];
+    }
+  });
 
   const [view, setView] = useState<
     "journey" | "evidence" | "decisions" | "model"
@@ -438,8 +446,12 @@ export default function ExecutiveWorkspace({
               {!preview && (
                 <SharedMarketMemory
                   chatId={chatId ?? null}
-                  revision={messages.length}
-                  busy={busy}
+                  revision={JSON.stringify([
+                    messages.length,
+                    preparation.savedMessage,
+                    contextRevision,
+                  ])}
+                  busy={busy || preparation.phase === "updating"}
                 />
               )}
               <details className="executive-context">
@@ -456,7 +468,7 @@ export default function ExecutiveWorkspace({
                   <div role="status" aria-live="polite">
                     <Text as="p" font="secondary-body">
                       {research.status === "ready"
-                        ? `Public research · ${research.source_urls?.length ?? 0} sources`
+                        ? `Public research · ${researchSources.length} sources`
                         : ["pending", "queued", "running"].includes(
                               research.status
                             )
@@ -465,15 +477,15 @@ export default function ExecutiveWorkspace({
                             ? "Public research needs a company website"
                             : "Public research unavailable"}
                     </Text>
-                    {research.source_urls?.map((url) => (
+                    {researchSources.map((url) => (
                       <Button
-                        key={url}
-                        href={url}
+                        key={url.href}
+                        href={url.href}
                         prominence="tertiary"
                         size="sm"
                         rightIcon={SvgArrowUpRight}
                       >
-                        {new URL(url).hostname}
+                        {url.hostname}
                       </Button>
                     ))}
                   </div>
@@ -741,6 +753,58 @@ export default function ExecutiveWorkspace({
                       sizePreset="main-ui"
                       variant="section"
                     />
+                    {!preview && (dossier || research.status === "ready") && (
+                      <div className="executive-evidence-row">
+                        <Text as="p" font="secondary-body">
+                          {t("providerClaimNotice")}
+                        </Text>
+                        {dossier && (
+                          <>
+                            <Text as="h3" font="main-ui-action">
+                              {dossier.source === "pdl"
+                                ? t("companyProfile.provider")
+                                : t("companyProfile.corrected")}
+                            </Text>
+                            {profileFields.map((field) =>
+                              dossier.profile[field] ? (
+                                <div key={field}>
+                                  <Text as="p" font="secondary-action">
+                                    {t(`companyProfile.fields.${field}`)}
+                                  </Text>
+                                  <Text as="p" font="main-ui-body">
+                                    {dossier.profile[field]}
+                                  </Text>
+                                </div>
+                              ) : null
+                            )}
+                          </>
+                        )}
+                        {research.status === "ready" && (
+                          <>
+                            <Text as="h3" font="main-ui-action">
+                              {t("publicResearchSource")}
+                            </Text>
+                            <Text
+                              as="p"
+                              font="secondary-body"
+                              className="whitespace-pre-wrap"
+                            >
+                              {research.report}
+                            </Text>
+                            {researchSources.map((url) => (
+                              <Button
+                                key={url.href}
+                                href={url.href}
+                                prominence="tertiary"
+                                size="sm"
+                              >
+                                {url.hostname}
+                              </Button>
+                            ))}
+                          </>
+                        )}
+                      </div>
+                    )}
                     {brief &&
                       [brief.objective, ...brief.journey].map((note, index) => (
                         <div key={index} className="executive-evidence-row">
