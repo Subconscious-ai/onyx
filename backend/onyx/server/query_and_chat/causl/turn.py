@@ -95,9 +95,11 @@ def workspace_turn(
     user: User,
     chat: ChatSession,
     selection: CauslSelection | None,
+    *,
+    saved_fact_request: bool = False,
 ) -> tuple[CauslChatBinding | None, str | None]:
     binding, envelope = read_workspace_context(
-        db, user, chat, selection, start_research=True
+        db, user, chat, selection, start_research=not saved_fact_request
     )
     if binding is None or envelope is None:
         return None, None
@@ -119,10 +121,19 @@ def workspace_turn(
             "Honor requests for no questions, no research, or no edits, then stop after the answer. "
             "Unknown evidence can remain unknown without a follow-up question.\n"
         )
+    prompt_context = envelope.model_dump(mode="json", by_alias=True)
+    tool_readout = saved_fact_request and binding.mode == "interview"
+    if tool_readout:
+        # Read accepted facts from current tool results, not a second bounded copy.
+        prompt_context["context"].pop("library", None)
     prompt = (
         (WORKSPACE_INSTRUCTIONS + "\n" if binding.mode == "workspace" else "")
-        + "Current authorized causl-kb workspace context follows. Use this snapshot for this turn. "
-        "KB contains accepted organization business memory. This snapshot is bounded. "
+        + (
+            "Current authorized causl-kb scope follows. Retrieve saved facts with market_search. "
+            if tool_readout
+            else "Current authorized causl-kb workspace context follows. Use this snapshot for this turn. "
+        )
+        + "KB contains accepted organization business memory. This snapshot is bounded. "
         "Use the Library market_search tool to retrieve missing or omitted facts before asking the executive. "
         + SAVED_FACT_RETRIEVAL_INSTRUCTIONS
         + "A missed search is inconclusive. Refine the query when results are omitted. "
@@ -133,8 +144,6 @@ def workspace_turn(
         "Propose changes for human review through the existing KB interfaces. Conversation text does not accept changes. "
         "Never claim a save or completed analysis without a confirmed result.\n"
         + model_phase
-        + json.dumps(
-            envelope.model_dump(mode="json", by_alias=True), ensure_ascii=False
-        )
+        + json.dumps(prompt_context, ensure_ascii=False)
     )
     return binding, prompt

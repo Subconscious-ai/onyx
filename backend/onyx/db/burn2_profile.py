@@ -1,7 +1,7 @@
 """User-owned professional context and corrections in native Postgres storage."""
 
 import time
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -16,7 +16,7 @@ from onyx.server.query_and_chat.burn2.profile import effective_profile
 
 def _read(key: str) -> dict[str, Any] | None:
     try:
-        return dict(load_encrypted_kv(key))
+        return dict(cast(dict[str, Any], load_encrypted_kv(key)))
     except KvKeyNotFoundError:
         return None
 

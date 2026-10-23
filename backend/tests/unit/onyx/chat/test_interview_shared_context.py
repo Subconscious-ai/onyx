@@ -24,8 +24,21 @@ from onyx.server.query_and_chat.models import SendMessageRequest
 
 
 @pytest.mark.parametrize("mode", ["interview", "workspace"])
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Raise conversion to 7% in three months.",
+        "Show me ten useful facts saved in our Library about products, study capabilities and Enterprise process.",
+        "What facts are saved in our Library about Enterprise?",
+        "Using only our saved Library, brief me on Enterprise. Give one complete, sourced fact for each question. Do not research again.",
+        "Our goal is to give executives ten saved facts in sixty seconds. Help me model that customer journey.",
+        "Do not show saved facts yet. Capture my goal and customer journey first.",
+    ],
+)
 def test_bound_turn_uses_current_shared_context_without_losing_interview_preparation(
-    monkeypatch: pytest.MonkeyPatch, mode: Literal["interview", "workspace"]
+    monkeypatch: pytest.MonkeyPatch,
+    mode: Literal["interview", "workspace"],
+    message: str,
 ) -> None:
     user = User(id=uuid4(), email="alice@example.com", use_memories=False)
     persona = Persona(id=11, name="Executive interview", tools=[], user_files=[])
@@ -112,9 +125,7 @@ def test_bound_turn_uses_current_shared_context_without_losing_interview_prepara
         "Accepted conversion baseline: 6%",
     ):
         workspace_turn.return_value = (binding, current_fact)
-        request = SendMessageRequest(
-            chat_session_id=chat.id, message="Raise conversion to 7% in three months."
-        )
+        request = SendMessageRequest(chat_session_id=chat.id, message=message)
         turn = process_message.build_chat_turn(
             request, user, MagicMock(), llm_overrides=None
         )
@@ -127,15 +138,27 @@ def test_bound_turn_uses_current_shared_context_without_losing_interview_prepara
         assert setup.causl_binding == binding
         assert setup.causl_original_message == request.message
         if mode == "interview":
-            assert "Alice" in context
-            assert research["report"] in context
-            assert "https://acme.com/plans" in context
-            assert request.message in context
-            assert "not accepted market memory" in context
             assert setup.trusted_turn_instructions
-            assert "30 spoken words" in setup.trusted_turn_instructions
+            if message.startswith(("Show", "What", "Using")):
+                assert setup.saved_fact_request is True
+                assert context == current_fact
+                assert workspace_turn.call_args.kwargs["saved_fact_request"] is True
+                assert setup.use_persona_prompt is False
+                assert "Question budget" not in setup.trusted_turn_instructions
+                assert "Capture the goal" not in setup.trusted_turn_instructions
+                assert "market_search" in setup.trusted_turn_instructions
+            else:
+                assert setup.saved_fact_request is False
+                assert "Alice" in context
+                assert research["report"] in context
+                assert "https://acme.com/plans" in context
+                assert request.message in context
+                assert "not accepted market memory" in context
+                assert setup.use_persona_prompt is True
+                assert "30 spoken words" in setup.trusted_turn_instructions
         else:
             assert context == current_fact
+            assert setup.saved_fact_request is False
             assert setup.trusted_turn_instructions is None
     assert workspace_turn.call_count == 2
     if mode == "interview":

@@ -37,6 +37,18 @@ from onyx.server.query_and_chat.placement import Placement
 from onyx.tools.models import ToolCallKickoff
 
 
+def test_named_tool_empty_error_keeps_existing_serialized_choice() -> None:
+    from onyx.llm.models import NamedToolChoice
+
+    error = EmptyLLMResponseError(
+        provider="bedrock",
+        model="gpt-oss",
+        tool_choice=NamedToolChoice(name="market_search"),
+        client_error_msg="No response.",
+    )
+    assert error.tool_choice.value == "required"
+
+
 def test_application_turn_instructions_preserve_native_memory_and_do_not_promote_sources():
     system = create_message(
         "Native policy. Remember enterprise pricing context.", MessageType.SYSTEM
@@ -133,6 +145,7 @@ def create_context_files(
     )
 
 
+@pytest.mark.parametrize("use_persona_prompt", [False, True])
 @pytest.mark.parametrize("proposal_ready", [False, True])
 @pytest.mark.parametrize("resumed", [False, True])
 @pytest.mark.parametrize("workspace_bound", [False, True])
@@ -142,6 +155,7 @@ def test_native_messages_scope_workspace_rules_without_changing_persona(
     resumed: bool,
     workspace_bound: bool,
     replace_base: bool,
+    use_persona_prompt: bool,
     proposal_ready: bool,
 ) -> None:
     persona = Persona(
@@ -227,6 +241,7 @@ def test_native_messages_scope_workspace_rules_without_changing_persona(
         token_counter=len,
         workspace_instructions=WORKSPACE_INSTRUCTIONS if workspace_bound else None,
         trusted_turn_instructions="Question budget: one.",
+        use_persona_prompt=use_persona_prompt,
     )
     system = captured[0]
     reminder = captured[-1]
@@ -236,13 +251,17 @@ def test_native_messages_scope_workspace_rules_without_changing_persona(
     assert (WORKSPACE_INSTRUCTIONS in reminder.message) is workspace_bound
     assert "Question budget: one." in system.message
     assert "Question budget: one." in reminder.message
-    assert (
-        "Always ask three discovery questions." in reminder.message
-    ) is not workspace_bound
+    assert ("Always ask three discovery questions." in reminder.message) is (
+        not workspace_bound and use_persona_prompt
+    )
     assert any(
         '"unit":null' in message.message
         and "https://example.com/run" in message.message
         for message in captured
+    )
+    assert (
+        any("Existing agent identity." in msg.message for msg in captured)
+        is use_persona_prompt
     )
     assert persona.system_prompt == "Existing agent identity."
     assert persona.task_prompt == "Always ask three discovery questions."
@@ -268,6 +287,80 @@ def test_native_messages_scope_workspace_rules_without_changing_persona(
                 assert (
                     "Never describe a proposal as saved or accepted" in message.message
                 )
+
+
+@pytest.mark.parametrize("tool_name", ["market_search", "unrelated_tool"])
+def test_forced_library_read_does_not_accept_an_unsearched_answer(
+    monkeypatch: pytest.MonkeyPatch, tool_name: str
+) -> None:
+    from onyx.llm.models import NamedToolChoice
+    from onyx.tools.interface import Tool
+
+    captured: list[object] = []
+
+    def step(**kwargs: Any) -> tuple[LlmStepResult, bool]:
+        captured.append(kwargs["tool_choice"])
+        return LlmStepResult(
+            reasoning=None,
+            answer="No Enterprise facts are saved.",
+            raw_answer="No Enterprise facts are saved.",
+            tool_calls=None,
+            finish_reason="stop",
+        ), False
+
+    monkeypatch.setattr(llm_loop, "run_llm_step", step)
+    monkeypatch.setattr(llm_loop, "trace", lambda *_args, **_kwargs: nullcontext())
+    monkeypatch.setattr(
+        llm_loop, "get_session_with_current_tenant", lambda: nullcontext(MagicMock())
+    )
+    monkeypatch.setattr(
+        llm_loop, "get_default_base_system_prompt", lambda _db: "Rules."
+    )
+    monkeypatch.setattr("onyx.chat.prompt_utils.get_company_context", lambda: None)
+    monkeypatch.setattr(
+        "onyx.llm.litellm_singleton.config.initialize_litellm", lambda: None
+    )
+    tool = MagicMock(spec=Tool)
+    tool.id = 67
+    tool.name = tool_name
+    tool.tool_definition.return_value = {
+        "type": "function",
+        "function": {
+            "name": tool_name,
+            "parameters": {"type": "object", "properties": {}},
+        },
+    }
+    llm = MagicMock(spec=LLM)
+    llm.config = LLMConfig(
+        model_provider="openai",
+        model_name="gpt-5-mini",
+        temperature=0,
+        max_input_tokens=16000,
+    )
+    expected = (
+        pytest.raises(RuntimeError, match="required Library search")
+        if tool_name == "market_search"
+        else nullcontext()
+    )
+    with expected:
+        llm_loop.run_llm_loop(
+            emitter=MagicMock(spec=Emitter),
+            state_container=MagicMock(spec=ChatStateContainer),
+            simple_chat_history=[create_message("Show saved facts", MessageType.USER)],
+            tools=[tool],
+            custom_agent_prompt=None,
+            context_files=create_context_files(),
+            persona=None,
+            user_memory_context=None,
+            llm=llm,
+            token_counter=len,
+            forced_tool_id=67,
+        )
+    assert captured == [
+        NamedToolChoice(name="market_search")
+        if tool_name == "market_search"
+        else ToolChoiceOptions.REQUIRED
+    ]
 
 
 class TestConstructMessageHistory:

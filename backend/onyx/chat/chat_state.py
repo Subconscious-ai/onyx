@@ -247,3 +247,5 @@ class ChatTurnSetup:
     causl_binding: CauslChatBinding | None = None
     causl_original_message: str | None = None
     trusted_turn_instructions: str | None = None
+    use_persona_prompt: bool = True
+    saved_fact_request: bool = False
