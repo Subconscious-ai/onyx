@@ -93,10 +93,11 @@ async def configure(upstream: Path) -> FastMCP:
         raise ValueError(
             "A private preview token of at least 32 characters is required."
         )
-    for key in (
-        "AWS_DEFAULT_REGION",
-        "EXA_API_KEY",
-    ):
+    retriever = os.environ.get("RETRIEVER", "exa").strip()
+    required_keys = ["AWS_DEFAULT_REGION"]
+    if "exa" in {name.strip() for name in retriever.split(",")}:
+        required_keys.append("EXA_API_KEY")
+    for key in required_keys:
         if not os.environ.get(key):
             raise ValueError(f"{key} is required.")
     if not os.environ.get("AWS_BEARER_TOKEN_BEDROCK") and not all(
@@ -112,7 +113,7 @@ async def configure(upstream: Path) -> FastMCP:
             "STRATEGIC_LLM": "bedrock:us.amazon.nova-pro-v1:0",
             "EMBEDDING": "bedrock:amazon.titan-embed-text-v2:0",
             "SIMILARITY_THRESHOLD": "0.2",
-            "RETRIEVER": "exa",
+            "RETRIEVER": retriever,
             "MAX_ITERATIONS": "2",
             "MAX_SEARCH_RESULTS_PER_QUERY": "3",
             "MAX_SCRAPER_WORKERS": "3",

@@ -2667,6 +2667,57 @@ def test_named_tool_choice_not_downgraded_for_claude_model() -> None:
         }
 
 
+@pytest.mark.parametrize(
+    "model_provider",
+    [LlmProviderNames.BEDROCK, LlmProviderNames.BEDROCK_CONVERSE],
+)
+@pytest.mark.parametrize("forced", [True, False])
+def test_bedrock_named_search_survives_provider_reasoning_mapping(
+    model_provider: str, forced: bool
+) -> None:
+    from litellm.llms.bedrock.chat.converse_transformation import AmazonConverseConfig
+
+    llm = LitellmLLM(
+        api_key=None,
+        timeout=30,
+        model_provider=model_provider,
+        model_name="openai.gpt-oss-120b-1:0",
+        max_input_tokens=32000,
+    )
+    with (
+        patch("litellm.completion") as completion,
+        patch("onyx.llm.multi_llm.model_is_reasoning_model", return_value=True),
+    ):
+        completion.return_value = []
+        list(
+            llm.stream(
+                [UserMessage(content="Read the saved facts")],
+                tools=_TOOL_CHOICE_DOWNGRADE_TOOLS,
+                tool_choice=(
+                    NamedToolChoice(name="get_weather")
+                    if forced
+                    else ToolChoiceOptions.AUTO
+                ),
+                reasoning_effort=ReasoningEffort.HIGH,
+            )
+        )
+        kwargs = completion.call_args.kwargs
+    mapped = AmazonConverseConfig().map_openai_params(
+        non_default_params={
+            key: kwargs[key]
+            for key in ("tool_choice", "reasoning_effort")
+            if key in kwargs
+        },
+        optional_params={},
+        model="openai.gpt-oss-120b-1:0",
+        drop_params=True,
+    )
+    assert mapped["tool_choice"] == (
+        {"tool": {"name": "get_weather"}} if forced else {"auto": {}}
+    )
+    assert ("reasoning_effort" in mapped) is not forced
+
+
 def test_named_tool_choice_skips_legacy_claude_thinking() -> None:
     """Anthropic rejects thinking.type=enabled combined with a forced tool, so
     a NamedToolChoice must suppress the legacy budget_tokens thinking param."""

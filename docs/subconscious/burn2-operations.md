@@ -10,6 +10,22 @@ Burn 2.0 interviews an executive for customer behavior transitions and measurabl
 - causl-kb derives organization authority from the authenticated session. The private model and individually selected supported journey states/transitions commit through the existing tenant transaction and ontology safe door. Draft relationships and incomplete OKRs do not become accepted facts.
 - Native Guesstimate supplies editing, unit checks and calculation. Unknown values remain empty. An executable symbolic structure is not a validated forecast or a measured causal effect.
 
+## Runtime and CI recovery
+
+- Check the serving process working directory and effective `PYTHONPATH`, not only checkout HEAD.
+  Read the systemd environment file, service instance and generated frontend bundle before comparing runs.
+  An unused checkout can have the correct commit while the application serves another checkout.
+- Pin the persona's stored model and research configuration with the application revisions.
+  A frontend deployment does not update the native persona, Python API or research worker.
+- If GitHub Actions creates no jobs, inspect the authenticated repository Actions landing page.
+  GitHub can disable inherited fork workflows separately from the ordinary Actions-enabled setting.
+  The October 18 failure showed “Workflows on this fork have been disabled”.
+  Clearing that safeguard restored the existing workflow without changing YAML or permissions.
+- Configure GPT Researcher through its native retriever settings. A completed job with no usable
+  source context remains unavailable. Search-only results do not prove a completed research report.
+- Review actual question text and independent arithmetic alongside tester results.
+  Speaker labels are not questions; a fraction, percentage and percentage-point gap use different units.
+
 ## Reproduce the backend overlay
 
 The Dockerfile pins upstream Onyx v4.7.0 by digest. The overlay adds a feature-gated preparation endpoint and reuses native forced-tool selection for explicit research/Python requests. No new database or migration is required.

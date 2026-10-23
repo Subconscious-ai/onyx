@@ -7,6 +7,8 @@ import re
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from onyx.prompts.causl_workspace import INTERVIEW_DISCOVERY_BUDGET
+
 if TYPE_CHECKING:
     from onyx.chat.models import ChatMessageSimple
 
@@ -70,7 +72,8 @@ def turn_guidance(
     )
     if not model_review:
         attention_budget = (
-            "Use at most 30 spoken words. State uncertainty as a statement, not another question. "
+            INTERVIEW_DISCOVERY_BUDGET
+            + "State uncertainty as a statement, not another question. "
             "Keep explicitly fixed inputs fixed and explicit exclusions excluded; do not revisit either. "
             "Use a supplied overall rate directly; unknown intermediate rates or unmeasured intervention effects do not block the first model. Do not ask the executive to guess them. "
             + attention_budget

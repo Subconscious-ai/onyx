@@ -13,6 +13,37 @@ from serve_research import ResearchDeadline, configure
 
 
 class ResearchDeadlineTests(unittest.IsolatedAsyncioTestCase):
+    async def test_duckduckgo_uses_selected_retriever_without_an_exa_key(self):
+        environment = {
+            "AWS_BEARER_TOKEN_BEDROCK": "test-bearer",
+            "AWS_DEFAULT_REGION": "us-east-1",
+            "GPTR_PREVIEW_TOKEN": "t" * 40,
+            "RETRIEVER": "duckduckgo",
+        }
+        upstream = FastMCP("Native keyless research")
+        with (
+            patch.dict(os.environ, environment, clear=True),
+            patch("serve_research.runpy.run_path", return_value={"mcp": upstream}),
+            patch("serve_research.install_source_limit", create=True),
+        ):
+            server = await configure(Path("/unused"))
+            self.assertIs(server, upstream)
+            self.assertIsNotNone(server.auth)
+            self.assertEqual(os.environ["RETRIEVER"], "duckduckgo")
+            self.assertNotIn("EXA_API_KEY", os.environ)
+
+    async def test_default_exa_retriever_still_requires_its_api_key(self):
+        environment = {
+            "AWS_BEARER_TOKEN_BEDROCK": "test-bearer",
+            "AWS_DEFAULT_REGION": "us-east-1",
+            "GPTR_PREVIEW_TOKEN": "t" * 40,
+        }
+        with (
+            patch.dict(os.environ, environment, clear=True),
+            self.assertRaisesRegex(ValueError, "EXA_API_KEY is required"),
+        ):
+            await configure(Path("/unused"))
+
     async def test_bedrock_bearer_auth_does_not_require_an_unrelated_iam_key_pair(self):
         environment = {
             "AWS_BEARER_TOKEN_BEDROCK": "test-bearer",
@@ -29,6 +60,7 @@ class ResearchDeadlineTests(unittest.IsolatedAsyncioTestCase):
             server = await configure(Path("/unused"))
             self.assertIs(server, upstream)
             self.assertIsNotNone(server.auth)
+            self.assertEqual(os.environ["RETRIEVER"], "exa")
             self.assertEqual(os.environ["SIMILARITY_THRESHOLD"], "0.2")
 
     async def test_oversized_source_is_bounded_before_embedding_with_original_provenance(

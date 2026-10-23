@@ -740,6 +740,13 @@ class LitellmLLM(LLM):
         # of the major providers. Not setting it sets it to OFF.
         if (
             is_reasoning
+            # LiteLLM's Bedrock mapper changes a named tool to auto when
+            # reasoning is enabled. Preserve the caller's required tool.
+            and not (
+                self._model_provider
+                in {LlmProviderNames.BEDROCK, LlmProviderNames.BEDROCK_CONVERSE}
+                and isinstance(tool_choice, NamedToolChoice)
+            )
             # The default of this parameter not set is surprisingly not the equivalent of an Auto but is actually Off
             and reasoning_effort != ReasoningEffort.OFF
             and not any(

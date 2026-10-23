@@ -35,10 +35,12 @@ from onyx.llm.models import (
     FunctionCall,
     ImageContentPart,
     ImageUrlDetail,
+    NamedToolChoice,
     ReasoningEffort,
     SystemMessage,
     TextContentPart,
     ToolCall,
+    ToolChoice,
     ToolMessage,
     UserMessage,
 )
@@ -1074,7 +1076,7 @@ def _delta_has_action(delta: Delta) -> bool:
 def run_llm_step_pkt_generator(
     history: list[ChatMessageSimple],
     tool_definitions: list[dict],
-    tool_choice: ToolChoiceOptions,
+    tool_choice: ToolChoice,
     llm: LLM,
     placement: Placement,
     state_container: ChatStateContainer | None,
@@ -1255,7 +1257,9 @@ def run_llm_step_pkt_generator(
             # When tool_choice is REQUIRED, content before tool calls is reasoning/thinking
             # about which tool to call, not an actual answer to the user.
             # Treat this content as reasoning instead of answer.
-            if is_deep_research and tool_choice == ToolChoiceOptions.REQUIRED:
+            if (
+                is_deep_research and tool_choice == ToolChoiceOptions.REQUIRED
+            ) or isinstance(tool_choice, NamedToolChoice):
                 accumulated_reasoning += content_chunk
                 if state_container:
                     state_container.set_reasoning_tokens(accumulated_reasoning)
@@ -1461,6 +1465,7 @@ def run_llm_step_pkt_generator(
         # as an answer would leak raw markup to the client and pollute context.
         if (
             tool_choice != ToolChoiceOptions.REQUIRED
+            and not isinstance(tool_choice, NamedToolChoice)
             and not tool_calls
             and not accumulated_answer.strip()
             and accumulated_raw_answer.strip()
@@ -1576,7 +1581,7 @@ def run_llm_step(
     emitter: Emitter,
     history: list[ChatMessageSimple],
     tool_definitions: list[dict],
-    tool_choice: ToolChoiceOptions,
+    tool_choice: ToolChoice,
     llm: LLM,
     placement: Placement,
     state_container: ChatStateContainer | None,

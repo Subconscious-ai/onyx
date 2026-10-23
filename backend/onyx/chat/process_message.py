@@ -120,7 +120,10 @@ from onyx.llm.utils import (
 )
 from onyx.natural_language_processing.utils import get_tokenizer
 from onyx.onyxbot.slack.models import SlackContext
-from onyx.prompts.causl_workspace import WORKSPACE_INSTRUCTIONS
+from onyx.prompts.causl_workspace import (
+    SAVED_FACT_RETRIEVAL_INSTRUCTIONS,
+    WORKSPACE_INSTRUCTIONS,
+)
 from onyx.prompts.prompt_utils import substitute_user_placeholders
 from onyx.server.query_and_chat.burn2 import EXECUTIVE_INTERVIEW_PERSONA_NAMES
 from onyx.server.query_and_chat.causl.turn import workspace_turn
@@ -662,13 +665,34 @@ def build_chat_turn(
         )
 
     persona = chat_session.persona
+    message_text = new_msg_req.message
+    saved_fact_request = (
+        os.environ.get("BURN2_ENABLED") == "true"
+        and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
+        and all(
+            re.search(pattern, message_text, re.I)
+            for pattern in (
+                r"^\s*(?:(?:using|from)\s+only\s+(?:(?:our|the|my)\s+)?"
+                r"(?:saved\s+)?library\s*[,:]\s*)?(?:please\s+)?"
+                r"(?:show|list|retrieve|give|brief|summari[sz]e|what|which)\b",
+                r"\b(?:saved|recorded|accepted|library)\b",
+                r"\bfacts?\b",
+            )
+        )
+    )
     causl_binding, workspace_context = workspace_turn(
-        db_session, user, chat_session, new_msg_req.causl_selection
+        db_session,
+        user,
+        chat_session,
+        new_msg_req.causl_selection,
+        saved_fact_request=saved_fact_request,
     )
     interview_mode = causl_binding is None or causl_binding.mode == "interview"
+    saved_fact_request = (
+        saved_fact_request and causl_binding is not None and interview_mode
+    )
     if causl_binding is not None and not interview_mode:
         additional_context = workspace_context
-    message_text = new_msg_req.message
 
     user_identity = LLMUserIdentity(
         user_id=llm_user_identifier, session_id=str(chat_session.id)
@@ -1088,6 +1112,12 @@ def build_chat_turn(
             draft=draft,
         )
         trusted_turn_instructions = guidance
+        if causl_binding is not None:
+            trusted_turn_instructions = (
+                SAVED_FACT_RETRIEVAL_INSTRUCTIONS
+                if saved_fact_request
+                else guidance + "\n" + SAVED_FACT_RETRIEVAL_INSTRUCTIONS
+            )
         logger.info(
             "Burn interview turn policy: turn=%s, has_brief=%s, model_review=%s, "
             "profile_status=%s, research_status=%s, research_included=%s, research_sources=%s",
@@ -1096,26 +1126,30 @@ def build_chat_turn(
             model_review_context is not None,
             profile.get("status"),
             (research or {}).get("status"),
-            "Public company research follows" in context,
+            not saved_fact_request and "Public company research follows" in context,
             len((research or {}).get("source_urls", [])),
         )
-        additional_context = "\n".join(
-            filter(
-                None,
-                [
-                    workspace_context,
-                    additional_context or new_msg_req.additional_context,
-                    context,
-                    interview_context(
-                        statements,
-                        [
-                            row.message
-                            for row in executive_history
-                            if row.message_type == MessageType.ASSISTANT
-                        ],
-                        draft,
-                    ),
-                ],
+        additional_context = (
+            workspace_context
+            if saved_fact_request
+            else "\n".join(
+                filter(
+                    None,
+                    [
+                        workspace_context,
+                        additional_context or new_msg_req.additional_context,
+                        context,
+                        interview_context(
+                            statements,
+                            [
+                                row.message
+                                for row in executive_history
+                                if row.message_type == MessageType.ASSISTANT
+                            ],
+                            draft,
+                        ),
+                    ],
+                )
             )
         )
 
@@ -1256,6 +1290,8 @@ def build_chat_turn(
         causl_binding=causl_binding,
         causl_original_message=causl_original_message,
         trusted_turn_instructions=trusted_turn_instructions,
+        use_persona_prompt=not saved_fact_request,
+        saved_fact_request=saved_fact_request,
     )
 
 
@@ -1540,6 +1576,16 @@ def _run_models(
                 initial_profile_tool,
             )
 
+            forced_tool_id = setup.forced_tool_id
+            if setup.saved_fact_request and forced_tool_id is None:
+                forced_tool_id = next(
+                    (tool.id for tool in model_tools if tool.name == "market_search"),
+                    None,
+                )
+                if forced_tool_id is None:
+                    raise RuntimeError(
+                        "Library search is unavailable. Saved facts cannot be verified."
+                    )
             forced_tool_id = initial_profile_tool(
                 enabled=os.environ.get("BURN2_ENABLED") == "true"
                 and (
@@ -1551,7 +1597,7 @@ def _run_models(
                 user_id=None if user.is_anonymous else user.id,
                 incognito=setup.incognito_record_mode is not None,
                 tools=model_tools,
-                forced_tool_id=setup.forced_tool_id,
+                forced_tool_id=forced_tool_id,
             )
             if forced_tool_id and forced_tool_id not in {
                 tool.id for tool in model_tools
@@ -1586,6 +1632,7 @@ def _run_models(
                     context_files=setup.extracted_context_files,
                     persona=setup.persona,
                     trusted_turn_instructions=setup.trusted_turn_instructions,
+                    use_persona_prompt=setup.use_persona_prompt,
                     user_memory_context=setup.user_memory_context,
                     llm=model_llm,
                     token_counter=get_llm_token_counter(model_llm),

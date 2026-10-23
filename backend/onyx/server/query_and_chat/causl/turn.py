@@ -7,9 +7,13 @@ from onyx.db.causl_workspace import bind_interview_chat, read_causl_binding
 from onyx.db.models import ChatSession, User
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
-from onyx.prompts.causl_workspace import WORKSPACE_INSTRUCTIONS
+from onyx.prompts.causl_workspace import (
+    SAVED_FACT_RETRIEVAL_INSTRUCTIONS,
+    WORKSPACE_INSTRUCTIONS,
+)
 from onyx.server.query_and_chat.burn2 import EXECUTIVE_INTERVIEW_PERSONA_NAMES
 from onyx.server.query_and_chat.causl.context import (
+    configuration,
     load_causl_context,
     load_interview_context,
 )
@@ -25,6 +29,8 @@ def read_workspace_context(
     user: User,
     chat: ChatSession,
     selection: CauslSelection | None,
+    *,
+    start_research: bool = False,
 ) -> tuple[CauslChatBinding | None, CauslContextEnvelope | None]:
     binding = read_causl_binding(db, user.id, chat.id)
     if (
@@ -46,7 +52,8 @@ def read_workspace_context(
             loaded.envelope.issuer,
             loaded.configuration.library_server_id,
         )
-        return binding, loaded.envelope
+        if not start_research:
+            return binding, loaded.envelope
     if binding is None:
         if selection is not None:
             raise OnyxError(
@@ -54,16 +61,26 @@ def read_workspace_context(
             )
         return None, None
     current = selection or binding.selection
+    config = configuration()
     if (
         chat.user_id != user.id
         or current.market_id != binding.market_id
         or chat.project_id is not None
+        or chat.incognito_record_mode is not None
+        or config.persona_id != chat.persona_id
+        or config.library_server_id != binding.library_server_id
     ):
         raise OnyxError(
             OnyxErrorCode.UNAUTHORIZED,
             "This conversation belongs to another workspace.",
         )
-    loaded = load_causl_context(db, user, binding.actor, current)
+    loaded = load_causl_context(
+        db,
+        user,
+        binding.actor,
+        current,
+        start_research=start_research and binding.mode == "interview",
+    )
     if (
         loaded.envelope.issuer != binding.issuer
         or loaded.configuration.library_server_id != binding.library_server_id
@@ -78,8 +95,12 @@ def workspace_turn(
     user: User,
     chat: ChatSession,
     selection: CauslSelection | None,
+    *,
+    saved_fact_request: bool = False,
 ) -> tuple[CauslChatBinding | None, str | None]:
-    binding, envelope = read_workspace_context(db, user, chat, selection)
+    binding, envelope = read_workspace_context(
+        db, user, chat, selection, start_research=not saved_fact_request
+    )
     if binding is None or envelope is None:
         return None, None
     current = selection or binding.selection
@@ -100,12 +121,22 @@ def workspace_turn(
             "Honor requests for no questions, no research, or no edits, then stop after the answer. "
             "Unknown evidence can remain unknown without a follow-up question.\n"
         )
+    prompt_context = envelope.model_dump(mode="json", by_alias=True)
+    tool_readout = saved_fact_request and binding.mode == "interview"
+    if tool_readout:
+        # Read accepted facts from current tool results, not a second bounded copy.
+        prompt_context["context"].pop("library", None)
     prompt = (
         (WORKSPACE_INSTRUCTIONS + "\n" if binding.mode == "workspace" else "")
-        + "Current authorized causl-kb workspace context follows. Use this snapshot for this turn. "
-        "KB contains accepted organization business memory. This snapshot is bounded. "
+        + (
+            "Current authorized causl-kb scope follows. Retrieve saved facts with market_search. "
+            if tool_readout
+            else "Current authorized causl-kb workspace context follows. Use this snapshot for this turn. "
+        )
+        + "KB contains accepted organization business memory. This snapshot is bounded. "
         "Use the Library market_search tool to retrieve missing or omitted facts before asking the executive. "
-        "A missed search is inconclusive. Refine the query when results are omitted. "
+        + SAVED_FACT_RETRIEVAL_INSTRUCTIONS
+        + "A missed search is inconclusive. Refine the query when results are omitted. "
         "Preserve unknowns when the available evidence does not establish a value. "
         "Accepted KB facts take precedence over older chat drafts. Do not ask for facts already supplied here. "
         "Keep executive statements, assumptions, estimates, synthetic results and observed results distinct. "
@@ -113,8 +144,6 @@ def workspace_turn(
         "Propose changes for human review through the existing KB interfaces. Conversation text does not accept changes. "
         "Never claim a save or completed analysis without a confirmed result.\n"
         + model_phase
-        + json.dumps(
-            envelope.model_dump(mode="json", by_alias=True), ensure_ascii=False
-        )
+        + json.dumps(prompt_context, ensure_ascii=False)
     )
     return binding, prompt
