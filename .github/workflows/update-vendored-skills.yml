@@ -18,6 +18,7 @@ concurrency:
 
 jobs:
   update-vendored-skills:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only maintenance/release job
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

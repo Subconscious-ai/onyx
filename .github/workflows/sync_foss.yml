@@ -8,6 +8,7 @@ on:
 
 jobs:
   sync-foss:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only maintenance/release job
     runs-on: ubuntu-latest
     environment: ci-protected
     timeout-minutes: 45
