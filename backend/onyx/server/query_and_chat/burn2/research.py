@@ -8,6 +8,10 @@ import time
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit
 
+from onyx.utils.logger import setup_logger
+
+logger = setup_logger()
+
 if TYPE_CHECKING:
     from onyx.tools.tool_implementations.web_search.clients.exa_client import ExaClient
 
@@ -243,6 +247,56 @@ def research_matches_company(profile: dict | None, company: str | None) -> bool:
             host = None
         names.append((host or "").removeprefix("www."))
     return expected in {identity(name) for name in names if isinstance(name, str)}
+
+
+def model_business_context(
+    profile: dict | None, research: dict | None, company: str | None
+) -> dict | None:
+    """Reuse the Library's bounded preparation contract without source promotion."""
+    if not research_matches_company(profile, company):
+        return None
+    fields = {
+        key: value[: 2048 if key == "website" else 500]
+        for key in (
+            "name",
+            "role",
+            "company",
+            "industry",
+            "website",
+            "product",
+            "customer_segment",
+        )
+        if isinstance(value := ((profile or {}).get("profile") or {}).get(key), str)
+    }
+    source = (
+        "executive_correction"
+        if (profile or {}).get("correction", {}).get("revision", 0)
+        else "pdl"
+    )
+    query = public_research_query(profile)
+    retained = research_readback(research, query) if query else None
+    status = (retained or {}).get("status", "unavailable")
+    result: dict[str, Any] = {
+        "status": status
+        if status in {"pending", "queued", "running", "unavailable", "needs_company"}
+        else "unavailable"
+    }
+    if retained and status == "ready":
+        try:
+            receipt = research_receipt(json.dumps(retained))
+            checked_at = float(retained["checked_at"])
+            if not 0 <= checked_at < float("inf"):
+                raise ValueError("Invalid research capture time")
+            result = {
+                "status": "ready",
+                **{key: receipt[key] for key in ("report", "source_urls", "truncated")},
+                "checked_at": checked_at,
+            }
+        except (TypeError, ValueError, KeyError) as error:
+            logger.warning(
+                "Burn research handoff unavailable: %s", type(error).__name__
+            )
+    return {"profile": fields, "profileSource": source, "research": result}
 
 
 def prepared_company_context(

@@ -280,6 +280,15 @@ def correct_executive_profile(
     return {**profile, "research": research}
 
 
+def _retained_profile(current: dict) -> dict:
+    if (
+        current.get("status") == "updating"
+        and time.time() - current.get("checked_at", 0) >= 30
+    ):
+        return {**current, "status": "unavailable"}
+    return current
+
+
 def _prepare_profile(user: User) -> dict:
     import requests
 
@@ -289,18 +298,25 @@ def _prepare_profile(user: User) -> dict:
     if os.environ.get("BURN2_ENABLED") != "true":
         raise HTTPException(404, "Not found")
     current = read_profile(user.id)
-    if current and time.time() - current.get("checked_at", 0) < 21600:
-        return current
+    if "checked_at" in current:
+        return _retained_profile(current)
     key = os.environ.get("PDL_API_KEY")
     if not key:
         return current
     lock = get_cache_backend().lock(f"burn2:profile:{user.id}", timeout=30)
     if not lock.acquire(blocking=False):
         return {"status": "updating"}
+    attempt = {
+        "status": "updating",
+        "profile": None,
+        "checked_at": time.time(),
+        "source": "People Data Labs",
+    }
     try:
         current = read_profile(user.id)
-        if current and time.time() - current.get("checked_at", 0) < 21600:
-            return current
+        if "checked_at" in current:
+            return _retained_profile(current)
+        save_profile(user.id, attempt)
         response = requests.get(
             "https://api.peopledatalabs.com/v5/person/enrich",
             params={"email": user.email, "min_likelihood": 6},
@@ -322,7 +338,9 @@ def _prepare_profile(user: User) -> dict:
         }
         save_profile(user.id, value)
         return read_profile(user.id)
-    except requests.RequestException:
+    except requests.RequestException as error:
+        logger.warning("Burn profile preparation unavailable: %s", type(error).__name__)
+        save_profile(user.id, {**attempt, "status": "unavailable"})
         return read_profile(user.id)
     finally:
         if lock.owned():

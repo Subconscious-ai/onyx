@@ -342,21 +342,38 @@ def send_interview_brief(db: Session, user: User, chat_id: UUID) -> None:
     if server.id != binding.library_server_id:
         raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
     url = context_url(server.server_url).removesuffix("native-context") + "onyx-brief"
+    snapshot = owned_snapshot(chat_id, user.id, db)
     messages = [
         {"type": row["type"], "message": row["message"]}
-        for row in owned_snapshot(chat_id, user.id, db)["transcript"]
+        for row in snapshot["transcript"]
         if row["type"] in ("user", "assistant")
     ]
+    payload = {
+        "format": "burn/onyx-interview",
+        "version": 1,
+        "chatId": str(chat_id),
+        "messages": messages,
+    }
+    from onyx.db.burn2_profile import read_profile
+    from onyx.db.burn2_research import read_research
+    from onyx.server.query_and_chat.burn2.research import model_business_context
+    from onyx.server.query_and_chat.burn2.validation import latest_saved_brief
+
+    brief = latest_saved_brief(
+        snapshot["transcript"],
+        [row["message"] for row in messages if row["type"] == "user"],
+    )
+    if brief:
+        preparation = model_business_context(
+            read_profile(user.id), read_research(user.id), brief.get("company")
+        )
+        if preparation is not None:
+            payload["businessContext"] = preparation
     with httpx.Client(timeout=10, follow_redirects=False) as client:
         response = client.post(
             url,
             headers=_headers(db, user, server, binding.actor, binding.issuer),
-            json={
-                "format": "burn/onyx-interview",
-                "version": 1,
-                "chatId": str(chat_id),
-                "messages": messages,
-            },
+            json=payload,
         )
     if response.status_code != 200:
         raise OnyxError(

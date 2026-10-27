@@ -1,6 +1,7 @@
 """Workspace hints must never widen the per-user KB grant or native ownership."""
 
 import json
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
 from uuid import uuid4
@@ -857,3 +858,103 @@ def test_hands_the_prepared_interview_brief_to_the_library(
     )
     context.send_interview_brief(db, user, chat_id)
     assert len(requests) == 1, "A workspace chat is not an interview to save"
+
+
+@pytest.mark.parametrize("profile_company", ["Example", "Different employer"])
+def test_native_brief_handoff_retains_only_matching_bounded_preparation(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    profile_company: str,
+) -> None:
+    from onyx.db import burn2_profile, burn2_research
+    from onyx.server.query_and_chat.burn2.research import public_research_query
+
+    db, user, _server = connected
+    chat_id = uuid4()
+    binding = CauslChatBinding(
+        user_id=user.id,
+        actor=ACTOR,
+        issuer="https://auth.example/",
+        market_id=None,
+        chat_id=chat_id,
+        selection=SELECTION,
+        library_server_id=22,
+        mode="interview",
+    )
+    brief = {
+        "version": 2,
+        "company": "Example",
+        "objective": {"text": "Grow renewal", "status": "unknown"},
+        "horizon": "Unknown",
+        "journey": [],
+        "keyResults": [],
+        "transitions": [],
+        "model": {
+            "equation": {"text": "Renewals", "status": "unknown"},
+            "inputs": [],
+            "gaps": [],
+        },
+        "interventions": [],
+        "conflicts": [],
+    }
+    transcript = [
+        {"type": "user", "message": "We work at Example."},
+        {
+            "type": "assistant",
+            "message": f"<interview-brief>{json.dumps(brief)}</interview-brief>",
+        },
+    ]
+    profile = {
+        "status": "ready",
+        "profile": {
+            "company": profile_company,
+            "website": "example.com",
+            "role": "CEO",
+            "name": "Executive",
+            "unmapped_secret": "private extra",
+        },
+    }
+    research = {
+        "status": "ready",
+        "query": public_research_query(profile),
+        "report": "Pricing starts at $40.",
+        "source_urls": ["https://example.com/pricing"],
+        "checked_at": 1793124000,
+        "truncated": False,
+        "source_captures": [{"text": "  Pricing starts at $40.\n"}],
+        "stale": True,
+        "acceptance": "unaccepted",
+        "job_id": "private-operation",
+    }
+    monkeypatch.setattr(context, "read_causl_binding", lambda *_args: binding)
+    monkeypatch.setattr(
+        context, "owned_snapshot", lambda *_args: {"transcript": transcript}
+    )
+    monkeypatch.setattr(burn2_profile, "read_profile", lambda *_args: profile)
+    monkeypatch.setattr(burn2_research, "read_research", lambda *_args: research)
+    requests = http_response(monkeypatch, {"marketId": "m", "accepted": {}})
+
+    context.send_interview_brief(db, user, chat_id)
+
+    payload = json.loads(requests[0].content)
+    expected = {
+        "profile": {
+            "company": "Example",
+            "website": "example.com",
+            "role": "CEO",
+            "name": "Executive",
+        },
+        "profileSource": "pdl",
+        "research": {
+            "status": "ready",
+            "report": "Pricing starts at $40.",
+            "source_urls": ["https://example.com/pricing"],
+            "checked_at": 1793124000,
+            "truncated": False,
+        },
+    }
+    assert payload.get("businessContext") == (
+        expected if profile_company == "Example" else None
+    )
+    (tmp_path / "native-handoff.json").write_text(json.dumps(payload))
