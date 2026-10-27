@@ -15,6 +15,22 @@ from onyx.server.query_and_chat.burn2.research import (
 
 
 class ResearchStartupTests(unittest.TestCase):
+    def test_aged_original_sources_remain_visible_with_a_stale_marker(self):
+        profile = {
+            "status": "ready",
+            "profile": {"company": "Acme", "website": "acme.com"},
+        }
+        research = {
+            "status": "ready",
+            "query": public_research_query(profile),
+            "checked_at": time.time() - 90000,
+            "report": "Retained pricing evidence.",
+            "source_urls": ["https://acme.com/pricing"],
+        }
+        context = prepared_company_context(profile, research, "Acme", has_draft=True)
+        self.assertIn("Retained pricing evidence.", context)
+        self.assertIn('"stale": true', context)
+
     def test_source_truncation_survives_a_short_report_receipt(self):
         result = research_receipt(
             json.dumps(

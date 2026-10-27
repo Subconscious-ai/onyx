@@ -244,7 +244,7 @@ def read_executive_research(
     from onyx.db.burn2_research import read_research
     from onyx.server.query_and_chat.burn2.research import (
         public_research_query,
-        research_reusable,
+        research_readback,
     )
 
     if os.environ.get("BURN2_ENABLED") != "true":
@@ -253,11 +253,7 @@ def read_executive_research(
     if not query:
         return {"status": "needs_company"}
     research = read_research(user.id)
-    return (
-        research
-        if research and research_reusable(research, query)
-        else {"status": "unavailable"}
-    )
+    return research_readback(research, query) or {"status": "unavailable"}
 
 
 @router.patch("/executive-profile")

@@ -1,6 +1,5 @@
 """Native worker boundaries: access, durable receipts and stale-result rejection."""
 
-import json
 import os
 import time
 import unittest
@@ -12,7 +11,13 @@ from uuid import uuid4
 from onyx.background.celery.tasks.burn2 import tasks
 from onyx.db import burn2_research as storage
 from onyx.server.query_and_chat.burn2 import background
-from onyx.server.query_and_chat.burn2.research import public_research_query
+from onyx.server.query_and_chat.burn2.research import (
+    collect_public_research,
+    public_research_query,
+)
+from onyx.tools.tool_implementations.open_url.models import WebContent
+from onyx.tools.tool_implementations.web_search.clients.exa_client import ExaClient
+from onyx.tools.tool_implementations.web_search.models import WebSearchResult
 
 
 class BackgroundPreparationTests(unittest.TestCase):
@@ -32,9 +37,22 @@ class BackgroundPreparationTests(unittest.TestCase):
         self.user = uuid4()
         self.profile = {"status": "ready", "profile": {"website": "example.com"}}
         self.state = None
-        self.connection = MagicMock(
-            return_value=("https://research.example.com/mcp", {}, "streamable-http")
-        )
+        self.provider = MagicMock()
+        self.provider.search.return_value = [
+            WebSearchResult(
+                title="Published product",
+                link="https://example.com/product",
+                snippet="Search summary",
+            )
+        ]
+        self.provider.contents.return_value = [
+            WebContent(
+                title="Published product",
+                link="https://example.com/product",
+                full_content="Published product",
+            )
+        ]
+        self.connection = MagicMock(return_value=self.provider)
         self.queue = self.stack.enter_context(
             patch.object(background.client_app, "send_task")
         )
@@ -50,6 +68,9 @@ class BackgroundPreparationTests(unittest.TestCase):
             ):
                 self.stack.enter_context(patch.object(module, name, value))
         self.stack.enter_context(patch.object(background, "save_research", self.save))
+        self.stack.enter_context(
+            patch.object(background, "update_research_if_current", self.update)
+        )
         self.stack.enter_context(
             patch.object(tasks, "update_research_if_current", self.update)
         )
@@ -84,6 +105,78 @@ class BackgroundPreparationTests(unittest.TestCase):
         self.assertEqual(self.queue.call_args.kwargs["kwargs"]["tenant_id"], "public")
         self.assertEqual(self.queue.call_args.kwargs["expires"], 300)
 
+    def test_expired_same_scope_does_not_authorize_another_paid_operation(self):
+        original = {
+            "job_id": "retained-operation",
+            "status": "ready",
+            "query": public_research_query(self.profile),
+            "checked_at": time.time() - 90000,
+            "source_urls": ["https://example.com/product"],
+            "report": "Retained original product evidence.",
+        }
+        self.state = dict(original)
+        result = background.ensure_research(self.user)
+        self.assertEqual(result["job_id"], "retained-operation")
+        self.assertEqual(result["source_urls"], ["https://example.com/product"])
+        self.queue.assert_not_called()
+        self.assertEqual(self.state, original)
+
+    def test_native_exa_capture_survives_without_a_gpt_researcher_tool(self):
+        provider = MagicMock()
+        provider.search.return_value = [
+            WebSearchResult(
+                title="Original product page",
+                link="https://example.com/product",
+                snippet="A search summary is not the original evidence.",
+            )
+        ]
+        provider.contents.return_value = [
+            WebContent(
+                title="Original product page",
+                link="https://example.com/product",
+                full_content="Pricing starts at $40 per seat per month.\n",
+            )
+        ]
+        self.connection.return_value = provider
+        operation = background.ensure_research(self.user)["job_id"]
+        self.run_research()
+        self.assertEqual(self.state["status"], "ready")
+        self.assertEqual(self.state["job_id"], operation)
+        self.assertEqual(self.state["source_urls"], ["https://example.com/product"])
+        capture = self.state["source_captures"][0]
+        self.assertEqual(capture["text"], "Pricing starts at $40 per seat per month.\n")
+        self.assertEqual(capture["url"], "https://example.com/product")
+        self.assertEqual(capture["title"], "Original product page")
+        self.assertEqual(self.state["acceptance"], "unaccepted")
+        background.ensure_research(self.user)
+        self.queue.assert_called_once()
+
+    def test_expired_never_started_job_requeues_the_same_operation(self):
+        self.state = {
+            "job_id": "never-started",
+            "status": "queued",
+            "query": public_research_query(self.profile),
+            "checked_at": time.time() - 400,
+        }
+        result = background.ensure_research(self.user)
+        self.assertEqual(result["job_id"], "never-started")
+        self.queue.assert_called_once()
+        self.run_research()
+        self.assertEqual(self.state["status"], "ready")
+        self.assertEqual(self.state["job_id"], "never-started")
+
+    def test_expired_running_operation_is_truthful_without_recharging(self):
+        self.state = {
+            "job_id": "started",
+            "status": "running",
+            "query": public_research_query(self.profile),
+            "checked_at": time.time() - 400,
+        }
+        result = background.ensure_research(self.user)
+        self.assertEqual(result["status"], "unavailable")
+        self.assertEqual(result["job_id"], "started")
+        self.queue.assert_not_called()
+
     def test_busy_research_lock_never_returns_the_previous_company_receipt(self):
         self.state = {
             "status": "ready",
@@ -109,13 +202,13 @@ class BackgroundPreparationTests(unittest.TestCase):
         background.ensure_research(self.user)
         self.queue.assert_called_once()
 
-    def test_stale_job_is_replaced_and_late_receipt_cannot_overwrite(self):
+    def test_material_scope_change_replaces_job_and_late_receipt_cannot_overwrite(self):
         background.ensure_research(self.user)
         old_job = self.state["job_id"]
-        self.state["checked_at"] = time.time() - 600
+        self.profile["profile"]["website"] = "different.example.com"
         background.ensure_research(self.user)
         self.assertNotEqual(self.state["job_id"], old_job)
-        with patch.object(tasks, "call_mcp_tool") as call:
+        with patch.object(tasks, "collect_public_research") as call:
             tasks.research_company.run(
                 user_id=str(self.user), persona_id=5, job_id=old_job, tenant_id="public"
             )
@@ -123,20 +216,7 @@ class BackgroundPreparationTests(unittest.TestCase):
 
     def test_worker_persists_original_sources_without_browser(self):
         background.ensure_research(self.user)
-        with patch.object(
-            tasks,
-            "call_mcp_tool",
-            return_value=json.dumps(
-                {
-                    "status": "success",
-                    "data": {
-                        "context": ["Published product"],
-                        "source_urls": ["https://example.com/product"],
-                    },
-                }
-            ),
-        ):
-            self.run_research()
+        self.run_research()
         self.assertEqual(self.state["status"], "ready")
         self.assertEqual(self.state["source_urls"], ["https://example.com/product"])
         background.ensure_research(self.user)
@@ -147,22 +227,24 @@ class BackgroundPreparationTests(unittest.TestCase):
 
         def switched(*_args, **_kwargs):
             self.profile["profile"]["website"] = "different.example.com"
-            return json.dumps(
-                {"context": "Old company", "source_urls": ["https://example.com"]}
-            )
+            return [
+                WebContent(
+                    title="Old company",
+                    link="https://example.com/product",
+                    full_content="Old company",
+                )
+            ]
 
-        with patch.object(tasks, "call_mcp_tool", side_effect=switched):
+        with patch.object(self.provider, "contents", side_effect=switched):
             self.run_research()
         self.assertNotEqual(self.state["status"], "ready")
         background.ensure_research(self.user)
         self.assertEqual(self.state["query"], public_research_query(self.profile))
 
-    def test_nested_tool_failure_is_durable_failure(self):
+    def test_missing_original_capture_is_durable_failure(self):
         background.ensure_research(self.user)
-        with patch.object(
-            tasks, "call_mcp_tool", return_value='{"status":"unavailable"}'
-        ):
-            self.run_research()
+        self.provider.contents.return_value = []
+        self.run_research()
         self.assertEqual(self.state["status"], "unavailable")
         self.assertNotIn("report", self.state)
 
@@ -191,26 +273,100 @@ class BackgroundPreparationTests(unittest.TestCase):
 
 
 class ResearchAccessTests(unittest.TestCase):
-    def test_native_persona_and_credentials_are_required(self):
-        user = SimpleNamespace(is_active=True)
-        server = SimpleNamespace(
-            server_url="https://research.example.com/mcp", transport=None
-        )
+    def test_native_exa_tool_uses_bounded_existing_configuration_without_gpt(self):
         db = MagicMock()
-        db.get.side_effect = [user, server]
+        db.get.return_value = SimpleNamespace(is_active=True)
+        persona = SimpleNamespace(
+            name="Burn 2.0", tools=[SimpleNamespace(name="web_search")]
+        )
+        configured = SimpleNamespace(
+            provider_type="exa",
+            api_key=SimpleNamespace(get_value=lambda **_kwargs: "fixture"),
+            config={"num_results": "10"},
+        )
+        with (
+            patch.object(storage, "get_session_with_current_tenant") as session,
+            patch.object(storage, "get_persona_by_id", return_value=persona),
+            patch.object(
+                storage, "fetch_active_web_search_provider", return_value=configured
+            ),
+        ):
+            session.return_value.__enter__.return_value = db
+            provider = storage.research_connection(uuid4(), 5)
+        provider.exa = MagicMock()
+        provider.exa.search_and_contents.return_value.results = []
+        self.assertEqual(provider.search("public business"), [])
+        self.assertEqual(
+            provider.exa.search_and_contents.call_args.kwargs["num_results"], 4
+        )
+
+    def test_authorized_readback_keeps_aged_sources_without_spending(self):
+        from onyx.server.query_and_chat.burn2.api import read_executive_research
+
+        profile = {"status": "ready", "profile": {"website": "example.com"}}
+        research = {
+            "status": "ready",
+            "query": public_research_query(profile),
+            "checked_at": time.time() - 90000,
+            "source_urls": ["https://example.com/pricing"],
+            "job_id": "retained",
+        }
+        with (
+            patch.dict(os.environ, {"BURN2_ENABLED": "true"}),
+            patch("onyx.db.burn2_profile.read_profile", return_value=profile),
+            patch.object(storage, "read_research", return_value=research),
+        ):
+            result = read_executive_research(SimpleNamespace(id=uuid4()))
+        self.assertEqual(result["source_urls"], ["https://example.com/pricing"])
+        self.assertEqual(result["job_id"], "retained")
+        self.assertTrue(result["stale"])
+
+    def test_native_capture_retains_sdk_text_before_hashing(self):
+        provider = ExaClient(api_key="fixture")
+        provider.exa = MagicMock()
+        provider.exa.search_and_contents.return_value.results = [
+            SimpleNamespace(
+                title="Pricing",
+                url="https://example.com/pricing",
+                highlights=["summary"],
+                author=None,
+                published_date=None,
+            )
+        ]
+        provider.exa.get_contents.return_value.results = [
+            SimpleNamespace(
+                title="Pricing",
+                url="https://example.com/pricing",
+                text="  Price $40.\n",
+                published_date=None,
+            )
+        ]
+        receipt = collect_public_research(provider, "public company pricing")
+        capture = receipt["source_captures"][0]
+        self.assertEqual(capture["text"], "  Price $40.\n")
+        self.assertEqual(
+            capture["sha256"],
+            "259675da5a3cdab7fe65c9b6b7dd34d820d395e02b36e4242a2d3b47fb68bb0d",
+        )
+
+    def test_native_persona_and_exa_credentials_are_required(self):
+        user = SimpleNamespace(is_active=True)
+        db = MagicMock()
+        db.get.return_value = user
         persona = SimpleNamespace(
             name="Burn 2.0",
-            tools=[SimpleNamespace(name="deep_research", mcp_server_id=4)],
+            tools=[SimpleNamespace(name="web_search")],
         )
-        credentials = MagicMock()
-        credentials.can_authenticate.return_value = False
+        provider = SimpleNamespace(provider_type="exa", api_key=None, config={})
         with (
             patch.object(storage, "get_session_with_current_tenant") as session,
             patch.object(storage, "get_persona_by_id", return_value=persona) as access,
-            patch.object(storage, "resolve_mcp_credentials", return_value=credentials),
+            patch.object(
+                storage, "fetch_active_web_search_provider", return_value=provider
+            ),
         ):
             session.return_value.__enter__.return_value = db
-            with self.assertRaisesRegex(ValueError, "credentials"):
+            with self.assertRaisesRegex(ValueError, "API key is required"):
                 storage.research_connection(uuid4(), 5)
             access.assert_called_once_with(5, user, db, is_for_edit=False)
 

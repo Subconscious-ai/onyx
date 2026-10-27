@@ -16,10 +16,9 @@ from onyx.db.burn2_research import (
 )
 from onyx.db.engine.sql_engine import get_session_with_current_tenant
 from onyx.db.models import User
-from onyx.server.features.mcp.client import call_mcp_tool
 from onyx.server.query_and_chat.burn2.research import (
+    collect_public_research,
     public_research_query,
-    research_receipt,
 )
 from onyx.utils.logger import setup_logger
 from shared_configs.contextvars import get_current_tenant_id
@@ -93,7 +92,7 @@ def research_company(
         ):
             return
         query = public_research_query(read_profile(user_uuid))
-        if query != state.get("query"):
+        if not query or query != state.get("query"):
             return
         state = {**state, "status": "running", "checked_at": time.time()}
         if not update_research_if_current(
@@ -101,15 +100,8 @@ def research_company(
         ):
             return
         try:
-            url, headers, transport = research_connection(user_uuid, persona_id)
-            receipt = research_receipt(
-                call_mcp_tool(
-                    url,
-                    "deep_research",
-                    {"query": query},
-                    connection_headers=headers,
-                    transport=transport,
-                )
+            receipt = collect_public_research(
+                research_connection(user_uuid, persona_id), query
             )
             result = {**state, **receipt, "status": "ready", "checked_at": time.time()}
         except Exception as error:
