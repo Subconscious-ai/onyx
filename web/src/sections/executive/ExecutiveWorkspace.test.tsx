@@ -69,8 +69,58 @@ describe("conversation-first brief access", () => {
     (useAutomaticBrief as jest.Mock).mockReturnValue({ phase: "idle", retry });
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ status: "not_found" }),
+      json: async () => ({
+        digest: "test",
+        library: { nodes: [], omitted: 0, truncated: false },
+      }),
     });
+  });
+  it("delivers research that finishes after the saved brief once per job and chat", async () => {
+    const note = {
+      text: "Grow renewals",
+      status: "executive",
+      quote: "Grow renewals",
+    };
+    const message = `<interview-brief>${JSON.stringify({ version: 1, company: "Example", objective: note, horizon: "Unknown", journey: [], interventions: [], conflicts: [] })}</interview-brief>`;
+    const messages = [
+      { type: "user", message: "Grow renewals" },
+      { type: "assistant", message },
+    ];
+    (useAutomaticBrief as jest.Mock).mockReturnValue({
+      phase: "saved",
+      savedMessage: message,
+      retry,
+    });
+    const context = {
+      profileStatus: "PDL ready",
+      research: { status: "running", job_id: "native-job" },
+    };
+    (useExecutiveContext as jest.Mock).mockReturnValue(context);
+    const { rerender } = render(
+      <ExecutiveWorkspace active chatId="chat-one" messages={messages}>
+        <span>Chat</span>
+      </ExecutiveWorkspace>
+    );
+    expect(retry).not.toHaveBeenCalled();
+    context.research = { status: "ready", job_id: "native-job" };
+    rerender(
+      <ExecutiveWorkspace active chatId="chat-one" messages={messages}>
+        <span>Chat</span>
+      </ExecutiveWorkspace>
+    );
+    expect(retry).toHaveBeenCalledTimes(1);
+    rerender(
+      <ExecutiveWorkspace active chatId="chat-one" messages={messages}>
+        <span>Chat</span>
+      </ExecutiveWorkspace>
+    );
+    expect(retry).toHaveBeenCalledTimes(1);
+    rerender(
+      <ExecutiveWorkspace active chatId="chat-two" messages={messages}>
+        <span>Chat</span>
+      </ExecutiveWorkspace>
+    );
+    await waitFor(() => expect(retry).toHaveBeenCalledTimes(2));
   });
   it("shows extracted evidence alongside chat and preserves composer text on mobile return", async () => {
     render(

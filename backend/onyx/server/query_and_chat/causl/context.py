@@ -1,5 +1,6 @@
 """Read current workspace context through native per-user Library OAuth."""
 
+import json
 import os
 import re
 from dataclasses import dataclass
@@ -337,6 +338,12 @@ def send_interview_brief(db: Session, user: User, chat_id: UUID) -> None:
     """Hand the saved interview brief to the Library as soon as Onyx prepares it."""
     binding = read_causl_binding(db, user.id, chat_id)
     if binding is None or binding.mode != "interview":
+        native_research = os.environ.get("BURN2_RESEARCH_PERSONA_ID", "")
+        if native_research.isdecimal() and int(native_research) > 0:
+            raise OnyxError(
+                OnyxErrorCode.UNAUTHORIZED,
+                "Reconnect your Library account before saving this business draft.",
+            )
         return
     server = _library_server(db, user, configuration())
     if server.id != binding.library_server_id:
@@ -364,11 +371,35 @@ def send_interview_brief(db: Session, user: User, chat_id: UUID) -> None:
         [row["message"] for row in messages if row["type"] == "user"],
     )
     if brief:
+        research = read_research(user.id)
         preparation = model_business_context(
-            read_profile(user.id), read_research(user.id), brief.get("company")
+            read_profile(user.id), research, brief.get("company")
         )
         if preparation is not None:
             payload["businessContext"] = preparation
+            if research and preparation["research"].get("status") == "ready":
+                captures = research.get("source_captures")
+                operation_id = research.get("job_id")
+                if (
+                    isinstance(operation_id, str)
+                    and isinstance(captures, list)
+                    and 0 < len(captures) <= 4
+                    and all(isinstance(source, dict) for source in captures)
+                ):
+                    sources = [
+                        {
+                            key: source[key]
+                            for key in ("url", "title", "text", "sha256", "fetched_at")
+                            if key in source
+                        }
+                        for source in captures
+                    ]
+                    native = {"operationId": operation_id, "sources": sources}
+                    if (
+                        len(json.dumps(native, ensure_ascii=False).encode("utf-8"))
+                        <= 1_000_000
+                    ):
+                        payload["nativeResearch"] = native
     with httpx.Client(timeout=10, follow_redirects=False) as client:
         response = client.post(
             url,
@@ -399,4 +430,4 @@ def send_interview_brief(db: Session, user: User, chat_id: UUID) -> None:
         raise OnyxError(
             OnyxErrorCode.CONFLICT, "The interview changed. Save the current draft."
         )
-    update_interview_market(db, binding, market_id)
+    update_interview_market(db, binding, market_id, snapshot["digest"])

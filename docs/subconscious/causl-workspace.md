@@ -29,6 +29,26 @@ the text filter before sampling and retains source identities. Beca must search 
 for an absent fact. A missed search is inconclusive; omitted results call for a narrower query.
 The brief displays a bounded Postgres view, not a complete copy of organization memory.
 
+### Native research and durable brief delivery
+
+[causl-kb #749 — reuse native research for the first saved business model](https://github.com/Subconscious-ai/causl-kb/issues/749)
+uses the existing preparation endpoint and Library receiver. With a positive
+`BURN2_RESEARCH_PERSONA_ID`, initial context reads do not start the older GPT
+Researcher queue. Ready, company-matched native research delivers its original
+source captures through the private `nativeResearch` receiver field. Captures
+remain outside browser responses and model context. The receiver retains the
+existing producer admission rules; delivery does not establish accepted facts.
+
+The preparation POST sends the brief to the Library before reporting success.
+The encrypted chat binding retains the returned market and delivered transcript
+digest together. Read-only polling reports Saved only for that delivered digest.
+Missing native bindings fail visibly. When research finishes after an early brief,
+the browser retries the existing POST once per research job and conversation.
+An unchanged delivered brief is reused without another model extraction.
+Restart both API and the native primary worker when deploying these changes.
+Unit tests establish these boundaries; the fresh six-case customer journey and
+its timing require separate agent-dev proof.
+
 Paired [causl-KB #714](https://github.com/Subconscious-ai/causl-kb/issues/714) tests one approved
 chat fact through fresh authorized contexts and the model request. Its reader preserves approved
 excerpts and prioritizes recently corrected records. Focused database and HTTP tests are separate

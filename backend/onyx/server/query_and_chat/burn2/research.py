@@ -67,7 +67,13 @@ def public_source_url(value: object) -> str | None:
     try:
         parsed = urlsplit(value)
         host = parsed.hostname or ""
-        if parsed.scheme not in {"http", "https"} or parsed.username or parsed.password:
+        if (
+            parsed.scheme not in {"http", "https"}
+            or parsed.username
+            or parsed.password
+            or parsed.port is not None
+            or parsed.fragment
+        ):
             return None
         if not re.fullmatch(r"[a-z0-9.-]+", host) or "." not in host:
             return None
@@ -165,6 +171,13 @@ def research_readback(
             "reason": "Research did not complete within the preparation window",
         }
     return state
+
+
+def public_research_state(state: dict[str, Any] | None) -> dict[str, Any]:
+    """Keep producer source bytes on the server, outside browser and model context."""
+    return {
+        key: value for key, value in (state or {}).items() if key != "source_captures"
+    }
 
 
 def research_receipt(raw: str) -> dict[str, Any]:
@@ -283,7 +296,7 @@ def model_business_context(
     }
     if retained and status == "ready":
         try:
-            receipt = research_receipt(json.dumps(retained))
+            receipt = research_receipt(json.dumps(public_research_state(retained)))
             checked_at = float(retained["checked_at"])
             if not 0 <= checked_at < float("inf"):
                 raise ValueError("Invalid research capture time")

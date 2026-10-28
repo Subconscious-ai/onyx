@@ -44,6 +44,95 @@ describe("automatic saved evidence", () => {
     ).toHaveLength(1);
     expect(result.current.savedMessage).toBe("latest saved evidence");
   });
+  it("checks Library delivery even when the message already contains a ready draft", async () => {
+    const quote = "Grow renewals";
+    const brief = {
+      version: 2,
+      company: "Example",
+      horizon: "Unknown",
+      objective: { text: quote, status: "executive", quote },
+      journey: [
+        {
+          id: "use",
+          actor: "Buyer",
+          text: "Uses product",
+          status: "assumption",
+        },
+        { id: "renew", actor: "Buyer", text: "Renews", status: "assumption" },
+      ],
+      keyResults: [
+        {
+          id: "renewals",
+          metric: "Renewals",
+          unit: "customers",
+          direction: "increase",
+          baseline: { text: "Unknown", status: "unknown" },
+          target: { text: "Unknown", status: "unknown" },
+          deadline: { text: "Unknown", status: "unknown" },
+          journeyIds: ["renew"],
+        },
+      ],
+      transitions: [
+        {
+          id: "renewal",
+          from: "use",
+          to: "renew",
+          behavior: { text: "Chooses to renew", status: "assumption" },
+          metric: "Renewal rate",
+        },
+      ],
+      model: {
+        equation: { text: "Users times renewal rate", status: "assumption" },
+        inputs: [
+          {
+            id: "users",
+            name: "Users",
+            unit: "customers",
+            value: { text: "Unknown", status: "unknown" },
+          },
+        ],
+        gaps: [],
+      },
+      interventions: [],
+      conflicts: [],
+    };
+    const fetcher = jest.spyOn(global, "fetch").mockImplementation(
+      async (_url, init) =>
+        ({
+          ok: true,
+          status: 200,
+          json: async () =>
+            init?.method === "POST"
+              ? { saved: true, message: "Library saved evidence" }
+              : { saved: false, background: false },
+        }) as Response
+    );
+    const { result } = renderHook(() =>
+      useAutomaticBrief({
+        active: true,
+        chatId: "ready-inline",
+        busy: false,
+        messages: [
+          { type: "user", message: quote },
+          {
+            type: "assistant",
+            message: `<interview-brief>${JSON.stringify(brief)}</interview-brief>`,
+          },
+        ],
+      })
+    );
+    await act(async () => {
+      jest.advanceTimersByTime(1500);
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(10);
+    });
+    expect(fetcher.mock.calls.map(([, init]) => init?.method)).toEqual([
+      "GET",
+      "POST",
+    ]);
+    expect(result.current.savedMessage).toBe("Library saved evidence");
+  });
   it("waits for streaming and prepares once without a page reload", async () => {
     const fetcher = jest.spyOn(global, "fetch").mockResolvedValue({
       ok: true,

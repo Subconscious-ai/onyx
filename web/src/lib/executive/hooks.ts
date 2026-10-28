@@ -1,13 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ExecutiveProfile, ProfileFields } from "@/lib/executive/profile";
-import {
-  interviewMessageText,
-  projectBrief,
-  modelReadiness,
-  type InterviewMessage,
-} from "./brief";
+import { interviewMessageText, type InterviewMessage } from "./brief";
 
 export interface PublicResearch {
   report?: string;
@@ -15,6 +10,7 @@ export interface PublicResearch {
   status: string;
   source_urls?: string[];
   checked_at?: number;
+  job_id?: string;
 }
 
 export function useExecutiveContext(
@@ -151,9 +147,6 @@ export function useAutomaticBrief({
     last?.type === "assistant" &&
     !!lastText.trim() &&
     messages.some((m) => m.type === "user");
-  const stored =
-    lastText.includes("</interview-brief>") &&
-    modelReadiness(projectBrief(messages).brief).ready;
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<{
     key: string;
@@ -169,7 +162,7 @@ export function useAutomaticBrief({
   // The polling/unmount regression covers the async ownership the lint rule misses.
   // oxlint-disable-next-line react-doctor/effect-needs-cleanup
   useEffect(() => {
-    if (!active || busy || !completed || stored) return;
+    if (!active || busy || !completed) return;
     const controller = new AbortController();
     const started = Date.now();
     let timer: ReturnType<typeof setTimeout>;
@@ -233,16 +226,17 @@ export function useAutomaticBrief({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [active, busy, completed, stored, key, chatId, attempt]);
+  }, [active, busy, completed, key, chatId, attempt]);
+  const retry = useCallback(() => setAttempt((value) => value + 1), []);
   return {
     savedMessage: state.key === key ? (state.message ?? null) : null,
     phase: busy
       ? "waiting"
       : state.key === key
         ? state.phase
-        : completed && !stored
+        : completed
           ? "updating"
           : "saved",
-    retry: () => setAttempt((value) => value + 1),
+    retry,
   };
 }

@@ -29,6 +29,7 @@ from onyx.llm.models import (
 from onyx.llm.override_models import LLMOverride
 from onyx.server.query_and_chat.burn2 import EXECUTIVE_INTERVIEW_PERSONA_NAMES
 from onyx.server.query_and_chat.burn2.models import ProfileCorrection
+from onyx.server.query_and_chat.burn2.research import public_research_state
 from onyx.server.query_and_chat.burn2.validation import (
     assistant_proposals,
     extraction_schema,
@@ -233,7 +234,7 @@ def prepare_profile(
     from onyx.server.query_and_chat.burn2.background import ensure_research
 
     profile = _prepare_profile(user)
-    return {**profile, "research": ensure_research(user.id)}
+    return {**profile, "research": public_research_state(ensure_research(user.id))}
 
 
 @router.get("/executive-research")
@@ -253,7 +254,9 @@ def read_executive_research(
     if not query:
         return {"status": "needs_company"}
     research = read_research(user.id)
-    return research_readback(research, query) or {"status": "unavailable"}
+    return public_research_state(research_readback(research, query)) or {
+        "status": "unavailable"
+    }
 
 
 @router.patch("/executive-profile")
@@ -277,7 +280,7 @@ def correct_executive_profile(
         research = ensure_research(user.id)
     except Exception:
         research = {"status": "unavailable"}
-    return {**profile, "research": research}
+    return {**profile, "research": public_research_state(research)}
 
 
 def _retained_profile(current: dict) -> dict:
@@ -375,6 +378,22 @@ def read_executive_brief(
             if not needs_completion(brief):
                 if brief != saved:
                     return {"saved": False, "background": False}
+                from onyx.db.causl_workspace import read_causl_binding
+
+                binding = read_causl_binding(db, user.id, chat_id)
+                native_research = os.environ.get("BURN2_RESEARCH_PERSONA_ID", "")
+                if (
+                    native_research.isdecimal()
+                    and int(native_research) > 0
+                    and (binding is None or binding.mode != "interview")
+                ):
+                    return {"saved": False, "background": False}
+                if (
+                    binding is not None
+                    and binding.mode == "interview"
+                    and binding.brief_digest != snapshot["digest"]
+                ):
+                    return {"saved": False, "background": False}
                 return {
                     "saved": True,
                     "message": snapshot["last_text"],
@@ -388,6 +407,40 @@ def read_executive_brief(
     }
 
 
+def _retained_prepared_brief(
+    body: PrepareBrief, user: User, db: Session
+) -> PreparedBrief | None:
+    """Resend new research without extracting an unchanged delivered interview again."""
+    from onyx.db.causl_workspace import read_causl_binding
+
+    binding = read_causl_binding(db, user.id, body.chat_id)
+    if binding is None or binding.mode != "interview" or not binding.brief_digest:
+        return None
+    if os.environ.get("BURN2_ENABLED") != "true":
+        raise OnyxError(OnyxErrorCode.NOT_FOUND)
+    if is_chat_session_processing(body.chat_id, get_cache_backend()):
+        raise OnyxError(OnyxErrorCode.CONFLICT, "Wait for the current answer")
+    try:
+        snapshot = owned_snapshot(body.chat_id, user.id, db)
+        if snapshot["digest"] != binding.brief_digest:
+            return None
+        persona = get_persona_by_id(snapshot["persona_id"], user, db, is_for_edit=False)
+        if persona.name not in EXECUTIVE_INTERVIEW_PERSONA_NAMES:
+            raise OnyxError(OnyxErrorCode.NOT_FOUND, "Executive conversation required")
+        saved = json.loads(
+            snapshot["last_text"]
+            .split("<interview-brief>", 1)[1]
+            .split("</interview-brief>", 1)[0]
+        )
+        if validate_brief(saved, snapshot["statements"]) != saved:
+            return None
+        return PreparedBrief(
+            message_id=snapshot["last_id"], saved=True, message=snapshot["last_text"]
+        )
+    except (ValueError, IndexError):
+        return None
+
+
 @router.post("/executive-brief")
 def prepare_brief(
     body: PrepareBrief,
@@ -398,7 +451,13 @@ def prepare_brief(
     if not lock.acquire(blocking=False):
         raise HTTPException(409, "The business draft is already updating")
     try:
-        return _prepare_brief(body, user, db)
+        prepared = _retained_prepared_brief(body, user, db) or _prepare_brief(
+            body, user, db
+        )
+        from onyx.server.query_and_chat.causl.context import send_interview_brief
+
+        send_interview_brief(db, user, body.chat_id)
+        return prepared
     finally:
         if lock.owned():
             lock.release()

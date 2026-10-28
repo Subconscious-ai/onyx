@@ -6,6 +6,27 @@ from onyx.server.query_and_chat.burn2.validation import validate_brief
 
 
 class StructuredBriefTest(unittest.TestCase):
+    def test_journey_quote_is_grounded_only_in_factual_prefix(self):
+        source = "Customers approve the scoped work."
+        for statement, expected in (
+            (source + " Demand fills capacity in this scenario.", "executive"),
+            ("For a hypothetical scenario. " + source, "assumption"),
+            (source[:-1] + " in this scenario.", "assumption"),
+        ):
+            with self.subTest(statement=statement):
+                brief = self.brief()
+                brief["journey"] = [
+                    {
+                        "id": "approved",
+                        "actor": "Customers",
+                        "text": "Approve the scoped work",
+                        "status": "executive",
+                        "quote": source if expected == "executive" else source[:-1],
+                    }
+                ]
+                result = validate_brief(brief, [statement])
+                self.assertEqual(result["journey"][0]["status"], expected)
+
     def test_hypothetical_scope_carries_to_following_sentences(self):
         hypothetical = "Our win rate is 25%."
         measured = "Our audited win rate is 50%."

@@ -112,7 +112,7 @@ def bind_interview_chat(
 
 
 def update_interview_market(
-    db: Session, expected: CauslChatBinding, market_id: str
+    db: Session, expected: CauslChatBinding, market_id: str, brief_digest: str
 ) -> None:
     """Retain the Library's market without replacing a newer chat association."""
     db.execute(
@@ -128,6 +128,7 @@ def update_interview_market(
     updated = current.model_copy(
         update={
             "market_id": market_id,
+            "brief_digest": brief_digest,
             "selection": current.selection.model_copy(update={"market_id": market_id}),
         }
     )

@@ -310,6 +310,7 @@ class ResearchAccessTests(unittest.TestCase):
             "checked_at": time.time() - 90000,
             "source_urls": ["https://example.com/pricing"],
             "job_id": "retained",
+            "source_captures": [{"text": "Exact private capture bytes"}],
         }
         with (
             patch.dict(os.environ, {"BURN2_ENABLED": "true"}),
@@ -320,6 +321,21 @@ class ResearchAccessTests(unittest.TestCase):
         self.assertEqual(result["source_urls"], ["https://example.com/pricing"])
         self.assertEqual(result["job_id"], "retained")
         self.assertTrue(result["stale"])
+        self.assertNotIn("source_captures", result)
+
+    def test_capture_urls_match_producer_port_and_fragment_constraints(self):
+        from onyx.server.query_and_chat.burn2.research import public_source_url
+
+        for url in (
+            "https://example.com:8443/pricing",
+            "https://example.com/pricing#plans",
+        ):
+            with self.subTest(url=url):
+                self.assertIsNone(public_source_url(url))
+        self.assertEqual(
+            public_source_url("https://example.com/pricing"),
+            "https://example.com/pricing",
+        )
 
     def test_native_capture_retains_sdk_text_before_hashing(self):
         provider = ExaClient(api_key="fixture")
