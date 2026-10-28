@@ -947,6 +947,8 @@ def test_saved_market_does_not_replace_a_newer_interview(
     changed: str,
 ) -> None:
     db, user, _server = connected
+    commit = MagicMock()
+    monkeypatch.setattr(db, "commit", commit)
     chat_id = uuid4()
     binding = CauslChatBinding(
         user_id=user.id,
@@ -976,7 +978,7 @@ def test_saved_market_does_not_replace_a_newer_interview(
         context.send_interview_brief(db, user, chat_id)
 
     assert failure.value.error_code == OnyxErrorCode.CONFLICT
-    db.commit.assert_not_called()
+    commit.assert_not_called()
     assert row.value.get_value.return_value["market_id"] == "newer-market"
 
 
