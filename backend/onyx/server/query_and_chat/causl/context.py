@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from onyx.auth.session_identity import require_session_identity
 from onyx.db.burn2_brief import owned_snapshot
-from onyx.db.causl_workspace import read_causl_binding
+from onyx.db.causl_workspace import read_causl_binding, update_interview_market
 from onyx.db.enums import MCPAuthenticationPerformer, MCPAuthenticationType
 from onyx.db.mcp import get_mcp_servers_for_persona
 from onyx.db.models import MCPServer, User
@@ -379,3 +379,24 @@ def send_interview_brief(db: Session, user: User, chat_id: UUID) -> None:
         raise OnyxError(
             OnyxErrorCode.BAD_GATEWAY, "The Library did not save the brief."
         )
+    try:
+        saved = response.json()
+        market_id = saved.get("marketId") if isinstance(saved, dict) else None
+        if not isinstance(market_id, str) or not market_id.strip():
+            raise ValueError("Missing saved market")
+        CauslSelection.model_validate(
+            {
+                **binding.selection.model_dump(by_alias=True),
+                "marketId": market_id,
+            }
+        )
+    except (ValueError, ValidationError):
+        raise OnyxError(
+            OnyxErrorCode.BAD_GATEWAY, "The Library did not return the saved market."
+        ) from None
+    db.expire_all()
+    if owned_snapshot(chat_id, user.id, db)["digest"] != snapshot["digest"]:
+        raise OnyxError(
+            OnyxErrorCode.CONFLICT, "The interview changed. Save the current draft."
+        )
+    update_interview_market(db, binding, market_id)

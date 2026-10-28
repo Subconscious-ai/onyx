@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import httpx
 import pytest
+from sqlalchemy.dialects.postgresql import Insert
 from sqlalchemy.orm import Session
 
 from onyx.auth.session_identity import SessionIdentity
@@ -21,6 +22,7 @@ from onyx.db.enums import (
 from onyx.db.models import (
     ChatMessage,
     ChatSession,
+    EncryptedKeyValueStore,
     MCPConnectionConfig,
     MCPServer,
     Persona,
@@ -829,11 +831,16 @@ def test_hands_the_prepared_interview_brief_to_the_library(
     ]
     monkeypatch.setattr(context, "read_causl_binding", lambda *_args: binding)
     monkeypatch.setattr(
-        context, "owned_snapshot", lambda *_args: {"transcript": transcript}
+        context,
+        "owned_snapshot",
+        lambda *_args: {"transcript": transcript, "digest": "current-interview"},
     )
+    update_market = MagicMock()
+    monkeypatch.setattr(context, "update_interview_market", update_market)
     requests = http_response(monkeypatch, {"marketId": "m", "accepted": {}})
 
     context.send_interview_brief(db, user, chat_id)
+    update_market.assert_called_once_with(db, binding, "m")
 
     assert [str(request.url) for request in requests] == [
         "https://kb.example/api/assistant/onyx-brief"
@@ -858,6 +865,153 @@ def test_hands_the_prepared_interview_brief_to_the_library(
     )
     context.send_interview_brief(db, user, chat_id)
     assert len(requests) == 1, "A workspace chat is not an interview to save"
+
+
+def test_saved_interview_selects_the_server_market_for_the_next_turn(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    chat = ChatSession(id=uuid4(), user_id=user.id, persona_id=11)
+    binding = CauslChatBinding(
+        user_id=user.id,
+        actor=ACTOR,
+        issuer="https://auth.example/",
+        market_id=None,
+        chat_id=chat.id,
+        selection=CauslSelection(page="workspace"),
+        library_server_id=22,
+        mode="interview",
+    )
+    row = MagicMock(spec=EncryptedKeyValueStore)
+    row.value.get_value.return_value = binding.model_dump(mode="json")
+    monkeypatch.setattr(db, "get", lambda *_args: row)
+
+    def execute(statement: Any, *_args: Any) -> None:
+        if isinstance(statement, Insert):
+            row.value.get_value.return_value = statement.compile().params["value"]
+
+    monkeypatch.setattr(db, "execute", execute)
+    monkeypatch.setattr(
+        context,
+        "owned_snapshot",
+        lambda *_args: {
+            "digest": "current-interview",
+            "transcript": [
+                {"type": "user", "message": "Clinics sign a yearly contract."},
+                {"type": "assistant", "message": "Saved the current draft."},
+            ],
+        },
+    )
+    requests: list[httpx.Request] = []
+    client = httpx.Client
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if request.url.path.endswith("onyx-brief"):
+            return httpx.Response(200, json={"marketId": "market_b", "accepted": {}})
+        payload = envelope()
+        payload["context"]["page"] = "workspace"
+        return httpx.Response(200, json=payload)
+
+    monkeypatch.setattr(
+        context.httpx,
+        "Client",
+        lambda **kwargs: client(transport=httpx.MockTransport(handle), **kwargs),
+    )
+
+    context.send_interview_brief(db, user, chat.id)
+
+    restored, prompt = turn.workspace_turn(db, user, chat, None)
+    assert restored is not None and restored.market_id == "market_b"
+    assert restored.selection.market_id == "market_b"
+    assert restored.selection.page == "workspace"
+    assert prompt is not None and "Accepted B fact" in prompt
+    assert dict(requests[-1].url.params) == {
+        "page": "workspace",
+        "market": "market_b",
+    }, "The next turn must read the canonical market returned by the Library"
+
+
+@pytest.mark.parametrize("changed", ["transcript", "association"])
+def test_saved_market_does_not_replace_a_newer_interview(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+    changed: str,
+) -> None:
+    db, user, _server = connected
+    chat_id = uuid4()
+    binding = CauslChatBinding(
+        user_id=user.id,
+        actor=ACTOR,
+        issuer="https://auth.example/",
+        market_id=None,
+        chat_id=chat_id,
+        selection=CauslSelection(page="workspace"),
+        library_server_id=22,
+        mode="interview",
+    )
+    row = MagicMock(spec=EncryptedKeyValueStore)
+    current = binding.model_copy(update={"market_id": "newer-market"})
+    row.value.get_value.return_value = current.model_dump(mode="json")
+    monkeypatch.setattr(db, "get", lambda *_args: row)
+    monkeypatch.setattr(context, "read_causl_binding", lambda *_args: binding)
+    snapshots = MagicMock(
+        side_effect=[
+            {"digest": "before", "transcript": []},
+            {"digest": "after" if changed == "transcript" else "before"},
+        ]
+    )
+    monkeypatch.setattr(context, "owned_snapshot", snapshots)
+    http_response(monkeypatch, {"marketId": "older-market", "accepted": {}})
+
+    with pytest.raises(OnyxError) as failure:
+        context.send_interview_brief(db, user, chat_id)
+
+    assert failure.value.error_code == OnyxErrorCode.CONFLICT
+    db.commit.assert_not_called()
+    assert row.value.get_value.return_value["market_id"] == "newer-market"
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {"marketId": None},
+        {"marketId": 1},
+        {"marketId": " "},
+        {"marketId": "x" * 501},
+    ],
+)
+def test_brief_handoff_requires_a_valid_server_market(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+    payload: dict[str, Any],
+) -> None:
+    db, user, _server = connected
+    chat_id = uuid4()
+    binding = CauslChatBinding(
+        user_id=user.id,
+        actor=ACTOR,
+        issuer="https://auth.example/",
+        market_id=None,
+        chat_id=chat_id,
+        selection=CauslSelection(page="workspace"),
+        library_server_id=22,
+        mode="interview",
+    )
+    monkeypatch.setattr(context, "read_causl_binding", lambda *_args: binding)
+    monkeypatch.setattr(
+        context, "owned_snapshot", lambda *_args: {"digest": "before", "transcript": []}
+    )
+    update_market = MagicMock()
+    monkeypatch.setattr(context, "update_interview_market", update_market)
+    http_response(monkeypatch, payload)
+
+    with pytest.raises(OnyxError) as failure:
+        context.send_interview_brief(db, user, chat_id)
+
+    assert failure.value.error_code == OnyxErrorCode.BAD_GATEWAY
+    update_market.assert_not_called()
 
 
 @pytest.mark.parametrize("profile_company", ["Example", "Different employer"])
@@ -929,8 +1083,11 @@ def test_native_brief_handoff_retains_only_matching_bounded_preparation(
     }
     monkeypatch.setattr(context, "read_causl_binding", lambda *_args: binding)
     monkeypatch.setattr(
-        context, "owned_snapshot", lambda *_args: {"transcript": transcript}
+        context,
+        "owned_snapshot",
+        lambda *_args: {"transcript": transcript, "digest": "current-interview"},
     )
+    monkeypatch.setattr(context, "update_interview_market", MagicMock())
     monkeypatch.setattr(burn2_profile, "read_profile", lambda *_args: profile)
     monkeypatch.setattr(burn2_research, "read_research", lambda *_args: research)
     requests = http_response(monkeypatch, {"marketId": "m", "accepted": {}})
