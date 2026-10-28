@@ -53,7 +53,7 @@ export function useExecutiveContext(
         if (cancelled) return;
         if (profile) {
           setDossier(
-            value.status === "ready" && value.profile
+            ["ready", "updating"].includes(value.status) && value.profile
               ? {
                   profile: value.profile,
                   source: value.correction?.revision
@@ -68,17 +68,29 @@ export function useExecutiveContext(
                   profile: value.profile ?? {},
                   provider_profile: value.provider_profile,
                   correction: value.correction,
+                  checked_at: value.checked_at,
+                  job_id: value.job_id,
+                  preparation_pending: value.preparation_pending,
+                  preparation_status: value.preparation_status,
                 }
               : null
           );
           setProfileStatus(
-            value.status === "ready"
-              ? `${value.correction?.revision ? "Your company context" : "PDL professional match loaded"}${value.profile?.company ? ` · ${value.profile.company}` : ""}`
-              : value.status === "not_found"
-                ? "PDL: no confident match"
-                : value.status === "updating"
-                  ? "Checking professional context…"
+            value.preparation_status === "not_found"
+              ? Object.keys(value.profile ?? {}).length
+                ? "No fresh PDL match; retained company context is available"
+                : "PDL: no confident match"
+              : value.preparation_status === "unavailable"
+                ? Object.keys(value.profile ?? {}).length
+                  ? "PDL refresh unavailable; retained company context is available"
                   : "PDL context unavailable"
+                : value.status === "ready"
+                  ? `${value.correction?.revision ? "Your company context" : "PDL professional match loaded"}${value.profile?.company ? ` · ${value.profile.company}` : ""}`
+                  : value.status === "not_found"
+                    ? "PDL: no confident match"
+                    : value.status === "updating"
+                      ? "Checking professional context…"
+                      : "PDL context unavailable"
           );
           if (value.status === "updating" && Date.now() - started < 30000) {
             timer = setTimeout(() => refresh(true), 2000);

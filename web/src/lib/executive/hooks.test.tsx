@@ -376,6 +376,8 @@ describe("automatic saved evidence", () => {
       json: async () => ({
         status: "ready",
         profile: { company: "Corrected" },
+        checked_at: 1234,
+        job_id: "retained-operation",
         correction: { revision: 2, fields: { company: "Corrected" } },
         research: { status: "needs_company" },
       }),
@@ -385,6 +387,11 @@ describe("automatic saved evidence", () => {
       await Promise.resolve();
     });
     expect(result.current.profile?.correction.revision).toBe(2);
+    expect(result.current.profile?.checked_at).toBe(1234);
+    expect(result.current.profile?.job_id).toBe("retained-operation");
+    expect(global.fetch).toHaveBeenCalledWith("/api/chat/executive-profile", {
+      method: "POST",
+    });
     expect(result.current.profileStatus).toContain("Your company context");
   });
 });

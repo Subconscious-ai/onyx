@@ -13872,6 +13872,13 @@
       "cancel": "キャンセル",
       "conflict": "プロフィールが別の場所で変更されました。キャンセルして開き直してください。修正は保存されていません。",
       "failed": "修正を保存できませんでした。入力内容は残っています。再試行してください。",
+      "refresh": "Refresh PDL and public research",
+      "refreshing": "Refreshing preparation…",
+      "refreshDescription": "Run a new PDL lookup and public research. Your interview and saved context stay available.",
+      "refreshFailed": "Could not confirm preparation. Retry to check the same request without a duplicate lookup.",
+      "refreshStarted": "Preparation request saved. Public research status appears in the brief.",
+      "refreshNoMatch": "No fresh PDL match. Previous company context and corrections stay unchanged.",
+      "refreshUnavailable": "PDL refresh unavailable. Previous company context and corrections stay unchanged.",
       "fields": {
         "name": "名前",
         "role": "役職",

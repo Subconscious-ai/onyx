@@ -121,6 +121,22 @@ class BackgroundPreparationTests(unittest.TestCase):
         self.queue.assert_not_called()
         self.assertEqual(self.state, original)
 
+    def test_explicit_profile_refresh_replaces_legacy_research_once(self):
+        operation = str(uuid4())
+        self.profile.update(job_id=operation, refresh_revision=0)
+        self.state = {
+            "job_id": "legacy-report",
+            "status": "ready",
+            "query": public_research_query(self.profile),
+            "checked_at": time.time(),
+            "report": "Legacy report without original source captures",
+        }
+        first = background.ensure_research(self.user)
+        second = background.ensure_research(self.user)
+        self.assertEqual(first["job_id"], operation)
+        self.assertEqual(second["job_id"], operation)
+        self.queue.assert_called_once()
+
     def test_native_exa_capture_survives_without_a_gpt_researcher_tool(self):
         provider = MagicMock()
         provider.search.return_value = [

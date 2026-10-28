@@ -6,7 +6,7 @@ import time
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from onyx.auth.permissions import require_permission
@@ -57,6 +57,13 @@ class PreparedBrief(BaseModel):
     message_id: int
     saved: bool
     message: str
+
+
+class ProfilePreparation(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    operation_id: UUID
+    checked_at: float | None = Field(ge=0)
+    revision: int = Field(ge=0)
 
 
 def discard_unverified_anchors(previous: dict) -> None:
@@ -230,11 +237,29 @@ Proposed interventions remain hypotheses. Jokes, confidence, and rejected third-
 @router.post("/executive-profile")
 def prepare_profile(
     user: User = Depends(require_permission(Permission.WRITE_CHAT)),
+    body: ProfilePreparation | None = None,
 ) -> dict:
     from onyx.server.query_and_chat.burn2.background import ensure_research
 
-    profile = _prepare_profile(user)
-    return {**profile, "research": public_research_state(ensure_research(user.id))}
+    profile = _prepare_profile(user, body)
+    if profile.get("preparation_pending"):
+        return {**profile, "research": {"status": "pending"}}
+    if (
+        profile.get("preparation_status") == "unavailable"
+        and profile.get("status") == "unavailable"
+    ):
+        return {**profile, "research": {"status": "unavailable"}}
+    research = ensure_research(user.id)
+    if (
+        body is not None
+        and research.get("status") in {"queued", "running"}
+        and research.get("job_id") != str(body.operation_id)
+    ):
+        raise OnyxError(
+            OnyxErrorCode.SERVICE_UNAVAILABLE,
+            "Research is already running. Retry this operation after it completes.",
+        )
+    return {**profile, "research": public_research_state(research)}
 
 
 @router.get("/executive-research")
@@ -284,30 +309,69 @@ def correct_executive_profile(
 
 
 def _retained_profile(current: dict) -> dict:
-    if (
-        current.get("status") == "updating"
-        and time.time() - current.get("checked_at", 0) >= 30
-    ):
-        return {**current, "status": "unavailable"}
+    if current.get("preparation_pending") or current.get("status") == "updating":
+        expired = time.time() - current.get("checked_at", 0) >= 30
+        return {
+            **current,
+            "status": "unavailable" if expired else "updating",
+            **(
+                {"preparation_status": "unavailable", "preparation_pending": False}
+                if expired and current.get("job_id")
+                else {}
+            ),
+        }
     return current
 
 
-def _prepare_profile(user: User) -> dict:
+def _retained_preparation(
+    current: dict, refresh: ProfilePreparation | None
+) -> dict | None:
+    if refresh is None:
+        return _retained_profile(current) if "checked_at" in current else None
+    if current.get("correction", {}).get("revision", 0) != refresh.revision:
+        raise OnyxError(
+            OnyxErrorCode.CONFLICT, "Company profile changed. Reload before refreshing."
+        )
+    if current.get("job_id") == str(refresh.operation_id):
+        return _retained_profile(current)
+    if current.get("checked_at") != refresh.checked_at or (
+        current.get("preparation_pending")
+        and time.time() - current.get("checked_at", 0) < 30
+    ):
+        raise OnyxError(
+            OnyxErrorCode.CONFLICT, "Preparation changed. Reload before refreshing."
+        )
+    return None
+
+
+def _prepare_profile(user: User, refresh: ProfilePreparation | None = None) -> dict:
     import requests
 
     from onyx.db.burn2_profile import read_profile, save_profile
+    from onyx.db.burn2_research import read_research
     from onyx.server.query_and_chat.burn2.profile import select_profile
+    from onyx.server.query_and_chat.burn2.research import research_reusable
 
     if os.environ.get("BURN2_ENABLED") != "true":
         raise HTTPException(404, "Not found")
     current = read_profile(user.id)
-    if "checked_at" in current:
-        return _retained_profile(current)
+    retained = _retained_preparation(current, refresh)
+    if retained is not None:
+        return retained
     key = os.environ.get("PDL_API_KEY")
     if not key:
+        if refresh is not None:
+            raise OnyxError(
+                OnyxErrorCode.SERVICE_UNAVAILABLE, "PDL preparation is unavailable."
+            )
         return current
     lock = get_cache_backend().lock(f"burn2:profile:{user.id}", timeout=30)
     if not lock.acquire(blocking=False):
+        if refresh is not None:
+            raise OnyxError(
+                OnyxErrorCode.SERVICE_UNAVAILABLE,
+                "Preparation is already running. Retry this operation.",
+            )
         return {"status": "updating"}
     attempt = {
         "status": "updating",
@@ -315,10 +379,35 @@ def _prepare_profile(user: User) -> dict:
         "checked_at": time.time(),
         "source": "People Data Labs",
     }
+    if refresh is not None:
+        attempt.update(
+            job_id=str(refresh.operation_id),
+            refresh_revision=refresh.revision,
+            preparation_pending=True,
+        )
     try:
         current = read_profile(user.id)
-        if "checked_at" in current:
-            return _retained_profile(current)
+        retained = _retained_preparation(current, refresh)
+        if retained is not None:
+            return retained
+        if refresh is not None:
+            research = read_research(user.id)
+            if (
+                research
+                and research.get("status") in {"queued", "running"}
+                and research_reusable(research, str(research.get("query", "")))
+            ):
+                raise OnyxError(
+                    OnyxErrorCode.SERVICE_UNAVAILABLE,
+                    "Research is already running. Retry this operation after it completes.",
+                )
+            attempt.update(
+                profile=current.get("provider_profile", current.get("profile")),
+                provider_checked_at=current.get(
+                    "provider_checked_at", current.get("checked_at")
+                ),
+                preparation_status="updating",
+            )
         save_profile(user.id, attempt)
         response = requests.get(
             "https://api.peopledatalabs.com/v5/person/enrich",
@@ -330,6 +419,7 @@ def _prepare_profile(user: User) -> dict:
             select_profile(response.json()) if response.status_code == 200 else None
         )
         value = {
+            **attempt,
             "status": "ready"
             if profile
             else "not_found"
@@ -339,12 +429,32 @@ def _prepare_profile(user: User) -> dict:
             "checked_at": time.time(),
             "source": "People Data Labs",
         }
+        if refresh is not None:
+            value.update(preparation_pending=False, preparation_status=value["status"])
+            if profile:
+                value["provider_checked_at"] = value["checked_at"]
+            elif attempt.get("profile"):
+                value.update(profile=attempt["profile"], status="ready")
         save_profile(user.id, value)
-        return read_profile(user.id)
+        result = read_profile(user.id)
+        if refresh is not None:
+            _retained_preparation(result, refresh)
+        return result
     except requests.RequestException as error:
         logger.warning("Burn profile preparation unavailable: %s", type(error).__name__)
-        save_profile(user.id, {**attempt, "status": "unavailable"})
-        return read_profile(user.id)
+        save_profile(
+            user.id,
+            {
+                **attempt,
+                "status": "ready" if attempt.get("profile") else "unavailable",
+                "preparation_pending": False,
+                "preparation_status": "unavailable",
+            },
+        )
+        result = read_profile(user.id)
+        if refresh is not None:
+            _retained_preparation(result, refresh)
+        return result
     finally:
         if lock.owned():
             lock.release()

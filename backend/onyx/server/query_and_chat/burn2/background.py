@@ -57,19 +57,39 @@ def ensure_research(user_id: UUID) -> dict:
     configured = os.environ.get("BURN2_RESEARCH_PERSONA_ID", "")
     if os.environ.get("BURN2_ENABLED") != "true" or not configured.isdecimal():
         return {"status": "disabled"}
-    query = public_research_query(read_profile(user_id))
+    profile = read_profile(user_id)
+    if profile.get("preparation_pending"):
+        return {"status": "pending"}
+    query = public_research_query(profile)
     if not query:
         return {"status": "needs_company"}
+    operation = (
+        profile.get("job_id")
+        if profile.get("refresh_revision")
+        == profile.get("correction", {}).get("revision", 0)
+        else None
+    )
     lock = get_cache_backend().lock(f"burn2:research:{user_id}", timeout=20)
     if not lock.acquire(blocking=False):
         state = research_readback(read_research(user_id), query)
-        if state:
+        if state and (not operation or state.get("job_id") == operation):
             return state
         return {"status": "queued"}
     try:
         state = read_research(user_id)
         # A queued job has not crossed the worker's atomic running transition.
-        if state is not None and state.get("query") == query:
+        if (
+            state is not None
+            and state.get("query") == query
+            and (
+                not operation
+                or state.get("job_id") == operation
+                or (
+                    state.get("status") in {"queued", "running"}
+                    and research_reusable(state, query)
+                )
+            )
+        ):
             if state.get("status") == "queued" and not research_reusable(state, query):
                 recovered = {**state, "checked_at": time.time()}
                 if update_research_if_current(
@@ -85,7 +105,7 @@ def ensure_research(user_id: UUID) -> dict:
             "status": "queued",
             "query": query,
             "checked_at": time.time(),
-            "job_id": str(uuid4()),
+            "job_id": operation or str(uuid4()),
         }
         save_research(user_id, state)
         return _schedule_research(user_id, int(configured), state)

@@ -13872,6 +13872,13 @@
       "cancel": "Cancelar",
       "conflict": "El perfil cambió en otra sesión. Cancela y vuelve a abrirlo antes de guardar. Tus cambios no se han guardado.",
       "failed": "No se pudieron guardar las correcciones. Tus cambios siguen aquí; vuelve a intentarlo.",
+      "refresh": "Refresh PDL and public research",
+      "refreshing": "Refreshing preparation…",
+      "refreshDescription": "Run a new PDL lookup and public research. Your interview and saved context stay available.",
+      "refreshFailed": "Could not confirm preparation. Retry to check the same request without a duplicate lookup.",
+      "refreshStarted": "Preparation request saved. Public research status appears in the brief.",
+      "refreshNoMatch": "No fresh PDL match. Previous company context and corrections stay unchanged.",
+      "refreshUnavailable": "PDL refresh unavailable. Previous company context and corrections stay unchanged.",
       "fields": {
         "name": "Nombre",
         "role": "Cargo",

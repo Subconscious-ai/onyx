@@ -45,6 +45,16 @@ digest together. Read-only polling reports Saved only for that delivered digest.
 Missing native bindings fail visibly. When research finishes after an early brief,
 the browser retries the existing POST once per research job and conversation.
 An unchanged delivered brief is reused without another model extraction.
+The existing Company profile editor has **Refresh PDL and public research**.
+This explicit action retains one operation ID across network retries. Ordinary
+login, reload, and another interview reuse preparation; they do not refresh it.
+A fresh operation requires the current profile receipt and correction revision.
+An active research operation cannot be replaced. PDL runs with its existing
+12-second timeout while the interview keeps the previous company context.
+Failed or unmatched lookups retain previous context and its provider timestamp;
+the separate preparation status records the new lookup outcome. A corrected
+company prevents an earlier operation from scheduling research for that company.
+Native research uses the same explicit operation ID and existing worker queue.
 Restart both API and the native primary worker when deploying these changes.
 Unit tests establish these boundaries; the fresh six-case customer journey and
 its timing require separate agent-dev proof.
