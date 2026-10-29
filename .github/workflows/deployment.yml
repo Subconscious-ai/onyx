@@ -246,7 +246,7 @@ jobs:
     needs:
       - determine-builds
       - audit-gate
-    if: needs.determine-builds.outputs.build-desktop == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && needs.determine-builds.outputs.build-desktop == 'true'
     runs-on: ubuntu-slim
     timeout-minutes: 10
     permissions:
@@ -309,7 +309,7 @@ jobs:
     needs:
       - determine-builds
       - create-release
-    if: needs.determine-builds.outputs.build-desktop == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.determine-builds.outputs.build-desktop == 'true') # upstream-only runner; this fork has none
     permissions:
       id-token: write
       contents: write
@@ -494,7 +494,7 @@ jobs:
     needs:
       - determine-builds
       - audit-gate
-    if: needs.determine-builds.outputs.build-web == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.determine-builds.outputs.build-web == 'true') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=4cpu-linux-x64
@@ -576,7 +576,7 @@ jobs:
     needs:
       - determine-builds
       - audit-gate
-    if: needs.determine-builds.outputs.build-web == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.determine-builds.outputs.build-web == 'true') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=4cpu-linux-arm64
@@ -660,7 +660,7 @@ jobs:
       - build-web-amd64
       - build-web-arm64
       - image-audit
-    if: always() && needs.build-web-amd64.result == 'success' && needs.build-web-arm64.result == 'success' && needs.image-audit.result == 'success'
+    if: github.repository == 'onyx-dot-app/onyx' && (always() && needs.build-web-amd64.result == 'success' && needs.build-web-arm64.result == 'success' && needs.image-audit.result == 'success') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-x64
@@ -750,7 +750,7 @@ jobs:
     needs:
       - determine-builds
       - audit-gate
-    if: needs.determine-builds.outputs.build-web-cloud == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.determine-builds.outputs.build-web-cloud == 'true') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=4cpu-linux-x64
@@ -842,7 +842,7 @@ jobs:
     needs:
       - determine-builds
       - audit-gate
-    if: needs.determine-builds.outputs.build-web-cloud == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.determine-builds.outputs.build-web-cloud == 'true') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=4cpu-linux-arm64
@@ -936,7 +936,7 @@ jobs:
       - build-web-cloud-amd64
       - build-web-cloud-arm64
       - image-audit
-    if: always() && needs.build-web-cloud-amd64.result == 'success' && needs.build-web-cloud-arm64.result == 'success' && needs.image-audit.result == 'success'
+    if: github.repository == 'onyx-dot-app/onyx' && (always() && needs.build-web-cloud-amd64.result == 'success' && needs.build-web-cloud-arm64.result == 'success' && needs.image-audit.result == 'success') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-x64
@@ -1012,7 +1012,7 @@ jobs:
     needs:
       - determine-builds
       - audit-gate
-    if: needs.determine-builds.outputs.build-backend == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.determine-builds.outputs.build-backend == 'true') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-x64
@@ -1108,7 +1108,7 @@ jobs:
     needs:
       - determine-builds
       - audit-gate
-    if: needs.determine-builds.outputs.build-backend == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.determine-builds.outputs.build-backend == 'true') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-arm64
@@ -1206,7 +1206,7 @@ jobs:
       - build-backend-amd64
       - build-backend-arm64
       - image-audit
-    if: always() && needs.build-backend-amd64.result == 'success' && needs.build-backend-arm64.result == 'success' && needs.image-audit.result == 'success'
+    if: github.repository == 'onyx-dot-app/onyx' && (always() && needs.build-backend-amd64.result == 'success' && needs.build-backend-arm64.result == 'success' && needs.image-audit.result == 'success') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-x64
@@ -1305,7 +1305,7 @@ jobs:
     needs:
       - determine-builds
       - audit-gate
-    if: needs.determine-builds.outputs.build-model-server == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.determine-builds.outputs.build-model-server == 'true') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-x64
@@ -1391,7 +1391,7 @@ jobs:
     needs:
       - determine-builds
       - audit-gate
-    if: needs.determine-builds.outputs.build-model-server == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.determine-builds.outputs.build-model-server == 'true') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-arm64
@@ -1479,7 +1479,7 @@ jobs:
       - build-model-server-amd64
       - build-model-server-arm64
       - image-audit
-    if: always() && needs.build-model-server-amd64.result == 'success' && needs.build-model-server-arm64.result == 'success' && needs.image-audit.result == 'success'
+    if: github.repository == 'onyx-dot-app/onyx' && (always() && needs.build-model-server-amd64.result == 'success' && needs.build-model-server-arm64.result == 'success' && needs.image-audit.result == 'success') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-x64
@@ -1635,7 +1635,7 @@ jobs:
     needs:
       - determine-builds
       - prepare-sandbox
-    if: needs.prepare-sandbox.result == 'success' && needs.prepare-sandbox.outputs.context-exists != 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.prepare-sandbox.result == 'success' && needs.prepare-sandbox.outputs.context-exists != 'true') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=4cpu-linux-x64
@@ -1708,7 +1708,7 @@ jobs:
     needs:
       - determine-builds
       - prepare-sandbox
-    if: needs.prepare-sandbox.result == 'success' && needs.prepare-sandbox.outputs.context-exists != 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.prepare-sandbox.result == 'success' && needs.prepare-sandbox.outputs.context-exists != 'true') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=4cpu-linux-arm64
@@ -1784,7 +1784,7 @@ jobs:
       - build-sandbox-amd64
       - build-sandbox-arm64
       - image-audit
-    if: always() && needs.prepare-sandbox.result == 'success' && needs.image-audit.result == 'success' && (needs.prepare-sandbox.outputs.context-exists == 'true' || (needs.build-sandbox-amd64.result == 'success' && needs.build-sandbox-arm64.result == 'success'))
+    if: github.repository == 'onyx-dot-app/onyx' && (always() && needs.prepare-sandbox.result == 'success' && needs.image-audit.result == 'success' && (needs.prepare-sandbox.outputs.context-exists == 'true' || (needs.build-sandbox-amd64.result == 'success' && needs.build-sandbox-arm64.result == 'success'))) # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-x64
@@ -1964,11 +1964,13 @@ jobs:
       - build-backend-amd64
       - build-model-server-amd64
     if: >-
+      github.repository == 'onyx-dot-app/onyx' && (
       always() && !cancelled() &&
       (needs.build-web-amd64.result == 'success' ||
        needs.build-web-cloud-amd64.result == 'success' ||
        needs.build-backend-amd64.result == 'success' ||
        needs.build-model-server-amd64.result == 'success')
+      )
     runs-on:
       - runs-on
       # amd64 to match the images scanned: `ods audit image` uses the docker CLI,

@@ -14,6 +14,7 @@ on:
       - "pyproject.toml"
       - "uv.lock"
       - ".github/dependabot.yml"
+      - ".github/audit-ignores.json"
       # Any workflow or composite-action change can bump a pinned action to a
       # vulnerable version, so gate the PR that makes the change (not just nightly).
       - ".github/workflows/**"
@@ -32,6 +33,8 @@ jobs:
     name: audit
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      AUDIT_IGNORE_URL: ${{ github.repository == 'onyx-dot-app/onyx' && 's3://onyx-internal-tools/audit/ignores.json' || '.github/audit-ignores.json' }}
     permissions:
       contents: read # checkout + read lockfiles
       id-token: write # OIDC for fetching the S3 allowlist
@@ -61,7 +64,7 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: uv run --no-sync --with 'onyx-devtools[audit]==0.13.2' ods audit --fail-on=critical
+        run: uv run --no-sync --with 'onyx-devtools[audit]==0.13.2' ods audit --fail-on=critical --ignore-url "$AUDIT_IGNORE_URL"
 
       - name: Run audit (SARIF report)
         if: github.event_name != 'pull_request'
@@ -70,7 +73,7 @@ jobs:
         # Don't fail the report job on findings; the SARIF upload surfaces them.
         # SARIF goes to stdout (the uploaded file); the text report goes to stderr
         # so the run's findings are also readable in the log.
-        run: uv run --no-sync --with 'onyx-devtools[audit]==0.13.2' ods audit --format=sarif,text > audit.sarif || true
+        run: uv run --no-sync --with 'onyx-devtools[audit]==0.13.2' ods audit --ignore-url "$AUDIT_IGNORE_URL" --format=sarif,text > audit.sarif || true
 
       - name: Upload SARIF file
         if: github.event_name != 'pull_request'

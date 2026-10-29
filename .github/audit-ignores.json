@@ -1,0 +1,10 @@
+{
+  "ignores": [
+    {
+      "id": "GHSA-7hp6-4w63-5g45",
+      "ecosystem": "PyPI",
+      "reason": "Onyx imports the LiteLLM SDK and model registry; Onyx does not host the LiteLLM Proxy or its experimental UI login. The affected proxy authentication routes are absent from onyx.main. LiteLLM 1.100.4 requires boto3>=1.43.1, which conflicts with the existing aioboto3/aiobotocore SDK constraints. Reassess before enabling LiteLLM Proxy hosting. https://github.com/advisories/GHSA-7hp6-4w63-5g45",
+      "expires": "2026-11-28"
+    }
+  ]
+}

@@ -165,7 +165,7 @@ jobs:
   prepare-craft-assets:
     name: Prepare Craft test assets
     needs: changes
-    if: needs.changes.outputs.craft_k8s == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.changes.outputs.craft_k8s == 'true') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-x64
@@ -285,7 +285,7 @@ jobs:
     # ECR repo so each test shard pulls prebuilt images instead of cold-building.
     name: build-image (${{ matrix.image }})
     needs: changes
-    if: needs.changes.outputs.craft_k8s == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.changes.outputs.craft_k8s == 'true') # upstream-only runner; this fork has none
     strategy:
       fail-fast: false
       matrix:
@@ -355,7 +355,7 @@ jobs:
   craft-k8s-tests:
     name: craft-k8s (${{ matrix.test-file.name }})
     needs: [changes, discover-test-files, prepare-craft-assets, build-images]
-    if: needs.changes.outputs.craft_k8s == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.changes.outputs.craft_k8s == 'true') # upstream-only runner; this fork has none
     # spot=false: this is a long lane (full kind cluster per shard); on-demand
     # avoids mid-run spot reclamation. Matches the compose lane.
     runs-on:
@@ -847,7 +847,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [changes, discover-test-files, build-images, craft-k8s-tests]
-    if: ${{ always() }}
+    if: github.repository == 'onyx-dot-app/onyx' && always() # suite runs only upstream; skipped reports success here
     steps:
       - name: Check job status
         env:
