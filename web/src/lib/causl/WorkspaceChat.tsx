@@ -139,8 +139,11 @@ export default function WorkspaceChat({
           cache: "no-store",
           signal: identityController.signal,
         });
-        if (!response.ok)
-          throw new Error(response.status === 401 ? "signin" : "access");
+        if (!response.ok) {
+          if (response.status === 401) throw new Error("signin");
+          if (response.status === 403) throw new Error("access");
+          return; // Retry temporary identity-service failures on the next poll.
+        }
         const identity = parseCauslIdentity(await response.json());
         if (!identity) throw new Error("access");
         const principal = JSON.stringify([
@@ -163,6 +166,11 @@ export default function WorkspaceChat({
         );
       } catch (error) {
         if (identityController.signal.aborted) return;
+        if (
+          !(error instanceof Error) ||
+          !["signin", "access"].includes(error.message)
+        )
+          return;
         const reason =
           error instanceof Error && error.message === "signin"
             ? "signin"

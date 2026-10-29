@@ -335,7 +335,7 @@ test("Colossus identity loss cancels delayed workspace authorization", async () 
   }
 });
 
-test("unchanged identity checks preserve pending Colossus turns and still announce principal changes", async () => {
+test("transient and unchanged identity checks preserve pending Colossus turns and still announce principal changes", async () => {
   const identity = { actor: context.actor, issuer: "https://auth.example/" };
   const nativeFetch = jest.spyOn(global, "fetch").mockResolvedValue({
     ok: true,
@@ -392,10 +392,26 @@ test("unchanged identity checks preserve pending Colossus turns and still announ
       requestId: request.requestId,
       selection: { page: "colossus", snapshot: { ...snapshot, revision: 2 } },
     });
+    for (const failure of [503, "network"] as const) {
+      if (failure === "network")
+        nativeFetch.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+      else
+        nativeFetch.mockResolvedValueOnce({
+          ok: false,
+          status: failure,
+        } as Response);
+      await act(async () => {
+        window.dispatchEvent(new Event("focus"));
+      });
+      expect(screen.getByTestId("pending-draft")).toBeInTheDocument();
+      expect(
+        post.mock.calls.some(([data]) => data.kind === "causl:status")
+      ).toBe(false);
+    }
     await act(async () => {
       window.dispatchEvent(new Event("focus"));
     });
-    expect(nativeFetch).toHaveBeenCalledTimes(2);
+    expect(nativeFetch).toHaveBeenCalledTimes(4);
     expect(
       post.mock.calls.filter(([data]) => data.kind === "causl:ready")
     ).toHaveLength(1);

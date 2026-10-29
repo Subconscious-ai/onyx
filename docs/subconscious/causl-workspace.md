@@ -272,10 +272,12 @@ Identity loss aborts preparation and clears the workspace. A fresh frame starts 
 Existing native history, conversation ownership, tools and per-user MCP authorization remain the owners.
 Colossus uses a separate `colossus:v1` binding namespace; KB bindings retain their current namespace.
 Every Colossus turn requires an explicit current selection; saved context cannot silently substitute.
+Native history remains readable outside Colossus. Sends, retries and regeneration without a live
+page snapshot return a 400 with guidance to reopen the conversation in Colossus.
+Temporary identity-service faults retain the existing session until the next poll; 401 and 403 clear the session.
 No model provider, tool registration, credential grant, or database migration changes are included.
 
 Focused validation covers schema limits, native identity, tenant mismatch, stale preparation,
 identity loss during delayed authorization, context freezing and KB compatibility.
-The October 29 local run passed 86 backend tests and all 1,406 native web tests.
 Source tests do not prove a hosted model reply. Hosted acceptance remains separately recorded in
 [Colossus #745 — discuss current geography in persistent native Onyx](https://github.com/Subconscious-ai/colossus-v2/issues/745).

@@ -64,8 +64,9 @@ def read_workspace_context(
         return None, None
     if require_current_colossus and binding.mode == "colossus" and selection is None:
         raise OnyxError(
-            OnyxErrorCode.UNAUTHORIZED,
-            "Refresh the current Colossus page before submitting.",
+            OnyxErrorCode.BAD_REQUEST,
+            "Open this conversation in Colossus before sending, retrying, or regenerating. "
+            "A current page snapshot is required; saved history cannot supply current geography.",
         )
     current = selection or binding.selection
     config = configuration()

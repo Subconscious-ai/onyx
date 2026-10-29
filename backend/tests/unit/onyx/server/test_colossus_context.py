@@ -1,12 +1,14 @@
 """Colossus view hints cannot widen native Library identity or conversation scope."""
 
+from typing import Any
+
 import pytest
 from pydantic import ValidationError
 
 from onyx.server.query_and_chat.causl.models import CauslSelection
 
 
-def snapshot() -> dict:
+def snapshot() -> dict[str, Any]:
     return {
         "version": 1,
         "revision": 3,
@@ -22,7 +24,7 @@ def snapshot() -> dict:
     }
 
 
-def test_colossus_snapshot_preserves_all_seven_categories():
+def test_colossus_snapshot_preserves_all_seven_categories() -> None:
     selection = CauslSelection.model_validate(
         {"page": "colossus", "snapshot": snapshot()}
     )
@@ -43,14 +45,14 @@ def test_colossus_snapshot_preserves_all_seven_categories():
         "evidence_links",
     ],
 )
-def test_colossus_snapshot_rejects_missing_categories(field):
+def test_colossus_snapshot_rejects_missing_categories(field: str) -> None:
     value = snapshot()
     del value[field]
     with pytest.raises(ValidationError):
         CauslSelection.model_validate({"page": "colossus", "snapshot": value})
 
 
-def test_colossus_snapshot_refuses_oversized_utf8_and_extra_overlay_content():
+def test_colossus_snapshot_refuses_oversized_utf8_and_extra_overlay_content() -> None:
     value = snapshot()
     value["visible_results"] = {"rows": ["世" * 22000]}
     with pytest.raises(ValidationError):
@@ -61,7 +63,7 @@ def test_colossus_snapshot_refuses_oversized_utf8_and_extra_overlay_content():
         CauslSelection.model_validate({"page": "colossus", "snapshot": value})
 
 
-def test_colossus_requires_snapshot_and_does_not_accept_kb_record_authority():
+def test_colossus_requires_snapshot_and_does_not_accept_kb_record_authority() -> None:
     for value in [
         {"page": "colossus"},
         {"page": "workspace", "snapshot": snapshot()},

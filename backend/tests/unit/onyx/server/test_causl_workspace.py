@@ -1296,6 +1296,8 @@ def test_colossus_memory_uses_verified_library_and_turns_require_current_selecti
     assert response.headers["cache-control"] == "private, no-store"
     read = MagicMock()
     monkeypatch.setattr(turn, "load_causl_context", read)
-    with pytest.raises(OnyxError):
+    with pytest.raises(OnyxError) as missing_context:
         turn.workspace_turn(db, user, chat, None)
+    assert missing_context.value.status_code == 400
+    assert "Open this conversation in Colossus" in missing_context.value.detail
     read.assert_not_called()
