@@ -26,6 +26,7 @@ def test_colossus_snapshot_preserves_all_seven_categories():
     selection = CauslSelection.model_validate(
         {"page": "colossus", "snapshot": snapshot()}
     )
+    assert selection.snapshot is not None
     assert selection.snapshot.revision == 3
     assert selection.query() == {"page": "workspace"}
 
