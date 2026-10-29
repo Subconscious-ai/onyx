@@ -27,7 +27,6 @@ html[data-customer-design="focus"] {
   --border-02: var(--hairline);
   --border-03: var(--grey-300);
   --focus-ring: 2px solid var(--color);
-  --hair: var(--hairline);
   --sidebar-width-expanded: 15rem;
   --chrome-header-height: 3.5rem;
   font-family: var(--font-body);
@@ -71,11 +70,6 @@ html[data-customer-design="focus"] .opal-root-layout__header {
 html[data-customer-design="focus"] .opal-root-layout__panel {
   border-inline-start: 1px solid var(--hairline);
   background: var(--backgroundColor);
-}
-
-html[data-customer-design="focus"] .executive-workspace {
-  --font-hanken-grotesk: var(--font-body);
-  --font-dm-mono: var(--font-mono);
 }
 
 html[data-customer-design="focus"] .executive-masthead {

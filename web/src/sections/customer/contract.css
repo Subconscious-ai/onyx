@@ -1,7 +1,8 @@
-/* Customer-route scoped copy. Source: https://github.com/Subconscious-ai/design-system
+/* Customer and executive-preview scoped copy. Source: https://github.com/Subconscious-ai/design-system
    Commit: 70d8addfeea83cf3e7f4b32f5a9b9a34298c1b39
    Files: contract.css; derived.css product register and reduced-motion tokens.
-   Adapter: root selectors target the active customer route; values remain canonical. */
+   Adapter: root selectors target the active customer route or standalone preview;
+   values remain canonical. Preview presence also reaches body portals. */
 @import "./fonts.css";
 
 /* Subconscious Design System app contract v2.0.0.
@@ -23,7 +24,8 @@
    sizing override locally (the editorial preview garden does this in
    `derived.css`). */
 
-html[data-customer-design="focus"] {
+html[data-customer-design="focus"],
+html:has(.executive-preview) {
   color-scheme: light;
 
   /* ---- Color ----------------------------------------------- */
@@ -130,7 +132,9 @@ html[data-customer-design="focus"] {
 /* data-mode on any element sets the mode of its subtree; greys, rules,
    tints and red re-derive inside it (derived.css and shadcn.css too). */
 html[data-customer-design="focus"],
-html[data-customer-design="focus"] [data-mode] {
+html:has(.executive-preview),
+html[data-customer-design="focus"] [data-mode],
+html:has(.executive-preview) [data-mode] {
   --grey-300: color-mix(in srgb, var(--color) 30%, var(--backgroundColor));
   --grey-500: color-mix(in srgb, var(--color) 72%, var(--backgroundColor));
   --grey-700: color-mix(in srgb, var(--color) 85%, var(--backgroundColor));
@@ -141,19 +145,25 @@ html[data-customer-design="focus"] [data-mode] {
 
 html[data-customer-design="focus"][data-mode="light"],
 html[data-customer-design="focus"]:not([data-mode]),
-html[data-customer-design="focus"] [data-mode="light"] {
+html[data-customer-design="focus"] [data-mode="light"],
+html:has(.executive-preview)[data-mode="light"],
+html:has(.executive-preview):not([data-mode]),
+html:has(.executive-preview) [data-mode="light"] {
   color-scheme: light;
   --backgroundColor: var(--lightColor, #ffffff);
   --color: var(--darkColor, #1b165b);
   --red: #c8102e;
 }
 
-/* Dark fires on data-mode="dark" (canonical) or html[data-customer-design="focus"].dark, the class
+/* Dark fires on data-mode="dark" (canonical) or the root .dark class
    next-themes sets. This block follows the light one, so .dark wins on a
    next-themes app with no data-mode. */
 html[data-customer-design="focus"][data-mode="dark"],
 html[data-customer-design="focus"].dark,
-html[data-customer-design="focus"] [data-mode="dark"] {
+html[data-customer-design="focus"] [data-mode="dark"],
+html:has(.executive-preview)[data-mode="dark"],
+html:has(.executive-preview).dark,
+html:has(.executive-preview) [data-mode="dark"] {
   color-scheme: dark;
   --backgroundColor: var(--darkColor, #1b165b);
   --color: var(--lightColor, #ffffff);
@@ -169,7 +179,8 @@ html[data-customer-design="focus"] [data-mode="dark"] {
 }
 
 /* Product register: calmer type, faster motion (DOCTRINE.md §2.4). */
-html[data-customer-design="focus"] {
+html[data-customer-design="focus"],
+html:has(.executive-preview) {
   /* Type — pinned upper bounds, no fluid scaling above the threshold.
      Heading hierarchy still has a 1.25–1.5x ratio between steps so
      "kill the middle weight" still applies — just at a calmer volume. */
@@ -190,7 +201,7 @@ html[data-customer-design="focus"] {
    motion lands on its end state. The aliases follow --dur-med. */
 @media (prefers-reduced-motion: reduce) {
   html[data-customer-design="focus"],
-  html[data-customer-design="focus"] {
+  html:has(.executive-preview) {
     --dur-fast: 1ms;
     --dur-med: 1ms;
     --dur-slow: 1ms;
