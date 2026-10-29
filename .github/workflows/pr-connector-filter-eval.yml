@@ -30,6 +30,7 @@ env:
 
 jobs:
   connector-filter-eval:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     # Informative, not a merge gate: a single failing eval case fails the run,
     # but some cases document behaviors the prompt does not handle yet, so a
     # red eval must never block the PR.

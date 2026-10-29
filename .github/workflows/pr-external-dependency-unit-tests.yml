@@ -79,6 +79,7 @@ jobs:
           echo "test-dirs=$dirs" >> $GITHUB_OUTPUT
 
   external-dependency-unit-tests:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     needs: discover-test-dirs
     # Use larger runner with more resources for Vespa
     runs-on:

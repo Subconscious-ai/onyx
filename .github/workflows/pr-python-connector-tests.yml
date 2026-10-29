@@ -78,6 +78,7 @@ env:
 
 jobs:
   build-backend-image:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     # See https://runs-on.com/runners/linux/
     runs-on:
       [
@@ -109,6 +110,7 @@ jobs:
           docker-no-cache: ${{ vars.DOCKER_NO_CACHE == 'true' && 'true' || 'false' }}
 
   connectors-check:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     needs: build-backend-image
     # id-token scoped to this job only -- it's the sole job that exchanges OIDC for AWS
     # credentials (to fetch connector secrets); build-backend-image authenticates to ECR via

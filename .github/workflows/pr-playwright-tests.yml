@@ -159,7 +159,7 @@ jobs:
 
   build-web-image:
     needs: changes
-    if: needs.changes.outputs.playwright == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.changes.outputs.playwright == 'true') # upstream-only runner; this fork has none
     runs-on:
       [
         runs-on,
@@ -238,8 +238,10 @@ jobs:
   build-backend-image:
     needs: changes
     if: >-
+      github.repository == 'onyx-dot-app/onyx' && (
       needs.changes.outputs.playwright == 'true' ||
       needs.changes.outputs.airgap == 'true'
+      )
     runs-on:
       [
         runs-on,
@@ -308,8 +310,10 @@ jobs:
   build-model-server-image:
     needs: changes
     if: >-
+      github.repository == 'onyx-dot-app/onyx' && (
       needs.changes.outputs.playwright == 'true' ||
       needs.changes.outputs.airgap == 'true'
+      )
     runs-on:
       [
         runs-on,
@@ -342,7 +346,7 @@ jobs:
 
   airgap-health:
     needs: [changes, build-backend-image, build-model-server-image]
-    if: needs.changes.outputs.airgap == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.changes.outputs.airgap == 'true') # upstream-only runner; this fork has none
     runs-on:
       [
         runs-on,
@@ -463,6 +467,7 @@ jobs:
             ${{ runner.temp }}/airgap-tls.log
 
   playwright-tests:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     needs: [build-web-image, build-backend-image, build-model-server-image]
     name: Playwright Tests (${{ matrix.project }} ${{ matrix.shard }}/${{ matrix.shards }})
     permissions:
@@ -657,12 +662,14 @@ jobs:
   playwright-tests-oauth-okta:
     needs: [changes, build-web-image, build-backend-image, build-model-server-image]
     if: >-
+      github.repository == 'onyx-dot-app/onyx' && (
       needs.changes.outputs.playwright == 'true' &&
       needs.changes.outputs.mcp_oauth == 'true' && (
         github.event_name == 'merge_group' || (
           github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.full_name == github.repository
         )
+      )
       )
     name: Playwright Tests (oauth-okta)
     permissions:
@@ -822,6 +829,7 @@ jobs:
           path: ${{ github.workspace }}/docker-compose.log
 
   playwright-tests-lite:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     needs: [build-web-image, build-backend-image]
     name: Playwright Tests (lite)
     permissions:
@@ -947,9 +955,11 @@ jobs:
       id-token: write # Required for OIDC-based AWS credential exchange (S3 access)
       contents: read
     if: >-
+      github.repository == 'onyx-dot-app/onyx' && (
       always() &&
       needs.playwright-tests.result != 'cancelled' &&
       needs.playwright-tests.result != 'skipped'
+      )
     runs-on:
       - runs-on
       - runner=2cpu-linux-arm64
@@ -1224,7 +1234,7 @@ jobs:
         playwright-tests-lite,
         playwright-tests-oauth-okta,
       ]
-    if: ${{ always() }}
+    if: github.repository == 'onyx-dot-app/onyx' && always() # suite runs only upstream; skipped reports success here
     steps:
       - name: Check job status
         env:
