@@ -50,7 +50,7 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$REVIEW_HELPER_REF" =~ ^[a-f0-9]{40}$ ]]
-          mkdir -p "$RUNNER_TEMP/claude-review-tools"
+          mkdir -p "$RUNNER_TEMP/claude-review-tools" "$RUNNER_TEMP/review-context"
           helper="$RUNNER_TEMP/claude-review-tools/claude_review.py"
           gh api "repos/$GITHUB_REPOSITORY/contents/scripts/agent/claude_review.py?ref=$REVIEW_HELPER_REF" \
             -H 'Accept: application/vnd.github.raw+json' > "$helper"
