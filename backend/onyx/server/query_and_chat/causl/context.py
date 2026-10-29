@@ -282,14 +282,14 @@ def _validate(
 def load_causl_context(
     db: Session,
     user: User,
-    actor: CauslActor,
+    actor: CauslActor | None,
     selection: CauslSelection,
     *,
     start_research: bool = False,
 ) -> AuthorizedCauslContext:
     config = configuration()
     identity = require_session_identity(user.id)
-    if identity.subject != actor.user_id:
+    if actor is not None and identity.subject != actor.user_id:
         raise OnyxError(
             OnyxErrorCode.UNAUTHORIZED,
             "Your Library account does not match your Onyx sign-in.",
@@ -302,8 +302,8 @@ def load_causl_context(
         selection,
         start_research=start_research,
     )
-    _validate(envelope, actor, selection)
-    if envelope.issuer != identity.issuer:
+    _validate(envelope, actor or envelope.actor, selection)
+    if envelope.issuer != identity.issuer or envelope.actor.user_id != identity.subject:
         raise OnyxError(
             OnyxErrorCode.UNAUTHORIZED,
             "Your Library account does not match your Onyx sign-in.",

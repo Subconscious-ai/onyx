@@ -94,6 +94,7 @@ class MCPTool(Tool[None]):
         bound_issuer: str | None = None,
         bound_statement: CauslStatement | None = None,
         bound_market_id: str | None = None,
+        bound_model_page: str | None = None,
     ) -> None:
         super().__init__(emitter=emitter)
 
@@ -109,6 +110,7 @@ class MCPTool(Tool[None]):
         self._bound_issuer = bound_issuer
         self._bound_statement = bound_statement
         self._bound_market_id = bound_market_id
+        self._bound_model_page = bound_model_page
 
         self._mcp_tool_name = tool_name
         self._name = tool_name  # NOTE: this may change in _disambiguate_mcp_tool_names
@@ -162,6 +164,16 @@ class MCPTool(Tool[None]):
                     key for key in schema.get("required", []) if key != "market"
                 ],
             }
+        if (
+            self._bound_actor is not None
+            and self._bound_model_page
+            and self._mcp_tool_name in {"inspect_model", "prepare_model_change"}
+        ):
+            from onyx.server.query_and_chat.causl.model_page import (
+                model_page_tool_schema,
+            )
+
+            schema = model_page_tool_schema(self._mcp_tool_name)
         return {
             "type": "function",
             "function": {
@@ -190,6 +202,33 @@ class MCPTool(Tool[None]):
         _server = self.mcp_server.name
         outcome = MCPToolCallStatus.ERROR
         try:
+            if (
+                self._bound_actor is not None
+                and self._bound_model_page
+                and self._mcp_tool_name in {"inspect_model", "prepare_model_change"}
+            ):
+                from onyx.server.query_and_chat.causl.model_page import (
+                    model_page_tool_result,
+                )
+
+                result = model_page_tool_result(
+                    self._mcp_tool_name, self._bound_model_page, llm_kwargs
+                )
+                self.emitter.emit(
+                    Packet(
+                        placement=placement,
+                        obj=CustomToolDelta(
+                            tool_name=self._name, response_type="json", data=result
+                        ),
+                    )
+                )
+                outcome = MCPToolCallStatus.SUCCESS
+                return ToolResponse(
+                    rich_response=CustomToolCallSummary(
+                        tool_name=self._name, response_type="json", tool_result=result
+                    ),
+                    llm_facing_response=json.dumps(result),
+                )
             if self._bound_actor is not None and self._mcp_tool_name in {
                 "inspect_model",
                 "prepare_model_change",

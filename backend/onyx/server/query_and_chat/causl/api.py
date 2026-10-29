@@ -73,4 +73,5 @@ def open_workspace(
         agent_id=loaded.configuration.persona_id,
         scope_key=loaded.envelope.context["scopeKey"],
         context_digest=loaded.envelope.context["digest"],
+        actor=loaded.envelope.actor,
     )

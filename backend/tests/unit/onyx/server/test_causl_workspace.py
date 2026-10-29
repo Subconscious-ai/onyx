@@ -1164,3 +1164,34 @@ def test_native_brief_handoff_retains_only_matching_bounded_preparation(
         else None
     ), "Only the matched company's exact private captures reach the producer intake"
     (tmp_path / "native-handoff.json").write_text(json.dumps(payload))
+
+
+def test_standalone_bootstrap_derives_actor_only_from_verified_native_and_library_identity(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    requests = http_response(monkeypatch, envelope())
+    loaded = context.load_causl_context(db, user, None, SELECTION)
+    assert loaded.envelope.actor == ACTOR
+    assert requests[0].headers["x-causl-expected-subject"] == "auth0|alice"
+    assert "x-causl-expected-organization" not in requests[0].headers
+
+
+@pytest.mark.parametrize(
+    "field,value", [("userId", "auth0|foreign"), ("issuer", "https://foreign.example/")]
+)
+def test_standalone_bootstrap_rejects_foreign_native_identity(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+    field: str,
+    value: str,
+) -> None:
+    db, user, _server = connected
+    payload = envelope()
+    if field == "issuer":
+        payload["issuer"] = value
+    else:
+        payload["actor"][field] = value
+    http_response(monkeypatch, payload)
+    with pytest.raises(OnyxError):
+        context.load_causl_context(db, user, None, SELECTION)

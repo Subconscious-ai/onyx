@@ -538,3 +538,51 @@ def test_ordinary_model_tools_keep_their_original_market_parameter(
     monkeypatch.setattr(mcp_tool, "call_mcp_tool", call)
     tool.run(Placement(turn_index=0), market="other_market")
     assert call.call_args.args[2] == {"market": "other_market"}
+
+
+def test_unsaved_page_proposal_uses_local_validator_without_saved_market_call(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import json
+
+    server = MCPServer(
+        id=22,
+        name="KB",
+        server_url="https://kb.example/api/mcp/library",
+        auth_type=MCPAuthenticationType.NONE,
+    )
+    emitter = MagicMock()
+    page = json.dumps(
+        {
+            "version": 1,
+            "captureId": "turn-1",
+            "document": {"local": "model"},
+            "page": {
+                "workspaceScope": "local:one",
+                "documentRevision": "revision-1",
+                "drafts": [],
+            },
+        }
+    )
+    tool = mcp_tool.MCPTool(
+        7,
+        emitter,
+        server,
+        "prepare_model_change",
+        "Prepare model changes",
+        {"type": "object"},
+        bound_actor=CauslActor(org_id="org_b", user_id="auth0|alice"),
+        bound_issuer="https://auth.example/",
+        bound_model_page=page,
+    )
+    call = MagicMock()
+    monkeypatch.setattr(mcp_tool, "call_mcp_tool", call)
+    response = tool.run(
+        Placement(turn_index=0),
+        edits=[{"kind": "delete-metric", "metricId": "local"}],
+        rationale="Review locally",
+    )
+    call.assert_not_called()
+    assert "models:proposal" in response.llm_facing_response
+    assert "turn-1" in response.llm_facing_response
+    assert emitter.emit.call_args.args[0].obj.data["captureId"] == "turn-1"

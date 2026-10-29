@@ -1,5 +1,6 @@
 "use client";
 
+import { captureModelPage } from "./modelPage";
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -38,6 +39,8 @@ export default function WorkspaceChat({
   const t = useTranslations("causlWorkspace");
   const router = useRouter();
   const params = useSearchParams();
+  const standalone = useRef(false);
+  const revision = useRef(0);
   const bridge = useRef<ReturnType<typeof createCauslBridge> | null>(null);
   const [workspace, setWorkspace] = useState<CauslWorkspace | null>(null);
   const [draft, setDraft] = useState<
@@ -75,15 +78,59 @@ export default function WorkspaceChat({
         setError(reason);
         setWorkspace(null);
         setDraft(null);
+        window.parent.postMessage(
+          { kind: "causl:unavailable", nonce },
+          parentOrigin
+        );
       },
     });
     bridge.current = controller;
+    const bootstrap = new AbortController();
     const receive = (event: MessageEvent) => {
       if (
         authenticated &&
         event.source === window.parent &&
         event.origin === parentOrigin
       ) {
+        if (
+          event.data?.kind === "models:open" &&
+          event.data.nonce === nonce &&
+          !standalone.current
+        ) {
+          standalone.current = true;
+          void fetch("/api/chat/causl-workspace", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: bootstrap.signal,
+            body: JSON.stringify({ selection: { page: "models" } }),
+          })
+            .then(async (response) => {
+              if (!response.ok) throw new Error(String(response.status));
+              return response.json();
+            })
+            .then((ready) => {
+              if (bootstrap.signal.aborted) return;
+              if (!ready.actor) throw new Error("Missing verified identity");
+              controller.receive({
+                kind: "causl:context",
+                nonce,
+                revision: ++revision.current,
+                actor: ready.actor,
+                selection: { page: "models" },
+              });
+            })
+            .catch(() => {
+              if (!bootstrap.signal.aborted) {
+                standalone.current = false;
+                setError("access");
+                window.parent.postMessage(
+                  { kind: "causl:unavailable", nonce },
+                  parentOrigin
+                );
+              }
+            });
+          return;
+        }
         const draft = controller.receiveDraft(event.data);
         const context = controller.navigationContext();
         if (draft && context) setDraft({ ...draft, context });
@@ -92,6 +139,13 @@ export default function WorkspaceChat({
         }
       }
     };
+    const proposal = (event: Event) => {
+      if (!standalone.current || !controller.navigationContext()) return;
+      const data = (event as CustomEvent).detail;
+      if (data?.kind === "models:proposal")
+        window.parent.postMessage({ ...data, nonce }, parentOrigin);
+    };
+    window.addEventListener("models:tool-result", proposal);
     window.addEventListener("message", receive);
     const removeNavigation = installCauslNavigation({
       document,
@@ -101,8 +155,11 @@ export default function WorkspaceChat({
     });
     window.parent.postMessage({ kind: "causl:ready", nonce }, parentOrigin);
     return () => {
+      bootstrap.abort();
       controller.dispose();
       bridge.current = null;
+      standalone.current = false;
+      window.removeEventListener("models:tool-result", proposal);
       window.removeEventListener("message", receive);
       removeNavigation();
     };
@@ -203,7 +260,33 @@ export default function WorkspaceChat({
                   prepareSubmission: async () => {
                     if (!bridge.current)
                       throw new Error("Workspace unavailable");
-                    return bridge.current.prepareSubmission();
+                    const selection = await bridge.current.prepareSubmission();
+                    if (!standalone.current) return selection;
+                    const context = bridge.current.navigationContext();
+                    if (!context) throw new Error("Workspace changed");
+                    // Verify the current native session and live Library membership before reading local content.
+                    try {
+                      await openCauslWorkspace(
+                        context,
+                        new AbortController().signal
+                      );
+                    } catch (error) {
+                      window.parent.postMessage(
+                        { kind: "causl:unavailable", nonce },
+                        parentOrigin!
+                      );
+                      throw error;
+                    }
+                    const modelPage = await captureModelPage(
+                      parentOrigin!,
+                      nonce!
+                    );
+                    if (
+                      !context ||
+                      bridge.current?.navigationContext() !== context
+                    )
+                      throw new Error("Workspace changed");
+                    return { ...selection, modelPage };
                   },
                 }}
               />

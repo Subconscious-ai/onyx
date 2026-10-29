@@ -9,6 +9,7 @@ export interface CauslSelection {
   record?: { type: string; id: string };
   runId?: string;
   studioId?: string;
+  modelPage?: string;
 }
 
 export interface CauslContextMessage {
@@ -24,6 +25,7 @@ export interface CauslWorkspace {
   agentId: number;
   scopeKey: string;
   contextDigest: string;
+  actor?: CauslActor;
 }
 
 export interface CauslDraft {
