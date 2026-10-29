@@ -246,6 +246,35 @@ export default function ExecutiveWorkspace({
   const { profileStatus, profile, dossier, research, reload, refreshing } =
     useExecutiveContext(active && !preview, preparation.savedMessage);
 
+  const deliveredResearch = useRef(new Set<string>());
+  useEffect(() => {
+    if (
+      !active ||
+      preview ||
+      busy ||
+      !chatId ||
+      !brief ||
+      preparation.phase !== "saved" ||
+      research.status !== "ready" ||
+      !research.job_id
+    )
+      return;
+    const key = JSON.stringify([chatId, research.job_id]);
+    if (deliveredResearch.current.has(key)) return;
+    deliveredResearch.current.add(key);
+    preparation.retry();
+  }, [
+    active,
+    preview,
+    busy,
+    chatId,
+    brief,
+    preparation.phase,
+    preparation.retry,
+    research.status,
+    research.job_id,
+  ]);
+
   const [view, setView] = useState<
     "journey" | "evidence" | "decisions" | "model"
   >("journey");

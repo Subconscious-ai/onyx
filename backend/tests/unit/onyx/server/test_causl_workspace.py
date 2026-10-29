@@ -1,12 +1,14 @@
 """Workspace hints must never widen the per-user KB grant or native ownership."""
 
 import json
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
 from uuid import uuid4
 
 import httpx
 import pytest
+from sqlalchemy.dialects.postgresql import Insert
 from sqlalchemy.orm import Session
 
 from onyx.auth.session_identity import SessionIdentity
@@ -20,6 +22,7 @@ from onyx.db.enums import (
 from onyx.db.models import (
     ChatMessage,
     ChatSession,
+    EncryptedKeyValueStore,
     MCPConnectionConfig,
     MCPServer,
     Persona,
@@ -139,11 +142,18 @@ def test_reads_current_grant_and_supplies_narrowing_actor_headers(
     assert dict(requests[0].url.params) == {"page": "models", "market": "market_b"}
 
 
+@pytest.mark.parametrize("native_exa", [False, True])
 def test_new_interviews_read_the_same_committed_market_fact_without_chat_history(
-    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+    native_exa: bool,
 ) -> None:
     db, user, _server = connected
     monkeypatch.setenv("BURN2_ENABLED", "true")
+    if native_exa:
+        monkeypatch.setenv("BURN2_RESEARCH_PERSONA_ID", "11")
+    else:
+        monkeypatch.delenv("BURN2_RESEARCH_PERSONA_ID", raising=False)
     monkeypatch.setattr(turn, "read_causl_binding", lambda *_args: None)
     monkeypatch.setattr(db, "get", lambda *_args: None)
     monkeypatch.setattr(db, "scalar", lambda *_args: None)
@@ -167,12 +177,12 @@ def test_new_interviews_read_the_same_committed_market_fact_without_chat_history
         assert WORKSPACE_INSTRUCTIONS not in prompt
         bindings.append(binding)
     assert bindings[0].chat_id != bindings[1].chat_id
-    assert len(requests) == 4, "Each new interview validates before activating research"
+    assert len(requests) == (2 if native_exa else 4)
     assert "x-causl-expected-organization" not in requests[0].headers
     assert requests[0].headers["x-causl-expected-subject"] == ACTOR.user_id
-    assert [request.method for request in requests] == ["GET", "POST", "GET", "POST"], (
-        "An ordinary interview turn starts or resumes bounded research"
-    )
+    assert [request.method for request in requests] == (
+        ["GET", "GET"] if native_exa else ["GET", "POST", "GET", "POST"]
+    ), "Native Exa preparation must not also start a legacy GPT Researcher job"
 
 
 def test_saved_fact_turn_fetches_facts_through_tools_without_starting_research(
@@ -828,11 +838,16 @@ def test_hands_the_prepared_interview_brief_to_the_library(
     ]
     monkeypatch.setattr(context, "read_causl_binding", lambda *_args: binding)
     monkeypatch.setattr(
-        context, "owned_snapshot", lambda *_args: {"transcript": transcript}
+        context,
+        "owned_snapshot",
+        lambda *_args: {"transcript": transcript, "digest": "current-interview"},
     )
+    update_market = MagicMock()
+    monkeypatch.setattr(context, "update_interview_market", update_market)
     requests = http_response(monkeypatch, {"marketId": "m", "accepted": {}})
 
     context.send_interview_brief(db, user, chat_id)
+    update_market.assert_called_once_with(db, binding, "m", "current-interview")
 
     assert [str(request.url) for request in requests] == [
         "https://kb.example/api/assistant/onyx-brief"
@@ -857,3 +872,295 @@ def test_hands_the_prepared_interview_brief_to_the_library(
     )
     context.send_interview_brief(db, user, chat_id)
     assert len(requests) == 1, "A workspace chat is not an interview to save"
+
+
+def test_saved_interview_selects_the_server_market_for_the_next_turn(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    chat = ChatSession(id=uuid4(), user_id=user.id, persona_id=11)
+    binding = CauslChatBinding(
+        user_id=user.id,
+        actor=ACTOR,
+        issuer="https://auth.example/",
+        market_id=None,
+        chat_id=chat.id,
+        selection=CauslSelection(page="workspace"),
+        library_server_id=22,
+        mode="interview",
+    )
+    row = MagicMock(spec=EncryptedKeyValueStore)
+    row.value.get_value.return_value = binding.model_dump(mode="json")
+    monkeypatch.setattr(db, "get", lambda *_args: row)
+
+    def execute(statement: Any, *_args: Any) -> None:
+        if isinstance(statement, Insert):
+            row.value.get_value.return_value = statement.compile().params["value"]
+
+    monkeypatch.setattr(db, "execute", execute)
+    monkeypatch.setattr(
+        context,
+        "owned_snapshot",
+        lambda *_args: {
+            "digest": "current-interview",
+            "transcript": [
+                {"type": "user", "message": "Clinics sign a yearly contract."},
+                {"type": "assistant", "message": "Saved the current draft."},
+            ],
+        },
+    )
+    requests: list[httpx.Request] = []
+    client = httpx.Client
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if request.url.path.endswith("onyx-brief"):
+            return httpx.Response(200, json={"marketId": "market_b", "accepted": {}})
+        payload = envelope()
+        payload["context"]["page"] = "workspace"
+        return httpx.Response(200, json=payload)
+
+    monkeypatch.setattr(
+        context.httpx,
+        "Client",
+        lambda **kwargs: client(transport=httpx.MockTransport(handle), **kwargs),
+    )
+
+    context.send_interview_brief(db, user, chat.id)
+
+    restored, prompt = turn.workspace_turn(db, user, chat, None)
+    assert restored is not None and restored.market_id == "market_b"
+    assert restored.selection.market_id == "market_b"
+    assert restored.selection.page == "workspace"
+    assert restored.brief_digest == "current-interview"
+    assert prompt is not None and "Accepted B fact" in prompt
+    assert dict(requests[-1].url.params) == {
+        "page": "workspace",
+        "market": "market_b",
+    }, "The next turn must read the canonical market returned by the Library"
+
+
+@pytest.mark.parametrize("changed", ["transcript", "association"])
+def test_saved_market_does_not_replace_a_newer_interview(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+    changed: str,
+) -> None:
+    db, user, _server = connected
+    commit = MagicMock()
+    monkeypatch.setattr(db, "commit", commit)
+    chat_id = uuid4()
+    binding = CauslChatBinding(
+        user_id=user.id,
+        actor=ACTOR,
+        issuer="https://auth.example/",
+        market_id=None,
+        chat_id=chat_id,
+        selection=CauslSelection(page="workspace"),
+        library_server_id=22,
+        mode="interview",
+    )
+    row = MagicMock(spec=EncryptedKeyValueStore)
+    current = binding.model_copy(update={"market_id": "newer-market"})
+    row.value.get_value.return_value = current.model_dump(mode="json")
+    monkeypatch.setattr(db, "get", lambda *_args: row)
+    monkeypatch.setattr(context, "read_causl_binding", lambda *_args: binding)
+    snapshots = MagicMock(
+        side_effect=[
+            {"digest": "before", "transcript": []},
+            {"digest": "after" if changed == "transcript" else "before"},
+        ]
+    )
+    monkeypatch.setattr(context, "owned_snapshot", snapshots)
+    http_response(monkeypatch, {"marketId": "older-market", "accepted": {}})
+
+    with pytest.raises(OnyxError) as failure:
+        context.send_interview_brief(db, user, chat_id)
+
+    assert failure.value.error_code == OnyxErrorCode.CONFLICT
+    commit.assert_not_called()
+    assert row.value.get_value.return_value["market_id"] == "newer-market"
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {"marketId": None},
+        {"marketId": 1},
+        {"marketId": " "},
+        {"marketId": "x" * 501},
+    ],
+)
+def test_brief_handoff_requires_a_valid_server_market(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+    payload: dict[str, Any],
+) -> None:
+    db, user, _server = connected
+    chat_id = uuid4()
+    binding = CauslChatBinding(
+        user_id=user.id,
+        actor=ACTOR,
+        issuer="https://auth.example/",
+        market_id=None,
+        chat_id=chat_id,
+        selection=CauslSelection(page="workspace"),
+        library_server_id=22,
+        mode="interview",
+    )
+    monkeypatch.setattr(context, "read_causl_binding", lambda *_args: binding)
+    monkeypatch.setattr(
+        context, "owned_snapshot", lambda *_args: {"digest": "before", "transcript": []}
+    )
+    update_market = MagicMock()
+    monkeypatch.setattr(context, "update_interview_market", update_market)
+    http_response(monkeypatch, payload)
+
+    with pytest.raises(OnyxError) as failure:
+        context.send_interview_brief(db, user, chat_id)
+
+    assert failure.value.error_code == OnyxErrorCode.BAD_GATEWAY
+    update_market.assert_not_called()
+
+
+def test_native_interview_cannot_claim_library_save_without_its_binding(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    monkeypatch.setenv("BURN2_RESEARCH_PERSONA_ID", "11")
+    monkeypatch.setattr(context, "read_causl_binding", lambda *_args: None)
+    with pytest.raises(OnyxError) as failure:
+        context.send_interview_brief(db, user, uuid4())
+    assert failure.value.error_code == OnyxErrorCode.UNAUTHORIZED
+
+
+@pytest.mark.parametrize("profile_company", ["Example", "Different employer"])
+@pytest.mark.parametrize(
+    "research_variant",
+    ["ready", "running", "stale_query", "missing_captures", "oversized"],
+)
+def test_native_brief_handoff_retains_only_matching_bounded_preparation(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    profile_company: str,
+    research_variant: str,
+) -> None:
+    from onyx.db import burn2_profile, burn2_research
+    from onyx.server.query_and_chat.burn2.research import public_research_query
+
+    db, user, _server = connected
+    chat_id = uuid4()
+    binding = CauslChatBinding(
+        user_id=user.id,
+        actor=ACTOR,
+        issuer="https://auth.example/",
+        market_id=None,
+        chat_id=chat_id,
+        selection=SELECTION,
+        library_server_id=22,
+        mode="interview",
+    )
+    brief = {
+        "version": 2,
+        "company": "Example",
+        "objective": {"text": "Grow renewal", "status": "unknown"},
+        "horizon": "Unknown",
+        "journey": [],
+        "keyResults": [],
+        "transitions": [],
+        "model": {
+            "equation": {"text": "Renewals", "status": "unknown"},
+            "inputs": [],
+            "gaps": [],
+        },
+        "interventions": [],
+        "conflicts": [],
+    }
+    transcript = [
+        {"type": "user", "message": "We work at Example."},
+        {
+            "type": "assistant",
+            "message": f"<interview-brief>{json.dumps(brief)}</interview-brief>",
+        },
+    ]
+    profile = {
+        "status": "ready",
+        "profile": {
+            "company": profile_company,
+            "website": "example.com",
+            "role": "CEO",
+            "name": "Executive",
+            "unmapped_secret": "private extra",
+        },
+    }
+    research = {
+        "status": "ready",
+        "query": public_research_query(profile),
+        "report": "Pricing starts at $40.",
+        "source_urls": ["https://example.com/pricing"],
+        "checked_at": 1793124000,
+        "truncated": False,
+        "source_captures": [
+            {
+                "url": "https://example.com/pricing",
+                "title": "Original pricing",
+                "text": "  Pricing starts at $40.\n",
+                "sha256": "7fd61572455e21ef1092ea992296b5f04e1d228989ae381a7e0441ff59994ca0",
+                "fetched_at": 1793124000,
+            }
+        ],
+        "stale": True,
+        "acceptance": "unaccepted",
+        "job_id": "1d2d0f61-479f-4931-b9e7-cc43ac70d91e",
+    }
+    if research_variant == "running":
+        research["status"] = "running"
+    elif research_variant == "stale_query":
+        research["query"] = "Old company research"
+    elif research_variant == "missing_captures":
+        research.pop("source_captures")
+    elif research_variant == "oversized":
+        research["source_captures"][0]["text"] = "€" * 400_000
+    monkeypatch.setattr(context, "read_causl_binding", lambda *_args: binding)
+    monkeypatch.setattr(
+        context,
+        "owned_snapshot",
+        lambda *_args: {"transcript": transcript, "digest": "current-interview"},
+    )
+    monkeypatch.setattr(context, "update_interview_market", MagicMock())
+    monkeypatch.setattr(burn2_profile, "read_profile", lambda *_args: profile)
+    monkeypatch.setattr(burn2_research, "read_research", lambda *_args: research)
+    requests = http_response(monkeypatch, {"marketId": "m", "accepted": {}})
+
+    context.send_interview_brief(db, user, chat_id)
+
+    payload = json.loads(requests[0].content)
+    expected = {
+        "profile": {
+            "company": "Example",
+            "website": "example.com",
+            "role": "CEO",
+            "name": "Executive",
+        },
+        "profileSource": "pdl",
+        "research": {
+            "status": "ready",
+            "report": "Pricing starts at $40.",
+            "source_urls": ["https://example.com/pricing"],
+            "checked_at": 1793124000,
+            "truncated": False,
+        },
+    }
+    if research_variant in {"running", "stale_query"}:
+        expected["research"] = {"status": "unavailable"}
+    assert payload.get("businessContext") == (
+        expected if profile_company == "Example" else None
+    )
+    assert payload.get("nativeResearch") == (
+        {"operationId": research["job_id"], "sources": research["source_captures"]}
+        if profile_company == "Example" and research_variant == "ready"
+        else None
+    ), "Only the matched company's exact private captures reach the producer intake"
+    (tmp_path / "native-handoff.json").write_text(json.dumps(payload))

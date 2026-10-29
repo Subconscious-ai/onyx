@@ -238,11 +238,18 @@ export function projectBrief(
   const observedQuote = (quote?: string) => {
     const turn = quoteTurn(quote);
     if (turn < 0) return false;
-    // Exact text alone cannot promote explicitly hypothetical or external-case input.
-    const context = statements[turn]!;
-    return !/\b(?:scenario|hypothetical|hypothesis|assume|suppose|public case|case study|benchmark)\b/.test(
-      context
-    );
+    // A later scenario cannot erase an earlier factual sentence or endorse its own inputs.
+    const factual: string[] = [];
+    for (const clause of statements[turn]!.split(/(?<=[.!?;])\s+|\n/)) {
+      if (
+        /\b(?:scenario|hypothetical|hypothesis|assume|suppose|public case|case study|benchmark)\b/.test(
+          clause
+        )
+      )
+        break;
+      factual.push(clause);
+    }
+    return Boolean(quote && factual.join(" ").includes(normalized(quote)));
   };
   const ground = <T extends BriefNote>(note: T): T => {
     if (note.status === "executive" && observedQuote(note.quote)) return note;

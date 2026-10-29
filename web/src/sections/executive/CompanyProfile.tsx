@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button, InputTypeIn, Text } from "@opal/components";
 import {
@@ -117,6 +117,61 @@ export default function CompanyProfile({
 }: CompanyProfileProps) {
   const t = useTranslations("executive.companyProfile");
   const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState("");
+  const operation = useRef<string | null>(null);
+  async function refreshPreparation() {
+    if (busy) return;
+    operation.current ??= JSON.stringify({
+      operation_id: crypto.randomUUID(),
+      checked_at: profile.checked_at ?? null,
+      revision: profile.correction.revision,
+    });
+    setBusy(true);
+    setError("");
+    setResult("");
+    try {
+      const response = await fetch("/api/chat/executive-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: operation.current,
+      });
+      if (!response.ok) {
+        if (response.status === 409) {
+          operation.current = null;
+          onRefresh();
+        }
+        setError(t(response.status === 409 ? "conflict" : "refreshFailed"));
+        return;
+      }
+      const receipt = await response.json();
+      if (
+        receipt.job_id !== JSON.parse(operation.current).operation_id ||
+        !["updating", "ready", "not_found", "unavailable"].includes(
+          receipt.preparation_status
+        )
+      ) {
+        setError(t("refreshFailed"));
+        return;
+      }
+      operation.current = null;
+      setResult(
+        t(
+          receipt.preparation_status === "not_found"
+            ? "refreshNoMatch"
+            : receipt.preparation_status === "unavailable"
+              ? "refreshUnavailable"
+              : "refreshStarted"
+        )
+      );
+      onRefresh();
+    } catch {
+      setError(t("refreshFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <div className="flex flex-col gap-2">
       <Button
@@ -128,11 +183,33 @@ export default function CompanyProfile({
         {t("title")}
       </Button>
       {open && (
-        <ProfileEditor
-          profile={profile}
-          onRefresh={onRefresh}
-          onClose={() => setOpen(false)}
-        />
+        <>
+          <ProfileEditor
+            profile={profile}
+            onRefresh={onRefresh}
+            onClose={() => setOpen(false)}
+          />
+          <Text font="secondary-body" color="text-03">
+            {t("refreshDescription")}
+          </Text>
+          <Button
+            prominence="tertiary"
+            disabled={busy || profile.preparation_pending}
+            onClick={() => void refreshPreparation()}
+          >
+            {t(busy || profile.preparation_pending ? "refreshing" : "refresh")}
+          </Button>
+          {error && (
+            <div role="alert">
+              <Text font="secondary-body">{error}</Text>
+            </div>
+          )}
+          {result && (
+            <div role="status">
+              <Text font="secondary-body">{result}</Text>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

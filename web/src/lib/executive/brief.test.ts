@@ -37,6 +37,34 @@ const history: InterviewMessage[] = [
 ];
 
 describe("executive brief provenance and reload", () => {
+  test.each([
+    [
+      "Customers approve the scoped work. Demand fills capacity in this scenario.",
+      "executive",
+    ],
+    [
+      "For a hypothetical scenario. Customers approve the scoped work.",
+      "assumption",
+    ],
+    ["Customers approve the scoped work in this scenario.", "assumption"],
+  ])("grounds a journey only in the factual prefix: %s", (message, status) => {
+    const result = projectBrief([
+      { type: "user", message },
+      answer({
+        ...draft,
+        journey: [
+          {
+            id: "approve",
+            actor: "Customers",
+            text: "Approve the scoped work",
+            status: "executive",
+            quote: "Customers approve the scoped work",
+          },
+        ],
+      }),
+    ]);
+    expect(result.brief?.journey[0]?.status).toBe(status);
+  });
   test("reconstructs the private objective and behavioral journey from persisted conversation", () => {
     const restored = projectBrief(JSON.parse(JSON.stringify(history)));
     expect(restored.brief?.objective.status).toBe("executive");

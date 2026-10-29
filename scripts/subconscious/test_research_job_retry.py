@@ -36,9 +36,8 @@ class ResearchJobRetryTests(unittest.TestCase):
                 f"{MODULE}.research_connection",
                 return_value=("https://example.com", {}, None),
             ),
-            patch(f"{MODULE}.call_mcp_tool", return_value="provider response"),
             patch(
-                f"{MODULE}.research_receipt",
+                f"{MODULE}.collect_public_research",
                 return_value={
                     "report": "Client report",
                     "source_urls": ["https://example.com/client"],
@@ -56,7 +55,6 @@ class ResearchJobRetryTests(unittest.TestCase):
             self.save,
             self.connection,
             self.call,
-            self.receipt,
         ) = started[3:]
         self.cache.return_value.lock.return_value = self.lock
 
@@ -93,7 +91,7 @@ class ResearchJobRetryTests(unittest.TestCase):
         self.call.assert_not_called()
         self.invoke()
         self.call.assert_called_once()
-        self.assertEqual(self.call.call_args.args[2], {"query": "Client query"})
+        self.assertEqual(self.call.call_args.args[1], "Client query")
         self.assertEqual(self.save.call_args.args[1]["status"], "ready")
         self.lock.release.assert_called_once()
 
@@ -212,7 +210,10 @@ class ResearchJobRetryTests(unittest.TestCase):
                 "job_id": "newer-job",
                 "query": "Another client",
             }
-            return "provider response"
+            return {
+                "report": "Old company",
+                "source_urls": ["https://example.com/client"],
+            }
 
         self.call.side_effect = replace
         self.invoke()

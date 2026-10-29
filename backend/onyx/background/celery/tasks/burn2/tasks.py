@@ -16,10 +16,10 @@ from onyx.db.burn2_research import (
 )
 from onyx.db.engine.sql_engine import get_session_with_current_tenant
 from onyx.db.models import User
-from onyx.server.features.mcp.client import call_mcp_tool
+from onyx.error_handling.exceptions import OnyxError
 from onyx.server.query_and_chat.burn2.research import (
+    collect_public_research,
     public_research_query,
-    research_receipt,
 )
 from onyx.utils.logger import setup_logger
 from shared_configs.contextvars import get_current_tenant_id
@@ -93,7 +93,7 @@ def research_company(
         ):
             return
         query = public_research_query(read_profile(user_uuid))
-        if query != state.get("query"):
+        if not query or query != state.get("query"):
             return
         state = {**state, "status": "running", "checked_at": time.time()}
         if not update_research_if_current(
@@ -101,15 +101,8 @@ def research_company(
         ):
             return
         try:
-            url, headers, transport = research_connection(user_uuid, persona_id)
-            receipt = research_receipt(
-                call_mcp_tool(
-                    url,
-                    "deep_research",
-                    {"query": query},
-                    connection_headers=headers,
-                    transport=transport,
-                )
+            receipt = collect_public_research(
+                research_connection(user_uuid, persona_id), query
             )
             result = {**state, **receipt, "status": "ready", "checked_at": time.time()}
         except Exception as error:
@@ -160,7 +153,6 @@ def prepare_saved_brief(
     from onyx.auth.permissions import has_global_permission
     from onyx.db.enums import Permission
     from onyx.server.query_and_chat.burn2.api import PrepareBrief, prepare_brief
-    from onyx.server.query_and_chat.causl.context import send_interview_brief
 
     with get_session_with_current_tenant() as db:
         user = db.get(User, UUID(user_id))
@@ -172,7 +164,7 @@ def prepare_saved_brief(
             return
         try:
             prepare_brief(PrepareBrief(chat_id=UUID(chat_id)), user, db)
-        except HTTPException as error:
+        except (HTTPException, OnyxError) as error:
             logger.warning(
                 "Burn background brief unavailable: HTTP %s", error.status_code
             )
@@ -201,12 +193,3 @@ def prepare_saved_brief(
             logger.warning(
                 "Burn background brief unavailable: %s", type(error).__name__
             )
-        else:
-            try:
-                send_interview_brief(db, user, UUID(chat_id))
-            except Exception as error:
-                # The browser handoff still carries the same brief to the Library.
-                logger.warning(
-                    "Burn brief Library handoff unavailable: %s",
-                    type(error).__name__,
-                )

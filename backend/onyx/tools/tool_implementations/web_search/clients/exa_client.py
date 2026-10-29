@@ -105,8 +105,13 @@ def _extract_site_operators(query: str) -> tuple[str, list[str]]:
 
 
 class ExaClient(WebSearchProvider, WebContentProvider):
-    def __init__(self, api_key: str, num_results: int = 10) -> None:
-        self.exa = ExaWithTimeout(api_key=api_key)
+    def __init__(
+        self,
+        api_key: str,
+        num_results: int = 10,
+        timeout_seconds: int = EXA_REQUEST_TIMEOUT_SECONDS,
+    ) -> None:
+        self.exa = ExaWithTimeout(api_key=api_key, timeout_seconds=timeout_seconds)
         self._num_results = num_results
 
     @property
@@ -193,7 +198,9 @@ class ExaClient(WebSearchProvider, WebContentProvider):
         return {"status": "ok"}
 
     @retry_builder(tries=3, delay=1, backoff=2)
-    def contents(self, urls: Sequence[str]) -> list[WebContent]:
+    def contents(
+        self, urls: Sequence[str], *, preserve_source_text: bool = False
+    ) -> list[WebContent]:
         response = self.exa.get_contents(
             urls=list(urls),
             text=True,
@@ -205,7 +212,8 @@ class ExaClient(WebSearchProvider, WebContentProvider):
         contents: list[WebContent] = []
         for result in response.results:
             title = (result.title or "").strip()
-            full_content = (result.text or "").strip()
+            source_text = result.text or ""
+            full_content = source_text if preserve_source_text else source_text.strip()
             contents.append(
                 WebContent(
                     title=title,
@@ -216,7 +224,7 @@ class ExaClient(WebSearchProvider, WebContentProvider):
                         if result.published_date
                         else None
                     ),
-                    scrape_successful=bool(full_content),
+                    scrape_successful=bool(source_text.strip()),
                 )
             )
 

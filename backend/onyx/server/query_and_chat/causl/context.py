@@ -1,5 +1,6 @@
 """Read current workspace context through native per-user Library OAuth."""
 
+import json
 import os
 import re
 from dataclasses import dataclass
@@ -12,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from onyx.auth.session_identity import require_session_identity
 from onyx.db.burn2_brief import owned_snapshot
-from onyx.db.causl_workspace import read_causl_binding
+from onyx.db.causl_workspace import read_causl_binding, update_interview_market
 from onyx.db.enums import MCPAuthenticationPerformer, MCPAuthenticationType
 from onyx.db.mcp import get_mcp_servers_for_persona
 from onyx.db.models import MCPServer, User
@@ -337,28 +338,96 @@ def send_interview_brief(db: Session, user: User, chat_id: UUID) -> None:
     """Hand the saved interview brief to the Library as soon as Onyx prepares it."""
     binding = read_causl_binding(db, user.id, chat_id)
     if binding is None or binding.mode != "interview":
+        native_research = os.environ.get("BURN2_RESEARCH_PERSONA_ID", "")
+        if native_research.isdecimal() and int(native_research) > 0:
+            raise OnyxError(
+                OnyxErrorCode.UNAUTHORIZED,
+                "Reconnect your Library account before saving this business draft.",
+            )
         return
     server = _library_server(db, user, configuration())
     if server.id != binding.library_server_id:
         raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
     url = context_url(server.server_url).removesuffix("native-context") + "onyx-brief"
+    snapshot = owned_snapshot(chat_id, user.id, db)
     messages = [
         {"type": row["type"], "message": row["message"]}
-        for row in owned_snapshot(chat_id, user.id, db)["transcript"]
+        for row in snapshot["transcript"]
         if row["type"] in ("user", "assistant")
     ]
+    payload = {
+        "format": "burn/onyx-interview",
+        "version": 1,
+        "chatId": str(chat_id),
+        "messages": messages,
+    }
+    from onyx.db.burn2_profile import read_profile
+    from onyx.db.burn2_research import read_research
+    from onyx.server.query_and_chat.burn2.research import model_business_context
+    from onyx.server.query_and_chat.burn2.validation import latest_saved_brief
+
+    brief = latest_saved_brief(
+        snapshot["transcript"],
+        [row["message"] for row in messages if row["type"] == "user"],
+    )
+    if brief:
+        research = read_research(user.id)
+        preparation = model_business_context(
+            read_profile(user.id), research, brief.get("company")
+        )
+        if preparation is not None:
+            payload["businessContext"] = preparation
+            if research and preparation["research"].get("status") == "ready":
+                captures = research.get("source_captures")
+                operation_id = research.get("job_id")
+                if (
+                    isinstance(operation_id, str)
+                    and isinstance(captures, list)
+                    and 0 < len(captures) <= 4
+                    and all(isinstance(source, dict) for source in captures)
+                ):
+                    sources = [
+                        {
+                            key: source[key]
+                            for key in ("url", "title", "text", "sha256", "fetched_at")
+                            if key in source
+                        }
+                        for source in captures
+                    ]
+                    native = {"operationId": operation_id, "sources": sources}
+                    if (
+                        len(json.dumps(native, ensure_ascii=False).encode("utf-8"))
+                        <= 1_000_000
+                    ):
+                        payload["nativeResearch"] = native
     with httpx.Client(timeout=10, follow_redirects=False) as client:
         response = client.post(
             url,
             headers=_headers(db, user, server, binding.actor, binding.issuer),
-            json={
-                "format": "burn/onyx-interview",
-                "version": 1,
-                "chatId": str(chat_id),
-                "messages": messages,
-            },
+            json=payload,
         )
     if response.status_code != 200:
         raise OnyxError(
             OnyxErrorCode.BAD_GATEWAY, "The Library did not save the brief."
         )
+    try:
+        saved = response.json()
+        market_id = saved.get("marketId") if isinstance(saved, dict) else None
+        if not isinstance(market_id, str) or not market_id.strip():
+            raise ValueError("Missing saved market")
+        CauslSelection.model_validate(
+            {
+                **binding.selection.model_dump(by_alias=True),
+                "marketId": market_id,
+            }
+        )
+    except (ValueError, ValidationError):
+        raise OnyxError(
+            OnyxErrorCode.BAD_GATEWAY, "The Library did not return the saved market."
+        ) from None
+    db.expire_all()
+    if owned_snapshot(chat_id, user.id, db)["digest"] != snapshot["digest"]:
+        raise OnyxError(
+            OnyxErrorCode.CONFLICT, "The interview changed. Save the current draft."
+        )
+    update_interview_market(db, binding, market_id, snapshot["digest"])

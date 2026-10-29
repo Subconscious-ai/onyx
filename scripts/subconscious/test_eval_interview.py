@@ -5,9 +5,12 @@ import json
 import tempfile
 import unittest
 import urllib.error
+import urllib.parse
+from email.message import Message
 from pathlib import Path
 from unittest.mock import patch
 
+import eval_interview
 from eval_interview import (
     Turn,
     allowed_bedrock_models,
@@ -20,6 +23,121 @@ from eval_interview import (
 
 
 class EvaluationChecks(unittest.TestCase):
+    def test_scenario_tools_include_only_defaults_and_required_authorized_design(self):
+        tools = [
+            {"id": 11, "name": "run_python"},
+            {"id": 12, "name": "web_search"},
+            {"id": 13, "name": "internal_search"},
+            {"id": 14, "name": "deep_research"},
+            {"id": 15, "name": "get_research_context"},
+            {"id": 16, "name": "get_research_sources"},
+            {"id": 21, "name": "check_causality"},
+            {"id": 22, "name": "generate_attributes_levels"},
+            {"id": 23, "name": "generate_dependent_variable"},
+            {"id": 24, "name": "create_experiment_draft"},
+            {"id": 25, "name": "get_experiment_draft"},
+            {"id": 31, "name": "start_experiment"},
+            {"id": 32, "name": "delete_project"},
+        ]
+        turns = [
+            Turn(
+                "Design",
+                tools_required=("check_causality", "generate_attributes_levels"),
+            ),
+            Turn(
+                "Draft",
+                tools_required=("create_experiment_draft", "get_experiment_draft"),
+            ),
+        ]
+        self.assertEqual(
+            eval_interview.scenario_tool_ids(tools, turns),
+            [11, 12, 13, 14, 15, 16, 21, 22, 24, 25],
+        )
+        self.assertEqual(
+            eval_interview.scenario_tool_ids(tools, [Turn("Calculate")]),
+            [11, 12, 13, 14, 15, 16],
+        )
+        self.assertEqual(
+            eval_interview.scenario_tool_ids(
+                tools, [Turn("Metric", tools_required=("generate_dependent_variable",))]
+            ),
+            [11, 12, 13, 14, 15, 16, 23],
+        )
+
+    def test_scenario_tools_reject_launch_even_when_persona_authorizes_it(self):
+        with self.assertRaisesRegex(
+            ValueError, "Unsupported scenario tools: start_experiment"
+        ):
+            eval_interview.scenario_tool_ids(
+                [{"id": 31, "name": "start_experiment"}],
+                [Turn("Launch", tools_required=("start_experiment",))],
+            )
+
+    def test_missing_required_scenario_tool_fails_before_chat_creation(self):
+        requested_paths = []
+
+        def open_response(request, **_options):
+            path = urllib.parse.urlsplit(request.full_url).path
+            requested_paths.append(path)
+            responses = {
+                "/api/persona/2": {"default_model_configuration_id": 7, "tools": []},
+                "/api/llm/provider": {
+                    "providers": [
+                        {
+                            "provider": "bedrock",
+                            "model_configurations": [{"id": 7, "name": "fixture"}],
+                        }
+                    ]
+                },
+            }
+            if path not in responses:
+                self.fail(
+                    "Missing tool preflight must stop before chat creation: " + path
+                )
+            return io.StringIO(json.dumps(responses[path]))
+
+        with tempfile.TemporaryDirectory() as directory:
+            scenario = Path(directory) / "scenario.json"
+            scenario.write_text(
+                json.dumps(
+                    {
+                        "draft": [
+                            {
+                                "message": "Draft",
+                                "tools_required": ["generate_attributes_levels"],
+                            }
+                        ]
+                    }
+                )
+            )
+            with (
+                patch(
+                    "sys.argv",
+                    [
+                        "eval_interview",
+                        "--cookies",
+                        "fixture.cookies",
+                        "--agent",
+                        "2",
+                        "--output",
+                        str(Path(directory) / "out.json"),
+                        "--scenario-file",
+                        str(scenario),
+                    ],
+                ),
+                patch("eval_interview.http.cookiejar.MozillaCookieJar.load"),
+                patch(
+                    "eval_interview.urllib.request.OpenerDirector.open",
+                    side_effect=open_response,
+                ),
+                self.assertRaisesRegex(
+                    ValueError,
+                    "Required scenario tools unavailable: generate_attributes_levels",
+                ),
+            ):
+                eval_interview.main()
+        self.assertEqual(requested_paths, ["/api/persona/2", "/api/llm/provider"])
+
     def test_executive_proof_roast_uses_fifth_turn_and_opt_out_reaches_it(self):
         cases = json.loads(
             Path(__file__).with_name("executive-proof-cases.json").read_text()
@@ -258,7 +376,9 @@ class EvaluationChecks(unittest.TestCase):
 
         def api(path, _body=None):
             if path.endswith("executive-brief"):
-                raise urllib.error.HTTPError(path, 502, "Provider error", {}, None)
+                raise urllib.error.HTTPError(
+                    path, 502, "Provider error", Message(), None
+                )
             return io.StringIO(json.dumps(source))
 
         result = checkpoint(api, "fixture", Turn("Prepare"), ["Baseline unknown"])

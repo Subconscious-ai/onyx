@@ -13872,6 +13872,13 @@
       "cancel": "취소",
       "conflict": "다른 곳에서 프로필이 변경되었습니다. 취소한 후 다시 열어 저장하세요. 수정 사항은 저장되지 않았습니다.",
       "failed": "수정 사항을 저장하지 못했습니다. 입력 내용은 그대로 있습니다. 다시 시도하세요.",
+      "refresh": "Refresh PDL and public research",
+      "refreshing": "Refreshing preparation…",
+      "refreshDescription": "Run a new PDL lookup and public research. Your interview and saved context stay available.",
+      "refreshFailed": "Could not confirm preparation. Retry to check the same request without a duplicate lookup.",
+      "refreshStarted": "Preparation request saved. Public research status appears in the brief.",
+      "refreshNoMatch": "No fresh PDL match. Previous company context and corrections stay unchanged.",
+      "refreshUnavailable": "PDL refresh unavailable. Previous company context and corrections stay unchanged.",
       "fields": {
         "name": "이름",
         "role": "직책",

@@ -249,6 +249,157 @@ class BriefModelPolicyTests(unittest.TestCase):
         self.assertEqual(resolved, ReasoningEffort.LOW)
 
 
+class BriefLibrarySaveTests(unittest.TestCase):
+    def test_browser_preparation_saves_the_library_before_reporting_success(self):
+        from onyx.server.query_and_chat.burn2 import api
+
+        body = api.PrepareBrief(chat_id=uuid4())
+        user, db = MagicMock(), MagicMock()
+        prepared = api.PreparedBrief(message_id=7, saved=True, message="Saved draft")
+        events = []
+        with (
+            patch.object(api, "get_cache_backend"),
+            patch("onyx.db.causl_workspace.read_causl_binding", return_value=None),
+            patch.object(
+                api,
+                "_prepare_brief",
+                side_effect=lambda *_: events.append("native") or prepared,
+            ),
+            patch(
+                "onyx.server.query_and_chat.causl.context.send_interview_brief",
+                side_effect=lambda *_: events.append("library"),
+            ) as send,
+        ):
+            result = api.prepare_brief(body, user, db)
+
+        self.assertIs(result, prepared)
+        self.assertEqual(events, ["native", "library"])
+        send.assert_called_once_with(db, user, body.chat_id)
+
+    def test_complete_undelivered_brief_is_not_reported_saved_by_read_only_get(self):
+        from onyx.server.query_and_chat.burn2 import api
+
+        saved = {"objective": {"status": "executive"}}
+        snapshot = {
+            "persona_id": 5,
+            "last_id": 7,
+            "last_text": "Answer<interview-brief>"
+            + json.dumps(saved)
+            + "</interview-brief>",
+            "statements": [],
+            "digest": "latest-digest",
+        }
+        persona = MagicMock()
+        persona.name = "Burn 2.0"
+        binding = MagicMock(mode="interview", brief_digest="older-digest")
+        with (
+            patch.dict("os.environ", {"BURN2_ENABLED": "true"}),
+            patch.object(api, "owned_snapshot", return_value=snapshot),
+            patch.object(api, "get_persona_by_id", return_value=persona),
+            patch.object(api, "validate_brief", return_value=saved),
+            patch.object(api, "needs_completion", return_value=False),
+            patch("onyx.db.causl_workspace.read_causl_binding", return_value=binding),
+            patch(
+                "onyx.server.query_and_chat.causl.context.send_interview_brief"
+            ) as send,
+        ):
+            result = api.read_executive_brief(uuid4(), MagicMock(), MagicMock())
+        self.assertEqual(result, {"saved": False, "background": False})
+        send.assert_not_called()
+
+    def test_native_complete_unbound_brief_is_not_reported_saved(self):
+        from onyx.server.query_and_chat.burn2 import api
+
+        saved = {"objective": {"status": "executive"}}
+        persona = MagicMock()
+        persona.name = "Burn 2.0"
+        snapshot = {
+            "persona_id": 5,
+            "last_text": "<interview-brief>" + json.dumps(saved) + "</interview-brief>",
+            "statements": [],
+            "digest": "latest",
+            "last_id": 7,
+        }
+        with (
+            patch.dict(
+                "os.environ",
+                {"BURN2_ENABLED": "true", "BURN2_RESEARCH_PERSONA_ID": "11"},
+            ),
+            patch.object(api, "owned_snapshot", return_value=snapshot),
+            patch.object(api, "get_persona_by_id", return_value=persona),
+            patch.object(api, "validate_brief", return_value=saved),
+            patch.object(api, "needs_completion", return_value=False),
+            patch("onyx.db.causl_workspace.read_causl_binding", return_value=None),
+        ):
+            result = api.read_executive_brief(uuid4(), MagicMock(), MagicMock())
+        self.assertEqual(result, {"saved": False, "background": False})
+
+    def test_research_ready_resends_unchanged_prepared_brief_without_extraction(self):
+        from onyx.server.query_and_chat.burn2 import api
+
+        saved = {"objective": {"status": "executive"}}
+        snapshot = {
+            "persona_id": 5,
+            "last_id": 7,
+            "last_text": "Answer<interview-brief>"
+            + json.dumps(saved)
+            + "</interview-brief>",
+            "statements": [],
+            "digest": "delivered-digest",
+        }
+        persona = MagicMock()
+        persona.name = "Burn 2.0"
+        binding = MagicMock(mode="interview", brief_digest="delivered-digest")
+        body, user, db = api.PrepareBrief(chat_id=uuid4()), MagicMock(), MagicMock()
+        with (
+            patch.dict("os.environ", {"BURN2_ENABLED": "true"}),
+            patch.object(api, "get_cache_backend"),
+            patch.object(api, "is_chat_session_processing", return_value=False),
+            patch.object(api, "owned_snapshot", return_value=snapshot),
+            patch.object(api, "get_persona_by_id", return_value=persona),
+            patch.object(api, "validate_brief", return_value=saved),
+            patch("onyx.db.causl_workspace.read_causl_binding", return_value=binding),
+            patch.object(api, "_prepare_brief") as extract,
+            patch(
+                "onyx.server.query_and_chat.causl.context.send_interview_brief"
+            ) as send,
+        ):
+            result = api.prepare_brief(body, user, db)
+        extract.assert_not_called()
+        send.assert_called_once_with(db, user, body.chat_id)
+        self.assertEqual(result.message, snapshot["last_text"])
+        self.assertTrue(result.saved)
+
+    def test_library_failure_cannot_be_reported_as_a_saved_model_brief(self):
+        from onyx.error_handling.error_codes import OnyxErrorCode
+        from onyx.error_handling.exceptions import OnyxError
+        from onyx.server.query_and_chat.burn2 import api
+
+        failure = OnyxError(OnyxErrorCode.BAD_GATEWAY, "Library unavailable")
+        with (
+            patch.object(api, "get_cache_backend") as cache,
+            patch("onyx.db.causl_workspace.read_causl_binding", return_value=None),
+            patch.object(
+                api,
+                "_prepare_brief",
+                return_value=api.PreparedBrief(
+                    message_id=7, saved=True, message="Draft"
+                ),
+            ),
+            patch(
+                "onyx.server.query_and_chat.causl.context.send_interview_brief",
+                side_effect=failure,
+            ),
+            self.assertRaises(OnyxError) as caught,
+        ):
+            api.prepare_brief(
+                api.PrepareBrief(chat_id=uuid4()), MagicMock(), MagicMock()
+            )
+
+        self.assertIs(caught.exception, failure)
+        cache.return_value.lock.return_value.release.assert_called_once()
+
+
 class BriefBackgroundTests(unittest.TestCase):
     def invoke(self, failure=None, allowed=True, retries=0, provider_failures=0):
         arguments = {
@@ -369,6 +520,16 @@ class BriefBackgroundTests(unittest.TestCase):
                 self.assertEqual(retry.call_args.kwargs["countdown"], 5)
                 self.assertEqual(retry.call_args.kwargs["expires"], 120)
         self.assertEqual(prepare_saved_brief.max_retries, 4)
+
+    def test_library_transport_error_uses_existing_bounded_retry(self):
+        from onyx.error_handling.error_codes import OnyxErrorCode
+        from onyx.error_handling.exceptions import OnyxError
+
+        _, retry = self.invoke(
+            OnyxError(OnyxErrorCode.BAD_GATEWAY, "Library unavailable")
+        )
+        retry.assert_called_once()
+        self.assertEqual(retry.call_args.kwargs["expires"], 120)
 
     def test_waiting_for_another_turn_does_not_back_off_like_a_provider_failure(self):
         # An older extraction can hold the lock through several quick answers.

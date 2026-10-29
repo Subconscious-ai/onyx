@@ -1,5 +1,6 @@
 """Native tool boundary checks; storage is mocked, no personal profiles are changed."""
 
+import json
 import os
 import unittest
 from unittest.mock import MagicMock, patch
@@ -78,6 +79,53 @@ class CompanyProfileToolTests(unittest.TestCase):
         self.assertEqual(save.call_args.args[1].revision, 7)
         self.assertEqual(save.call_args.args[1].fields, {"company": "Synthetic"})
         self.assertIn('"revision": 8', result.llm_facing_response)
+
+    def test_update_keeps_ready_source_captures_out_of_browser_and_model(self):
+        research = {
+            "status": "ready",
+            "report": "A bounded research summary.",
+            "source_urls": ["https://example.com/product"],
+            "source_captures": [
+                {
+                    "url": "https://example.com/product",
+                    "text": "Original source bytes retained for the producer only.",
+                }
+            ],
+        }
+        with (
+            patch(
+                "onyx.db.burn2_profile.correct_profile",
+                return_value={"correction": {"revision": 3}},
+            ),
+            patch(
+                "onyx.chat.incognito.current_turn_persists_content", return_value=True
+            ),
+            patch(
+                "onyx.server.query_and_chat.burn2.background.ensure_research",
+                return_value=research,
+            ),
+        ):
+            result = self.tool.run(
+                self.placement,
+                None,
+                operation="update",
+                revision=2,
+                fields={"role": "CEO"},
+            )
+        assert isinstance(result.rich_response, str)
+        outputs = {
+            "browser": self.emitter.emit.call_args.args[0].obj.data,
+            "model": json.loads(result.llm_facing_response),
+            "rich_response": json.loads(result.rich_response),
+        }
+        for destination, output in outputs.items():
+            with self.subTest(destination=destination):
+                self.assertEqual(output["research"]["status"], "ready")
+                self.assertEqual(
+                    output["research"]["source_urls"], research["source_urls"]
+                )
+                self.assertEqual(output["research"]["report"], research["report"])
+                self.assertNotIn("source_captures", output["research"])
 
     def test_automatic_revision_still_rejects_a_concurrent_edit(self):
         with (

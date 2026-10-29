@@ -13872,6 +13872,13 @@
       "cancel": "إلغاء",
       "conflict": "تم تغيير الملف في مكان آخر. ألغِ العملية وأعد فتحه قبل الحفظ. لم تُحفظ تعديلاتك.",
       "failed": "تعذّر حفظ التصحيحات. لا تزال تعديلاتك هنا؛ حاول مجدداً.",
+      "refresh": "Refresh PDL and public research",
+      "refreshing": "Refreshing preparation…",
+      "refreshDescription": "Run a new PDL lookup and public research. Your interview and saved context stay available.",
+      "refreshFailed": "Could not confirm preparation. Retry to check the same request without a duplicate lookup.",
+      "refreshStarted": "Preparation request saved. Public research status appears in the brief.",
+      "refreshNoMatch": "No fresh PDL match. Previous company context and corrections stay unchanged.",
+      "refreshUnavailable": "PDL refresh unavailable. Previous company context and corrections stay unchanged.",
       "fields": {
         "name": "الاسم",
         "role": "المنصب",
