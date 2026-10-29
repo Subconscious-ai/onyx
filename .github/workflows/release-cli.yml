@@ -7,6 +7,7 @@ on:
 
 jobs:
   pypi:
+    if: github.repository == 'onyx-dot-app/onyx'
     runs-on: ubuntu-latest
     environment:
       name: release-cli
@@ -53,6 +54,7 @@ jobs:
         working-directory: cli
 
   github-release:
+    if: github.repository == 'onyx-dot-app/onyx'
     runs-on: ubuntu-latest
     permissions:
       contents: write # needed to create the GitHub release and upload archives

@@ -246,7 +246,7 @@ jobs:
     needs:
       - determine-builds
       - audit-gate
-    if: needs.determine-builds.outputs.build-desktop == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && needs.determine-builds.outputs.build-desktop == 'true'
     runs-on: ubuntu-slim
     timeout-minutes: 10
     permissions:
