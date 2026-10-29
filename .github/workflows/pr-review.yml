@@ -91,7 +91,7 @@ jobs:
             <!-- claude-review:${{ github.event.pull_request.head.sha }} -->
             The review is advisory. Never approve, merge, deploy or modify branches.
           claude_args: >-
-            --model sonnet --effort medium --max-turns 48
+            --model sonnet --effort medium --max-turns 64
             --restricted --strict-mcp-config --disable-slash-commands
             --settings '{"disableAllHooks":true,"permissions":{"deny":["Read(./.git)","Read(./.git/**)"]}}'
             --tools "Read,Grep,Glob"

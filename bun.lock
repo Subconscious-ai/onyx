@@ -41,7 +41,7 @@
       "name": "onyx-chat-widget",
       "version": "1.0.0",
       "dependencies": {
-        "dompurify": "^3.4.13",
+        "dompurify": "^3.4.17",
         "lit": "^3.1.0",
         "marked": "^18.0.11",
         "terser": "^5.51.0",
