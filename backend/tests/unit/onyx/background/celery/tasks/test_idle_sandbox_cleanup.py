@@ -1,3 +1,5 @@
+from collections.abc import Callable
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -29,12 +31,14 @@ def test_idle_sweep_requires_backend_only_for_running_sandboxes(
     monkeypatch.setattr(config, "load_incluster_config", MagicMock(side_effect=error))
     monkeypatch.setattr(config, "load_kube_config", MagicMock(side_effect=error))
 
+    # Celery stubs lose the bound task keyword signature.
+    run_cleanup = cast(Callable[..., None], tasks.cleanup_idle_sandboxes_task.run)
     if has_running_sandbox:
         with pytest.raises(
             RuntimeError, match="Failed to load Kubernetes configuration"
         ):
-            tasks.cleanup_idle_sandboxes_task.run(tenant_id="test-tenant")
+            run_cleanup(tenant_id="test-tenant")
     else:
-        tasks.cleanup_idle_sandboxes_task.run(tenant_id="test-tenant")
+        run_cleanup(tenant_id="test-tenant")
 
     redis.lock.return_value.release.assert_called_once_with()
