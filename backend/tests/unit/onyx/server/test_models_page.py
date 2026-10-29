@@ -1,10 +1,12 @@
 """Current local model context stays separate from saved business evidence."""
 
 import json
+from pathlib import Path
 from typing import Any
 
 import pytest
 
+from onyx.server.query_and_chat.causl import model_page
 from onyx.server.query_and_chat.causl.model_page import (
     model_page_tool_result,
     model_page_tool_schema,
@@ -78,6 +80,17 @@ def test_draft_context_cannot_prepare_model_changes() -> None:
         )
 
 
+def test_missing_document_requires_a_complete_model_instead_of_draft_commit() -> None:
+    page = json.loads(snapshot())
+    page["document"] = None
+    with pytest.raises(ValueError, match="No complete model available"):
+        model_page_tool_result(
+            "prepare_model_change",
+            json.dumps(page),
+            {"edits": [{}], "rationale": "Edit"},
+        )
+
+
 def test_local_tool_schema_uses_canonical_semantic_edits_without_market_authority() -> (
     None
 ):
@@ -90,3 +103,15 @@ def test_local_tool_schema_uses_canonical_semantic_edits_without_market_authorit
 def test_native_proposal_limit_matches_models_complete_validation() -> None:
     schema = model_page_tool_schema("prepare_model_change")
     assert schema["properties"]["edits"]["maxItems"] == 24
+
+
+def test_changed_contract_cannot_drift_from_pinned_models_owner(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    contract = json.loads(model_page._CONTRACT_PATH.read_text())
+    contract["maxEdits"] = 25
+    changed = tmp_path / "changed-contract.json"
+    changed.write_text(json.dumps(contract))
+    monkeypatch.setattr(model_page, "_CONTRACT_PATH", changed)
+    with pytest.raises(ValueError, match="pinned owner revision"):
+        model_page_tool_schema("prepare_model_change")

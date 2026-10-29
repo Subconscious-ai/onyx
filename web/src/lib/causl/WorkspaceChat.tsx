@@ -8,7 +8,7 @@ import { Button, Text } from "@opal/components";
 import {
   createCauslBridge,
   openCauslWorkspace,
-  type CauslWorkspaceError,
+  CauslWorkspaceError,
 } from "./bridge";
 import type { CauslContextMessage, CauslDraft, CauslWorkspace } from "./types";
 import {
@@ -98,19 +98,13 @@ export default function WorkspaceChat({
           !standalone.current
         ) {
           standalone.current = true;
-          void fetch("/api/chat/causl-workspace", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            signal: bootstrap.signal,
-            body: JSON.stringify({ selection: { page: "models" } }),
-          })
-            .then(async (response) => {
-              if (!response.ok) throw new Error(String(response.status));
-              return response.json();
-            })
+          void openCauslWorkspace(
+            { selection: { page: "models" } },
+            bootstrap.signal
+          )
             .then((ready) => {
               if (bootstrap.signal.aborted) return;
-              if (!ready.actor) throw new Error("Missing verified identity");
+              if (!ready.actor) throw new CauslWorkspaceError("unavailable");
               controller.receive({
                 kind: "causl:context",
                 nonce,
@@ -119,10 +113,14 @@ export default function WorkspaceChat({
                 selection: { page: "models" },
               });
             })
-            .catch(() => {
+            .catch((error: unknown) => {
               if (!bootstrap.signal.aborted) {
                 standalone.current = false;
-                setError("access");
+                setError(
+                  error instanceof CauslWorkspaceError
+                    ? error.reason
+                    : "unavailable"
+                );
                 window.parent.postMessage(
                   { kind: "causl:unavailable", nonce },
                   parentOrigin

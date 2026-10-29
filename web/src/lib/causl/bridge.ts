@@ -1,4 +1,5 @@
 import type {
+  CauslActor,
   CauslContextMessage,
   CauslDraft,
   CauslSelection,
@@ -86,7 +87,7 @@ export class CauslWorkspaceError extends Error {
 }
 
 export async function openCauslWorkspace(
-  message: CauslContextMessage,
+  message: CauslContextMessage | { selection: { page: "models" } },
   signal: AbortSignal
 ): Promise<CauslWorkspace> {
   const response = await fetch("/api/chat/causl-workspace", {
@@ -94,7 +95,7 @@ export async function openCauslWorkspace(
     headers: { "Content-Type": "application/json" },
     signal,
     body: JSON.stringify({
-      actor: message.actor,
+      actor: "actor" in message ? message.actor : undefined,
       selection: message.selection,
     }),
   });
@@ -122,11 +123,23 @@ export async function openCauslWorkspace(
     !/^[a-f0-9]{64}$/i.test(result.contextDigest)
   )
     throw new CauslWorkspaceError("unavailable");
+  let actor: CauslActor | undefined;
+  if (result.actor !== undefined) {
+    const verifiedActor = result.actor;
+    if (
+      !object(verifiedActor) ||
+      !reference(verifiedActor.orgId, 120) ||
+      !reference(verifiedActor.userId, 512)
+    )
+      throw new CauslWorkspaceError("unavailable");
+    actor = { orgId: verifiedActor.orgId, userId: verifiedActor.userId };
+  }
   return {
     chatId: result.chatId,
     agentId: result.agentId,
     scopeKey: result.scopeKey,
     contextDigest: result.contextDigest,
+    ...(actor ? { actor } : {}),
   };
 }
 

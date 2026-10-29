@@ -20,6 +20,10 @@ from onyx.server.features.mcp.oauth import (
 )
 from onyx.server.metrics.mcp_client import record_mcp_client_tool_outcome
 from onyx.server.metrics.mcp_common import MCPToolCallStatus
+from onyx.server.query_and_chat.causl.model_page import (
+    model_page_tool_result,
+    model_page_tool_schema,
+)
 from onyx.server.query_and_chat.causl.models import CauslActor
 from onyx.server.query_and_chat.causl.statement import (
     FACT_PREPARATION_TOOL,
@@ -138,6 +142,13 @@ class MCPTool(Tool[None]):
     def use_disambiguated_name(self) -> None:
         self._name = self._llm_name
 
+    def _uses_model_page(self) -> bool:
+        return (
+            self._bound_actor is not None
+            and bool(self._bound_model_page)
+            and self._mcp_tool_name in {"inspect_model", "prepare_model_change"}
+        )
+
     def tool_definition(self) -> dict:
         """Return the tool definition from the MCP server"""
         # Convert MCP tool definition to OpenAI function calling format
@@ -164,15 +175,7 @@ class MCPTool(Tool[None]):
                     key for key in schema.get("required", []) if key != "market"
                 ],
             }
-        if (
-            self._bound_actor is not None
-            and self._bound_model_page
-            and self._mcp_tool_name in {"inspect_model", "prepare_model_change"}
-        ):
-            from onyx.server.query_and_chat.causl.model_page import (
-                model_page_tool_schema,
-            )
-
+        if self._uses_model_page():
             schema = model_page_tool_schema(self._mcp_tool_name)
         return {
             "type": "function",
@@ -202,15 +205,7 @@ class MCPTool(Tool[None]):
         _server = self.mcp_server.name
         outcome = MCPToolCallStatus.ERROR
         try:
-            if (
-                self._bound_actor is not None
-                and self._bound_model_page
-                and self._mcp_tool_name in {"inspect_model", "prepare_model_change"}
-            ):
-                from onyx.server.query_and_chat.causl.model_page import (
-                    model_page_tool_result,
-                )
-
+            if self._uses_model_page() and self._bound_model_page is not None:
                 result = model_page_tool_result(
                     self._mcp_tool_name, self._bound_model_page, llm_kwargs
                 )
