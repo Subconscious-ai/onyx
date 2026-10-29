@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import runpy
 import subprocess
 import sys
 import tempfile
@@ -437,6 +438,63 @@ class PreparedReviewTest(unittest.TestCase):
     def test_complete_attestation_and_actual_reads_pass(self) -> None:
         result = self.verify()
         self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_native_read_preserves_carriage_returns_and_unicode_separators(
+        self,
+    ) -> None:
+        helper = runpy.run_path(str(HELPER))
+        for separator in ("\r", "\x0b", "\x0c", "\x1c", "\x85", "\u2028", "\u2029"):
+            with (
+                self.subTest(separator=repr(separator)),
+                tempfile.TemporaryDirectory() as raw,
+            ):
+                directory = Path(raw)
+                records = helper["chunks"](
+                    directory,
+                    "patch",
+                    0,
+                    "native.diff",
+                    f"first{separator}second\nlast\r",
+                )
+                path = directory / records[0]["file"]
+                lines = path.read_bytes().decode().removesuffix("\n").split("\n")
+                trace = [
+                    {
+                        "type": "assistant",
+                        "message": {
+                            "content": [
+                                {
+                                    "type": "tool_use",
+                                    "name": "Read",
+                                    "id": "native",
+                                    "input": {
+                                        "file_path": str(path),
+                                        "limit": len(lines),
+                                    },
+                                }
+                            ]
+                        },
+                    },
+                    {
+                        "type": "user",
+                        "message": {
+                            "content": [
+                                {
+                                    "type": "tool_result",
+                                    "tool_use_id": "native",
+                                    "content": "\n".join(
+                                        f"{n:6}→{line}"
+                                        for n, line in enumerate(lines, 1)
+                                    ),
+                                }
+                            ]
+                        },
+                    },
+                ]
+                helper["successful_reads"](
+                    trace, directory, {path.name: records[0]["id"]}
+                )
+                self.assertEqual(records[0]["lines"], len(lines))
 
     def test_native_read_horizontal_whitespace_before_arrow_preserves_coverage(
         self,

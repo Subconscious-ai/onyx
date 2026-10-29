@@ -130,7 +130,7 @@ def write_chunk(
     )
     raw = text.encode()
     require(
-        len(raw) <= CHUNK_BYTES and len(text.splitlines()) <= CHUNK_LINES,
+        len(raw) <= CHUNK_BYTES and text.count("\n") <= CHUNK_LINES,
         "Chunk limit exceeded",
     )
     filename = identifier + ".txt"
@@ -139,7 +139,7 @@ def write_chunk(
         "id": identifier,
         "file": filename,
         "sha256": digest(raw),
-        "lines": len(text.splitlines()),
+        "lines": text.count("\n"),
     }
 
 
@@ -323,7 +323,7 @@ def successful_reads(
                 path, call = calls[block["tool_use_id"]]
                 if block.get("is_error"):
                     continue
-                lines = path.read_text().splitlines()
+                lines = path.read_bytes().decode().removesuffix("\n").split("\n")
                 if call.get("offset", 1) != 1 or call.get("limit", len(lines)) < len(
                     lines
                 ):
