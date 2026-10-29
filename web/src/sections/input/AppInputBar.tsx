@@ -147,6 +147,7 @@ const AppInputBar = React.memo(
     onToggleTabReading,
   }: AppInputBarProps) => {
     const t = useTranslations("chat.input");
+    const tMessages = useTranslations("chat.messages");
     const { incognitoEnabled } = useIncognito();
     const [isRecording, setIsRecording] = useState(false);
     const [recordingCycleCount, setRecordingCycleCount] = useState(0);
@@ -881,6 +882,15 @@ const AppInputBar = React.memo(
                 : undefined
             }
             id="onyx-chat-input-send-button"
+            aria-label={
+              !embeddedWorkspace && chatState !== "input" && message.trim()
+                ? t("baseInputBar.sendButton.queueLabel")
+                : chatState === "streaming"
+                  ? t("baseInputBar.stopButton.ariaLabel")
+                  : isVoicePlaybackControllable
+                    ? tMessages("tts.stopButton.tooltip")
+                    : t("baseInputBar.sendButton.sendLabel")
+            }
             icon={
               isClassifying
                 ? SvgSimpleLoader
