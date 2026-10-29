@@ -3,11 +3,19 @@
 import { useTranslations } from "next-intl";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import { Button, Text } from "@opal/components";
 import { SvgArrowUpRight } from "@opal/icons";
 import { richNodes } from "@opal/utils";
 import ExecutiveWorkspace from "./ExecutiveWorkspace";
 import type { InterviewBrief, InterviewMessage } from "@/lib/executive/brief";
+
+// Issue #84: three throwaway layouts on the existing preview route.
+const CustomerDesignPrototype = dynamic(
+  () => import("@/sections/executive/CustomerDesignPrototype"),
+  { ssr: false }
+);
 
 const firstQuote =
   "The priority is reducing time to first value over the next six months. Hospital administrators evaluate the platform, but implementation stalls before the first useful workflow.";
@@ -90,6 +98,7 @@ const initialMessages: InterviewMessage[] = [
 
 export default function ExecutivePreview() {
   const t = useTranslations("executive");
+  const searchParams = useSearchParams();
   const [after, setAfter] = useState(true);
   const messages: InterviewMessage[] = after
     ? [
@@ -101,6 +110,19 @@ export default function ExecutivePreview() {
         },
       ]
     : initialMessages;
+  const variant = searchParams.get("variant");
+  if (
+    process.env.NODE_ENV !== "production" &&
+    variant &&
+    ["A", "B", "C"].includes(variant)
+  ) {
+    return (
+      <CustomerDesignPrototype
+        messages={messages}
+        brief={after ? revised : draft}
+      />
+    );
+  }
   return (
     <main className="executive-preview">
       <ExecutiveWorkspace active preview messages={messages}>
