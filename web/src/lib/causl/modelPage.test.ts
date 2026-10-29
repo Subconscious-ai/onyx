@@ -44,16 +44,24 @@ test("captures at dispatch and accepts only the exact parent, origin, nonce and 
 test("missing and oversized context fail without sending an incomplete document", async () => {
   const large = captureModelPage("https://models.example", "nonce");
   respond({ snapshot: "x".repeat(64001) });
-  await expect(large).rejects.toThrow("too large");
+  await expect(large).rejects.toMatchObject({
+    name: "ModelPageCaptureError",
+    message: "Models context too large",
+  });
   post.mockClear();
   const missing = captureModelPage("https://models.example", "nonce");
   respond({ error: "No complete model available" });
-  await expect(missing).rejects.toThrow("No complete model available");
+  await expect(missing).rejects.toMatchObject({
+    name: "ModelPageCaptureError",
+    message: "No complete model available",
+  });
 });
 
 test("a missing parent response leaves no persistent listener", async () => {
   const capture = captureModelPage("https://models.example", "nonce");
-  const rejection = expect(capture).rejects.toThrow("unavailable");
+  const rejection = expect(capture).rejects.toMatchObject({
+    name: "ModelPageCaptureError",
+  });
   jest.advanceTimersByTime(5000);
   await rejection;
   expect(jest.getTimerCount()).toBe(0);
