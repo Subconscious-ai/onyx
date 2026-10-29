@@ -28,6 +28,7 @@ permissions:
   contents: read
 jobs:
   Deploy-Storybook:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only maintenance/release job
     runs-on: ubuntu-latest
     environment: ci-protected
     timeout-minutes: 30

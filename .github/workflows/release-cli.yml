@@ -7,6 +7,7 @@ on:
 
 jobs:
   pypi:
+    if: github.repository == 'onyx-dot-app/onyx'
     runs-on: ubuntu-latest
     environment:
       name: release-cli
@@ -53,6 +54,7 @@ jobs:
         working-directory: cli
 
   github-release:
+    if: github.repository == 'onyx-dot-app/onyx'
     runs-on: ubuntu-latest
     permissions:
       contents: write # needed to create the GitHub release and upload archives
@@ -193,6 +195,7 @@ jobs:
           gh release upload cli-latest --clobber latest-dist/*
 
   docker-amd64:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-x64
@@ -249,6 +252,7 @@ jobs:
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
   docker-arm64:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-arm64
@@ -305,6 +309,7 @@ jobs:
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
   merge-docker:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     needs:
       - docker-amd64
       - docker-arm64

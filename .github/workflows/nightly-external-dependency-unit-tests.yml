@@ -14,6 +14,7 @@ permissions: {}
 
 jobs:
   nightly-external-dependency-unit-tests:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     # Runs every test under backend/tests/external_dependency_unit marked
     # with `@pytest.mark.nightly` — i.e. tests that are too slow, expensive,
     # or flaky to run on every PR but should still be exercised daily.

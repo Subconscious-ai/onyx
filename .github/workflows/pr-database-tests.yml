@@ -50,7 +50,7 @@ jobs:
   database-tests:
     needs: changes
     if: needs.changes.outputs.db == 'true'
-    # The public fork cannot use the private AWS runner group. Keep the same ARM tests.
+    # This fork uses GitHub-hosted ARM; upstream keeps its RunsOn pool.
     runs-on: ${{ fromJSON(github.repository == 'Subconscious-ai/onyx' && '["ubuntu-24.04-arm"]' || format('["runs-on","runner=2cpu-linux-arm64","run-id={0}-database-tests"]', github.run_id)) }}
     timeout-minutes: 12
     steps:
