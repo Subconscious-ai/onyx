@@ -111,6 +111,31 @@ def bind_interview_chat(
     return binding
 
 
+def update_interview_market(
+    db: Session, expected: CauslChatBinding, market_id: str, brief_digest: str
+) -> None:
+    """Retain the Library's market without replacing a newer chat association."""
+    db.execute(
+        text("select pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+        {"key": f"causl:chat:{expected.chat_id}"},
+    )
+    db.expire_all()
+    current = read_causl_binding(db, expected.user_id, expected.chat_id)
+    if current != expected or current.mode != "interview":
+        raise OnyxError(
+            OnyxErrorCode.CONFLICT, "The interview changed. Save the current draft."
+        )
+    updated = current.model_copy(
+        update={
+            "market_id": market_id,
+            "brief_digest": brief_digest,
+            "selection": current.selection.model_copy(update={"market_id": market_id}),
+        }
+    )
+    _write(db, f"causl:chat:{current.chat_id}", updated.model_dump(mode="json"))
+    db.commit()
+
+
 def open_causl_chat(
     db: Session,
     user: User,

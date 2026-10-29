@@ -98,8 +98,14 @@ def workspace_turn(
     *,
     saved_fact_request: bool = False,
 ) -> tuple[CauslChatBinding | None, str | None]:
+    native_research = os.environ.get("BURN2_RESEARCH_PERSONA_ID", "")
+    native_preparation = native_research.isdecimal() and int(native_research) > 0
     binding, envelope = read_workspace_context(
-        db, user, chat, selection, start_research=not saved_fact_request
+        db,
+        user,
+        chat,
+        selection,
+        start_research=not saved_fact_request and not native_preparation,
     )
     if binding is None or envelope is None:
         return None, None

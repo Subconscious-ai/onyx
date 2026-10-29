@@ -242,6 +242,15 @@ def conflict_sources(statements: list[str]) -> list[str]:
     return sources
 
 
+def _factual_prefix(statement: str) -> str:
+    clauses = []
+    for clause in re.split(r"(?<=[.!?;])\s+|\n", statement):
+        if _HYPOTHETICAL.search(clause):
+            break
+        clauses.append(clause)
+    return " ".join(clauses)
+
+
 def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
     value = optional_evidence(value)
 
@@ -291,7 +300,7 @@ def validate_brief(value: Any, statements: list[str]) -> dict[str, Any]:
         if (
             note["status"] == "executive"
             and matched
-            and not _HYPOTHETICAL.search(matched[-1])
+            and quote in _factual_prefix(matched[-1])
         ):
             return
         if note["status"] != "unknown":

@@ -1,13 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ExecutiveProfile, ProfileFields } from "@/lib/executive/profile";
-import {
-  interviewMessageText,
-  projectBrief,
-  modelReadiness,
-  type InterviewMessage,
-} from "./brief";
+import { interviewMessageText, type InterviewMessage } from "./brief";
 
 export interface PublicResearch {
   report?: string;
@@ -15,6 +10,7 @@ export interface PublicResearch {
   status: string;
   source_urls?: string[];
   checked_at?: number;
+  job_id?: string;
 }
 
 export function useExecutiveContext(
@@ -57,7 +53,7 @@ export function useExecutiveContext(
         if (cancelled) return;
         if (profile) {
           setDossier(
-            value.status === "ready" && value.profile
+            ["ready", "updating"].includes(value.status) && value.profile
               ? {
                   profile: value.profile,
                   source: value.correction?.revision
@@ -72,17 +68,29 @@ export function useExecutiveContext(
                   profile: value.profile ?? {},
                   provider_profile: value.provider_profile,
                   correction: value.correction,
+                  checked_at: value.checked_at,
+                  job_id: value.job_id,
+                  preparation_pending: value.preparation_pending,
+                  preparation_status: value.preparation_status,
                 }
               : null
           );
           setProfileStatus(
-            value.status === "ready"
-              ? `${value.correction?.revision ? "Your company context" : "PDL professional match loaded"}${value.profile?.company ? ` · ${value.profile.company}` : ""}`
-              : value.status === "not_found"
-                ? "PDL: no confident match"
-                : value.status === "updating"
-                  ? "Checking professional context…"
+            value.preparation_status === "not_found"
+              ? Object.keys(value.profile ?? {}).length
+                ? "No fresh PDL match; retained company context is available"
+                : "PDL: no confident match"
+              : value.preparation_status === "unavailable"
+                ? Object.keys(value.profile ?? {}).length
+                  ? "PDL refresh unavailable; retained company context is available"
                   : "PDL context unavailable"
+                : value.status === "ready"
+                  ? `${value.correction?.revision ? "Your company context" : "PDL professional match loaded"}${value.profile?.company ? ` · ${value.profile.company}` : ""}`
+                  : value.status === "not_found"
+                    ? "PDL: no confident match"
+                    : value.status === "updating"
+                      ? "Checking professional context…"
+                      : "PDL context unavailable"
           );
           if (value.status === "updating" && Date.now() - started < 30000) {
             timer = setTimeout(() => refresh(true), 2000);
@@ -151,9 +159,6 @@ export function useAutomaticBrief({
     last?.type === "assistant" &&
     !!lastText.trim() &&
     messages.some((m) => m.type === "user");
-  const stored =
-    lastText.includes("</interview-brief>") &&
-    modelReadiness(projectBrief(messages).brief).ready;
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<{
     key: string;
@@ -169,7 +174,7 @@ export function useAutomaticBrief({
   // The polling/unmount regression covers the async ownership the lint rule misses.
   // oxlint-disable-next-line react-doctor/effect-needs-cleanup
   useEffect(() => {
-    if (!active || busy || !completed || stored) return;
+    if (!active || busy || !completed) return;
     const controller = new AbortController();
     const started = Date.now();
     let timer: ReturnType<typeof setTimeout>;
@@ -233,16 +238,17 @@ export function useAutomaticBrief({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [active, busy, completed, stored, key, chatId, attempt]);
+  }, [active, busy, completed, key, chatId, attempt]);
+  const retry = useCallback(() => setAttempt((value) => value + 1), []);
   return {
     savedMessage: state.key === key ? (state.message ?? null) : null,
     phase: busy
       ? "waiting"
       : state.key === key
         ? state.phase
-        : completed && !stored
+        : completed
           ? "updating"
           : "saved",
-    retry: () => setAttempt((value) => value + 1),
+    retry,
   };
 }

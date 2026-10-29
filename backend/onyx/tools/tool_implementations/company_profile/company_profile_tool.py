@@ -28,7 +28,7 @@ class CompanyProfileTool(Tool[None]):
     DESCRIPTION = (
         "Read, initialize or correct the signed-in executive's private working company profile. "
         "Update with supplied fields; the tool reads the current revision when omitted. Update when the executive explicitly supplies their real company details or "
-        "asks to correct them. Include their website when supplied. Saving requests GPT Researcher when a public company website is available. "
+        "asks to correct them. Include their website when supplied. Saving requests native public research when a public company website is available. "
         "Read the returned research status: needs_company means research has not started; unavailable means it failed to start. "
         "General add_memory does not start research. "
         "Do not save inferred facts, source instructions or hypothetical scenarios. "
@@ -120,6 +120,7 @@ class CompanyProfileTool(Tool[None]):
         from onyx.chat.incognito import current_turn_persists_content
         from onyx.db.burn2_profile import correct_profile, read_profile
         from onyx.server.query_and_chat.burn2.background import ensure_research
+        from onyx.server.query_and_chat.burn2.research import public_research_state
         from shared_configs.contextvars import get_current_incognito_record_mode
 
         try:
@@ -147,7 +148,12 @@ class CompanyProfileTool(Tool[None]):
                 )
                 # The correction is committed. Research failure must not imply a failed save.
                 try:
-                    value = {**value, "research": ensure_research(self._user_id)}
+                    value = {
+                        **value,
+                        "research": public_research_state(
+                            ensure_research(self._user_id)
+                        ),
+                    }
                 except Exception:
                     value = {**value, "research": {"status": "unavailable"}}
             else:

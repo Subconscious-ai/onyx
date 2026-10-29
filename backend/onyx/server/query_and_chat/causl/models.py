@@ -67,6 +67,7 @@ class CauslChatBinding(BaseModel):
     selection: CauslSelection
     library_server_id: int
     mode: Literal["workspace", "interview"] = "workspace"
+    brief_digest: str | None = None
 
 
 class CauslWorkspaceResponse(BaseModel):

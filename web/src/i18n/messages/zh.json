@@ -13872,6 +13872,13 @@
       "cancel": "取消",
       "conflict": "资料已在其他位置更改。请取消并重新打开后再保存。您的更改尚未保存。",
       "failed": "无法保存更正。您的输入仍保留在此处，请重试。",
+      "refresh": "Refresh PDL and public research",
+      "refreshing": "Refreshing preparation…",
+      "refreshDescription": "Run a new PDL lookup and public research. Your interview and saved context stay available.",
+      "refreshFailed": "Could not confirm preparation. Retry to check the same request without a duplicate lookup.",
+      "refreshStarted": "Preparation request saved. Public research status appears in the brief.",
+      "refreshNoMatch": "No fresh PDL match. Previous company context and corrections stay unchanged.",
+      "refreshUnavailable": "PDL refresh unavailable. Previous company context and corrections stay unchanged.",
       "fields": {
         "name": "姓名",
         "role": "职务",
