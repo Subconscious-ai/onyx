@@ -107,6 +107,23 @@ assistant reply, and normal model save/reopen before handing off the QA link.
 Observe popup pages with Playwright events. Wrapping native Window handles changes
 `postMessage` source identity and invalidates the handoff test.
 
+### Workspace open request contract
+
+`POST /api/chat/causl-workspace` requires both the KB actor and the page selection:
+
+```json
+{
+  "actor": {"orgId": "<KB organization>", "userId": "<KB subject>"},
+  "selection": {"page": "models", "marketId": "<optional market>"},
+  "chatId": "<optional existing chat UUID>"
+}
+```
+
+`actor` has no default. The verified Library response must match it, so a body
+with only `selection` is rejected with HTTP 422 (`body.actor` missing). Smoke and
+QA scripts must send the same body as `openCauslWorkspace` in
+`web/src/lib/causl/bridge.ts`.
+
 ## Configuration
 
 Keep both settings unset to leave ordinary Onyx authentication unchanged.
