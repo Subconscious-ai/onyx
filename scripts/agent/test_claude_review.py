@@ -5,13 +5,12 @@ import copy
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 import unittest
-import sys
-
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 HELPER = ROOT / "scripts/agent/claude_review.py"
@@ -21,24 +20,49 @@ BASE = "b" * 40
 
 def blob(text):
     raw = text.encode()
-    sha = hashlib.sha1(f"blob {len(raw)}\0".encode() + raw).hexdigest()
-    return {"sha": sha, "size": len(raw), "encoding": "base64", "content": base64.b64encode(raw).decode()}
+    sha = hashlib.sha1(
+        f"blob {len(raw)}\0".encode() + raw, usedforsecurity=False
+    ).hexdigest()
+    return {
+        "sha": sha,
+        "size": len(raw),
+        "encoding": "base64",
+        "content": base64.b64encode(raw).decode(),
+    }
 
 
 def github_fixture():
     files, blobs = [], {}
     for i in range(73):
         # Reproduce the API's one-line JSON and an 82 KB single patch/line.
-        lines = ["x" * 82400] if i == 0 else [f"source {i} line {n} " + "y" * 90 for n in range(50)]
+        lines = (
+            ["x" * 82400]
+            if i == 0
+            else [f"source {i} line {n} " + "y" * 90 for n in range(50)]
+        )
         text = "\n".join(lines)
         source = blob(text)
         blobs[source["sha"]] = source
-        files.append({
-            "filename": f"src/changed-{i}.ts", "status": "added", "sha": source["sha"],
-            "additions": len(lines), "deletions": 0,
-            "patch": f"@@ -0,0 +1,{len(lines)} @@\n" + "\n".join("+" + line for line in lines),
-        })
-    pr = {"state": "open", "draft": False, "head": {"sha": HEAD, "repo": {"full_name": "owner/repo"}}, "base": {"sha": BASE}, "changed_files": 73, "additions": 3601, "deletions": 0}
+        files.append(
+            {
+                "filename": f"src/changed-{i}.ts",
+                "status": "added",
+                "sha": source["sha"],
+                "additions": len(lines),
+                "deletions": 0,
+                "patch": f"@@ -0,0 +1,{len(lines)} @@\n"
+                + "\n".join("+" + line for line in lines),
+            }
+        )
+    pr = {
+        "state": "open",
+        "draft": False,
+        "head": {"sha": HEAD, "repo": {"full_name": "owner/repo"}},
+        "base": {"sha": BASE},
+        "changed_files": 73,
+        "additions": 3601,
+        "deletions": 0,
+    }
     return {"pr": pr, "files": [files[:50], files[50:]], "blobs": blobs}
 
 
@@ -57,8 +81,26 @@ def fake_gh(directory):
 def invoke(command, directory, environment=None, review_drafts=False):
     arguments = ["--review-drafts", "true"] if review_drafts else []
     return subprocess.run(
-        [sys.executable, str(HELPER), command, "--repository", "owner/repo", "--number", "743", "--head", HEAD, "--base", BASE, "--context", str(directory / "context"), *arguments],
-        env=environment, text=True, capture_output=True, check=False,
+        [
+            sys.executable,
+            str(HELPER),
+            command,
+            "--repository",
+            "owner/repo",
+            "--number",
+            "743",
+            "--head",
+            HEAD,
+            "--base",
+            BASE,
+            "--context",
+            str(directory / "context"),
+            *arguments,
+        ],
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
     )
 
 
@@ -67,7 +109,9 @@ def tab_read_trace(trace):
     for turn in trace:
         if turn["type"] == "user":
             block = turn["message"]["content"][0]
-            block["content"] = re.sub(r"^([ \t]*\d+)→", r"\1\t", block["content"], flags=re.MULTILINE)
+            block["content"] = re.sub(
+                r"^([ \t]*\d+)→", r"\1\t", block["content"], flags=re.MULTILINE
+            )
     return trace
 
 
@@ -80,7 +124,11 @@ class PreparedReviewTest(unittest.TestCase):
         cls.fixture = github_fixture()
         cls.fixture_path = cls.directory / "github.json"
         cls.fixture_path.write_text(json.dumps(cls.fixture))
-        cls.environment = dict(os.environ, PATH=str(cls.directory) + ":" + os.environ["PATH"], GH_FIXTURE=str(cls.fixture_path))
+        cls.environment = dict(
+            os.environ,
+            PATH=str(cls.directory) + ":" + os.environ["PATH"],
+            GH_FIXTURE=str(cls.fixture_path),
+        )
         result = invoke("prepare", cls.directory, cls.environment)
         if result.returncode:
             raise AssertionError(result.stderr)
@@ -88,19 +136,61 @@ class PreparedReviewTest(unittest.TestCase):
         cls.manifest = json.loads((cls.context / "manifest.json").read_text())
         cls.required = cls.manifest["patch_chunks"]
         cls.output = {
-            "head_sha": HEAD, "base_sha": BASE,
-            "manifest_sha256": hashlib.sha256((cls.context / "manifest.json").read_bytes()).hexdigest(),
+            "head_sha": HEAD,
+            "base_sha": BASE,
+            "manifest_sha256": hashlib.sha256(
+                (cls.context / "manifest.json").read_bytes()
+            ).hexdigest(),
             "patch_chunks_reviewed": [c["id"] for c in cls.required],
-            "standards_complete": True, "spec_complete": True, "incomplete": False,
+            "standards_complete": True,
+            "spec_complete": True,
+            "incomplete": False,
         }
         cls.trace = []
         for i, chunk in enumerate(cls.required):
             path = cls.context / chunk["file"]
-            cls.trace.extend([
-                {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Read", "id": str(i), "input": {"file_path": str(path)}}]}},
-                {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": str(i), "content": "\n".join(f"{n:6}→{line}" for n, line in enumerate(path.read_text().splitlines(), 1))}]}},
-            ])
-        cls.trace.append({"type": "result", "subtype": "success", "is_error": False, "structured_output": cls.output})
+            cls.trace.extend(
+                [
+                    {
+                        "type": "assistant",
+                        "message": {
+                            "content": [
+                                {
+                                    "type": "tool_use",
+                                    "name": "Read",
+                                    "id": str(i),
+                                    "input": {"file_path": str(path)},
+                                }
+                            ]
+                        },
+                    },
+                    {
+                        "type": "user",
+                        "message": {
+                            "content": [
+                                {
+                                    "type": "tool_result",
+                                    "tool_use_id": str(i),
+                                    "content": "\n".join(
+                                        f"{n:6}→{line}"
+                                        for n, line in enumerate(
+                                            path.read_text().splitlines(), 1
+                                        )
+                                    ),
+                                }
+                            ]
+                        },
+                    },
+                ]
+            )
+        cls.trace.append(
+            {
+                "type": "result",
+                "subtype": "success",
+                "is_error": False,
+                "structured_output": cls.output,
+            }
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -109,8 +199,14 @@ class PreparedReviewTest(unittest.TestCase):
     def verify(self, output=None, trace=None, review_drafts=False):
         execution = self.directory / "execution.json"
         execution.write_text(json.dumps(self.trace if trace is None else trace))
-        environment = dict(self.environment, STRUCTURED_OUTPUT=json.dumps(self.output if output is None else output), EXECUTION_FILE=str(execution))
-        return invoke("verify", self.directory, environment, review_drafts=review_drafts)
+        environment = dict(
+            self.environment,
+            STRUCTURED_OUTPUT=json.dumps(self.output if output is None else output),
+            EXECUTION_FILE=str(execution),
+        )
+        return invoke(
+            "verify", self.directory, environment, review_drafts=review_drafts
+        )
 
     def test_complete_patch_context_uses_fewer_reads_than_changed_files(self):
         self.assertLess(len(self.required), len(self.manifest["files"]))
@@ -118,7 +214,9 @@ class PreparedReviewTest(unittest.TestCase):
     def test_large_paginated_api_becomes_complete_bounded_plaintext(self):
         self.assertEqual(len(self.manifest["files"]), 73)
         self.assertGreater(len(json.dumps(self.fixture["files"])), 491000)
-        all_chunks = self.required + [c for f in self.manifest["files"] for c in f["source_chunks"]]
+        all_chunks = self.required + [
+            c for f in self.manifest["files"] for c in f["source_chunks"]
+        ]
         for chunk in all_chunks:
             raw = (self.context / chunk["file"]).read_bytes()
             self.assertLessEqual(len(raw), 20000)
@@ -130,7 +228,10 @@ class PreparedReviewTest(unittest.TestCase):
                 number = int(location[1:].split(".")[0])
                 reconstructed[number] = reconstructed.get(number, "") + value
         originals = [f for page in self.fixture["files"] for f in page]
-        expected = "".join(f"UNTRUSTED PATCH FILE: {json.dumps(f['filename'])}\n{f['patch']}\nEND PATCH FILE: {json.dumps(f['filename'])}\n" for f in originals)
+        expected = "".join(
+            f"UNTRUSTED PATCH FILE: {json.dumps(f['filename'])}\n{f['patch']}\nEND PATCH FILE: {json.dumps(f['filename'])}\n"
+            for f in originals
+        )
         self.assertEqual("\n".join(reconstructed.values()), expected)
 
     def test_native_draft_review_requires_explicit_opt_in(self):
@@ -142,7 +243,9 @@ class PreparedReviewTest(unittest.TestCase):
                 directory = Path(directory)
                 denied = invoke("prepare", directory, self.environment)
                 self.assertNotEqual(denied.returncode, 0)
-                allowed = invoke("prepare", directory, self.environment, review_drafts=True)
+                allowed = invoke(
+                    "prepare", directory, self.environment, review_drafts=True
+                )
                 self.assertEqual(allowed.returncode, 0, allowed.stderr)
             self.assertNotEqual(self.verify().returncode, 0)
             allowed = self.verify(review_drafts=True)
@@ -160,7 +263,9 @@ class PreparedReviewTest(unittest.TestCase):
         for turn in trace:
             if turn["type"] == "user":
                 block = turn["message"]["content"][0]
-                block["content"] = re.sub(r"^( +)(\d+)→", r"\1\2\t→", block["content"], flags=re.MULTILINE)
+                block["content"] = re.sub(
+                    r"^( +)(\d+)→", r"\1\2\t→", block["content"], flags=re.MULTILINE
+                )
         result = self.verify(trace=trace)
         self.assertEqual(result.returncode, 0, result.stderr)
 
@@ -175,8 +280,12 @@ class PreparedReviewTest(unittest.TestCase):
             "changed_text": original + "tampered",
             "omitted_first_line": "\n".join(lines[1:]),
             "omitted_last_line": "\n".join(lines[:-1]),
-            "wrong_line_number": re.sub(r"^([ \t]*)1\t", r"\g<1>2\t", original, count=1),
-            "space_separator": re.sub(r"^([ \t]*\d+)\t", r"\1 ", original, flags=re.MULTILINE),
+            "wrong_line_number": re.sub(
+                r"^([ \t]*)1\t", r"\g<1>2\t", original, count=1
+            ),
+            "space_separator": re.sub(
+                r"^([ \t]*\d+)\t", r"\1 ", original, flags=re.MULTILINE
+            ),
         }
         for name, content in changes.items():
             trace = tab_read_trace(self.trace)
@@ -220,18 +329,30 @@ class PreparedReviewTest(unittest.TestCase):
         secret = "private-credential-and-file-content-do-not-print"
         trace[0]["message"]["content"][0]["input"]["private_argument"] = secret
         trace[1]["message"]["content"][0]["content"] = "     1 | " + secret
-        trace[1]["tool_use_result"] = {"type": "text", "content": secret, secret: secret}
+        trace[1]["tool_use_result"] = {
+            "type": "text",
+            "content": secret,
+            secret: secret,
+        }
         result = self.verify(trace=trace)
         self.assertNotEqual(result.returncode, 0)
-        diagnostic, = [line.removeprefix("native_read_diagnostics=") for line in result.stderr.splitlines()
-                       if line.startswith("native_read_diagnostics=")]
+        (diagnostic,) = [
+            line.removeprefix("native_read_diagnostics=")
+            for line in result.stderr.splitlines()
+            if line.startswith("native_read_diagnostics=")
+        ]
         diagnostic = json.loads(diagnostic)
-        self.assertEqual(diagnostic["turn_types"], {"assistant": 1, "user": 1, "result": 1})
+        self.assertEqual(
+            diagnostic["turn_types"], {"assistant": 1, "user": 1, "result": 1}
+        )
         self.assertEqual(diagnostic["read_calls"], 1)
         self.assertEqual(diagnostic["bound_read_calls"], 1)
         self.assertEqual(diagnostic["tool_results"], 1)
         self.assertEqual(diagnostic["result_prefixes"], {"number_pipe": 1})
-        self.assertEqual(diagnostic["tool_use_result_shapes"], {"NoneType": 2, "content,type,other": 1})
+        self.assertEqual(
+            diagnostic["tool_use_result_shapes"],
+            {"NoneType": 2, "content,type,other": 1},
+        )
         self.assertNotIn(secret, result.stderr)
         self.assertNotIn(str(self.context), json.dumps(diagnostic))
         self.assertLess(len(json.dumps(diagnostic)), 4000)
@@ -239,27 +360,54 @@ class PreparedReviewTest(unittest.TestCase):
     def test_incomplete_or_wrong_revision_attestations_fail(self):
         changes = [
             {"patch_chunks_reviewed": []},
-            {"patch_chunks_reviewed": self.output["patch_chunks_reviewed"] + [self.required[0]["id"]]},
-            {"head_sha": BASE}, {"base_sha": HEAD}, {"manifest_sha256": "0" * 64},
-            {"standards_complete": False}, {"spec_complete": False}, {"incomplete": True},
+            {
+                "patch_chunks_reviewed": self.output["patch_chunks_reviewed"]
+                + [self.required[0]["id"]]
+            },
+            {"head_sha": BASE},
+            {"base_sha": HEAD},
+            {"manifest_sha256": "0" * 64},
+            {"standards_complete": False},
+            {"spec_complete": False},
+            {"incomplete": True},
         ]
         for change in changes:
             with self.subTest(change=list(change)):
-                self.assertNotEqual(self.verify(output=dict(self.output, **change)).returncode, 0)
+                self.assertNotEqual(
+                    self.verify(output=dict(self.output, **change)).returncode, 0
+                )
 
     def test_self_attestation_cannot_replace_native_read_coverage(self):
-        for variant in ("none", "error", "offset", "limit", "truncated", "other_path", "result", "output"):
+        for variant in (
+            "none",
+            "error",
+            "offset",
+            "limit",
+            "truncated",
+            "other_path",
+            "result",
+            "output",
+        ):
             trace = copy.deepcopy(self.trace)
             if variant == "none":
                 trace = trace[-1:]
             elif variant == "error":
                 trace[1]["message"]["content"][0]["is_error"] = True
             elif variant in ("offset", "limit"):
-                trace[0]["message"]["content"][0]["input"][variant] = 2 if variant == "offset" else 1
+                trace[0]["message"]["content"][0]["input"][variant] = (
+                    2 if variant == "offset" else 1
+                )
             elif variant == "truncated":
-                trace[1]["message"]["content"][0]["content"] = "     1→" + (self.context / self.required[0]["file"]).read_text().splitlines()[0]
+                trace[1]["message"]["content"][0]["content"] = (
+                    "     1→"
+                    + (self.context / self.required[0]["file"])
+                    .read_text()
+                    .splitlines()[0]
+                )
             elif variant == "other_path":
-                trace[0]["message"]["content"][0]["input"]["file_path"] = "/tmp/other.txt"
+                trace[0]["message"]["content"][0]["input"]["file_path"] = str(
+                    self.directory / "other.txt"
+                )
             elif variant == "result":
                 trace[-1]["is_error"] = True
             elif variant == "output":
@@ -288,7 +436,15 @@ class PreparedReviewTest(unittest.TestCase):
                 self.fixture_path.write_text(json.dumps(self.fixture))
 
     def test_omitted_binary_malformed_and_truncated_patches_fail(self):
-        for variant in ("missing", "binary", "hunk", "statistics", "omitted", "duplicate", "blob"):
+        for variant in (
+            "missing",
+            "binary",
+            "hunk",
+            "statistics",
+            "omitted",
+            "duplicate",
+            "blob",
+        ):
             fixture = copy.deepcopy(self.fixture)
             first = fixture["files"][0][0]
             if variant == "missing":
@@ -305,18 +461,28 @@ class PreparedReviewTest(unittest.TestCase):
             elif variant == "duplicate":
                 fixture["files"][0][1] = first
             elif variant == "blob":
-                fixture["blobs"][first["sha"]]["content"] = base64.b64encode(b"wrong source").decode()
-            with self.subTest(variant=variant), tempfile.TemporaryDirectory() as directory:
+                fixture["blobs"][first["sha"]]["content"] = base64.b64encode(
+                    b"wrong source"
+                ).decode()
+            with (
+                self.subTest(variant=variant),
+                tempfile.TemporaryDirectory() as directory,
+            ):
                 directory = Path(directory)
                 altered = directory / "github.json"
                 altered.write_text(json.dumps(fixture))
-                result = invoke("prepare", directory, dict(self.environment, GH_FIXTURE=str(altered)))
+                result = invoke(
+                    "prepare",
+                    directory,
+                    dict(self.environment, GH_FIXTURE=str(altered)),
+                )
                 self.assertNotEqual(result.returncode, 0)
 
-
     def test_summary_marker_without_code_review_fails_workflow(self):
-        workflow = (ROOT / ".github/workflows/claude-review.yml").read_text()
-        gate = workflow.split("      - name: Require completed and persisted review\n")[1]
+        workflow = (ROOT / ".github/workflows/pr-review.yml").read_text()
+        gate = workflow.split("      - name: Require completed and persisted review\n")[
+            1
+        ]
         script = gate.split("        run: |\n", 1)[1]
         script = "\n".join(line[10:] for line in script.splitlines())
         with tempfile.TemporaryDirectory() as directory:
@@ -331,19 +497,35 @@ class PreparedReviewTest(unittest.TestCase):
             gh.chmod(0o700)
             execution = directory / "execution.json"
             for complete in (False, True):
-                execution.write_text(json.dumps(self.trace if complete else self.trace[-1:]))
-                summary = "Standards: 0; Spec: 0" if complete else "Advisory and partial: core.py and 22 files unread"
+                execution.write_text(
+                    json.dumps(self.trace if complete else self.trace[-1:])
+                )
+                summary = (
+                    "Standards: 0; Spec: 0"
+                    if complete
+                    else "Advisory and partial: core.py and 22 files unread"
+                )
                 environment = dict(
-                    self.environment, PATH=str(directory) + ":" + os.environ["PATH"],
-                    CONCLUSION="success", NUMBER="743", HEAD_SHA=HEAD, BASE_SHA=BASE,
-                    REVIEW_DRAFTS="false", GITHUB_REPOSITORY="owner/repo",
-                    REVIEW_HELPER=str(HELPER), REVIEW_CONTEXT=str(self.context),
-                    STRUCTURED_OUTPUT=json.dumps(self.output), EXECUTION_FILE=str(execution),
+                    self.environment,
+                    PATH=str(directory) + ":" + os.environ["PATH"],
+                    CONCLUSION="success",
+                    NUMBER="743",
+                    HEAD_SHA=HEAD,
+                    BASE_SHA=BASE,
+                    REVIEW_DRAFTS="false",
+                    GITHUB_REPOSITORY="owner/repo",
+                    REVIEW_HELPER=str(HELPER),
+                    REVIEW_CONTEXT=str(self.context),
+                    STRUCTURED_OUTPUT=json.dumps(self.output),
+                    EXECUTION_FILE=str(execution),
                     REVIEW_COMMENT=f"<!-- claude-review:{HEAD} --> {summary}",
                 )
                 result = subprocess.run(
-                    ["bash", "-c", script], env=environment,
-                    text=True, capture_output=True, check=False,
+                    ["bash", "-c", script],
+                    env=environment,
+                    text=True,
+                    capture_output=True,
+                    check=False,
                 )
                 with self.subTest(complete=complete):
                     if complete:
@@ -352,7 +534,9 @@ class PreparedReviewTest(unittest.TestCase):
                     else:
                         self.assertNotEqual(result.returncode, 0, result.stdout)
                         self.assertIn("Incomplete native Read coverage", result.stderr)
-                        self.assertNotIn(f"<!-- claude-review:{HEAD} -->", result.stdout)
+                        self.assertNotIn(
+                            f"<!-- claude-review:{HEAD} -->", result.stdout
+                        )
 
 
 if __name__ == "__main__":
