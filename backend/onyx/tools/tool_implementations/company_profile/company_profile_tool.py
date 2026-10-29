@@ -120,6 +120,7 @@ class CompanyProfileTool(Tool[None]):
         from onyx.chat.incognito import current_turn_persists_content
         from onyx.db.burn2_profile import correct_profile, read_profile
         from onyx.server.query_and_chat.burn2.background import ensure_research
+        from onyx.server.query_and_chat.burn2.research import public_research_state
         from shared_configs.contextvars import get_current_incognito_record_mode
 
         try:
@@ -147,7 +148,12 @@ class CompanyProfileTool(Tool[None]):
                 )
                 # The correction is committed. Research failure must not imply a failed save.
                 try:
-                    value = {**value, "research": ensure_research(self._user_id)}
+                    value = {
+                        **value,
+                        "research": public_research_state(
+                            ensure_research(self._user_id)
+                        ),
+                    }
                 except Exception:
                     value = {**value, "research": {"status": "unavailable"}}
             else:
