@@ -59,6 +59,7 @@ permissions:
 
 jobs:
   build-model-server-image:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     runs-on:
       [
         runs-on,
@@ -104,6 +105,7 @@ jobs:
           docker-token: ${{ env.DOCKER_TOKEN }}
 
   build-devcontainer-image:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     runs-on:
       [
         runs-on,
@@ -132,6 +134,7 @@ jobs:
           ecr-registry: ${{ vars.ECR_REGISTRY }}
 
   provider-chat-test:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     needs:
       [
         build-model-server-image,

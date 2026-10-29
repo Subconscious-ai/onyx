@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   docker-amd64:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-x64
@@ -74,6 +75,7 @@ jobs:
           echo "digest=$(echo "$METADATA" | jq -r '.devcontainer."containerimage.digest"')" >> "$GITHUB_OUTPUT"
 
   docker-arm64:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=2cpu-linux-arm64
@@ -135,6 +137,7 @@ jobs:
           echo "digest=$(echo "$METADATA" | jq -r '.devcontainer."containerimage.digest"')" >> "$GITHUB_OUTPUT"
 
   merge-docker:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     needs:
       - docker-amd64
       - docker-arm64

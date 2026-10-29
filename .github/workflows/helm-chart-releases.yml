@@ -38,6 +38,7 @@ env:
 
 jobs:
   release:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only maintenance/release job
     permissions:
       contents: write # create the release/tag and push index.yaml to gh-pages
       packages: write # push the chart to ghcr.io

@@ -20,6 +20,7 @@ concurrency:
 
 jobs:
   update-recommended-models:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only maintenance/release job
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
