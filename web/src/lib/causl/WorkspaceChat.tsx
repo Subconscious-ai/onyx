@@ -233,7 +233,7 @@ export default function WorkspaceChat({
       <div className="flex h-full flex-col items-start justify-center gap-3 p-4">
         <Text as="p">{t("signin")}</Text>
         <Button
-          href="/auth/login?next=%2Fapp"
+          href="/auth/login?provider=auth0&next=%2Fapp"
           target="_blank"
           rel="noopener noreferrer"
         >
