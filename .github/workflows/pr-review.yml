@@ -46,7 +46,7 @@ jobs:
       - name: Prepare complete exact-head review context
         id: context
         env:
-          REVIEW_HELPER_REF: 5edfdcb5d0ba4d1facbe87ecdd0c46140a1f77ee
+          REVIEW_HELPER_REF: c14cc48e19163de6354ced1efa6a5b3b9323dae2
         run: |
           set -euo pipefail
           [[ "$REVIEW_HELPER_REF" =~ ^[a-f0-9]{40}$ ]]
@@ -54,7 +54,7 @@ jobs:
           helper="$RUNNER_TEMP/claude-review-tools/claude_review.py"
           gh api "repos/$GITHUB_REPOSITORY/contents/scripts/agent/claude_review.py?ref=$REVIEW_HELPER_REF" \
             -H 'Accept: application/vnd.github.raw+json' > "$helper"
-          echo "4a21d63812a01bc66496d824dabe03685d1e9f5607d1ddabf2dbb611ed7639ec  $helper" | sha256sum -c -
+          echo "fdefd94f304d27e61af4e41a16b9804c5f8e0014d3e4ffaded4784b56d2bcf69  $helper" | sha256sum -c -
           python3 "$helper" prepare --repository "$GITHUB_REPOSITORY" --number "$NUMBER" \
             --head "$HEAD_SHA" --base "$BASE_SHA" --context "$RUNNER_TEMP/review-context/pr" \
             --review-drafts true
