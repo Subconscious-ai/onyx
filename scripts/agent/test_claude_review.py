@@ -64,7 +64,14 @@ def github_fixture() -> dict[str, Any]:
         "additions": 3601,
         "deletions": 0,
     }
-    return {"pr": pr, "files": [files[:50], files[50:]], "blobs": blobs}
+    patch = "".join(
+        f"diff --git a/{file['filename']} b/{file['filename']}\n"
+        f"new file mode 100644\n--- /dev/null\n+++ b/{file['filename']}\n"
+        + file["patch"]
+        + "\n"
+        for file in files
+    )
+    return {"pr": pr, "files": [files[:50], files[50:]], "blobs": blobs, "diff": patch}
 
 
 def fake_gh(directory: Path) -> None:
@@ -72,9 +79,9 @@ def fake_gh(directory: Path) -> None:
     path.write_text(
         f"#!{sys.executable}\nimport json,os,sys\n"
         "data=json.load(open(os.environ['GH_FIXTURE']))\nendpoint=sys.argv[-1]\n"
+        "if 'Accept: application/vnd.github.diff' in sys.argv: print(data['diff'],end='');sys.exit(0)\n"
         "if '/git/blobs/' in endpoint: result=data['blobs'][endpoint.rsplit('/',1)[1]]\n"
         "elif '/files?' in endpoint: result=data['files']\n"
-        "elif '/git/trees/' in endpoint: result=data['trees'][endpoint.rsplit('/',1)[1]]\n"
         "else: result=data['pr']\nprint(json.dumps(result))\n"
     )
     path.chmod(0o700)
@@ -231,7 +238,7 @@ class PreparedReviewTest(unittest.TestCase):
             "verify", self.directory, environment, review_drafts=review_drafts
         )
 
-    def test_metadata_only_changes_preserve_exact_git_evidence(self) -> None:
+    def test_metadata_changes_preserve_exact_git_evidence(self) -> None:
         fixture = github_fixture()
         empty = blob("")
         text = blob("print('ok')\n")
@@ -263,41 +270,28 @@ class PreparedReviewTest(unittest.TestCase):
                     "deletions": 0,
                     "changes": 0,
                 },
+                {
+                    "filename": "changed-owner.py",
+                    "previous_filename": "old-owner.py",
+                    "status": "renamed",
+                    "sha": text["sha"],
+                    "additions": 1,
+                    "deletions": 1,
+                    "changes": 2,
+                },
             ]
         ]
-        fixture["pr"].update(changed_files=3, additions=0, deletions=0)
-        fixture["trees"] = {
-            BASE: {
-                "truncated": False,
-                "tree": [
-                    {"path": name, "mode": "100644", "type": "blob", "sha": text["sha"]}
-                    for name in ("original.py", "executable.py")
-                ],
-            },
-            HEAD: {
-                "truncated": False,
-                "tree": [
-                    {
-                        "path": "empty.py",
-                        "mode": "100644",
-                        "type": "blob",
-                        "sha": empty["sha"],
-                    },
-                    {
-                        "path": "renamed.py",
-                        "mode": "100644",
-                        "type": "blob",
-                        "sha": text["sha"],
-                    },
-                    {
-                        "path": "executable.py",
-                        "mode": "100755",
-                        "type": "blob",
-                        "sha": text["sha"],
-                    },
-                ],
-            },
-        }
+        fixture["pr"].update(changed_files=4, additions=1, deletions=1)
+        fixture["diff"] = (
+            "diff --git a/empty.py b/empty.py\nnew file mode 100644\nindex 0000000..e69de29\n"
+            "diff --git a/original.py b/renamed.py\nsimilarity index 100%\n"
+            "rename from original.py\nrename to renamed.py\n"
+            "diff --git a/executable.py b/executable.py\nold mode 100644\nnew mode 100755\n"
+            "diff --git a/old-owner.py b/changed-owner.py\nold mode 100644\nnew mode 100755\n"
+            "similarity index 50%\nrename from old-owner.py\nrename to changed-owner.py\n"
+            "index 78b5066..2a3f5d2\n--- a/old-owner.py\n+++ b/changed-owner.py\n"
+            "@@ -1,2 +1,2 @@\n unchanged\n-old\n+new\n"
+        )
         with tempfile.TemporaryDirectory() as raw_directory:
             directory = Path(raw_directory)
             path = directory / "github.json"
@@ -309,17 +303,22 @@ class PreparedReviewTest(unittest.TestCase):
             manifest = json.loads((directory / "context/manifest.json").read_text())
             self.assertEqual(
                 [file["status"] for file in manifest["files"]],
-                ["added", "renamed", "modified"],
+                ["added", "renamed", "modified", "renamed"],
             )
             patch = "".join(
                 (directory / "context" / chunk["file"]).read_text()
                 for chunk in manifest["patch_chunks"]
             )
-            self.assertIn('"previous_filename": "original.py"', patch)
-            self.assertIn('"mode": "100755"', patch)
-            self.assertIn('"mode": "100644"', patch)
+            self.assertIn("rename from original.py", patch)
+            self.assertIn("new mode 100755", patch)
+            self.assertIn("old mode 100644", patch)
+            self.assertIn("rename from old-owner.py", patch)
+            self.assertIn("-old", patch)
+            self.assertIn("+new", patch)
             # A zero-count claim must not hide omitted text changes.
-            fixture["trees"][BASE]["tree"][1]["sha"] = empty["sha"]
+            fixture["diff"] = fixture["diff"].replace(
+                "rename to renamed.py", "rename to wrong.py"
+            )
             path.write_text(json.dumps(fixture))
             with tempfile.TemporaryDirectory() as rejected:
                 result = invoke(
@@ -328,6 +327,34 @@ class PreparedReviewTest(unittest.TestCase):
                     dict(self.environment, GH_FIXTURE=str(path)),
                 )
             self.assertNotEqual(result.returncode, 0)
+
+    def test_text_patch_preserves_rename_and_mode_headers(self) -> None:
+        fixture = github_fixture()
+        file = fixture["files"][0][0]
+        file.update(status="renamed", previous_filename="old-owner.ts")
+        fixture["files"] = [[file]]
+        fixture["pr"].update(changed_files=1, additions=1, deletions=0)
+        fixture["diff"] = (
+            "diff --git a/old-owner.ts b/src/changed-0.ts\n"
+            "old mode 100644\nnew mode 100755\nsimilarity index 99%\n"
+            "rename from old-owner.ts\nrename to src/changed-0.ts\n"
+            "--- a/old-owner.ts\n+++ b/src/changed-0.ts\n" + file["patch"] + "\n"
+        )
+        with tempfile.TemporaryDirectory() as raw_directory:
+            directory = Path(raw_directory)
+            path = directory / "github.json"
+            path.write_text(json.dumps(fixture))
+            result = invoke(
+                "prepare", directory, dict(self.environment, GH_FIXTURE=str(path))
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            manifest = json.loads((directory / "context/manifest.json").read_text())
+            evidence = "".join(
+                (directory / "context" / chunk["file"]).read_text()
+                for chunk in manifest["patch_chunks"]
+            )
+            self.assertIn("rename from old-owner.ts", evidence)
+            self.assertIn("new mode 100755", evidence)
 
     def test_short_lines_pack_into_the_existing_native_read_byte_bound(self) -> None:
         fixture = github_fixture()
@@ -348,6 +375,10 @@ class PreparedReviewTest(unittest.TestCase):
             ]
         ]
         fixture["blobs"] = {source["sha"]: source}
+        fixture["diff"] = (
+            "diff --git a/review.py b/review.py\nnew file mode 100644\n"
+            "--- /dev/null\n+++ b/review.py\n" + fixture["files"][0][0]["patch"] + "\n"
+        )
         fixture["pr"].update(changed_files=1, additions=len(lines), deletions=0)
         with tempfile.TemporaryDirectory() as raw_directory:
             directory = Path(raw_directory)
@@ -370,9 +401,7 @@ class PreparedReviewTest(unittest.TestCase):
     def test_large_paginated_api_becomes_complete_bounded_plaintext(self) -> None:
         self.assertEqual(len(self.manifest["files"]), 73)
         self.assertGreater(len(json.dumps(self.fixture["files"])), 491000)
-        all_chunks = self.required + [
-            c for f in self.manifest["files"] for c in f["source_chunks"]
-        ]
+        all_chunks = self.required
         for chunk in all_chunks:
             raw = (self.context / chunk["file"]).read_bytes()
             self.assertLessEqual(len(raw), 20000)
@@ -383,12 +412,7 @@ class PreparedReviewTest(unittest.TestCase):
                 location, value = line.split(" ", 1)
                 number = int(location[1:].split(".")[0])
                 reconstructed[number] = reconstructed.get(number, "") + value
-        originals = [f for page in self.fixture["files"] for f in page]
-        expected = "".join(
-            f"UNTRUSTED PATCH FILE: {json.dumps(f['filename'])}\n{f['patch']}\nEND PATCH FILE: {json.dumps(f['filename'])}\n"
-            for f in originals
-        )
-        self.assertEqual("\n".join(reconstructed.values()), expected)
+        self.assertEqual("\n".join(reconstructed.values()), self.fixture["diff"])
 
     def test_native_draft_review_requires_explicit_opt_in(self) -> None:
         fixture = copy.deepcopy(self.fixture)
@@ -484,40 +508,15 @@ class PreparedReviewTest(unittest.TestCase):
             path.unlink()
             path.write_bytes(original)
 
-    def test_incomplete_read_diagnostics_show_shapes_without_trace_contents(
-        self,
-    ) -> None:
+    def test_incomplete_reads_do_not_expose_trace_contents(self) -> None:
         trace = copy.deepcopy(self.trace[:2] + self.trace[-1:])
         secret = "private-credential-and-file-content-do-not-print"
         trace[0]["message"]["content"][0]["input"]["private_argument"] = secret
         trace[1]["message"]["content"][0]["content"] = "     1 | " + secret
-        trace[1]["tool_use_result"] = {
-            "type": "text",
-            "content": secret,
-            secret: secret,
-        }
         result = self.verify(trace=trace)
         self.assertNotEqual(result.returncode, 0)
-        (diagnostic,) = [
-            line.removeprefix("native_read_diagnostics=")
-            for line in result.stderr.splitlines()
-            if line.startswith("native_read_diagnostics=")
-        ]
-        diagnostic = json.loads(diagnostic)
-        self.assertEqual(
-            diagnostic["turn_types"], {"assistant": 1, "user": 1, "result": 1}
-        )
-        self.assertEqual(diagnostic["read_calls"], 1)
-        self.assertEqual(diagnostic["bound_read_calls"], 1)
-        self.assertEqual(diagnostic["tool_results"], 1)
-        self.assertEqual(diagnostic["result_prefixes"], {"number_pipe": 1})
-        self.assertEqual(
-            diagnostic["tool_use_result_shapes"],
-            {"NoneType": 2, "content,type,other": 1},
-        )
+        self.assertIn("Incomplete native Read coverage", result.stderr)
         self.assertNotIn(secret, result.stderr)
-        self.assertNotIn(str(self.context), json.dumps(diagnostic))
-        self.assertLess(len(json.dumps(diagnostic)), 4000)
 
     def test_incomplete_or_wrong_revision_attestations_fail(self) -> None:
         changes = [
@@ -605,16 +604,19 @@ class PreparedReviewTest(unittest.TestCase):
             "statistics",
             "omitted",
             "duplicate",
-            "blob",
         ):
             fixture = copy.deepcopy(self.fixture)
             first = fixture["files"][0][0]
             if variant == "missing":
-                del first["patch"]
+                fixture["diff"] = fixture["diff"].split(
+                    "diff --git a/src/changed-1.ts", 1
+                )[0]
             elif variant == "binary":
-                first["patch"] = "Binary files differ"
+                fixture["diff"] = "Binary files differ\n"
             elif variant == "hunk":
-                first["patch"] += "\n+unexpected"
+                fixture["diff"] = fixture["diff"].replace(
+                    "@@ -0,0 +1,1 @@", "@@ -0,0 +1,2 @@", 1
+                )
             elif variant == "statistics":
                 first["additions"] += 1
                 fixture["pr"]["additions"] += 1
@@ -622,10 +624,6 @@ class PreparedReviewTest(unittest.TestCase):
                 fixture["files"][0].pop()
             elif variant == "duplicate":
                 fixture["files"][0][1] = first
-            elif variant == "blob":
-                fixture["blobs"][first["sha"]]["content"] = base64.b64encode(
-                    b"wrong source"
-                ).decode()
             with (
                 self.subTest(variant=variant),
                 tempfile.TemporaryDirectory() as raw_directory,
