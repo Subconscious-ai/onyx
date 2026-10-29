@@ -1,5 +1,7 @@
 "use client";
-import CompanyProfile from "@/sections/executive/CompanyProfile";
+import CompanyProfile, {
+  createCompanyProfileState,
+} from "@/sections/executive/CompanyProfile";
 import SharedMarketMemory from "@/sections/executive/SharedMarketMemory";
 import InterviewProgress from "@/sections/executive/InterviewProgress";
 
@@ -23,10 +25,16 @@ import {
   modelHandoffMessages,
 } from "@/lib/executive/model-handoff";
 import type { ModelContext } from "@/lib/executive/model-context";
-import { Button, Text } from "@opal/components";
+import { Button, Modal, Text } from "@opal/components";
 import { Interactive } from "@opal/core";
 import { Content } from "@opal/layouts";
-import { SvgArrowUpRight, SvgCheck, SvgDownload } from "@opal/icons";
+import {
+  SvgAlertCircle,
+  SvgArrowUpRight,
+  SvgCheck,
+  SvgDownload,
+  SvgLoader,
+} from "@opal/icons";
 import {
   briefMarkdown,
   projectBrief,
@@ -190,6 +198,14 @@ export default function ExecutiveWorkspace({
     busy,
     messages,
   });
+  const briefUpdating =
+    preparation.phase === "updating" || preparation.phase === "waiting";
+  const briefStatus =
+    preparation.phase === "error"
+      ? t("progress.failed")
+      : briefUpdating
+        ? t("progress.updating")
+        : "";
   const savedMessages = useMemo(
     () =>
       preparation.savedMessage
@@ -279,7 +295,10 @@ export default function ExecutiveWorkspace({
     "journey" | "evidence" | "decisions" | "model"
   >("journey");
   const [selectedStep, setSelectedStep] = useState<string | null>(null);
-  const [mobileBrief, setMobileBrief] = useState(false);
+  const [briefOpen, setBriefOpen] = useState(false);
+  const companyProfileState = useState(createCompanyProfileState);
+  const briefTrigger = useRef<HTMLDivElement>(null);
+  const briefReturnFocus = useRef<HTMLElement | null>(null);
   if (!active) return children;
   const step =
     brief?.journey.find((item) => item.id === selectedStep) ??
@@ -289,6 +308,15 @@ export default function ExecutiveWorkspace({
         ["executive", "research"].includes(note.status)
       ).length
     : 0;
+
+  function openBrief(returnFocus?: HTMLElement | null) {
+    briefReturnFocus.current =
+      returnFocus ??
+      (document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null);
+    setBriefOpen(true);
+  }
 
   function openModel() {
     if (modelConnected) {
@@ -357,13 +385,13 @@ export default function ExecutiveWorkspace({
           onAsk={onAsk}
           onReview={(item) => {
             setView(item === "journey" ? "journey" : "model");
-            setMobileBrief(true);
+            openBrief();
           }}
         />
       }
     >
       <section
-        className={`executive-workspace ${mobileBrief ? "executive-show-brief" : ""}`}
+        className="executive-workspace"
         data-scale="product"
         aria-label={t("executiveInterviewWorkspace")}
       >
@@ -374,31 +402,46 @@ export default function ExecutiveWorkspace({
           </div>
           <div className="flex items-center gap-1">
             <Button
+              ref={briefTrigger}
               prominence="secondary"
               size="sm"
-              onClick={() => setMobileBrief(!mobileBrief)}
-              data-executive="executive-mobile-toggle"
-              aria-expanded={mobileBrief}
-              aria-controls="executive-brief"
+              onClick={() => openBrief(briefTrigger.current)}
+              data-executive="executive-brief-trigger"
+              aria-haspopup="dialog"
+              aria-expanded={briefOpen}
+              aria-controls={briefOpen ? "executive-brief" : undefined}
+              aria-describedby={
+                briefStatus ? "executive-brief-status" : undefined
+              }
             >
-              {mobileBrief
-                ? "Conversation"
-                : preparation.phase === "error"
-                  ? "Brief · retry"
-                  : preparation.phase === "updating"
-                    ? "Brief · updating"
-                    : "Brief"}
+              {t("briefControl")}
             </Button>
+            <span
+              id="executive-brief-status"
+              role="status"
+              aria-live="polite"
+              title={briefStatus || undefined}
+              className="flex items-center"
+            >
+              {preparation.phase === "error" ? (
+                <SvgAlertCircle
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 shrink-0 text-status-error-02"
+                />
+              ) : briefUpdating ? (
+                <SvgLoader
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 shrink-0 motion-safe:animate-spin"
+                />
+              ) : null}
+              {briefStatus && (
+                <span className="sr-only">
+                  <Text>{briefStatus}</Text>
+                </span>
+              )}
+            </span>
           </div>
         </header>
-
-        <div className="executive-team" aria-label={t("interviewTeam")}>
-          {specialists.map(({ name, role }) => (
-            <span key={name}>
-              <strong>{name}</strong> · {role}
-            </span>
-          ))}
-        </div>
 
         <div className="executive-main">
           <div className="executive-conversation">
@@ -410,10 +453,26 @@ export default function ExecutiveWorkspace({
               </PreparationContext.Provider>
             </div>
           </div>
+        </div>
 
-          {active && (
+        <Modal open={briefOpen} onOpenChange={setBriefOpen}>
+          <Modal.Content
+            id="executive-brief"
+            width="lg"
+            height="lg"
+            data-executive="executive-brief-dialog"
+            data-scale="product"
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              const target = briefReturnFocus.current;
+              (target?.isConnected ? target : briefTrigger.current)?.focus();
+            }}
+          >
+            <Modal.Header
+              title={t("workingBusinessBrief")}
+              onClose={() => setBriefOpen(false)}
+            />
             <aside
-              id="executive-brief"
               className="executive-brief"
               aria-label={t("workingBusinessBrief")}
             >
@@ -461,8 +520,19 @@ export default function ExecutiveWorkspace({
               )}
               <details className="executive-context">
                 <summary>{t("researchContextAndLenses")}</summary>
+                <ul aria-label={t("interviewTeam")}>
+                  {specialists.map(({ name, role }) => (
+                    <li key={name}>
+                      <Text font="main-ui-action">{`${name} · ${role}`}</Text>
+                    </li>
+                  ))}
+                </ul>
                 {!preview && profile && (
-                  <CompanyProfile profile={profile} onRefresh={reload} />
+                  <CompanyProfile
+                    profile={profile}
+                    onRefresh={reload}
+                    persistentState={companyProfileState}
+                  />
                 )}
                 {!preview && (
                   <Text as="p" font="secondary-body">
@@ -627,11 +697,12 @@ export default function ExecutiveWorkspace({
                                 size="sm"
                                 prominence="tertiary"
                                 rightIcon={SvgArrowUpRight}
-                                onClick={() =>
+                                onClick={() => {
+                                  setBriefOpen(false);
                                   onAsk(
                                     `Focus on the journey stage “${step.text}”. Identify the most consequential missing private context before proposing an intervention.`
-                                  )
-                                }
+                                  );
+                                }}
                               >
                                 {t("exploreTheFriction")}
                               </Button>
@@ -819,11 +890,12 @@ export default function ExecutiveWorkspace({
                               prominence="tertiary"
                               size="sm"
                               rightIcon={SvgArrowUpRight}
-                              onClick={() =>
+                              onClick={() => {
+                                setBriefOpen(false);
                                 onAsk(
                                   `Explore the proposed intervention “${item.text}”. Define the behavior to change, the evidence required, and a practical experiment. No experiment execution without an explicit instruction.`
-                                )
-                              }
+                                );
+                              }}
                             >
                               {t("shapeAnExperiment")}
                             </Button>
@@ -867,8 +939,8 @@ export default function ExecutiveWorkspace({
                 )}
               </footer>
             </aside>
-          )}
-        </div>
+          </Modal.Content>
+        </Modal>
       </section>
     </ModelActionContext.Provider>
   );

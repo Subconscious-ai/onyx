@@ -72,6 +72,7 @@ import { useTierAtLeast } from "@/hooks/useTierAtLeast";
 import { Tier } from "@/lib/settings/types";
 import { useFullWidthChat } from "@/providers/FullWidthChatProvider";
 import { useIncognito } from "@/providers/IncognitoProvider";
+import "@/sections/customer/focus.css";
 
 // ---------------------------------------------------------------------------
 // Header
@@ -676,6 +677,23 @@ export default function AppChrome({
   const [rightPanel, setRightPanel] = useState<ReactNode>(null);
 
   const appPosition = useAppPosition();
+  const customerSurface =
+    appPosition.isChat() ||
+    appPosition.isNewSession() ||
+    appPosition.isAgent() ||
+    appPosition.isProject();
+
+  // The root boundary also reaches native dialogs portaled outside AppChrome.
+  // Leaving customer routes restores settings and administration tokens.
+  useEffect(() => {
+    if (!customerSurface) return;
+    const root = document.documentElement;
+    root.dataset.customerDesign = "focus";
+    return () => {
+      delete root.dataset.customerDesign;
+    };
+  }, [customerSurface]);
+
   useAppDocumentTitle();
 
   const { hasBackground, appBackgroundUrl } = useAppBackground();
