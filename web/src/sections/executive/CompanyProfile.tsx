@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { useTranslations } from "next-intl";
 import { Button, InputTypeIn, Text } from "@opal/components";
 import {
@@ -12,18 +12,46 @@ import {
 interface CompanyProfileProps {
   profile: ExecutiveProfile;
   onRefresh: () => void;
+  persistentState?: [
+    CompanyProfileState,
+    Dispatch<SetStateAction<CompanyProfileState>>,
+  ];
 }
 
-interface ProfileEditorProps extends CompanyProfileProps {
+interface ProfileEditorState {
+  original: ExecutiveProfile;
+  fields: ProfileFields;
+  busy: boolean;
+  error: string;
+}
+
+export interface CompanyProfileState {
+  editor: ProfileEditorState | null;
+  busy: boolean;
+  error: string;
+  result: string;
+  operation: string | null;
+}
+
+export function createCompanyProfileState(): CompanyProfileState {
+  return { editor: null, busy: false, error: "", result: "", operation: null };
+}
+
+interface ProfileEditorProps {
+  state: ProfileEditorState;
+  onStateChange: Dispatch<SetStateAction<ProfileEditorState>>;
+  onRefresh: () => void;
   onClose: () => void;
 }
 
-function ProfileEditor({ profile, onRefresh, onClose }: ProfileEditorProps) {
+function ProfileEditor({
+  state,
+  onStateChange,
+  onRefresh,
+  onClose,
+}: ProfileEditorProps) {
   const t = useTranslations("executive.companyProfile");
-  const [original] = useState(profile);
-  const [fields, setFields] = useState<ProfileFields>(profile.profile);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const { original, fields, busy, error } = state;
   async function save() {
     const changed = Object.fromEntries(
       profileFields
@@ -34,8 +62,7 @@ function ProfileEditor({ profile, onRefresh, onClose }: ProfileEditorProps) {
       onClose();
       return;
     }
-    setBusy(true);
-    setError("");
+    onStateChange((current) => ({ ...current, busy: true, error: "" }));
     try {
       const response = await fetch("/api/chat/executive-profile", {
         method: "PATCH",
@@ -47,15 +74,18 @@ function ProfileEditor({ profile, onRefresh, onClose }: ProfileEditorProps) {
       });
       if (!response.ok) {
         if (response.status === 409) onRefresh();
-        setError(t(response.status === 409 ? "conflict" : "failed"));
+        onStateChange((current) => ({
+          ...current,
+          error: t(response.status === 409 ? "conflict" : "failed"),
+        }));
         return;
       }
       onRefresh();
       onClose();
     } catch {
-      setError(t("failed"));
+      onStateChange((current) => ({ ...current, error: t("failed") }));
     } finally {
-      setBusy(false);
+      onStateChange((current) => ({ ...current, busy: false }));
     }
   }
   return (
@@ -81,7 +111,10 @@ function ProfileEditor({ profile, onRefresh, onClose }: ProfileEditorProps) {
               maxLength={500}
               variant={busy ? "disabled" : "primary"}
               onChange={(event) =>
-                setFields({ ...fields, [key]: event.target.value })
+                onStateChange((current) => ({
+                  ...current,
+                  fields: { ...current.fields, [key]: event.target.value },
+                }))
               }
             />
             <Text font="secondary-body" color="text-03">
@@ -114,62 +147,80 @@ function ProfileEditor({ profile, onRefresh, onClose }: ProfileEditorProps) {
 export default function CompanyProfile({
   profile,
   onRefresh,
+  persistentState,
 }: CompanyProfileProps) {
   const t = useTranslations("executive.companyProfile");
-  const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [result, setResult] = useState("");
-  const operation = useRef<string | null>(null);
+  const localState = useState(createCompanyProfileState);
+  const [state, setState] = persistentState ?? localState;
+  const { editor, busy, error, result } = state;
+
+  function updateState(update: Partial<CompanyProfileState>) {
+    setState((current) => ({ ...current, ...update }));
+  }
+
+  function updateEditor(update: SetStateAction<ProfileEditorState>) {
+    setState((current) =>
+      current.editor
+        ? {
+            ...current,
+            editor:
+              typeof update === "function" ? update(current.editor) : update,
+          }
+        : current
+    );
+  }
+
   async function refreshPreparation() {
     if (busy) return;
-    operation.current ??= JSON.stringify({
-      operation_id: crypto.randomUUID(),
-      checked_at: profile.checked_at ?? null,
-      revision: profile.correction.revision,
-    });
-    setBusy(true);
-    setError("");
-    setResult("");
+    const operation =
+      state.operation ??
+      JSON.stringify({
+        operation_id: crypto.randomUUID(),
+        checked_at: profile.checked_at ?? null,
+        revision: profile.correction.revision,
+      });
+    updateState({ operation, busy: true, error: "", result: "" });
     try {
       const response = await fetch("/api/chat/executive-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: operation.current,
+        body: operation,
       });
       if (!response.ok) {
         if (response.status === 409) {
-          operation.current = null;
+          updateState({ operation: null });
           onRefresh();
         }
-        setError(t(response.status === 409 ? "conflict" : "refreshFailed"));
+        updateState({
+          error: t(response.status === 409 ? "conflict" : "refreshFailed"),
+        });
         return;
       }
       const receipt = await response.json();
       if (
-        receipt.job_id !== JSON.parse(operation.current).operation_id ||
+        receipt.job_id !== JSON.parse(operation).operation_id ||
         !["updating", "ready", "not_found", "unavailable"].includes(
           receipt.preparation_status
         )
       ) {
-        setError(t("refreshFailed"));
+        updateState({ error: t("refreshFailed") });
         return;
       }
-      operation.current = null;
-      setResult(
-        t(
+      updateState({
+        operation: null,
+        result: t(
           receipt.preparation_status === "not_found"
             ? "refreshNoMatch"
             : receipt.preparation_status === "unavailable"
               ? "refreshUnavailable"
               : "refreshStarted"
-        )
-      );
+        ),
+      });
       onRefresh();
     } catch {
-      setError(t("refreshFailed"));
+      updateState({ error: t("refreshFailed") });
     } finally {
-      setBusy(false);
+      updateState({ busy: false });
     }
   }
   return (
@@ -177,17 +228,29 @@ export default function CompanyProfile({
       <Button
         size="sm"
         prominence="tertiary"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
+        onClick={() =>
+          updateState({
+            editor: editor
+              ? null
+              : {
+                  original: profile,
+                  fields: profile.profile,
+                  busy: false,
+                  error: "",
+                },
+          })
+        }
+        aria-expanded={!!editor}
       >
         {t("title")}
       </Button>
-      {open && (
+      {editor && (
         <>
           <ProfileEditor
-            profile={profile}
+            state={editor}
+            onStateChange={updateEditor}
             onRefresh={onRefresh}
-            onClose={() => setOpen(false)}
+            onClose={() => updateState({ editor: null })}
           />
           <Text font="secondary-body" color="text-03">
             {t("refreshDescription")}

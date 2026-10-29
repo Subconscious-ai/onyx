@@ -28,14 +28,36 @@ jest.mock("@opal/components", () => ({
     children,
     onClick,
     disabled,
+    ref,
+    type = "button",
+    "aria-label": label,
     "aria-expanded": expanded,
-  }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-    <button onClick={onClick} disabled={disabled} aria-expanded={expanded}>
+  }: React.ComponentPropsWithRef<"button">) => (
+    <button
+      ref={ref}
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      aria-expanded={expanded}
+    >
       {children}
     </button>
   ),
+  Modal: jest.requireActual("@opal/components/modal/components").Modal,
+  InputTypeIn: ({
+    variant,
+    ...props
+  }: React.InputHTMLAttributes<HTMLInputElement> & { variant?: string }) => (
+    <input {...props} disabled={variant === "disabled"} />
+  ),
 }));
-jest.mock("@opal/layouts", () => ({ Content: () => null }));
+jest.mock("@opal/layouts", () => ({
+  Content: ({ title }: { title?: React.ReactNode }) => <span>{title}</span>,
+  Section: ({ children, ref }: React.ComponentPropsWithRef<"div">) => (
+    <div ref={ref}>{children}</div>
+  ),
+}));
 jest.mock("@opal/utils", () => ({
   richNodes: (value: unknown) => value,
   cn: (...args: unknown[]) => args.filter(Boolean).join(" "),
@@ -122,22 +144,170 @@ describe("conversation-first brief access", () => {
     );
     await waitFor(() => expect(retry).toHaveBeenCalledTimes(2));
   });
-  it("shows extracted evidence alongside chat and preserves composer text on mobile return", async () => {
+  it("opens the brief as a modal and returns focus without losing the conversation draft", async () => {
     render(
       <ExecutiveWorkspace active messages={[]}>
-        <textarea aria-label="Message" defaultValue="Retain this draft" />
+        <textarea aria-label="Message" />
       </ExecutiveWorkspace>
     );
-    expect(screen.getByLabelText("workingBusinessBrief")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Brief" }));
-    expect(screen.getByLabelText("workingBusinessBrief")).toBeVisible();
+    const composer = screen.getByLabelText("Message");
+    fireEvent.change(composer, { target: { value: "Retain this draft" } });
+    const trigger = screen.getByRole("button", {
+      name: /Brief|workingBusinessBrief/,
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    trigger.focus();
+    fireEvent.click(trigger);
+    const dialog = screen.getByRole("dialog", {
+      name: "workingBusinessBrief",
+    });
+    expect(dialog).toBeVisible();
     await waitFor(() =>
       expect(screen.getByText("PDL: no confident match")).toBeInTheDocument()
     );
-    fireEvent.click(screen.getByRole("button", { name: "Conversation" }));
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    );
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(screen.getByLabelText("Message")).toBe(composer);
     expect(screen.getByLabelText("Message")).toHaveValue("Retain this draft");
     expect(screen.getByLabelText("Message")).toBeVisible();
   });
+  it("retains correction input and the failed refresh operation when the brief reopens", async () => {
+    const reload = jest.fn();
+    (useExecutiveContext as jest.Mock).mockReturnValue({
+      profile: {
+        profile: { company: "Example" },
+        checked_at: 10,
+        correction: { revision: 3, fields: {} },
+      },
+      research: { status: "needs_company" },
+      reload,
+    });
+    // POST /api/chat/executive-profile loses the first refresh response.
+    const fetcher = jest
+      .fn()
+      .mockRejectedValueOnce(new Error("Response lost"))
+      .mockImplementationOnce(async (_url, request) => ({
+        ok: true,
+        json: async () => ({
+          job_id: JSON.parse(request.body).operation_id,
+          preparation_status: "ready",
+        }),
+      }));
+    global.fetch = fetcher;
+    render(
+      <ExecutiveWorkspace active messages={[]}>
+        <textarea aria-label="Message" />
+      </ExecutiveWorkspace>
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "workingBusinessBrief" })
+    );
+    fireEvent.click(screen.getByText("researchContextAndLenses"));
+    fireEvent.click(screen.getByRole("button", { name: "title" }));
+    fireEvent.change(screen.getByLabelText("fields.company"), {
+      target: { value: "Corrected company" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "refresh" }));
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent("refreshFailed")
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    );
+    expect(screen.queryByLabelText("fields.company")).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "workingBusinessBrief" })
+    );
+    fireEvent.click(screen.getByText("researchContextAndLenses"));
+    expect(screen.getByLabelText("fields.company")).toHaveValue(
+      "Corrected company"
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("refreshFailed");
+    fireEvent.click(screen.getByRole("button", { name: "refresh" }));
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
+    expect(fetcher.mock.calls[1][1].body).toBe(fetcher.mock.calls[0][1].body);
+    expect(screen.getByLabelText("fields.company")).toHaveValue(
+      "Corrected company"
+    );
+    fireEvent.click(screen.getByRole("button", { name: "cancel" }));
+    expect(screen.queryByLabelText("fields.company")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "title" }));
+    expect(screen.getByLabelText("fields.company")).toHaveValue("Example");
+  });
+  it.each([
+    {
+      action: "exploreTheFriction",
+      tab: null,
+      request:
+        "Focus on the journey stage “Renews subscription”. Identify the most consequential missing private context before proposing an intervention.",
+    },
+    {
+      action: "shapeAnExperiment",
+      tab: "Next moves",
+      request:
+        "Explore the proposed intervention “Test a renewal reminder”. Define the behavior to change, the evidence required, and a practical experiment. No experiment execution without an explicit instruction.",
+    },
+  ])(
+    "returns to the mounted conversation after $action",
+    async ({ action, tab, request }) => {
+      const onAsk = jest.fn();
+      const brief = {
+        version: 1,
+        company: "Example",
+        objective: { text: "Grow renewals", status: "assumption" },
+        horizon: "2027",
+        journey: [
+          {
+            id: "renew",
+            actor: "Buyer",
+            text: "Renews subscription",
+            status: "assumption",
+          },
+        ],
+        interventions: [
+          {
+            text: "Test a renewal reminder",
+            journeyId: "renew",
+            rationale: "Check the proposed renewal support.",
+          },
+        ],
+        conflicts: [],
+      };
+      render(
+        <ExecutiveWorkspace
+          active
+          onAsk={onAsk}
+          messages={[
+            {
+              type: "assistant",
+              message: `<interview-brief>${JSON.stringify(brief)}</interview-brief>`,
+            },
+          ]}
+        >
+          <textarea aria-label="Message" />
+        </ExecutiveWorkspace>
+      );
+      const composer = screen.getByLabelText("Message");
+      fireEvent.change(composer, { target: { value: "Retain this draft" } });
+      fireEvent.click(
+        screen.getByRole("button", { name: "workingBusinessBrief" })
+      );
+      if (tab) fireEvent.click(screen.getByRole("button", { name: tab }));
+      fireEvent.click(screen.getByRole("button", { name: action }));
+      expect(onAsk).toHaveBeenCalledTimes(1);
+      expect(onAsk).toHaveBeenCalledWith(request);
+      await waitFor(() =>
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+      );
+      expect(screen.getByLabelText("Message")).toBe(composer);
+      expect(composer).toBeVisible();
+      expect(composer).toHaveValue("Retain this draft");
+    }
+  );
   it("keeps extraction failure and retry reachable without a permanent chat footer", async () => {
     (useAutomaticBrief as jest.Mock).mockReturnValue({ phase: "error", retry });
     render(
@@ -147,9 +317,11 @@ describe("conversation-first brief access", () => {
       </ExecutiveWorkspace>
     );
     expect(
-      screen.getByRole("button", { name: "retryDraft" })
-    ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Brief · retry" }));
+      screen.queryByRole("button", { name: "retryDraft" })
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "workingBusinessBrief" })
+    );
     fireEvent.click(screen.getByRole("button", { name: "retryDraft" }));
     expect(retry).toHaveBeenCalledTimes(1);
     await waitFor(() =>
@@ -174,7 +346,9 @@ describe("conversation-first brief access", () => {
         <ExecutiveModelAction />
       </ExecutiveWorkspace>
     );
-    fireEvent.click(screen.getByRole("button", { name: "Brief · retry" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "workingBusinessBrief" })
+    );
     fireEvent.click(screen.getByRole("button", { name: "modelSavedOpen" }));
     expect(recover).toHaveBeenCalledTimes(1);
     expect(connection.open).not.toHaveBeenCalled();
@@ -183,7 +357,7 @@ describe("conversation-first brief access", () => {
     delete process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE;
   });
 
-  it("transfers interview, dossier and research through the existing model button", () => {
+  it("transfers interview, dossier and research through the existing model button", async () => {
     process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE =
       "https://causl.example/dashboard/burn-import";
     window.history.replaceState({}, "", "?chatId=saved-chat");
@@ -272,6 +446,15 @@ describe("conversation-first brief access", () => {
         <textarea aria-label="Message" />
         <ExecutiveModelAction />
       </ExecutiveWorkspace>
+    );
+    fireEvent.click(screen.getByRole("button", { name: "goal: captured" }));
+    const dialog = screen.getByRole("dialog", {
+      name: "workingBusinessBrief",
+    });
+    expect(screen.getByText("proposedDriverEquation")).toBeVisible();
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     );
     // A ready model must be reachable directly from the conversation.
     fireEvent.click(screen.getByRole("button", { name: "open" }));

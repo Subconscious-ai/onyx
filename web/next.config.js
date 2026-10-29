@@ -8,6 +8,10 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Private preview hosts must opt in to Next's development HMR origin check.
+  allowedDevOrigins: process.env.NEXT_ALLOWED_DEV_ORIGINS?.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
   productionBrowserSourceMaps: false,
   poweredByHeader: false,
   // Next 16.3 adapters omit the trace required by standalone packaging.

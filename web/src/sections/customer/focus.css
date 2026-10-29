@@ -1,0 +1,189 @@
+@import "./contract.css";
+
+/* The canonical contract reaches native Opal controls and body portals only
+   while AppChrome owns a customer route. Settings keep their existing theme. */
+html[data-customer-design="focus"] {
+  --text-05: var(--color);
+  --text-04: var(--grey-700);
+  --text-03: var(--grey-500);
+  --text-02: var(--grey-500);
+  --text-01: var(--grey-300);
+  --text-inverted-05: var(--backgroundColor);
+  --text-inverted-04: var(--backgroundColor);
+  --background-neutral-00: var(--backgroundColor);
+  --background-neutral-01: var(--bg-2);
+  --background-neutral-02: var(--bg-active);
+  --background-neutral-03: var(--bg-active);
+  --background-neutral-04: var(--hairline);
+  --background-neutral-inverted-00: var(--color);
+  --background-neutral-inverted-01: var(--grey-700);
+  --background-tint-00: var(--backgroundColor);
+  --background-tint-01: var(--bg-2);
+  --background-tint-02: var(--bg-2);
+  --background-tint-03: var(--bg-active);
+  --background-tint-04: var(--hairline);
+  --background-tint-inverted-00: var(--color);
+  --border-01: var(--hairline);
+  --border-02: var(--hairline);
+  --border-03: var(--grey-300);
+  --focus-ring: 2px solid var(--color);
+  --hair: var(--hairline);
+  --sidebar-width-expanded: 15rem;
+  --chrome-header-height: 3.5rem;
+  font-family: var(--font-body);
+  color: var(--color);
+  background: var(--backgroundColor);
+}
+
+/* RootLayout sets font aliases inline on html. A body boundary also gives
+   native portaled dialogs the canonical font without changing those aliases. */
+html[data-customer-design="focus"] body {
+  --font-hanken-grotesk: var(--font-body);
+  --font-kh-teka: var(--font-display);
+  --font-dm-mono: var(--font-mono);
+  font-family: var(--font-body);
+}
+
+html[data-customer-design="focus"] .opal-sidebar-root__column {
+  border-inline-end: 1px solid var(--hairline);
+  background: var(--bg-2);
+}
+
+html[data-customer-design="focus"] .opal-sidebar-header {
+  padding-block: var(--sp-4);
+}
+
+html[data-customer-design="focus"] .opal-sidebar-header__content {
+  gap: var(--sp-2);
+}
+
+html[data-customer-design="focus"] .opal-sidebar-section__title {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.06em;
+}
+
+html[data-customer-design="focus"] .opal-root-layout__header {
+  border-bottom: 1px solid var(--hairline);
+  background: var(--backgroundColor);
+}
+
+html[data-customer-design="focus"] .opal-root-layout__panel {
+  border-inline-start: 1px solid var(--hairline);
+  background: var(--backgroundColor);
+}
+
+html[data-customer-design="focus"] .executive-workspace {
+  --font-hanken-grotesk: var(--font-body);
+  --font-dm-mono: var(--font-mono);
+}
+
+html[data-customer-design="focus"] .executive-masthead {
+  min-height: 3.5rem;
+  padding: var(--sp-2) var(--sp-5);
+  border-bottom: 0;
+}
+
+html[data-customer-design="focus"] .executive-brand {
+  gap: var(--sp-3);
+}
+
+html[data-customer-design="focus"] .executive-brand .wordmark {
+  font-size: 18px;
+}
+
+html[data-customer-design="focus"] #onyx-chat-input {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-adopted);
+  background: var(--backgroundColor);
+  box-shadow: var(--shadow-adopted);
+  transition:
+    border-color var(--dur-fast) var(--ease-causal),
+    box-shadow var(--dur-fast) var(--ease-causal);
+}
+
+html[data-customer-design="focus"] #onyx-chat-input:focus-within {
+  border-color: var(--grey-500);
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+}
+
+html[data-customer-design="focus"] .executive-workspace button {
+  border-radius: var(--radius-adopted) !important;
+}
+
+html[data-customer-design="focus"] [data-executive="executive-brief-trigger"] {
+  min-height: 44px;
+}
+
+html[data-customer-design="focus"] [data-executive="executive-brief-dialog"],
+html[data-customer-design="focus"]
+  [role="dialog"]:has([data-command-menu-list]) {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-adopted);
+  background: var(--backgroundColor);
+  color: var(--color);
+  box-shadow: var(--shadow-adopted);
+  font-family: var(--font-body);
+}
+
+html[data-customer-design="focus"].dark
+  :is(
+    [data-executive~="executive-status-assumption"],
+    [data-executive~="executive-status-unknown"]
+  ) {
+  color: var(--red-on-dark);
+}
+
+html[data-customer-design="focus"]
+  [data-executive="executive-brief-dialog"]
+  .executive-brief {
+  display: flex;
+  min-height: 0;
+  width: 100%;
+  border: 0;
+  background: var(--backgroundColor);
+}
+
+html[data-customer-design="focus"] .executive-welcome h1 {
+  font-size: var(--fs-display);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-h1);
+  line-height: 1.15;
+}
+
+html[data-customer-design="focus"] .executive-native-chat .interview-progress {
+  border-radius: var(--radius-adopted);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-2);
+}
+
+html[data-customer-design="focus"] :focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  html[data-customer-design="focus"] .executive-masthead {
+    padding-inline: var(--sp-3);
+  }
+
+  html[data-customer-design="focus"] .executive-brand .wordmark {
+    font-size: 14px;
+  }
+
+  html[data-customer-design="focus"] [data-executive="executive-brief-dialog"] {
+    max-width: calc(100dvw - 1rem);
+    max-height: calc(100dvh - 1rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-customer-design="focus"] .opal-sidebar-root__column,
+  html[data-customer-design="focus"] .opal-sidebar-root__overlay,
+  html[data-customer-design="focus"] .opal-modal-overlay,
+  html[data-customer-design="focus"] #onyx-chat-input {
+    animation: none;
+    transition: none;
+  }
+}
