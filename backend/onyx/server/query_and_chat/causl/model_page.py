@@ -37,6 +37,8 @@ def model_page_tool_result(
         # Native tool results are durable. Draft text belongs only in the current prompt.
         page_context = {**snapshot.get("page", {})}
         drafts = page_context.pop("drafts", [])
+        if not isinstance(drafts, list):
+            raise ValueError("Current Models drafts must be a list.")
         page_context["draftCount"] = len(drafts)
         return {
             "currentModelPage": {**snapshot, "page": page_context},
