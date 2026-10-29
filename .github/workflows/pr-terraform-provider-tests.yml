@@ -145,7 +145,7 @@ jobs:
     # Built once and pushed to the shared ECR repo so both auth legs pull a
     # prebuilt image instead of cold-building.
     needs: changes
-    if: needs.changes.outputs.provider == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.changes.outputs.provider == 'true') # upstream-only runner; this fork has none
     runs-on:
       - runs-on
       - runner=8cpu-linux-x64
@@ -195,7 +195,7 @@ jobs:
   acceptance:
     name: acceptance (${{ matrix.auth }})
     needs: [changes, build-backend-image]
-    if: needs.changes.outputs.provider == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.changes.outputs.provider == 'true') # upstream-only runner; this fork has none
     permissions:
       contents: read
     runs-on:
@@ -383,7 +383,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [changes, docs-check, build-backend-image, acceptance]
-    if: ${{ always() }}
+    if: github.repository == 'onyx-dot-app/onyx' && always() # suite runs only upstream; skipped reports success here
     steps:
       - name: Check job status
         env:
