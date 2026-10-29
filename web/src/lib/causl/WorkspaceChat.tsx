@@ -8,8 +8,12 @@ import {
   createCauslBridge,
   openCauslWorkspace,
   type CauslWorkspaceError,
-} from "./bridge";
-import type { CauslContextMessage, CauslDraft, CauslWorkspace } from "./types";
+} from "@/lib/causl/bridge";
+import type {
+  CauslContextMessage,
+  CauslDraft,
+  CauslWorkspace,
+} from "@/lib/causl/types";
 import {
   getMCPUserOAuthNavigationUrl,
   startMCPUserOAuth,
@@ -22,7 +26,10 @@ import AppChrome from "@/layouts/chromes/AppChrome";
 import AppPage from "@/views/AppPage";
 import { installCauslNavigation } from "@/lib/causl/navigation";
 
+import { parseCauslIdentity } from "@/lib/causl/colossus";
+
 interface WorkspaceChatProps {
+  pageKind?: "kb" | "colossus";
   parentOrigin: string | null;
   nonce: string | null;
   authenticated: boolean;
@@ -34,6 +41,7 @@ export default function WorkspaceChat({
   nonce,
   authenticated,
   libraryServerId,
+  pageKind = "kb",
 }: WorkspaceChatProps) {
   const t = useTranslations("causlWorkspace");
   const router = useRouter();
@@ -47,6 +55,11 @@ export default function WorkspaceChat({
     null
   );
   const [connecting, setConnecting] = useState(false);
+  const refresh = useRef<{
+    id: string;
+    resolve(): void;
+    reject(error: Error): void;
+  } | null>(null);
   useEffect(() => {
     if (!parentOrigin || !nonce || window.parent === window) return;
     const controller = createCauslBridge({
@@ -88,7 +101,16 @@ export default function WorkspaceChat({
         const context = controller.navigationContext();
         if (draft && context) setDraft({ ...draft, context });
         else if (event.data?.kind === "causl:context") {
-          if (controller.receive(event.data)) setDraft(null);
+          if (controller.receive(event.data)) {
+            setDraft(null);
+            if (
+              refresh.current &&
+              event.data.requestId === refresh.current.id
+            ) {
+              refresh.current.resolve();
+              refresh.current = null;
+            }
+          }
         }
       }
     };
@@ -99,14 +121,73 @@ export default function WorkspaceChat({
       current: controller.navigationContext,
       send: (message) => window.parent.postMessage(message, parentOrigin),
     });
-    window.parent.postMessage({ kind: "causl:ready", nonce }, parentOrigin);
+    const identityController = new AbortController();
+    let identityFailed = false;
+    async function announce() {
+      if (identityFailed) return;
+      if (pageKind !== "colossus") {
+        window.parent.postMessage(
+          { kind: "causl:ready", nonce },
+          parentOrigin!
+        );
+        return;
+      }
+      try {
+        if (!authenticated) throw new Error("signin");
+        const response = await fetch("/api/chat/causl-identity", {
+          cache: "no-store",
+          signal: identityController.signal,
+        });
+        if (!response.ok)
+          throw new Error(response.status === 401 ? "signin" : "access");
+        const identity = parseCauslIdentity(await response.json());
+        if (!identity) throw new Error("access");
+        window.parent.postMessage(
+          {
+            kind: "causl:ready",
+            nonce,
+            protocol: 2,
+            actor: identity.actor,
+            issuer: identity.issuer,
+          },
+          parentOrigin!
+        );
+      } catch (error) {
+        if (identityController.signal.aborted) return;
+        const reason =
+          error instanceof Error && error.message === "signin"
+            ? "signin"
+            : "access";
+        identityFailed = true;
+        controller.dispose();
+        refresh.current?.reject(new Error("Identity unavailable"));
+        refresh.current = null;
+        setDraft(null);
+        setError(reason);
+        setWorkspace(null);
+        window.parent.postMessage(
+          { kind: "causl:status", nonce, reason },
+          parentOrigin!
+        );
+      }
+    }
+    void announce();
+    const identityTimer = setInterval(() => {
+      if (pageKind === "colossus") void announce();
+    }, 30_000);
+    if (pageKind === "colossus") window.addEventListener("focus", announce);
     return () => {
       controller.dispose();
+      identityController.abort();
+      clearInterval(identityTimer);
+      window.removeEventListener("focus", announce);
+      refresh.current?.reject(new Error("Workspace changed"));
+      refresh.current = null;
       bridge.current = null;
       window.removeEventListener("message", receive);
       removeNavigation();
     };
-  }, [authenticated, parentOrigin, nonce, router]);
+  }, [authenticated, parentOrigin, nonce, router, pageKind]);
 
   async function connectLibrary() {
     if (!libraryServerId || connecting) return;
@@ -203,7 +284,45 @@ export default function WorkspaceChat({
                   prepareSubmission: async () => {
                     if (!bridge.current)
                       throw new Error("Workspace unavailable");
-                    return bridge.current.prepareSubmission();
+                    if (pageKind === "colossus") {
+                      refresh.current?.reject(
+                        new Error("Preparation replaced")
+                      );
+                      const id = crypto.randomUUID();
+                      let timer: ReturnType<typeof setTimeout>;
+                      try {
+                        await new Promise<void>((resolve, reject) => {
+                          refresh.current = { id, resolve, reject };
+                          timer = setTimeout(
+                            () =>
+                              reject(
+                                new Error("Current page context unavailable")
+                              ),
+                            10_000
+                          );
+                          window.parent.postMessage(
+                            {
+                              kind: "causl:request-context",
+                              nonce,
+                              requestId: id,
+                            },
+                            parentOrigin!
+                          );
+                        });
+                      } finally {
+                        clearTimeout(timer!);
+                        if (refresh.current?.id === id) refresh.current = null;
+                      }
+                    }
+                    if (!bridge.current) throw new Error("Workspace changed");
+                    const selection = await bridge.current.prepareSubmission();
+                    const current = bridge.current?.navigationContext();
+                    if (pageKind === "colossus" && current)
+                      window.parent.postMessage(
+                        { ...current, kind: "causl:prepared", selection },
+                        parentOrigin!
+                      );
+                    return selection;
                   },
                 }}
               />

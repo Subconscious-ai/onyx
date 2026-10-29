@@ -1164,3 +1164,138 @@ def test_native_brief_handoff_retains_only_matching_bounded_preparation(
         else None
     ), "Only the matched company's exact private captures reach the producer intake"
     (tmp_path / "native-handoff.json").write_text(json.dumps(payload))
+
+
+def colossus_selection(revision: int = 1) -> CauslSelection:
+    return CauslSelection.model_validate(
+        {
+            "page": "colossus",
+            "snapshot": {
+                "version": 1,
+                "revision": revision,
+                "map_view": {"zoom": 3},
+                "selected_place": {"id": "USA"},
+                "layers": {"active": ["world_bank"]},
+                "filters": {"scope": "world"},
+                "dates": {"period": "2001", "grain": "annual"},
+                "visible_results": {"returned": 2, "viewport_visible": None},
+                "evidence_links": {"sources": ["https://api.worldbank.org"]},
+                "omissions": [],
+                "privacy": "Browser-local overlays excluded",
+            },
+        }
+    )
+
+
+def test_colossus_reads_verified_workspace_authority_and_keeps_view_hints_separate(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    db, user, _ = connected
+    payload = envelope()
+    payload["context"].update(page="workspace", market=None)
+    requests = http_response(monkeypatch, payload)
+    first = context.load_causl_context(db, user, ACTOR, colossus_selection())
+    second = context.load_causl_context(db, user, ACTOR, colossus_selection(2))
+    assert dict(requests[0].url.params) == {"page": "workspace"}
+    assert requests[0].headers["x-causl-expected-organization"] == ACTOR.org_id
+    assert first.envelope.context["page"] == "colossus"
+    assert first.envelope.context["view_hints"]["dates"]["period"] == "2001"
+    assert "library" not in first.envelope.context
+    assert first.envelope.context["scopeKey"] != payload["context"]["scopeKey"]
+    assert first.envelope.context["scopeKey"] == second.envelope.context["scopeKey"]
+    assert first.envelope.context["digest"] != second.envelope.context["digest"]
+
+
+def test_colossus_refuses_foreign_actor_before_service_read(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    db, user, _ = connected
+    read = MagicMock()
+    monkeypatch.setattr(context, "_read", read)
+    with pytest.raises(OnyxError):
+        context.load_causl_context(
+            db,
+            user,
+            CauslActor(org_id="org_c", user_id="auth0|bob"),
+            colossus_selection(),
+        )
+    read.assert_not_called()
+
+
+def test_colossus_refuses_mismatched_verified_organization(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    db, user, _ = connected
+    payload = envelope()
+    payload["context"].update(page="workspace", market=None)
+    payload["actor"]["orgId"] = "foreign"
+    http_response(monkeypatch, payload)
+    with pytest.raises(OnyxError):
+        context.load_causl_context(db, user, ACTOR, colossus_selection())
+
+
+def test_colossus_conversations_cannot_reuse_kb_scope_or_switch_page_kind(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from onyx.db.causl_workspace import _scope_key
+
+    db, user, _ = connected
+    assert _scope_key(user.id, ACTOR, "https://auth.example/", None) != _scope_key(
+        user.id, ACTOR, "https://auth.example/", None, colossus=True
+    )
+    chat = ChatSession(id=uuid4(), user_id=user.id, persona_id=11)
+    binding = CauslChatBinding(
+        user_id=user.id,
+        issuer="https://auth.example/",
+        actor=ACTOR,
+        market_id=None,
+        chat_id=chat.id,
+        selection=colossus_selection(),
+        library_server_id=22,
+        mode="colossus",
+    )
+    monkeypatch.setattr(turn, "read_causl_binding", lambda *_args: binding)
+    read = MagicMock()
+    monkeypatch.setattr(turn, "load_causl_context", read)
+    with pytest.raises(OnyxError):
+        turn.workspace_turn(db, user, chat, CauslSelection(page="workspace"))
+    read.assert_not_called()
+
+
+def test_colossus_memory_uses_verified_library_and_turns_require_current_selection(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fastapi import Response
+
+    from onyx.server.query_and_chat.causl import api
+
+    db, user, _ = connected
+    payload = envelope()
+    payload["context"].update(page="workspace", market=None)
+    http_response(monkeypatch, payload)
+    chat = ChatSession(id=uuid4(), user_id=user.id, persona_id=11)
+    binding = CauslChatBinding(
+        user_id=user.id,
+        issuer="https://auth.example/",
+        actor=ACTOR,
+        market_id=None,
+        chat_id=chat.id,
+        selection=colossus_selection(),
+        library_server_id=22,
+        mode="colossus",
+    )
+    monkeypatch.setattr(turn, "read_causl_binding", lambda *_args: binding)
+    monkeypatch.setattr(api, "get_chat_session_by_id", lambda *_args, **_kwargs: chat)
+    response = Response()
+    memory = api.read_memory(chat.id, response, user, db)
+    assert memory["library"] == payload["context"]["library"]
+    assert response.headers["cache-control"] == "private, no-store"
+    read = MagicMock()
+    monkeypatch.setattr(turn, "load_causl_context", read)
+    with pytest.raises(OnyxError):
+        turn.workspace_turn(db, user, chat, None)
+    read.assert_not_called()

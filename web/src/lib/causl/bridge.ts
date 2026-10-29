@@ -3,7 +3,8 @@ import type {
   CauslDraft,
   CauslSelection,
   CauslWorkspace,
-} from "./types";
+} from "@/lib/causl/types";
+import { parseColossusSnapshot } from "@/lib/causl/colossus";
 
 function object(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -34,7 +35,24 @@ export function parseCauslMessage(value: unknown): CauslContextMessage | null {
     selection.page !== "workspace" &&
     selection.page !== "library" &&
     selection.page !== "models" &&
-    selection.page !== "reports"
+    selection.page !== "reports" &&
+    selection.page !== "colossus"
+  )
+    return null;
+  const snapshot =
+    selection.page === "colossus"
+      ? parseColossusSnapshot(selection.snapshot)
+      : null;
+  if (
+    selection.page === "colossus"
+      ? !snapshot ||
+        [
+          selection.marketId,
+          selection.record,
+          selection.runId,
+          selection.studioId,
+        ].some((value) => value !== undefined)
+      : selection.snapshot !== undefined
   )
     return null;
   if (selection.marketId !== undefined && !reference(selection.marketId))
@@ -65,6 +83,7 @@ export function parseCauslMessage(value: unknown): CauslContextMessage | null {
     actor: { orgId: value.actor.orgId, userId: value.actor.userId },
     selection: {
       page: selection.page,
+      ...(snapshot ? { snapshot } : {}),
       ...(selection.marketId !== undefined
         ? { marketId: selection.marketId }
         : {}),
@@ -158,6 +177,7 @@ export function createCauslBridge(options: {
       return;
     const nextScope = JSON.stringify([
       message.actor,
+      message.selection.page === "colossus" ? "colossus" : "kb",
       message.selection.marketId ?? null,
     ]);
     if (scope !== null && nextScope !== scope) {

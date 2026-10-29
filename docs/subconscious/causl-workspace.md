@@ -248,3 +248,34 @@ An API-token connection cannot supply the workspace's per-user OAuth identity.
 Preserve existing connections while preparing a reviewed OAuth connection.
 Configure the backend IDs before a fresh verified OIDC sign-in.
 Old native sessions do not contain the required issuer and subject metadata.
+
+## Colossus page context (protocol 2)
+
+Colossus uses the existing `/causl` native workspace frame with `pageKind=colossus`.
+`GET /api/chat/causl-identity` verifies native OIDC and the existing per-user Library grant.
+The response contains only the authorized actor and issuer; browser hints cannot select either.
+The configured embed origin allowlist remains exact. No wildcard or permission expansion is required.
+
+A parent supplies `selection.page=colossus` and a version 1 snapshot containing
+`map_view`, `selected_place`, `layers`, `filters`, `dates`, `visible_results`, and `evidence_links`.
+Snapshots require a nonnegative revision, explicit omissions and the privacy marker
+`Browser-local overlays excluded`. Both native parsers enforce 64,000 serialized UTF-8 bytes.
+The backend wraps hints in the existing verified authorization envelope and namespace.
+Hints remain untrusted view descriptions, never Library memory or retrieval authority.
+
+Before each submission, native Onyx requests current parent context with a request ID.
+Exact origin, frame source, nonce, actor and increasing transport revision must match.
+Replaced preparation is cancelled. The submitted snapshot is frozen before native transport.
+`causl:prepared` identifies the submitted page revision, while later page changes remain distinct.
+Identity loss aborts preparation and clears the workspace. A fresh frame starts a new principal scope.
+
+Existing native history, conversation ownership, tools and per-user MCP authorization remain the owners.
+Colossus uses a separate `colossus:v1` binding namespace; KB bindings retain their current namespace.
+Every Colossus turn requires an explicit current selection; saved context cannot silently substitute.
+No model provider, tool registration, credential grant, or database migration changes are included.
+
+Focused validation covers schema limits, native identity, tenant mismatch, stale preparation,
+identity loss during delayed authorization, context freezing and KB compatibility.
+The October 29 local run passed 86 backend tests and all 1,406 native web tests.
+Source tests do not prove a hosted model reply. Hosted acceptance remains separately recorded in
+[Colossus #745 — discuss current geography in persistent native Onyx](https://github.com/Subconscious-ai/colossus-v2/issues/745).
