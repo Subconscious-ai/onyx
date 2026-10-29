@@ -334,3 +334,99 @@ test("Colossus identity loss cancels delayed workspace authorization", async () 
     nativeFetch.mockRestore();
   }
 });
+
+test("unchanged identity checks preserve pending Colossus turns and still announce principal changes", async () => {
+  const identity = { actor: context.actor, issuer: "https://auth.example/" };
+  const nativeFetch = jest.spyOn(global, "fetch").mockResolvedValue({
+    ok: true,
+    json: async () => identity,
+  } as Response);
+  try {
+    render(
+      <WorkspaceChat
+        parentOrigin="https://kb.example"
+        nonce="frame-nonce"
+        authenticated
+        libraryServerId={null}
+        pageKind="colossus"
+      />
+    );
+    await waitFor(() => expect(nativeFetch).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(
+        post.mock.calls.filter(([data]) => data.kind === "causl:ready")
+      ).toHaveLength(1)
+    );
+    const snapshot = {
+      version: 1,
+      revision: 1,
+      map_view: {},
+      selected_place: {},
+      layers: {},
+      filters: {},
+      dates: {},
+      visible_results: {},
+      evidence_links: {},
+      omissions: [],
+      privacy: "Browser-local overlays excluded",
+    };
+    receive({ ...context, selection: { page: "colossus", snapshot } });
+    await screen.findByText("No pending question");
+    let finishOpen!: (value: typeof mockWorkspace) => void;
+    jest.mocked(openCauslWorkspace).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishOpen = resolve;
+        })
+    );
+    let prepared!: Promise<unknown>;
+    act(() => {
+      prepared = mockPrepare!();
+    });
+    const request = post.mock.calls
+      .map(([data]) => data)
+      .find((data) => data.kind === "causl:request-context");
+    receive({
+      ...context,
+      revision: 2,
+      requestId: request.requestId,
+      selection: { page: "colossus", snapshot: { ...snapshot, revision: 2 } },
+    });
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"));
+    });
+    expect(nativeFetch).toHaveBeenCalledTimes(2);
+    expect(
+      post.mock.calls.filter(([data]) => data.kind === "causl:ready")
+    ).toHaveLength(1);
+    await act(async () => {
+      finishOpen(mockWorkspace);
+    });
+    await expect(prepared).resolves.toMatchObject({
+      page: "colossus",
+      snapshot: { revision: 2 },
+    });
+    nativeFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ...identity,
+        actor: { ...context.actor, orgId: "org_changed" },
+      }),
+    } as Response);
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"));
+    });
+    expect(
+      post.mock.calls.filter(([data]) => data.kind === "causl:ready")
+    ).toHaveLength(2);
+    expect(post).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        kind: "causl:ready",
+        actor: { ...context.actor, orgId: "org_changed" },
+      }),
+      "https://kb.example"
+    );
+  } finally {
+    nativeFetch.mockRestore();
+  }
+});

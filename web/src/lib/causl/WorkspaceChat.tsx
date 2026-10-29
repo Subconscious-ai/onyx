@@ -123,6 +123,7 @@ export default function WorkspaceChat({
     });
     const identityController = new AbortController();
     let identityFailed = false;
+    let announcedIdentity: string | null = null;
     async function announce() {
       if (identityFailed) return;
       if (pageKind !== "colossus") {
@@ -142,6 +143,14 @@ export default function WorkspaceChat({
           throw new Error(response.status === 401 ? "signin" : "access");
         const identity = parseCauslIdentity(await response.json());
         if (!identity) throw new Error("access");
+        const principal = JSON.stringify([
+          identity.issuer,
+          identity.actor.orgId,
+          identity.actor.userId,
+        ]);
+        // Focus and periodic checks must not replace a pending turn's context.
+        if (principal === announcedIdentity) return;
+        announcedIdentity = principal;
         window.parent.postMessage(
           {
             kind: "causl:ready",
