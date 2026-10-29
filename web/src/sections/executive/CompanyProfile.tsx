@@ -3,11 +3,11 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { useTranslations } from "next-intl";
 import { Button, InputTypeIn, Text } from "@opal/components";
-import {
-  profileFields,
-  type ExecutiveProfile,
-  type ProfileFields,
-} from "@/lib/executive/profile";
+import { profileFields, type ExecutiveProfile } from "@/lib/executive/profile";
+import type {
+  CompanyProfileState,
+  ProfileEditorState,
+} from "@/sections/executive/types";
 
 interface CompanyProfileProps {
   profile: ExecutiveProfile;
@@ -16,21 +16,6 @@ interface CompanyProfileProps {
     CompanyProfileState,
     Dispatch<SetStateAction<CompanyProfileState>>,
   ];
-}
-
-interface ProfileEditorState {
-  original: ExecutiveProfile;
-  fields: ProfileFields;
-  busy: boolean;
-  error: string;
-}
-
-export interface CompanyProfileState {
-  editor: ProfileEditorState | null;
-  busy: boolean;
-  error: string;
-  result: string;
-  operation: string | null;
 }
 
 export function createCompanyProfileState(): CompanyProfileState {

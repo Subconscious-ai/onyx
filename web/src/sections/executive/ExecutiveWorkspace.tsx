@@ -393,10 +393,9 @@ export default function ExecutiveWorkspace({
               size="sm"
               onClick={() => openBrief(briefTrigger.current)}
               data-executive="executive-brief-trigger"
-              aria-label={t("workingBusinessBrief")}
               aria-haspopup="dialog"
               aria-expanded={briefOpen}
-              aria-controls="executive-brief"
+              aria-controls={briefOpen ? "executive-brief" : undefined}
             >
               {t("briefControl")}
             </Button>

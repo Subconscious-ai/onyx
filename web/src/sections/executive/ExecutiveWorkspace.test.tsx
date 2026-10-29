@@ -32,6 +32,7 @@ jest.mock("@opal/components", () => ({
     type = "button",
     "aria-label": label,
     "aria-expanded": expanded,
+    "aria-controls": controls,
   }: React.ComponentPropsWithRef<"button">) => (
     <button
       ref={ref}
@@ -40,6 +41,7 @@ jest.mock("@opal/components", () => ({
       disabled={disabled}
       aria-label={label}
       aria-expanded={expanded}
+      aria-controls={controls}
     >
       {children}
     </button>
@@ -153,15 +155,17 @@ describe("conversation-first brief access", () => {
     const composer = screen.getByLabelText("Message");
     fireEvent.change(composer, { target: { value: "Retain this draft" } });
     const trigger = screen.getByRole("button", {
-      name: /Brief|workingBusinessBrief/,
+      name: "briefControl",
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(trigger).not.toHaveAttribute("aria-controls");
     trigger.focus();
     fireEvent.click(trigger);
     const dialog = screen.getByRole("dialog", {
       name: "workingBusinessBrief",
     });
     expect(dialog).toBeVisible();
+    expect(trigger).toHaveAttribute("aria-controls", dialog.id);
     await waitFor(() =>
       expect(screen.getByText("PDL: no confident match")).toBeInTheDocument()
     );
@@ -170,6 +174,7 @@ describe("conversation-first brief access", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     );
     await waitFor(() => expect(trigger).toHaveFocus());
+    expect(trigger).not.toHaveAttribute("aria-controls");
     expect(screen.getByLabelText("Message")).toBe(composer);
     expect(screen.getByLabelText("Message")).toHaveValue("Retain this draft");
     expect(screen.getByLabelText("Message")).toBeVisible();
@@ -202,9 +207,7 @@ describe("conversation-first brief access", () => {
         <textarea aria-label="Message" />
       </ExecutiveWorkspace>
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "workingBusinessBrief" })
-    );
+    fireEvent.click(screen.getByRole("button", { name: "briefControl" }));
     fireEvent.click(screen.getByText("researchContextAndLenses"));
     fireEvent.click(screen.getByRole("button", { name: "title" }));
     fireEvent.change(screen.getByLabelText("fields.company"), {
@@ -219,9 +222,7 @@ describe("conversation-first brief access", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     );
     expect(screen.queryByLabelText("fields.company")).not.toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole("button", { name: "workingBusinessBrief" })
-    );
+    fireEvent.click(screen.getByRole("button", { name: "briefControl" }));
     fireEvent.click(screen.getByText("researchContextAndLenses"));
     expect(screen.getByLabelText("fields.company")).toHaveValue(
       "Corrected company"
@@ -293,9 +294,7 @@ describe("conversation-first brief access", () => {
       );
       const composer = screen.getByLabelText("Message");
       fireEvent.change(composer, { target: { value: "Retain this draft" } });
-      fireEvent.click(
-        screen.getByRole("button", { name: "workingBusinessBrief" })
-      );
+      fireEvent.click(screen.getByRole("button", { name: "briefControl" }));
       if (tab) fireEvent.click(screen.getByRole("button", { name: tab }));
       fireEvent.click(screen.getByRole("button", { name: action }));
       expect(onAsk).toHaveBeenCalledTimes(1);
@@ -319,9 +318,7 @@ describe("conversation-first brief access", () => {
     expect(
       screen.queryByRole("button", { name: "retryDraft" })
     ).not.toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole("button", { name: "workingBusinessBrief" })
-    );
+    fireEvent.click(screen.getByRole("button", { name: "briefControl" }));
     fireEvent.click(screen.getByRole("button", { name: "retryDraft" }));
     expect(retry).toHaveBeenCalledTimes(1);
     await waitFor(() =>
@@ -346,9 +343,7 @@ describe("conversation-first brief access", () => {
         <ExecutiveModelAction />
       </ExecutiveWorkspace>
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "workingBusinessBrief" })
-    );
+    fireEvent.click(screen.getByRole("button", { name: "briefControl" }));
     fireEvent.click(screen.getByRole("button", { name: "modelSavedOpen" }));
     expect(recover).toHaveBeenCalledTimes(1);
     expect(connection.open).not.toHaveBeenCalled();
