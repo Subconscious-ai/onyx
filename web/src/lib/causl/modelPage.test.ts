@@ -1,5 +1,5 @@
 /** @jest-environment jsdom */
-import { captureModelPage } from "./modelPage";
+import { captureModelPage } from "@/lib/causl/modelPage";
 
 let post: jest.SpyInstance;
 beforeEach(() => {

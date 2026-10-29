@@ -1,6 +1,6 @@
 "use client";
 
-import { captureModelPage } from "./modelPage";
+import { captureModelPage } from "@/lib/causl/modelPage";
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
