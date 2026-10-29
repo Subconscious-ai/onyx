@@ -141,7 +141,7 @@ jobs:
 
   build-model-server-image:
     needs: changes
-    if: needs.changes.outputs.integration == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.changes.outputs.integration == 'true') # upstream-only runner; this fork has none
     runs-on:
       [
         runs-on,
@@ -172,7 +172,7 @@ jobs:
 
   build-devcontainer-image:
     needs: changes
-    if: needs.changes.outputs.integration == 'true'
+    if: github.repository == 'onyx-dot-app/onyx' && (needs.changes.outputs.integration == 'true') # upstream-only runner; this fork has none
     runs-on:
       [
         runs-on,
@@ -235,6 +235,7 @@ jobs:
           no-cache: ${{ vars.DOCKER_NO_CACHE == 'true' }}
 
   integration-tests:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     needs:
       [
         discover-test-dirs,
@@ -460,6 +461,7 @@ jobs:
       # ------------------------------------------------------------
 
   onyx-lite-tests:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     needs: [build-devcontainer-image]
     permissions:
       id-token: write # Required for OIDC-based AWS credential exchange
@@ -570,6 +572,7 @@ jobs:
           docker compose -f docker-compose.yml -f docker-compose.onyx-lite.yml -f docker-compose.dev.yml down -v
 
   multitenant-tests:
+    if: github.repository == 'onyx-dot-app/onyx' # upstream-only runner; this fork has none
     needs: [build-model-server-image, build-devcontainer-image]
     runs-on:
       [
@@ -694,7 +697,7 @@ jobs:
     runs-on: ubuntu-slim
     timeout-minutes: 5
     needs: [changes, integration-tests, onyx-lite-tests, multitenant-tests]
-    if: ${{ always() }}
+    if: github.repository == 'onyx-dot-app/onyx' && always() # suite runs only upstream; skipped reports success here
     steps:
       - name: Check job status
         env:
