@@ -28,7 +28,13 @@ import type { ModelContext } from "@/lib/executive/model-context";
 import { Button, Modal, Text } from "@opal/components";
 import { Interactive } from "@opal/core";
 import { Content } from "@opal/layouts";
-import { SvgArrowUpRight, SvgCheck, SvgDownload } from "@opal/icons";
+import {
+  SvgAlertCircle,
+  SvgArrowUpRight,
+  SvgCheck,
+  SvgDownload,
+  SvgLoader,
+} from "@opal/icons";
 import {
   briefMarkdown,
   projectBrief,
@@ -192,6 +198,14 @@ export default function ExecutiveWorkspace({
     busy,
     messages,
   });
+  const briefUpdating =
+    preparation.phase === "updating" || preparation.phase === "waiting";
+  const briefStatus =
+    preparation.phase === "error"
+      ? t("progress.failed")
+      : briefUpdating
+        ? t("progress.updating")
+        : "";
   const savedMessages = useMemo(
     () =>
       preparation.savedMessage
@@ -396,9 +410,36 @@ export default function ExecutiveWorkspace({
               aria-haspopup="dialog"
               aria-expanded={briefOpen}
               aria-controls={briefOpen ? "executive-brief" : undefined}
+              aria-describedby={
+                briefStatus ? "executive-brief-status" : undefined
+              }
             >
               {t("briefControl")}
             </Button>
+            <span
+              id="executive-brief-status"
+              role="status"
+              aria-live="polite"
+              title={briefStatus || undefined}
+              className="flex items-center"
+            >
+              {preparation.phase === "error" ? (
+                <SvgAlertCircle
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 shrink-0 text-status-error-02"
+                />
+              ) : briefUpdating ? (
+                <SvgLoader
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 shrink-0 motion-safe:animate-spin"
+                />
+              ) : null}
+              {briefStatus && (
+                <span className="sr-only">
+                  <Text>{briefStatus}</Text>
+                </span>
+              )}
+            </span>
           </div>
         </header>
 

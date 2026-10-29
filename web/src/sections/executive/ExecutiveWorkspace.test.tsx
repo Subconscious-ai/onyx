@@ -33,6 +33,7 @@ jest.mock("@opal/components", () => ({
     "aria-label": label,
     "aria-expanded": expanded,
     "aria-controls": controls,
+    "aria-describedby": describedBy,
   }: React.ComponentPropsWithRef<"button">) => (
     <button
       ref={ref}
@@ -42,6 +43,7 @@ jest.mock("@opal/components", () => ({
       aria-label={label}
       aria-expanded={expanded}
       aria-controls={controls}
+      aria-describedby={describedBy}
     >
       {children}
     </button>
@@ -65,9 +67,11 @@ jest.mock("@opal/utils", () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(" "),
 }));
 jest.mock("@opal/icons", () => ({
+  SvgAlertCircle: () => <svg aria-hidden="true" />,
   SvgArrowUpRight: () => null,
   SvgCheck: () => null,
   SvgDownload: () => null,
+  SvgLoader: () => <svg aria-hidden="true" />,
 }));
 
 describe("conversation-first brief access", () => {
@@ -178,6 +182,46 @@ describe("conversation-first brief access", () => {
     expect(screen.getByLabelText("Message")).toBe(composer);
     expect(screen.getByLabelText("Message")).toHaveValue("Retain this draft");
     expect(screen.getByLabelText("Message")).toBeVisible();
+  });
+  it("shows brief updates and failures before opening the brief without losing the conversation draft", () => {
+    (useAutomaticBrief as jest.Mock).mockReturnValue({
+      phase: "waiting",
+      retry,
+    });
+    const content = (
+      <ExecutiveWorkspace active messages={[]}>
+        <textarea aria-label="Message" />
+      </ExecutiveWorkspace>
+    );
+    const { rerender } = render(content);
+    const composer = screen.getByLabelText("Message");
+    fireEvent.change(composer, { target: { value: "Retain this draft" } });
+    const trigger = screen.getByRole("button", { name: "briefControl" });
+
+    expect(screen.getByRole("status")).toHaveTextContent("progress.updating");
+    expect(screen.getByRole("status")).toBeVisible();
+    expect(trigger).toHaveAccessibleDescription("progress.updating");
+
+    for (const phase of ["updating", "error", "saved"]) {
+      (useAutomaticBrief as jest.Mock).mockReturnValue({ phase, retry });
+      rerender(
+        <ExecutiveWorkspace active messages={[]}>
+          <textarea aria-label="Message" />
+        </ExecutiveWorkspace>
+      );
+      const status =
+        phase === "error"
+          ? "progress.failed"
+          : phase === "updating"
+            ? "progress.updating"
+            : "";
+      if (status) expect(screen.getByRole("status")).toHaveTextContent(status);
+      else expect(screen.getByRole("status")).toBeEmptyDOMElement();
+      expect(trigger).toHaveAccessibleDescription(status);
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(screen.getByLabelText("Message")).toBe(composer);
+      expect(composer).toHaveValue("Retain this draft");
+    }
   });
   it("retains correction input and the failed refresh operation when the brief reopens", async () => {
     const reload = jest.fn();
