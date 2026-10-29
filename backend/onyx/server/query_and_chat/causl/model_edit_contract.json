@@ -1,6 +1,7 @@
 {
   "version": 1,
   "source": "guesstimate-v3 modelEditSchema",
+  "maxEdits": 24,
   "schema": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "oneOf": [

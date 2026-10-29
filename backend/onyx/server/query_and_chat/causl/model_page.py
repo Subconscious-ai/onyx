@@ -17,7 +17,7 @@ def model_page_tool_schema(name: str) -> dict[str, Any]:
             "edits": {
                 "type": "array",
                 "minItems": 1,
-                "maxItems": 200,
+                "maxItems": contract["maxEdits"],
                 "items": contract["schema"],
             },
             "rationale": {"type": "string", "minLength": 1, "maxLength": 4000},
@@ -53,7 +53,9 @@ def model_page_tool_result(
     if (
         set(arguments) != {"edits", "rationale"}
         or not isinstance(arguments["edits"], list)
-        or not 1 <= len(arguments["edits"]) <= 200
+        or not 1
+        <= len(arguments["edits"])
+        <= model_page_tool_schema(name)["properties"]["edits"]["maxItems"]
         or not isinstance(arguments["rationale"], str)
         or not 1 <= len(arguments["rationale"]) <= 4000
     ):

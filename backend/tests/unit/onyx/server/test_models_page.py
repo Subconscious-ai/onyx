@@ -56,7 +56,7 @@ def test_local_proposal_preserves_capture_and_never_claims_application() -> None
     "arguments",
     [
         {"edits": [], "rationale": "Empty"},
-        {"edits": [{}] * 201, "rationale": "Too many"},
+        {"edits": [{}] * 25, "rationale": "Too many"},
         {"edits": [{}], "rationale": "", "market": "foreign"},
         {"edits": [{}], "rationale": 42},
         {"edits": [{}], "rationale": "x" * 4001},
@@ -85,3 +85,8 @@ def test_local_tool_schema_uses_canonical_semantic_edits_without_market_authorit
     assert set(schema["properties"]) == {"edits", "rationale"}
     assert schema["additionalProperties"] is False
     assert "oneOf" in schema["properties"]["edits"]["items"]
+
+
+def test_native_proposal_limit_matches_models_complete_validation() -> None:
+    schema = model_page_tool_schema("prepare_model_change")
+    assert schema["properties"]["edits"]["maxItems"] == 24
