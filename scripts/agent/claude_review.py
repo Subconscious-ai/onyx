@@ -14,29 +14,32 @@ import re
 import subprocess
 import sys
 from collections import Counter
+from collections.abc import Iterator
 from pathlib import Path, PurePosixPath
+from typing import Any
+from urllib.parse import quote
 
 CHUNK_BYTES = 20000
-CHUNK_LINES = 120
+CHUNK_LINES = 1000
 SOURCE_BYTES = 2_000_000
 TOTAL_BYTES = 32_000_000
 HUNK = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(?:.*)$")
 
 
-def require(condition, message):
+def require(condition: object, message: str) -> None:
     if not condition:
         raise ValueError(message)
 
 
-def digest(data):
+def digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def encoded(value):
+def encoded(value: Any) -> bytes:
     return json.dumps(value, sort_keys=True, ensure_ascii=True).encode()
 
 
-def gh(endpoint, paginate=False):
+def gh(endpoint: str, paginate: bool = False) -> Any:
     command = ["gh", "api"]
     if paginate:
         command += ["--paginate", "--slurp"]
@@ -50,8 +53,10 @@ def gh(endpoint, paginate=False):
     return json.loads(result.stdout)
 
 
-def current_pr(repository, number, head, base, review_drafts=False):
-    pr = gh(f"repos/{repository}/pulls/{number}")
+def current_pr(
+    repository: str, number: int, head: str, base: str, review_drafts: bool = False
+) -> dict[str, Any]:
+    pr: dict[str, Any] = gh(f"repos/{repository}/pulls/{number}")
     require(pr["state"] == "open", "PR is not open")
     require(pr["draft"] is False or review_drafts, "Draft review is not allowed")
     require(pr["head"]["repo"]["full_name"] == repository, "Fork review is unsupported")
@@ -60,10 +65,11 @@ def current_pr(repository, number, head, base, review_drafts=False):
     return pr
 
 
-def validate_patch(file):
+def validate_patch(file: dict[str, Any]) -> str:
     patch = file.get("patch")
     name = file["filename"]
-    require(isinstance(patch, str) and patch, f"Missing/binary patch: {name}")
+    if not isinstance(patch, str) or not patch:
+        raise ValueError(f"Missing/binary patch: {name}")
     added = deleted = old = new = 0
     have_hunk = False
     for line in patch.split("\n"):
@@ -92,7 +98,78 @@ def validate_patch(file):
     return patch
 
 
-def source_text(repository, file):
+def metadata_patch(repository: str, file: dict[str, Any], base: str, head: str) -> str:
+    name = file["filename"]
+    require(
+        all(file.get(key) == 0 for key in ("additions", "deletions", "changes"))
+        and file.get("patch") in (None, ""),
+        f"Missing/binary patch: {name}",
+    )
+
+    def entry(revision: str, filename: str) -> dict[str, Any]:
+        path = PurePosixPath(filename)
+        require(
+            not path.is_absolute()
+            and ".." not in path.parts
+            and not any(ord(c) < 32 for c in filename),
+            "Unsafe metadata path",
+        )
+        ref = revision if str(path.parent) == "." else f"{revision}:{path.parent}"
+        tree = gh(f"repos/{repository}/git/trees/{quote(ref, safe='')}")
+        require(tree.get("truncated") is False, "Incomplete metadata tree")
+        matches = [item for item in tree["tree"] if item["path"] == path.name]
+        require(len(matches) == 1, f"Missing metadata tree entry: {filename}")
+        value: dict[str, Any] = matches[0]
+        require(
+            value["type"] == "blob" and value["mode"] in ("100644", "100755"),
+            "Unsupported metadata file type",
+        )
+        return value
+
+    status = file["status"]
+    if status == "renamed":
+        require(
+            isinstance(file.get("previous_filename"), str)
+            and file["previous_filename"] != name,
+            "Missing original rename path",
+        )
+    old = (
+        None if status == "added" else entry(base, file.get("previous_filename", name))
+    )
+    new = None if status == "removed" else entry(head, name)
+    empty_sha = "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    if status in ("added", "removed"):
+        value = new if status == "added" else old
+        assert value is not None
+        require(
+            value["sha"] == file["sha"] == empty_sha,
+            "Missing patch for nonempty file",
+        )
+    else:
+        assert old is not None and new is not None
+        require(
+            status in ("renamed", "modified")
+            and old["sha"] == new["sha"] == file["sha"],
+            "Missing patch for changed content",
+        )
+        require(
+            (status == "renamed" and file.get("previous_filename") != name)
+            or old["mode"] != new["mode"],
+            "No metadata change",
+        )
+    return "METADATA ONLY " + json.dumps(
+        {
+            "filename": name,
+            "previous_filename": file.get("previous_filename"),
+            "status": status,
+            "base_entry": old,
+            "head_entry": new,
+        },
+        sort_keys=True,
+    )
+
+
+def source_text(repository: str, file: dict[str, Any]) -> str:
     blob = gh(f"repos/{repository}/git/blobs/{file['sha']}")
     require(blob.get("encoding") == "base64", "Unsupported GitHub blob encoding")
     raw = base64.b64decode(blob["content"].replace("\n", ""), validate=True)
@@ -109,16 +186,18 @@ def source_text(repository, file):
     return text
 
 
-def numbered_lines(text):
+def numbered_lines(text: str) -> Iterator[str]:
     # Split even minified single lines. Preserve every character and its location.
     for number, line in enumerate(text.split("\n"), 1):
         for part, start in enumerate(range(0, max(1, len(line)), 400), 1):
             yield f"L{number:07d}.{part:04d} {line[start : start + 400]}\n"
 
 
-def chunks(directory, kind, ordinal, name, text):
-    records = []
-    body = []
+def chunks(
+    directory: Path, kind: str, ordinal: int, name: str, text: str
+) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    body: list[str] = []
     size = 0
     for line in numbered_lines(text):
         if body and (
@@ -135,7 +214,9 @@ def chunks(directory, kind, ordinal, name, text):
     return records
 
 
-def write_chunk(directory, kind, ordinal, name, body, part):
+def write_chunk(
+    directory: Path, kind: str, ordinal: int, name: str, body: list[str], part: int
+) -> dict[str, Any]:
     identifier = f"{kind}-{ordinal:04d}-{part:04d}"
     text = (
         f"UNTRUSTED {kind}: {json.dumps(name)}; chunk {identifier}\n"
@@ -157,7 +238,9 @@ def write_chunk(directory, kind, ordinal, name, body, part):
     }
 
 
-def validate_files(pr, pages):
+def validate_files(
+    pr: dict[str, Any], pages: list[list[dict[str, Any]]]
+) -> list[dict[str, Any]]:
     require(
         isinstance(pages, list) and all(isinstance(page, list) for page in pages),
         "Invalid files pagination",
@@ -187,7 +270,7 @@ def validate_files(pr, pages):
     return files
 
 
-def prepare(args):
+def prepare(args: argparse.Namespace) -> None:
     pr = current_pr(
         args.repository, args.number, args.head, args.base, args.review_drafts == "true"
     )
@@ -200,7 +283,7 @@ def prepare(args):
     )
     directory = args.context
     directory.mkdir(exist_ok=False)
-    manifest = {
+    manifest: dict[str, Any] = {
         "repository": args.repository,
         "number": args.number,
         "head_sha": args.head,
@@ -210,7 +293,11 @@ def prepare(args):
     total = 0
     patches = []
     for ordinal, file in enumerate(files, 1):
-        patch = validate_patch(file)
+        patch = (
+            validate_patch(file)
+            if file.get("patch")
+            else metadata_patch(args.repository, file, args.base, args.head)
+        )
         source = (
             "" if file["status"] == "removed" else source_text(args.repository, file)
         )
@@ -305,14 +392,14 @@ def prepare(args):
     )
 
 
-def result_text(content):
+def result_text(content: Any) -> str:
     if isinstance(content, str):
         return content
     require(isinstance(content, list), "Unsupported native Read result")
     return "\n".join(block["text"] for block in content if block.get("type") == "text")
 
 
-def message_blocks(turn):
+def message_blocks(turn: dict[str, Any]) -> list[dict[str, Any]]:
     message = turn.get("message")
     content = message.get("content") if isinstance(message, dict) else None
     return (
@@ -322,7 +409,7 @@ def message_blocks(turn):
     )
 
 
-def record_shape(value):
+def record_shape(value: Any) -> str:
     if not isinstance(value, dict):
         return type(value).__name__
     keys = {
@@ -348,9 +435,15 @@ def record_shape(value):
     )
 
 
-def read_diagnostics(execution, directory, required, calls, read):
+def read_diagnostics(
+    execution: list[dict[str, Any]],
+    directory: Path,
+    required: dict[str, str],
+    calls: dict[str, tuple[Path, dict[str, Any]]],
+    read: set[str],
+) -> dict[str, Any]:
     # Protocol shapes and counters survive cleanup without exposing trace values.
-    counters = {
+    counters: dict[str, Counter[str]] = {
         key: Counter()
         for key in (
             "turn_types",
@@ -433,7 +526,9 @@ def read_diagnostics(execution, directory, required, calls, read):
     return {**summary, **counters}
 
 
-def native_read_path(call, directory, required):
+def native_read_path(
+    call: dict[str, Any], directory: Path, required: dict[str, str]
+) -> Path | None:
     path = Path(call.get("file_path", ""))
     if path.is_absolute():
         # Runner directories can have aliases; bind the actual chunk.
@@ -445,10 +540,12 @@ def native_read_path(call, directory, required):
     )
 
 
-def successful_reads(execution, directory, required):
+def successful_reads(
+    execution: list[dict[str, Any]], directory: Path, required: dict[str, str]
+) -> None:
     require(isinstance(execution, list), "Unsupported official execution trace")
-    calls = {}
-    read = set()
+    calls: dict[str, tuple[Path, dict[str, Any]]] = {}
+    read: set[str] = set()
     for turn in execution:
         for block in message_blocks(turn):
             if (
@@ -501,7 +598,7 @@ def successful_reads(execution, directory, required):
     )
 
 
-def verify(args):
+def verify(args: argparse.Namespace) -> None:
     directory = args.context.resolve()
     raw = (directory / "manifest.json").read_bytes()
     manifest = json.loads(raw)
@@ -526,7 +623,7 @@ def verify(args):
         and output.get("incomplete") is False,
         "Review reports incomplete Standards or Spec",
     )
-    required = {}
+    required: dict[str, str] = {}
     for chunk in manifest["patch_chunks"]:
         require(
             digest((directory / chunk["file"]).read_bytes()) == chunk["sha256"],
@@ -569,7 +666,7 @@ def verify(args):
     )
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("prepare", "verify"))
     parser.add_argument("--repository", required=True)

@@ -11,6 +11,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 HELPER = ROOT / "scripts/agent/claude_review.py"
@@ -18,7 +19,7 @@ HEAD = "a" * 40
 BASE = "b" * 40
 
 
-def blob(text):
+def blob(text: str) -> dict[str, Any]:
     raw = text.encode()
     sha = hashlib.sha1(
         f"blob {len(raw)}\0".encode() + raw, usedforsecurity=False
@@ -31,7 +32,7 @@ def blob(text):
     }
 
 
-def github_fixture():
+def github_fixture() -> dict[str, Any]:
     files, blobs = [], {}
     for i in range(73):
         # Reproduce the API's one-line JSON and an 82 KB single patch/line.
@@ -66,19 +67,25 @@ def github_fixture():
     return {"pr": pr, "files": [files[:50], files[50:]], "blobs": blobs}
 
 
-def fake_gh(directory):
+def fake_gh(directory: Path) -> None:
     path = directory / "gh"
     path.write_text(
         f"#!{sys.executable}\nimport json,os,sys\n"
         "data=json.load(open(os.environ['GH_FIXTURE']))\nendpoint=sys.argv[-1]\n"
         "if '/git/blobs/' in endpoint: result=data['blobs'][endpoint.rsplit('/',1)[1]]\n"
         "elif '/files?' in endpoint: result=data['files']\n"
+        "elif '/git/trees/' in endpoint: result=data['trees'][endpoint.rsplit('/',1)[1]]\n"
         "else: result=data['pr']\nprint(json.dumps(result))\n"
     )
     path.chmod(0o700)
 
 
-def invoke(command, directory, environment=None, review_drafts=False):
+def invoke(
+    command: str,
+    directory: Path,
+    environment: dict[str, str] | None = None,
+    review_drafts: bool = False,
+) -> subprocess.CompletedProcess[str]:
     arguments = ["--review-drafts", "true"] if review_drafts else []
     return subprocess.run(
         [
@@ -104,7 +111,7 @@ def invoke(command, directory, environment=None, review_drafts=False):
     )
 
 
-def tab_read_trace(trace):
+def tab_read_trace(trace: list[dict[str, Any]]) -> list[dict[str, Any]]:
     trace = copy.deepcopy(trace)
     for turn in trace:
         if turn["type"] == "user":
@@ -116,8 +123,19 @@ def tab_read_trace(trace):
 
 
 class PreparedReviewTest(unittest.TestCase):
+    temporary: tempfile.TemporaryDirectory[str]
+    directory: Path
+    fixture: dict[str, Any]
+    fixture_path: Path
+    environment: dict[str, str]
+    context: Path
+    manifest: dict[str, Any]
+    required: list[dict[str, Any]]
+    output: dict[str, Any]
+    trace: list[dict[str, Any]]
+
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         cls.temporary = tempfile.TemporaryDirectory()
         cls.directory = Path(cls.temporary.name)
         fake_gh(cls.directory)
@@ -193,10 +211,15 @@ class PreparedReviewTest(unittest.TestCase):
         )
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         cls.temporary.cleanup()
 
-    def verify(self, output=None, trace=None, review_drafts=False):
+    def verify(
+        self,
+        output: dict[str, Any] | None = None,
+        trace: list[dict[str, Any]] | None = None,
+        review_drafts: bool = False,
+    ) -> subprocess.CompletedProcess[str]:
         execution = self.directory / "execution.json"
         execution.write_text(json.dumps(self.trace if trace is None else trace))
         environment = dict(
@@ -208,10 +231,143 @@ class PreparedReviewTest(unittest.TestCase):
             "verify", self.directory, environment, review_drafts=review_drafts
         )
 
-    def test_complete_patch_context_uses_fewer_reads_than_changed_files(self):
+    def test_metadata_only_changes_preserve_exact_git_evidence(self) -> None:
+        fixture = github_fixture()
+        empty = blob("")
+        text = blob("print('ok')\n")
+        fixture["blobs"] = {item["sha"]: item for item in (empty, text)}
+        fixture["files"] = [
+            [
+                {
+                    "filename": "empty.py",
+                    "status": "added",
+                    "sha": empty["sha"],
+                    "additions": 0,
+                    "deletions": 0,
+                    "changes": 0,
+                },
+                {
+                    "filename": "renamed.py",
+                    "previous_filename": "original.py",
+                    "status": "renamed",
+                    "sha": text["sha"],
+                    "additions": 0,
+                    "deletions": 0,
+                    "changes": 0,
+                },
+                {
+                    "filename": "executable.py",
+                    "status": "modified",
+                    "sha": text["sha"],
+                    "additions": 0,
+                    "deletions": 0,
+                    "changes": 0,
+                },
+            ]
+        ]
+        fixture["pr"].update(changed_files=3, additions=0, deletions=0)
+        fixture["trees"] = {
+            BASE: {
+                "truncated": False,
+                "tree": [
+                    {"path": name, "mode": "100644", "type": "blob", "sha": text["sha"]}
+                    for name in ("original.py", "executable.py")
+                ],
+            },
+            HEAD: {
+                "truncated": False,
+                "tree": [
+                    {
+                        "path": "empty.py",
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": empty["sha"],
+                    },
+                    {
+                        "path": "renamed.py",
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": text["sha"],
+                    },
+                    {
+                        "path": "executable.py",
+                        "mode": "100755",
+                        "type": "blob",
+                        "sha": text["sha"],
+                    },
+                ],
+            },
+        }
+        with tempfile.TemporaryDirectory() as raw_directory:
+            directory = Path(raw_directory)
+            path = directory / "github.json"
+            path.write_text(json.dumps(fixture))
+            result = invoke(
+                "prepare", directory, dict(self.environment, GH_FIXTURE=str(path))
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            manifest = json.loads((directory / "context/manifest.json").read_text())
+            self.assertEqual(
+                [file["status"] for file in manifest["files"]],
+                ["added", "renamed", "modified"],
+            )
+            patch = "".join(
+                (directory / "context" / chunk["file"]).read_text()
+                for chunk in manifest["patch_chunks"]
+            )
+            self.assertIn('"previous_filename": "original.py"', patch)
+            self.assertIn('"mode": "100755"', patch)
+            self.assertIn('"mode": "100644"', patch)
+            # A zero-count claim must not hide omitted text changes.
+            fixture["trees"][BASE]["tree"][1]["sha"] = empty["sha"]
+            path.write_text(json.dumps(fixture))
+            with tempfile.TemporaryDirectory() as rejected:
+                result = invoke(
+                    "prepare",
+                    Path(rejected),
+                    dict(self.environment, GH_FIXTURE=str(path)),
+                )
+            self.assertNotEqual(result.returncode, 0)
+
+    def test_short_lines_pack_into_the_existing_native_read_byte_bound(self) -> None:
+        fixture = github_fixture()
+        lines = [f"line {i}" for i in range(1293)]
+        text = "\n".join(lines)
+        source = blob(text)
+        fixture["files"] = [
+            [
+                {
+                    "filename": "review.py",
+                    "status": "added",
+                    "sha": source["sha"],
+                    "additions": len(lines),
+                    "deletions": 0,
+                    "patch": f"@@ -0,0 +1,{len(lines)} @@\n"
+                    + "\n".join("+" + line for line in lines),
+                }
+            ]
+        ]
+        fixture["blobs"] = {source["sha"]: source}
+        fixture["pr"].update(changed_files=1, additions=len(lines), deletions=0)
+        with tempfile.TemporaryDirectory() as raw_directory:
+            directory = Path(raw_directory)
+            path = directory / "github.json"
+            path.write_text(json.dumps(fixture))
+            result = invoke(
+                "prepare", directory, dict(self.environment, GH_FIXTURE=str(path))
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            manifest = json.loads((directory / "context/manifest.json").read_text())
+            self.assertLessEqual(len(manifest["patch_chunks"]), 3)
+            for chunk in manifest["patch_chunks"]:
+                self.assertLessEqual(
+                    (directory / "context" / chunk["file"]).stat().st_size, 20000
+                )
+
+    def test_complete_patch_context_uses_fewer_reads_than_changed_files(self) -> None:
         self.assertLess(len(self.required), len(self.manifest["files"]))
 
-    def test_large_paginated_api_becomes_complete_bounded_plaintext(self):
+    def test_large_paginated_api_becomes_complete_bounded_plaintext(self) -> None:
         self.assertEqual(len(self.manifest["files"]), 73)
         self.assertGreater(len(json.dumps(self.fixture["files"])), 491000)
         all_chunks = self.required + [
@@ -220,8 +376,8 @@ class PreparedReviewTest(unittest.TestCase):
         for chunk in all_chunks:
             raw = (self.context / chunk["file"]).read_bytes()
             self.assertLessEqual(len(raw), 20000)
-            self.assertLessEqual(len(raw.decode().splitlines()), 120)
-        reconstructed = {}
+            self.assertLessEqual(len(raw.decode().splitlines()), 1000)
+        reconstructed: dict[int, str] = {}
         for chunk in self.required:
             for line in (self.context / chunk["file"]).read_text().splitlines()[1:-1]:
                 location, value = line.split(" ", 1)
@@ -234,13 +390,13 @@ class PreparedReviewTest(unittest.TestCase):
         )
         self.assertEqual("\n".join(reconstructed.values()), expected)
 
-    def test_native_draft_review_requires_explicit_opt_in(self):
+    def test_native_draft_review_requires_explicit_opt_in(self) -> None:
         fixture = copy.deepcopy(self.fixture)
         fixture["pr"]["draft"] = True
         self.fixture_path.write_text(json.dumps(fixture))
         try:
-            with tempfile.TemporaryDirectory() as directory:
-                directory = Path(directory)
+            with tempfile.TemporaryDirectory() as raw_directory:
+                directory = Path(raw_directory)
                 denied = invoke("prepare", directory, self.environment)
                 self.assertNotEqual(denied.returncode, 0)
                 allowed = invoke(
@@ -254,11 +410,13 @@ class PreparedReviewTest(unittest.TestCase):
         finally:
             self.fixture_path.write_text(json.dumps(self.fixture))
 
-    def test_complete_attestation_and_actual_reads_pass(self):
+    def test_complete_attestation_and_actual_reads_pass(self) -> None:
         result = self.verify()
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_native_read_horizontal_whitespace_before_arrow_preserves_coverage(self):
+    def test_native_read_horizontal_whitespace_before_arrow_preserves_coverage(
+        self,
+    ) -> None:
         trace = copy.deepcopy(self.trace)
         for turn in trace:
             if turn["type"] == "user":
@@ -269,11 +427,11 @@ class PreparedReviewTest(unittest.TestCase):
         result = self.verify(trace=trace)
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_native_tab_numbered_read_format_preserves_complete_coverage(self):
+    def test_native_tab_numbered_read_format_preserves_complete_coverage(self) -> None:
         result = self.verify(trace=tab_read_trace(self.trace))
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_native_tab_numbered_read_tampering_fails(self):
+    def test_native_tab_numbered_read_tampering_fails(self) -> None:
         original = tab_read_trace(self.trace)[1]["message"]["content"][0]["content"]
         lines = original.splitlines()
         changes = {
@@ -293,14 +451,16 @@ class PreparedReviewTest(unittest.TestCase):
             with self.subTest(change=name):
                 self.assertNotEqual(self.verify(trace=trace).returncode, 0)
 
-    def test_native_tab_numbered_reads_require_the_complete_first_page(self):
+    def test_native_tab_numbered_reads_require_the_complete_first_page(self) -> None:
         for bounds in ({"offset": 0}, {"offset": 2}, {"limit": 1}):
             trace = tab_read_trace(self.trace)
             trace[0]["message"]["content"][0]["input"].update(bounds)
             with self.subTest(bounds=bounds):
                 self.assertNotEqual(self.verify(trace=trace).returncode, 0)
 
-    def test_native_reads_through_runner_path_alias_bind_to_exact_context_files(self):
+    def test_native_reads_through_runner_path_alias_bind_to_exact_context_files(
+        self,
+    ) -> None:
         alias = self.directory / "runner-context-alias"
         alias.symlink_to(self.context, target_is_directory=True)
         trace = copy.deepcopy(self.trace)
@@ -311,7 +471,7 @@ class PreparedReviewTest(unittest.TestCase):
         result = self.verify(trace=trace)
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_native_read_alias_cannot_escape_the_prepared_context(self):
+    def test_native_read_alias_cannot_escape_the_prepared_context(self) -> None:
         path = self.context / self.required[0]["file"]
         original = path.read_bytes()
         outside = self.directory / path.name
@@ -324,7 +484,9 @@ class PreparedReviewTest(unittest.TestCase):
             path.unlink()
             path.write_bytes(original)
 
-    def test_incomplete_read_diagnostics_show_shapes_without_trace_contents(self):
+    def test_incomplete_read_diagnostics_show_shapes_without_trace_contents(
+        self,
+    ) -> None:
         trace = copy.deepcopy(self.trace[:2] + self.trace[-1:])
         secret = "private-credential-and-file-content-do-not-print"
         trace[0]["message"]["content"][0]["input"]["private_argument"] = secret
@@ -357,7 +519,7 @@ class PreparedReviewTest(unittest.TestCase):
         self.assertNotIn(str(self.context), json.dumps(diagnostic))
         self.assertLess(len(json.dumps(diagnostic)), 4000)
 
-    def test_incomplete_or_wrong_revision_attestations_fail(self):
+    def test_incomplete_or_wrong_revision_attestations_fail(self) -> None:
         changes = [
             {"patch_chunks_reviewed": []},
             {
@@ -377,7 +539,7 @@ class PreparedReviewTest(unittest.TestCase):
                     self.verify(output=dict(self.output, **change)).returncode, 0
                 )
 
-    def test_self_attestation_cannot_replace_native_read_coverage(self):
+    def test_self_attestation_cannot_replace_native_read_coverage(self) -> None:
         for variant in (
             "none",
             "error",
@@ -415,7 +577,7 @@ class PreparedReviewTest(unittest.TestCase):
             with self.subTest(variant=variant):
                 self.assertNotEqual(self.verify(trace=trace).returncode, 0)
 
-    def test_changed_chunk_or_current_head_fails(self):
+    def test_changed_chunk_or_current_head_fails(self) -> None:
         path = self.context / self.required[0]["file"]
         original = path.read_bytes()
         try:
@@ -435,7 +597,7 @@ class PreparedReviewTest(unittest.TestCase):
             finally:
                 self.fixture_path.write_text(json.dumps(self.fixture))
 
-    def test_omitted_binary_malformed_and_truncated_patches_fail(self):
+    def test_omitted_binary_malformed_and_truncated_patches_fail(self) -> None:
         for variant in (
             "missing",
             "binary",
@@ -466,9 +628,9 @@ class PreparedReviewTest(unittest.TestCase):
                 ).decode()
             with (
                 self.subTest(variant=variant),
-                tempfile.TemporaryDirectory() as directory,
+                tempfile.TemporaryDirectory() as raw_directory,
             ):
-                directory = Path(directory)
+                directory = Path(raw_directory)
                 altered = directory / "github.json"
                 altered.write_text(json.dumps(fixture))
                 result = invoke(
@@ -478,15 +640,15 @@ class PreparedReviewTest(unittest.TestCase):
                 )
                 self.assertNotEqual(result.returncode, 0)
 
-    def test_summary_marker_without_code_review_fails_workflow(self):
+    def test_summary_marker_without_code_review_fails_workflow(self) -> None:
         workflow = (ROOT / ".github/workflows/pr-review.yml").read_text()
         gate = workflow.split("      - name: Require completed and persisted review\n")[
             1
         ]
         script = gate.split("        run: |\n", 1)[1]
         script = "\n".join(line[10:] for line in script.splitlines())
-        with tempfile.TemporaryDirectory() as directory:
-            directory = Path(directory)
+        with tempfile.TemporaryDirectory() as raw_directory:
+            directory = Path(raw_directory)
             gh = directory / "gh"
             gh.write_text(
                 f"#!{sys.executable}\nimport json,os,sys\n"
