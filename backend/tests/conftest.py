@@ -1,10 +1,24 @@
 """Root conftest — shared fixtures available to all test directories."""
 
-from collections.abc import Generator
+import os
 
-import pytest
+# Never report test-process errors to Sentry. Importing `onyx.main` builds the
+# FastAPI app at module import time, which calls `init_sentry` whenever
+# SENTRY_DSN is set — so a developer shell/.env exporting a real DSN would ship
+# expected no-DB unit-test failures (e.g. "Engine not initialized") to a
+# production Sentry project. Clear it before any onyx/shared_configs import.
+os.environ.pop("SENTRY_DSN", None)
 
-from onyx.utils.variable_functionality import (
+import shared_configs.configs as _shared_configs  # noqa: E402
+
+# Belt-and-braces in case shared_configs was imported before this conftest.
+_shared_configs.SENTRY_DSN = None
+
+from collections.abc import Generator  # noqa: E402
+
+import pytest  # noqa: E402
+
+from onyx.utils.variable_functionality import (  # noqa: E402
     fetch_versioned_implementation,
     global_version,
 )
