@@ -9541,6 +9541,33 @@
           "text": "응답 대기 중..."
         }
       },
+      "customToolApproval": {
+        "approveButton": {
+          "label": "이 작업을 정확히 승인"
+        },
+        "approvedStatus": {
+          "text": "승인했습니다. {toolName}이(가) 실행 중입니다."
+        },
+        "card": {
+          "description": "아래의 정확한 작업을 검토하세요. 승인하기 전에는 아무것도 실행되지 않습니다.",
+          "title": "{toolName}에 승인이 필요합니다"
+        },
+        "declineButton": {
+          "label": "거절"
+        },
+        "declinedStatus": {
+          "text": "거절했습니다. 아무것도 실행되지 않았습니다."
+        },
+        "expiredStatus": {
+          "text": "제한 시간 내에 응답이 없었습니다. 아무것도 실행되지 않았습니다."
+        },
+        "messageBlock": {
+          "label": "정확한 작업"
+        },
+        "sendError": {
+          "text": "응답을 보내지 못했습니다. 다시 시도하세요."
+        }
+      },
       "customToolAuth": {
         "card": {
           "description": "이 도구를 사용하려면 {toolName}에 연결하세요",

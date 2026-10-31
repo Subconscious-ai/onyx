@@ -9541,6 +9541,33 @@
           "text": "Aguardando resposta..."
         }
       },
+      "customToolApproval": {
+        "approveButton": {
+          "label": "Aprovar exatamente esta ação"
+        },
+        "approvedStatus": {
+          "text": "Aprovado. {toolName} está em execução."
+        },
+        "card": {
+          "description": "Revise a ação exata abaixo. Nada será executado até você aprovar.",
+          "title": "{toolName} precisa da sua aprovação"
+        },
+        "declineButton": {
+          "label": "Recusar"
+        },
+        "declinedStatus": {
+          "text": "Recusado. Nada foi executado."
+        },
+        "expiredStatus": {
+          "text": "Sem resposta a tempo. Nada foi executado."
+        },
+        "messageBlock": {
+          "label": "Ação exata"
+        },
+        "sendError": {
+          "text": "Não foi possível enviar sua resposta. Tente novamente."
+        }
+      },
       "customToolAuth": {
         "card": {
           "description": "Conecte {toolName} para habilitar esta ferramenta",

@@ -9541,6 +9541,33 @@
           "text": "Warten auf Antwort..."
         }
       },
+      "customToolApproval": {
+        "approveButton": {
+          "label": "Genau diese Aktion genehmigen"
+        },
+        "approvedStatus": {
+          "text": "Genehmigt. {toolName} wird ausgeführt."
+        },
+        "card": {
+          "description": "Prüfen Sie die genaue Aktion unten. Ohne Ihre Genehmigung wird nichts ausgeführt.",
+          "title": "{toolName} benötigt Ihre Genehmigung"
+        },
+        "declineButton": {
+          "label": "Ablehnen"
+        },
+        "declinedStatus": {
+          "text": "Abgelehnt. Es wurde nichts ausgeführt."
+        },
+        "expiredStatus": {
+          "text": "Keine Antwort innerhalb der Frist. Es wurde nichts ausgeführt."
+        },
+        "messageBlock": {
+          "label": "Genaue Aktion"
+        },
+        "sendError": {
+          "text": "Ihre Antwort konnte nicht gesendet werden. Versuchen Sie es erneut."
+        }
+      },
       "customToolAuth": {
         "card": {
           "description": "Verbinden Sie {toolName}, um dieses Werkzeug zu aktivieren",

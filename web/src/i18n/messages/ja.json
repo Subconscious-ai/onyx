@@ -9541,6 +9541,33 @@
           "text": "レスポンスを待っています..."
         }
       },
+      "customToolApproval": {
+        "approveButton": {
+          "label": "この内容のとおりに承認する"
+        },
+        "approvedStatus": {
+          "text": "承認しました。{toolName} を実行中です。"
+        },
+        "card": {
+          "description": "以下の実行内容を確認してください。承認するまで何も実行されません。",
+          "title": "{toolName} の承認が必要です"
+        },
+        "declineButton": {
+          "label": "拒否する"
+        },
+        "declinedStatus": {
+          "text": "拒否しました。何も実行されていません。"
+        },
+        "expiredStatus": {
+          "text": "時間内に回答がありませんでした。何も実行されていません。"
+        },
+        "messageBlock": {
+          "label": "実行内容"
+        },
+        "sendError": {
+          "text": "回答を送信できませんでした。もう一度お試しください。"
+        }
+      },
       "customToolAuth": {
         "card": {
           "description": "このツールを使用するには {toolName} に接続してください",

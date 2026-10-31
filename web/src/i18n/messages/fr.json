@@ -9541,6 +9541,33 @@
           "text": "En attente de réponse..."
         }
       },
+      "customToolApproval": {
+        "approveButton": {
+          "label": "Approuver exactement cette action"
+        },
+        "approvedStatus": {
+          "text": "Approuvé. {toolName} est en cours d'exécution."
+        },
+        "card": {
+          "description": "Vérifiez l'action exacte ci-dessous. Rien ne sera exécuté sans votre approbation.",
+          "title": "{toolName} a besoin de votre approbation"
+        },
+        "declineButton": {
+          "label": "Refuser"
+        },
+        "declinedStatus": {
+          "text": "Refusé. Rien n'a été exécuté."
+        },
+        "expiredStatus": {
+          "text": "Aucune réponse dans le délai. Rien n'a été exécuté."
+        },
+        "messageBlock": {
+          "label": "Action exacte"
+        },
+        "sendError": {
+          "text": "Votre réponse n'a pas pu être envoyée. Réessayez."
+        }
+      },
       "customToolAuth": {
         "card": {
           "description": "Connectez {toolName} pour activer cet outil",

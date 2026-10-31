@@ -9541,6 +9541,33 @@
           "text": "正在等待响应..."
         }
       },
+      "customToolApproval": {
+        "approveButton": {
+          "label": "按此内容批准"
+        },
+        "approvedStatus": {
+          "text": "已批准，{toolName} 正在运行。"
+        },
+        "card": {
+          "description": "请查看下方的具体操作。在您批准之前不会执行任何内容。",
+          "title": "{toolName} 需要您的批准"
+        },
+        "declineButton": {
+          "label": "拒绝"
+        },
+        "declinedStatus": {
+          "text": "已拒绝，未执行任何操作。"
+        },
+        "expiredStatus": {
+          "text": "未在时限内回复，未执行任何操作。"
+        },
+        "messageBlock": {
+          "label": "具体操作"
+        },
+        "sendError": {
+          "text": "无法发送您的回复，请重试。"
+        }
+      },
       "customToolAuth": {
         "card": {
           "description": "连接到 {toolName} 以启用此工具",

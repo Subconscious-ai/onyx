@@ -9541,6 +9541,33 @@
           "text": "Waiting for response..."
         }
       },
+      "customToolApproval": {
+        "approveButton": {
+          "label": "Approve this exact action"
+        },
+        "approvedStatus": {
+          "text": "Approved. {toolName} is running."
+        },
+        "card": {
+          "description": "Review the exact action below. Nothing runs until you approve it.",
+          "title": "{toolName} needs your approval"
+        },
+        "declineButton": {
+          "label": "Decline"
+        },
+        "declinedStatus": {
+          "text": "Declined. Nothing was run."
+        },
+        "expiredStatus": {
+          "text": "No answer in time. Nothing was run."
+        },
+        "messageBlock": {
+          "label": "Exact action"
+        },
+        "sendError": {
+          "text": "Your answer could not be sent. Try again."
+        }
+      },
       "customToolAuth": {
         "card": {
           "description": "Connect to {toolName} to enable this tool",

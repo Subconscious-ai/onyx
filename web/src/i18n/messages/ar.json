@@ -9541,6 +9541,33 @@
           "text": "في انتظار الاستجابة..."
         }
       },
+      "customToolApproval": {
+        "approveButton": {
+          "label": "الموافقة على هذا الإجراء بالضبط"
+        },
+        "approvedStatus": {
+          "text": "تمت الموافقة. يجري تشغيل {toolName}."
+        },
+        "card": {
+          "description": "راجع الإجراء المحدد أدناه. لن يتم تنفيذ أي شيء قبل موافقتك.",
+          "title": "{toolName} يحتاج إلى موافقتك"
+        },
+        "declineButton": {
+          "label": "رفض"
+        },
+        "declinedStatus": {
+          "text": "تم الرفض. لم يتم تنفيذ أي شيء."
+        },
+        "expiredStatus": {
+          "text": "لم يصل رد في الوقت المحدد. لم يتم تنفيذ أي شيء."
+        },
+        "messageBlock": {
+          "label": "الإجراء المحدد"
+        },
+        "sendError": {
+          "text": "تعذر إرسال ردك. حاول مرة أخرى."
+        }
+      },
       "customToolAuth": {
         "card": {
           "description": "اتصل بـ {toolName} لتفعيل هذه الأداة",
