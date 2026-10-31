@@ -4,6 +4,28 @@ The current shared-memory candidate and its QA boundary are in
 [Shared market memory](causl-workspace.md#shared-market-memory-in-native-interviews).
 The dated results below describe earlier candidates.
 
+## Supported workflow and source owners
+
+An executive supplies a business goal, customer decisions, and known operating values.
+Beca retains the conversation and prepares a sourced working brief for a private business model.
+Unknown inputs remain unknown. Accepted market facts require the existing Library review and save path.
+Onyx owns the interview and conversation memory. causl-kb owns accepted evidence and saved models.
+The success measure includes model save/reopen and the full interview time, not brief extraction alone.
+The dated evidence below does not establish a current deployment or a 60-second acceptance pass.
+
+Use these sources before changing the fork:
+
+| Customer or agent task | Guidance and implementation |
+| --- | --- |
+| Start an executive interview | `/app/executive` selects an accessible Burn agent and redirects to native chat. See [entry route](../../web/src/app/app/executive/page.tsx). |
+| Prepare and reopen a working brief | [Burn operations](burn2-operations.md#private-api-and-contracts), [native preparation API](../../backend/onyx/server/query_and_chat/burn2/api.py), and [browser preparation](../../web/src/lib/executive/hooks.ts). |
+| Retrieve accepted organization facts | [Workspace guidance](causl-workspace.md), with per-user Library OAuth and server-verified scope. |
+| Connect an external MCP client | [Standalone MCP server](../../backend/onyx/mcp_server/README.md). This bearer-token service is separate from Beca's Library OAuth connection. |
+
+The root README describes upstream Onyx. Upstream connectors and providers are not a fork-specific support or deployment claim.
+Source changes do not update stored personas, credentials, or running services.
+The dated sections retain earlier receipts; inspect current issue and PR state before release decisions.
+
 ## October 19 closeout
 
 The original interview and model receivers are merged in
