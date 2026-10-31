@@ -356,7 +356,7 @@ test("keeps an embedded follow-up as a draft on Enter and preserves it when stop
   ).toHaveLength(1);
   expect(submit).not.toHaveBeenCalled();
 
-  await user.click(document.getElementById("onyx-chat-input-send-button")!);
+  await user.click(screen.getByRole("button", { name: "Stop generating" }));
   expect(initial.stopGenerating).toHaveBeenCalledTimes(1);
   expect(input).toHaveTextContent("Independent draft D");
   expect(
@@ -378,9 +378,7 @@ test("keeps an unaccepted workspace draft in storage after send", async () => {
       sessionStorage.getItem(draftKey("chat", "workspace-chat"))
     ).toContain("Independent draft D")
   );
-  await setupUser().click(
-    document.getElementById("onyx-chat-input-send-button")!
-  );
+  await setupUser().click(screen.getByRole("button", { name: "Send" }));
   expect(submit).toHaveBeenCalledWith("Independent draft D");
   expect(
     JSON.parse(sessionStorage.getItem(draftKey("chat", "workspace-chat"))!)

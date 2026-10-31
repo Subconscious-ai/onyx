@@ -1,0 +1,209 @@
+/* Customer and executive-preview scoped copy. Source: https://github.com/Subconscious-ai/design-system
+   Commit: 70d8addfeea83cf3e7f4b32f5a9b9a34298c1b39
+   Files: contract.css; derived.css product register and reduced-motion tokens.
+   Adapter: root selectors target the active customer route or standalone preview;
+   values remain canonical. Preview presence also reaches body portals. */
+@import "./fonts.css";
+
+/* Subconscious Design System app contract v2.0.0.
+   Import this in apps that need only the root compatibility boundary.
+
+   What the contract carries:
+   · Color: --darkColor, --lightColor + light/dark mode swap
+   · Typography: font-family stacks, type scale, line heights, weights, tracking
+   · Spacing: 4pt scale, 8 steps
+
+   What the contract does NOT carry:
+   · Font-face declarations (fonts.css loads the three OFL families)
+   · Other-stylesheet imports (no transitive imports)
+   · Element-level styling (no body, h1, p — consumers compose their own)
+   · Component classes (.btn, .card, etc — those live in preview/ as patterns)
+
+   Names mirror the extended canon in `derived.css`. Values are pinned
+   (no clamps) at the contract layer; consuming apps that need fluid
+   sizing override locally (the editorial preview garden does this in
+   `derived.css`). */
+
+html[data-customer-design="focus"],
+html:has(.executive-preview) {
+  color-scheme: light;
+
+  /* ---- Color ----------------------------------------------- */
+  --darkColor: #1b165b;
+  --lightColor: #ffffff;
+  --backgroundColor: var(--lightColor);
+  --color: var(--darkColor);
+
+  /* Signal red. Dark mode swaps it to the graphic register (AA-Large).
+     --red-on-dark is the 4.5:1 text register for small red type on ink. */
+  --red: #c8102e;
+  --red-on-dark: #f45169;
+  /* Filled destructive controls: one pair in every mode (5.88:1). */
+  --red-fill: #c8102e;
+  --on-red-fill: #ffffff;
+
+  /* Radii. Editorial corners are sharp, control or dot. The product
+     register takes one Kokonut radius and one soft depth (DOCTRINE §3.0). */
+  --radius-sharp: 0;
+  --radius-control: 2px;
+  --radius-dot: 999px;
+  --radius-adopted: 10px;
+  --shadow-adopted:
+    0 1px 2px color-mix(in srgb, var(--darkColor) 8%, transparent),
+    0 8px 24px -12px color-mix(in srgb, var(--darkColor) 24%, transparent);
+
+  /* ---- Typography · families ------------------------------- */
+  /* Three SIL OFL families, self-hosted by fonts.css. The Fallback faces
+     are metric-matched system fonts that fonts.css declares. */
+  --font-display:
+    "Inter Tight", "Inter Tight Fallback", "Helvetica Neue", Arial, sans-serif;
+  --font-body:
+    "Inter Tight", "Inter Tight Fallback", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-italic: "Redaction", "Redaction Fallback", Georgia, serif;
+
+  /* ---- Typography · weights -------------------------------- */
+  /* One token per Inter Tight weight fonts.css loads. */
+  --fw-thin: 100;
+  --fw-extralight: 200;
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-display: 800;
+
+  /* ---- Typography · type scale (px, pinned) ----------------
+     Five sizes plus the label. Pinned so app builds are
+     deterministic; derived.css makes the five fluid.
+
+     Why five, not eight: the doctrinal scale is "violently large /
+     uncomfortably small". A long mid-scale just blurs the gap. */
+  --fs-display: 64px; /* hero / cover surfaces        */
+  --fs-h1: 40px; /* primary page heading         */
+  --fs-h2: 28px; /* section heading              */
+  --fs-body: 16px; /* default running text         */
+  --fs-meta: 12px; /* field labels, mono captions  */
+  --fs-label: 10px; /* the mono caps label          */
+
+  /* ---- Typography · line heights --------------------------- */
+  --lh-tight: 1; /* display / hero        */
+  --lh-display: 1.05; /* h1 / h2               */
+  --lh-body: 1.45; /* default running text  */
+  --lh-loose: 1.6; /* small / meta          */
+
+  /* ---- Typography · tracking (optical, per-size) -----------
+     Bringhurst's counterpoint principle: letter-spacing scales
+     inversely with type size. New code maps tracking to the type
+     scale 1:1. */
+  --tracking-display: -0.065em; /* ≥ 64px hero / cover           */
+  --tracking-h1: -0.045em; /* 36-44px primary headlines     */
+  --tracking-h2: -0.025em; /* 24-32px subheads              */
+  --tracking-body: -0.015em; /* 14-18px body                  */
+  --tracking-meta: -0.005em; /* 11-13px micro-body            */
+  --tracking-caps: 0.14em; /* mono caps default             */
+
+  /* ---- Spacing · 4pt scale, 8 steps ------------------------ */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* ---- Chart palette · five categorical hues ---------------
+     Light-mode pinned here; the dark block below swaps to a
+     darker rotation that reads against dark backgrounds.
+     Mirrors the data-viz palette on www.subconscious.ai. Five hues
+     that sit clear of signal red and the body type stack.
+
+     Production consumers reach these by copying contract.css. The
+     preview garden and the kit consume them via the same contract
+     (PR #401 retired the duplicate declaration in `tokens.css`). */
+  --chart-1: #f05100; /* orange  */
+  --chart-2: #00bb7f; /* teal    */
+  --chart-3: #f99c00; /* amber   */
+  --chart-4: #fcbb00; /* gold    */
+  --chart-5: #ff2357; /* pink-red — kept distinct from --red via hue */
+}
+
+/* data-mode on any element sets the mode of its subtree; greys, rules,
+   tints and red re-derive inside it (derived.css and shadcn.css too). */
+html[data-customer-design="focus"],
+html:has(.executive-preview),
+html[data-customer-design="focus"] [data-mode],
+html:has(.executive-preview) [data-mode] {
+  --grey-300: color-mix(in srgb, var(--color) 30%, var(--backgroundColor));
+  --grey-500: color-mix(in srgb, var(--color) 72%, var(--backgroundColor));
+  --grey-700: color-mix(in srgb, var(--color) 85%, var(--backgroundColor));
+  --hairline: color-mix(in srgb, var(--color) 15%, transparent);
+  --bg-2: color-mix(in srgb, var(--color) 3%, var(--backgroundColor));
+  --bg-active: color-mix(in srgb, var(--color) 8%, var(--backgroundColor));
+}
+
+html[data-customer-design="focus"][data-mode="light"],
+html[data-customer-design="focus"]:not([data-mode]),
+html[data-customer-design="focus"] [data-mode="light"],
+html:has(.executive-preview)[data-mode="light"],
+html:has(.executive-preview):not([data-mode]),
+html:has(.executive-preview) [data-mode="light"] {
+  color-scheme: light;
+  --backgroundColor: var(--lightColor, #ffffff);
+  --color: var(--darkColor, #1b165b);
+  --red: #c8102e;
+}
+
+/* Dark fires on data-mode="dark" (canonical) or the root .dark class
+   next-themes sets. This block follows the light one, so .dark wins on a
+   next-themes app with no data-mode. */
+html[data-customer-design="focus"][data-mode="dark"],
+html[data-customer-design="focus"].dark,
+html[data-customer-design="focus"] [data-mode="dark"],
+html:has(.executive-preview)[data-mode="dark"],
+html:has(.executive-preview).dark,
+html:has(.executive-preview) [data-mode="dark"] {
+  color-scheme: dark;
+  --backgroundColor: var(--darkColor, #1b165b);
+  --color: var(--lightColor, #ffffff);
+  /* Graphic register (#614): #c8102e misses 3.0:1 on most dark grounds.
+     One value per mode, never per theme. */
+  --red: #f0475f;
+  /* Chart palette · dark-mode rotation. */
+  --chart-1: #1447e6; /* blue       */
+  --chart-2: #009588; /* muted teal */
+  --chart-3: #104e64; /* dark teal  */
+  --chart-4: #ac4bff; /* purple     */
+  --chart-5: #f99c00; /* amber      */
+}
+
+/* Product register: calmer type, faster motion (DOCTRINE.md §2.4). */
+html[data-customer-design="focus"],
+html:has(.executive-preview) {
+  /* Type — pinned upper bounds, no fluid scaling above the threshold.
+     Heading hierarchy still has a 1.25–1.5x ratio between steps so
+     "kill the middle weight" still applies — just at a calmer volume. */
+  --fs-display: clamp(26px, 3vw, 32px); /* product hero / page title */
+  --fs-h1: clamp(20px, 2.2vw, 24px); /* primary heading           */
+  --fs-h2: clamp(17px, 1.7vw, 19px); /* section heading           */
+  --fs-body: clamp(14px, 1vw, 15px); /* body default              */
+  --fs-meta: clamp(11px, 0.75vw, 12px); /* labels, mono captions     */
+
+  /* Motion — Kokonut timing and Kokonut's ease-out. Durations follow the product --dur-med. */
+  --ease-causal: cubic-bezier(0.23, 1, 0.32, 1);
+  --dur-fast: 150ms; /* hover / focus feedback */
+  --dur-med: 220ms; /* state changes, sweeps  */
+  --dur-slow: 400ms; /* entrances, settles     */
+}
+
+/* Reduced motion: every token duration snaps to 1ms, so token-driven
+   motion lands on its end state. The aliases follow --dur-med. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-customer-design="focus"],
+  html:has(.executive-preview) {
+    --dur-fast: 1ms;
+    --dur-med: 1ms;
+    --dur-slow: 1ms;
+  }
+}

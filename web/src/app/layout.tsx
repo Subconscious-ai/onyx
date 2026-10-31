@@ -104,7 +104,7 @@ export default async function Layout({ children }: LayoutProps) {
       <head>
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, interactive-widget=resizes-content"
+          content="width=device-width, initial-scale=1, interactive-widget=resizes-content"
         />
 
         {/* When running inside the Tauri desktop wrapper on macOS, tag <html>

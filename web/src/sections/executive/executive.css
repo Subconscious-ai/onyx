@@ -1,6 +1,4 @@
-/* Tokens copied from Subconscious-ai/design-system b5ef525ee7b626b9346d1bf18c7242e666b07193. */
-@import url("https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Redaction:ital@0;1&display=swap");
-@import "./contract.css";
+@import "../customer/contract.css";
 
 :is(.executive-workspace, [data-executive~="executive-workspace"]) {
   height: 100%;
@@ -11,10 +9,9 @@
   background: var(--backgroundColor);
   color: var(--color);
   font-family: var(--font-body);
-  --bg-2: color-mix(in srgb, var(--color) 3%, var(--backgroundColor));
   --bg-3: color-mix(in srgb, var(--color) 6%, var(--backgroundColor));
-  --font-hanken-grotesk: "Inter Tight", Inter, sans-serif;
-  --font-dm-mono: "IBM Plex Mono", monospace;
+  --font-hanken-grotesk: var(--font-body);
+  --font-dm-mono: var(--font-mono);
 }
 :is(.executive-workspace, [data-executive~="executive-workspace"]) * {
   box-sizing: border-box;
@@ -35,7 +32,7 @@
   gap: 20px;
   min-height: 68px;
   padding: 12px 28px;
-  border-bottom: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hairline);
 }
 :is(.executive-brand, [data-executive~="executive-brand"]) {
   display: flex;
@@ -73,8 +70,7 @@
 }
 :is(.executive-main, [data-executive~="executive-main"]) {
   flex: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(310px, 36%);
+  display: flex;
   min-height: 0;
 }
 :is(.executive-conversation, [data-executive~="executive-conversation"]) {
@@ -138,7 +134,7 @@
 }
 :is(.executive-specialist-note, [data-executive~="executive-specialist-note"]) {
   padding: 10px 28px 12px;
-  border-bottom: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hairline);
   min-height: 43px;
   color: var(--grey-500);
 }
@@ -281,7 +277,7 @@
   display: flex;
   gap: 4px;
   padding: 0 24px 16px;
-  border-bottom: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hairline);
 }
 :is(.executive-view-switch, [data-executive~="executive-view-switch"]) button {
   flex: 1;
@@ -374,7 +370,7 @@
   font-family: var(--font-mono);
 }
 :is(.executive-step-detail, [data-executive~="executive-step-detail"]) {
-  border-top: 1px solid var(--hair);
+  border-top: 1px solid var(--hairline);
   padding: 16px 0;
   display: flex;
   flex-direction: column;
@@ -383,7 +379,7 @@
 }
 :is(.executive-model-note, [data-executive~="executive-model-note"]) {
   margin-top: 24px;
-  border-top: 1px solid var(--hair);
+  border-top: 1px solid var(--hairline);
   padding-top: 15px;
   display: grid;
   gap: 7px;
@@ -404,7 +400,7 @@
   color: var(--grey-500);
 }
 :is(.executive-evidence-row, [data-executive~="executive-evidence-row"]) {
-  border-bottom: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hairline);
   padding: 18px 0;
   display: grid;
   gap: 10px;
@@ -437,7 +433,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 24px;
-  border-top: 1px solid var(--hair);
+  border-top: 1px solid var(--hairline);
   min-height: 52px;
   gap: 8px;
 }
@@ -473,7 +469,7 @@
 }
 :is(.executive-example-answer, [data-executive~="executive-example-answer"]) {
   background: var(--bg-2);
-  border: 1px solid var(--hair);
+  border: 1px solid var(--hairline);
   padding: 18px;
   margin-left: 32px;
   font-size: 15px;
@@ -543,19 +539,6 @@
   :is(.executive-conversation, [data-executive~="executive-conversation"]) {
     flex: 1;
   }
-  :is(.executive-brief, [data-executive~="executive-brief"]) {
-    display: none;
-  }
-  :is(.executive-show-brief, [data-executive~="executive-show-brief"])
-    :is(.executive-brief, [data-executive~="executive-brief"]) {
-    display: flex;
-    flex: 1;
-    border-left: 0;
-  }
-  :is(.executive-show-brief, [data-executive~="executive-show-brief"])
-    :is(.executive-conversation, [data-executive~="executive-conversation"]) {
-    display: none;
-  }
   :is(.executive-mobile-toggle, [data-executive~="executive-mobile-toggle"]) {
     display: inline-flex;
   }
@@ -617,7 +600,7 @@
   flex-wrap: wrap;
   gap: 12px;
   padding: 16px 24px;
-  border-top: 1px solid var(--hair);
+  border-top: 1px solid var(--hairline);
   background: var(--backgroundColor);
 }
 .executive-model-action > div {
@@ -702,7 +685,7 @@
 .executive-context {
   padding: 12px 18px;
   font-size: 12px;
-  border-bottom: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hairline);
 }
 .executive-context summary {
   cursor: pointer;
@@ -743,7 +726,7 @@
   justify-content: space-between;
   gap: 24px;
   padding: 14px 28px;
-  border-bottom: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hairline);
   background: var(--bg-2);
 }
 .interview-progress-content {
@@ -771,11 +754,11 @@
   margin-block: 8px;
   border: 0;
   appearance: none;
-  background: var(--hair);
+  background: var(--hairline);
   color: var(--red);
 }
 .interview-progress progress::-webkit-progress-bar {
-  background: var(--hair);
+  background: var(--hairline);
 }
 .interview-progress progress::-webkit-progress-value {
   background: var(--red);
@@ -854,7 +837,7 @@
   gap: 6px 16px;
   padding: 6px 16px;
   font-size: 11px;
-  border-bottom: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hairline);
 }
 .executive-team span {
   color: var(--grey-500);
@@ -864,19 +847,7 @@
 }
 .executive-native-chat .interview-progress {
   margin: 12px 0;
-  border: 1px solid var(--hair);
+  border: 1px solid var(--hairline);
   border-radius: 8px;
   padding: 12px;
-}
-@media (min-width: 861px) {
-  .executive-main {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 32%);
-  }
-  .executive-brief {
-    border-left: 1px solid var(--hair);
-  }
-  [data-executive~="executive-mobile-toggle"] {
-    display: none;
-  }
 }
