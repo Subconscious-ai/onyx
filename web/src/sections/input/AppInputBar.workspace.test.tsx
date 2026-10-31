@@ -520,3 +520,34 @@ test.each(["accepted", "cancelled"] as const)(
     open.mockRestore();
   }
 );
+
+test.each(["click", "Escape"])(
+  "workspace Stop via %s retains the draft and never queues a message",
+  async (action) => {
+    const user = setupUser();
+    const submit = jest.fn();
+    const inputProps = props(submit);
+    const beforeQueue = [
+      ...useChatSessionStore.getState().sessions.get("workspace-chat")!
+        .queuedMessages,
+    ];
+    const { container } = render(<AppInputBar {...inputProps} />);
+    const input = container.querySelector('[contenteditable="true"]')!;
+    await waitFor(() => expect(input).toHaveTextContent("Independent draft D"));
+    if (action === "click") {
+      const stop = container.querySelector("#onyx-chat-input-send-button")!;
+      expect(stop).toHaveTextContent("Stop");
+      await user.click(stop);
+    } else {
+      await user.click(input);
+      await user.keyboard("{Escape}");
+    }
+    expect(inputProps.stopGenerating).toHaveBeenCalledTimes(1);
+    expect(submit).not.toHaveBeenCalled();
+    expect(input).toHaveTextContent("Independent draft D");
+    expect(
+      useChatSessionStore.getState().sessions.get("workspace-chat")!
+        .queuedMessages
+    ).toEqual(beforeQueue);
+  }
+);

@@ -147,6 +147,7 @@ const AppInputBar = React.memo(
     onToggleTabReading,
   }: AppInputBarProps) => {
     const t = useTranslations("chat.input");
+    const tWorkspace = useTranslations("workspaceAi");
     const tMessages = useTranslations("chat.messages");
     const { incognitoEnabled } = useIncognito();
     const [isRecording, setIsRecording] = useState(false);
@@ -712,6 +713,9 @@ const AppInputBar = React.memo(
 
     const chatControls = (
       <div
+        data-ai-composer-controls={
+          embeddedWorkspace && !isSearchMode ? "" : undefined
+        }
         {...(isSearchMode ? { inert: true } : {})}
         className={cn(
           "flex justify-between items-center w-full",
@@ -749,6 +753,7 @@ const AppInputBar = React.memo(
                 disabled={disabled}
                 icon={SvgPaperclip}
                 tooltip={t("appInputBar.attachFilesButton.tooltip")}
+                aria-label={t("appInputBar.attachFilesButton.tooltip")}
                 interaction={open ? "hover" : "rest"}
                 prominence="tertiary"
               />
@@ -771,6 +776,7 @@ const AppInputBar = React.memo(
                 key={activeAgent.id}
                 agent={activeAgent}
                 toolConfiguration={toolConfiguration}
+                label={embeddedWorkspace ? tWorkspace("tools") : undefined}
                 disabled={disabled}
               />
             )}
@@ -869,12 +875,13 @@ const AppInputBar = React.memo(
 
           <Button
             disabled={
-              (chatState === "input" &&
+              !(embeddedWorkspace && chatState === "streaming") &&
+              ((chatState === "input" &&
                 !isVoicePlaybackControllable &&
                 !message) ||
-              hasUploadingFiles ||
-              hasIndexingFiles ||
-              isClassifying
+                hasUploadingFiles ||
+                hasIndexingFiles ||
+                isClassifying)
             }
             tooltip={
               hasUploadingFiles || hasIndexingFiles
@@ -882,6 +889,9 @@ const AppInputBar = React.memo(
                 : undefined
             }
             id="onyx-chat-input-send-button"
+            data-ai-stop={
+              embeddedWorkspace && chatState === "streaming" ? "" : undefined
+            }
             aria-label={
               !embeddedWorkspace && chatState !== "input" && message.trim()
                 ? t("baseInputBar.sendButton.queueLabel")
@@ -919,7 +929,11 @@ const AppInputBar = React.memo(
                 submitMessage(message);
               }
             }}
-          />
+          >
+            {embeddedWorkspace && chatState === "streaming"
+              ? tWorkspace("stop")
+              : undefined}
+          </Button>
         </div>
       </div>
     );
@@ -1048,6 +1062,18 @@ const AppInputBar = React.memo(
                       data-placeholder={activePlaceholder}
                       data-empty={!message ? "" : undefined}
                       onKeyDown={(event) => {
+                        if (
+                          embeddedWorkspace &&
+                          chatState === "streaming" &&
+                          event.key === "Escape" &&
+                          !showPrompts &&
+                          !event.defaultPrevented
+                        ) {
+                          event.preventDefault();
+                          stopTTS({ manual: true });
+                          stopGenerating();
+                          return;
+                        }
                         if (
                           handleInputNavKeys(event, queueNav, handleTileKeyDown)
                         )
