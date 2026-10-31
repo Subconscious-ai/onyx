@@ -9953,8 +9953,7 @@
           "searching": {
             "status": "Searching the web"
           }
-        },
-        "sourceCount": "{count, plural, one {# source} other {# sources}}"
+        }
       },
       "toolbar": {
         "dislikeButton": {

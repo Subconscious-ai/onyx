@@ -9953,8 +9953,7 @@
           "searching": {
             "status": "正在搜索网页"
           }
-        },
-        "sourceCount": "{count, plural, one {# 个来源} other {# 个来源}}"
+        }
       },
       "toolbar": {
         "dislikeButton": {

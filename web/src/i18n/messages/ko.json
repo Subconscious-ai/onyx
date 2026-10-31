@@ -9953,8 +9953,7 @@
           "searching": {
             "status": "웹 검색 중"
           }
-        },
-        "sourceCount": "{count, plural, one {출처 #개} other {출처 #개}}"
+        }
       },
       "toolbar": {
         "dislikeButton": {

@@ -9953,8 +9953,7 @@
           "searching": {
             "status": "Durchsucht das Web"
           }
-        },
-        "sourceCount": "{count, plural, one {# Quelle} other {# Quellen}}"
+        }
       },
       "toolbar": {
         "dislikeButton": {

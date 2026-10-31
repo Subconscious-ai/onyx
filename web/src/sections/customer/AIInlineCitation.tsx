@@ -147,6 +147,15 @@ export default function AIInlineCitation({
             <Text font="main-ui-body" color="text-05">
               {source.title}
             </Text>
+            {source.sourceUrl && (
+              <Text
+                font="secondary-body"
+                color="text-03"
+                wordWrap="wrap-anywhere"
+              >
+                {source.sourceUrl}
+              </Text>
+            )}
             {source.description && (
               <Text font="secondary-body" color="text-03" maxLines={3}>
                 {source.description}

@@ -9953,8 +9953,7 @@
           "searching": {
             "status": "ウェブを検索中"
           }
-        },
-        "sourceCount": "{count, plural, one {# 件のソース} other {# 件のソース}}"
+        }
       },
       "toolbar": {
         "dislikeButton": {

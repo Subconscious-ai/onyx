@@ -9953,8 +9953,7 @@
           "searching": {
             "status": "جارٍ البحث في الويب"
           }
-        },
-        "sourceCount": "{count, plural, one {# مصدر} other {# مصادر}}"
+        }
       },
       "toolbar": {
         "dislikeButton": {
