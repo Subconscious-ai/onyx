@@ -9642,6 +9642,32 @@
           "title": "خطأ في التحقق"
         }
       },
+      "experimentRun": {
+        "failed": {
+          "text": "لم تكتمل ({status}). اسأل Beca عن الخطوة التالية."
+        },
+        "finished": {
+          "text": "اكتملت. اطلب النتائج من Beca."
+        },
+        "openResults": {
+          "label": "فتح النتائج"
+        },
+        "queued": {
+          "text": "في انتظار الدور في قائمة الانتظار."
+        },
+        "running": {
+          "text": "قيد التشغيل. قد يستغرق ذلك عدة دقائق."
+        },
+        "starting": {
+          "text": "جارٍ البدء."
+        },
+        "title": {
+          "text": "التجربة {runId}"
+        },
+        "unavailable": {
+          "text": "الحالة غير متاحة الآن. ستتم إعادة التحقق."
+        }
+      },
       "humanMessage": {
         "editButton": {
           "tooltip": "تعديل"

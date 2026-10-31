@@ -9642,6 +9642,32 @@
           "title": "Validation Error"
         }
       },
+      "experimentRun": {
+        "failed": {
+          "text": "Did not finish ({status}). Ask Beca what to do next."
+        },
+        "finished": {
+          "text": "Finished. Ask Beca for the results."
+        },
+        "openResults": {
+          "label": "Open results"
+        },
+        "queued": {
+          "text": "Waiting in the queue."
+        },
+        "running": {
+          "text": "Running. This can take several minutes."
+        },
+        "starting": {
+          "text": "Starting."
+        },
+        "title": {
+          "text": "Experiment {runId}"
+        },
+        "unavailable": {
+          "text": "The status is unavailable right now. Checking again."
+        }
+      },
       "humanMessage": {
         "editButton": {
           "tooltip": "Edit"

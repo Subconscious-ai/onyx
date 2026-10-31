@@ -9642,6 +9642,32 @@
           "title": "검증 오류"
         }
       },
+      "experimentRun": {
+        "failed": {
+          "text": "완료되지 않았습니다({status}). 다음 조치는 Beca에게 물어보세요."
+        },
+        "finished": {
+          "text": "완료되었습니다. 결과는 Beca에게 물어보세요."
+        },
+        "openResults": {
+          "label": "결과 열기"
+        },
+        "queued": {
+          "text": "대기열에서 기다리는 중입니다."
+        },
+        "running": {
+          "text": "실행 중입니다. 몇 분 걸릴 수 있습니다."
+        },
+        "starting": {
+          "text": "시작하는 중입니다."
+        },
+        "title": {
+          "text": "실험 {runId}"
+        },
+        "unavailable": {
+          "text": "지금은 상태를 확인할 수 없습니다. 다시 확인합니다."
+        }
+      },
       "humanMessage": {
         "editButton": {
           "tooltip": "편집"

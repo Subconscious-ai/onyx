@@ -9642,6 +9642,32 @@
           "title": "Erreur de validation"
         }
       },
+      "experimentRun": {
+        "failed": {
+          "text": "Non terminé ({status}). Demandez à Beca quoi faire ensuite."
+        },
+        "finished": {
+          "text": "Terminé. Demandez les résultats à Beca."
+        },
+        "openResults": {
+          "label": "Ouvrir les résultats"
+        },
+        "queued": {
+          "text": "En attente dans la file."
+        },
+        "running": {
+          "text": "En cours. Cela peut prendre plusieurs minutes."
+        },
+        "starting": {
+          "text": "Démarrage."
+        },
+        "title": {
+          "text": "Expérience {runId}"
+        },
+        "unavailable": {
+          "text": "Le statut est indisponible pour le moment. Nouvelle vérification en cours."
+        }
+      },
       "humanMessage": {
         "editButton": {
           "tooltip": "Modifier"

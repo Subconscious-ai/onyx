@@ -9642,6 +9642,32 @@
           "title": "検証エラー"
         }
       },
+      "experimentRun": {
+        "failed": {
+          "text": "完了しませんでした（{status}）。次の対応は Beca に尋ねてください。"
+        },
+        "finished": {
+          "text": "完了しました。結果は Beca に尋ねてください。"
+        },
+        "openResults": {
+          "label": "結果を開く"
+        },
+        "queued": {
+          "text": "キューで待機中です。"
+        },
+        "running": {
+          "text": "実行中です。数分かかることがあります。"
+        },
+        "starting": {
+          "text": "開始しています。"
+        },
+        "title": {
+          "text": "実験 {runId}"
+        },
+        "unavailable": {
+          "text": "現在ステータスを取得できません。再確認します。"
+        }
+      },
       "humanMessage": {
         "editButton": {
           "tooltip": "編集"

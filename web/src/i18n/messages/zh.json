@@ -9642,6 +9642,32 @@
           "title": "验证错误"
         }
       },
+      "experimentRun": {
+        "failed": {
+          "text": "未能完成（{status}）。请向 Beca 询问下一步。"
+        },
+        "finished": {
+          "text": "已完成。请向 Beca 询问结果。"
+        },
+        "openResults": {
+          "label": "打开结果"
+        },
+        "queued": {
+          "text": "正在队列中等待。"
+        },
+        "running": {
+          "text": "运行中，可能需要几分钟。"
+        },
+        "starting": {
+          "text": "正在启动。"
+        },
+        "title": {
+          "text": "实验 {runId}"
+        },
+        "unavailable": {
+          "text": "目前无法获取状态，将重新检查。"
+        }
+      },
       "humanMessage": {
         "editButton": {
           "tooltip": "编辑"

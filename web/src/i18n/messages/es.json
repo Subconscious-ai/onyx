@@ -9642,6 +9642,32 @@
           "title": "Error de validación"
         }
       },
+      "experimentRun": {
+        "failed": {
+          "text": "No terminó ({status}). Pregunta a Beca qué hacer ahora."
+        },
+        "finished": {
+          "text": "Terminado. Pídele los resultados a Beca."
+        },
+        "openResults": {
+          "label": "Abrir resultados"
+        },
+        "queued": {
+          "text": "Esperando en la cola."
+        },
+        "running": {
+          "text": "En ejecución. Puede tardar varios minutos."
+        },
+        "starting": {
+          "text": "Iniciando."
+        },
+        "title": {
+          "text": "Experimento {runId}"
+        },
+        "unavailable": {
+          "text": "El estado no está disponible ahora. Se volverá a comprobar."
+        }
+      },
       "humanMessage": {
         "editButton": {
           "tooltip": "Editar"

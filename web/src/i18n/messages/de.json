@@ -9642,6 +9642,32 @@
           "title": "Validierungsfehler"
         }
       },
+      "experimentRun": {
+        "failed": {
+          "text": "Nicht abgeschlossen ({status}). Fragen Sie Beca, wie es weitergeht."
+        },
+        "finished": {
+          "text": "Abgeschlossen. Fragen Sie Beca nach den Ergebnissen."
+        },
+        "openResults": {
+          "label": "Ergebnisse öffnen"
+        },
+        "queued": {
+          "text": "Wartet in der Warteschlange."
+        },
+        "running": {
+          "text": "Läuft. Das kann einige Minuten dauern."
+        },
+        "starting": {
+          "text": "Wird gestartet."
+        },
+        "title": {
+          "text": "Experiment {runId}"
+        },
+        "unavailable": {
+          "text": "Der Status ist gerade nicht verfügbar. Es wird erneut geprüft."
+        }
+      },
       "humanMessage": {
         "editButton": {
           "tooltip": "Bearbeiten"
