@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
+from onyx.auth.host_auth import host_session_for
 from onyx.auth.permissions import require_permission
 from onyx.db.causl_workspace import open_causl_chat
 from onyx.db.chat import get_chat_session_by_id
@@ -17,6 +18,7 @@ from onyx.server.query_and_chat.causl.context import (
     load_interview_context,
 )
 from onyx.server.query_and_chat.causl.models import (
+    CauslActor,
     CauslIdentityResponse,
     CauslSelection,
     CauslWorkspaceRequest,
@@ -34,6 +36,15 @@ def workspace_identity(
     db_session: Session = Depends(get_session),
 ) -> CauslIdentityResponse:
     """Bootstrap a public geography parent from the existing verified native grant."""
+    host = host_session_for(user.id)
+    if host is not None:
+        response.headers["Cache-Control"] = "private, no-store"
+        return CauslIdentityResponse(
+            actor=CauslActor(
+                org_id=host.organization_id, user_id=host.identity.subject
+            ),
+            issuer=host.identity.issuer,
+        )
     loaded = load_interview_context(db_session, user)
     response.headers["Cache-Control"] = "private, no-store"
     return CauslIdentityResponse(

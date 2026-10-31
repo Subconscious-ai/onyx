@@ -1333,3 +1333,90 @@ def test_colossus_memory_uses_verified_library_and_turns_require_current_selecti
     assert "Open this conversation in Colossus" in missing_context.value.detail
     read.assert_not_called()
 
+
+def test_host_models_context_does_not_require_optional_library(connected, monkeypatch):
+    from onyx.auth.host_auth import HostSession, host_request
+
+    db, user, _ = connected
+    identity = context.require_session_identity(user.id)
+
+    def no_library(*_args, **_kwargs):
+        pytest.fail("Basic app context must not read Library")
+
+    monkeypatch.setattr(context, "_library_server", no_library)
+    with host_request(HostSession(identity, ACTOR.org_id, "test-only-token")):
+        loaded = context.load_causl_context(
+            db, user, None, CauslSelection(page="models")
+        )
+        assert loaded.envelope.actor == ACTOR
+        assert loaded.envelope.issuer == identity.issuer
+        assert loaded.envelope.context["library"] == {}
+        assert loaded.envelope.context["page"] == "models"
+        with pytest.raises(OnyxError):
+            context.load_causl_context(
+                db,
+                user,
+                ACTOR.model_copy(update={"org_id": "foreign"}),
+                CauslSelection(page="models"),
+            )
+
+
+def test_host_models_context_preserves_persona_denial(connected, monkeypatch):
+    from onyx.auth.host_auth import HostSession, host_request
+
+    db, user, _ = connected
+    monkeypatch.setattr(context, "user_can_access_persona", lambda *_args: False)
+    with host_request(
+        HostSession(
+            context.require_session_identity(user.id), ACTOR.org_id, "test-only-token"
+        )
+    ):
+        with pytest.raises(OnyxError):
+            context.load_causl_context(db, user, None, CauslSelection(page="models"))
+
+
+def test_host_colossus_context_and_identity_need_no_library(connected, monkeypatch):
+    from fastapi import Response
+
+    from onyx.auth.host_auth import HostSession, host_request
+    from onyx.server.query_and_chat.causl.api import workspace_identity
+
+    db, user, _ = connected
+
+    def no_library(*_args, **_kwargs):
+        pytest.fail("Basic app context must not read Library")
+
+    monkeypatch.setattr(context, "_library_server", no_library)
+    with host_request(
+        HostSession(
+            context.require_session_identity(user.id), ACTOR.org_id, "test-only-token"
+        )
+    ):
+        identity = workspace_identity(Response(), user, db)
+        assert identity.actor == ACTOR
+        first = context.load_causl_context(db, user, ACTOR, colossus_selection())
+        second = context.load_causl_context(db, user, ACTOR, colossus_selection(2))
+        assert first.envelope.context["view_hints"]["revision"] == 1
+        assert second.envelope.context["view_hints"]["revision"] == 2
+        assert first.envelope.context["digest"] != second.envelope.context["digest"]
+        assert "library" not in first.envelope.context
+
+
+def test_host_context_cannot_replace_library_record_authorization(
+    connected, monkeypatch
+):
+    from onyx.auth.host_auth import HostSession, host_request
+
+    db, user, _ = connected
+
+    def denied(*_args, **_kwargs):
+        raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+
+    monkeypatch.setattr(context, "_library_server", denied)
+    with host_request(
+        HostSession(
+            context.require_session_identity(user.id), ACTOR.org_id, "test-only-token"
+        )
+    ):
+        with pytest.raises(OnyxError):
+            context.load_causl_context(db, user, ACTOR, SELECTION)

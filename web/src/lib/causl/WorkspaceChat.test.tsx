@@ -1,7 +1,7 @@
 import React from "react";
 import { act, render, screen, waitFor } from "@tests/setup/test-utils";
 import WorkspaceChat from "./WorkspaceChat";
-import { openCauslWorkspace } from "./bridge";
+import { CauslWorkspaceError, openCauslWorkspace } from "./bridge";
 import type { CauslDraft } from "./types";
 
 const mockWorkspace = {
