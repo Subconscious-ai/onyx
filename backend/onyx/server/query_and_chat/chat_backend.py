@@ -839,6 +839,11 @@ def handle_send_chat_message(
     if get_hashed_api_key_from_request(request) or get_hashed_pat_from_request(request):
         chat_message_req.origin = MessageOrigin.API
 
+    # A person can answer a tool server's request for approval only in a browser
+    # stream. A call authenticated by API key or PAT is programmatic: nobody is
+    # there to click a card.
+    interactive = chat_message_req.origin != MessageOrigin.API
+
     # Multi-model streaming path: 2-3 LLMs in parallel (streaming only)
     is_multi_model = (
         chat_message_req.llm_overrides is not None
@@ -861,6 +866,7 @@ def handle_send_chat_message(
                         request.headers
                     ),
                     mcp_headers=chat_message_req.mcp_headers,
+                    interactive=interactive,
                 ):
                     yield get_json_line(obj.model_dump())
             except Exception as e:
@@ -936,6 +942,7 @@ def handle_send_chat_message(
                 mcp_headers=chat_message_req.mcp_headers,
                 additional_context=chat_message_req.additional_context,
                 external_state_container=state_container,
+                interactive=interactive,
             ):
                 yield get_json_line(obj.model_dump())
 

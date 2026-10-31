@@ -279,6 +279,34 @@ describe("packetProcessor", () => {
       expect(result.toolGroupKeys.has("0-0")).toBe(true);
     });
 
+    test("an approval request and its result stay in their tool call's group, in order", () => {
+      const state = createInitialState(1);
+      const packets = [
+        createPacket(PacketType.CUSTOM_TOOL_START, { turn_index: 0 }),
+        createPacket(
+          PacketType.CUSTOM_TOOL_APPROVAL_REQUEST,
+          { turn_index: 0 },
+          { approval_id: "a1" }
+        ),
+        createPacket(
+          PacketType.CUSTOM_TOOL_APPROVAL_RESULT,
+          { turn_index: 0 },
+          { approval_id: "a1", outcome: "approved" }
+        ),
+        createPacket(PacketType.CUSTOM_TOOL_DELTA, { turn_index: 0 }),
+      ];
+      const result = processPackets(state, packets);
+
+      expect(result.toolGroups).toHaveLength(1);
+      expect(result.displayGroupKeys.size).toBe(0);
+      expect(result.toolGroups[0]?.packets.map((p) => p.obj.type)).toEqual([
+        PacketType.CUSTOM_TOOL_START,
+        PacketType.CUSTOM_TOOL_APPROVAL_REQUEST,
+        PacketType.CUSTOM_TOOL_APPROVAL_RESULT,
+        PacketType.CUSTOM_TOOL_DELTA,
+      ]);
+    });
+
     // Parameterized tests for display packet types
     test.each([
       [PacketType.MESSAGE_START, "MESSAGE_START"],

@@ -12,6 +12,7 @@ from typing import Any, Dict, TypeVar
 
 from mcp import ClientSession
 from mcp.client.auth import OAuthClientProvider
+from mcp.client.session import ElicitationFnT
 from mcp.client.sse import sse_client
 from mcp.client.streamable_http import streamablehttp_client  # or use stdio_client
 from mcp.types import (
@@ -128,6 +129,7 @@ def _create_mcp_client_function_runner(
     connection_headers: dict[str, str] | None = None,
     transport: MCPTransport = MCPTransport.STREAMABLE_HTTP,
     auth: OAuthClientProvider | None = None,  # TODO: maybe used this for all auth types
+    elicitation_callback: ElicitationFnT | None = None,
     **kwargs: Any,
 ) -> Callable[[], Coroutine[Any, Any, T]]:
     auth_headers = connection_headers or {}
@@ -165,6 +167,9 @@ def _create_mcp_client_function_runner(
                 read,
                 write,
                 read_timeout_seconds=timedelta(seconds=MCP_TOOL_CALL_TIMEOUT_SECONDS),
+                # Only passed when a caller can show the question to a user; the
+                # session then advertises the elicitation capability.
+                elicitation_callback=elicitation_callback,
             ) as session:
                 return await function(session, **kwargs)
 
@@ -190,10 +195,17 @@ def _call_mcp_client_function_sync(
     connection_headers: dict[str, str] | None = None,
     transport: MCPTransport = MCPTransport.STREAMABLE_HTTP,
     auth: OAuthClientProvider | None = None,
+    elicitation_callback: ElicitationFnT | None = None,
     **kwargs: Any,
 ) -> T:
     run_client_function = _create_mcp_client_function_runner(
-        function, server_url, connection_headers, transport, auth, **kwargs
+        function,
+        server_url,
+        connection_headers,
+        transport,
+        auth,
+        elicitation_callback,
+        **kwargs,
     )
     try:
         return run_async_sync_no_cancel(run_client_function())
@@ -294,6 +306,7 @@ def call_mcp_tool(
     connection_headers: dict[str, str] | None = None,
     transport: MCPTransport = MCPTransport.STREAMABLE_HTTP,
     auth: OAuthClientProvider | None = None,
+    elicitation_callback: ElicitationFnT | None = None,
 ) -> str:
     """Call a specific tool on the MCP server"""
     return _call_mcp_client_function_sync(
@@ -302,6 +315,7 @@ def call_mcp_tool(
         connection_headers,
         transport,
         auth,
+        elicitation_callback,
     )
 
 

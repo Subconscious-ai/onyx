@@ -77,6 +77,7 @@ from onyx.db.tools import (
 )
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
+from onyx.redis.redis_pool import get_redis_client
 from onyx.server.features.mcp.client import (
     discover_mcp_tools,
     log_exception_group,
@@ -92,6 +93,15 @@ from onyx.server.features.mcp.credentials import (
     requires_user_authentication,
     resolve_mcp_credentials,
     user_can_authenticate,
+)
+from onyx.server.features.mcp.elicitation import (
+    ElicitationAlreadyAnswered,
+    ElicitationNotFound,
+    submit_decision,
+)
+from onyx.server.features.mcp.experiment_run import (
+    ExperimentRunStatus,
+    get_experiment_run_status,
 )
 from onyx.server.features.mcp.models import (
     MCPApiKeyResponse,
@@ -628,6 +638,43 @@ async def connect_admin_oauth(
 ) -> MCPUserOAuthConnectResponse:
     """Connect OAuth flow for admin MCP server authentication"""
     return await _connect_oauth(request, db, is_admin=True, user=user)
+
+
+class MCPElicitationAnswer(BaseModel):
+    decision: Literal["approve", "decline"]
+
+
+@router.post("/elicitation/{approval_id}", status_code=204)
+def answer_mcp_elicitation(
+    approval_id: str,
+    answer: MCPElicitationAnswer,
+    user: User = Depends(require_permission(Permission.BASIC_ACCESS)),
+) -> None:
+    """The signed-in user's answer to an MCP server's request for approval.
+
+    Only the user the question was shown to can answer it, and only once.
+    """
+    try:
+        submit_decision(get_redis_client(), approval_id, str(user.id), answer.decision)
+    except ElicitationNotFound as error:
+        raise OnyxError(
+            OnyxErrorCode.NOT_FOUND, "This approval request has expired."
+        ) from error
+    except ElicitationAlreadyAnswered as error:
+        raise OnyxError(
+            OnyxErrorCode.CONFLICT, "This approval request was already answered."
+        ) from error
+
+
+@router.get("/experiment-run/{run_id}", response_model=ExperimentRunStatus)
+def read_experiment_run(
+    run_id: str,
+    chat_session_id: UUID,
+    db: Session = Depends(get_session),
+    user: User = Depends(require_permission(Permission.BASIC_ACCESS)),
+) -> ExperimentRunStatus:
+    """Status of an experiment launched in the caller's own chat session."""
+    return get_experiment_run_status(db, user, chat_session_id, run_id)
 
 
 @router.post("/oauth/connect", response_model=MCPUserOAuthConnectResponse)
