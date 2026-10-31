@@ -1394,6 +1394,8 @@ def test_host_colossus_context_and_identity_need_no_library(connected, monkeypat
     ):
         identity = workspace_identity(Response(), user, db)
         assert identity.actor == ACTOR
+        assert identity.native_user_id == user.id
+        assert identity.shared_context_supported is True
         first = context.load_causl_context(db, user, ACTOR, colossus_selection())
         second = context.load_causl_context(db, user, ACTOR, colossus_selection(2))
         assert first.envelope.context["view_hints"]["revision"] == 1
@@ -1420,3 +1422,45 @@ def test_host_context_cannot_replace_library_record_authorization(
     ):
         with pytest.raises(OnyxError):
             context.load_causl_context(db, user, ACTOR, SELECTION)
+
+
+@pytest.mark.parametrize("denied", [None, "persona", "organization"])
+def test_saved_twenty_source_checks_current_persona_and_library_identity(
+    connected, monkeypatch, denied
+):
+    from fastapi import Response
+
+    from onyx.auth import session_identity
+    from onyx.server.query_and_chat.causl.api import workspace_source_identity
+
+    db, user, _ = connected
+    monkeypatch.setattr(
+        session_identity, "require_session_identity", context.require_session_identity
+    )
+    persona_access = MagicMock(return_value=denied != "persona")
+    monkeypatch.setattr(context, "user_can_access_persona", persona_access)
+    payload = envelope()
+    payload["context"].update(page="workspace", market=None)
+    http_response(monkeypatch, payload)
+    response = Response()
+    if denied:
+        with pytest.raises(OnyxError):
+            workspace_source_identity(
+                response,
+                "foreign" if denied == "organization" else ACTOR.org_id,
+                17,
+                user,
+                db,
+            )
+        return
+    identity = workspace_source_identity(response, ACTOR.org_id, 17, user, db)
+    assert identity == {
+        "nativeUserId": str(user.id),
+        "issuer": "https://auth.example/",
+        "subject": ACTOR.user_id,
+        "orgId": ACTOR.org_id,
+        "personaId": 17,
+        "libraryServerId": 22,
+    }
+    persona_access.assert_called_once_with(db, 17, user)
+    assert response.headers["Cache-Control"] == "private, no-store"

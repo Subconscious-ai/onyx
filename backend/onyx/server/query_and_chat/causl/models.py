@@ -36,6 +36,8 @@ class CauslActor(BaseModel):
 
 
 class CauslIdentityResponse(BaseModel):
+    native_user_id: UUID | None = None
+    shared_context_supported: bool = True
     actor: CauslActor
     issuer: str = Field(min_length=1, max_length=2048)
 

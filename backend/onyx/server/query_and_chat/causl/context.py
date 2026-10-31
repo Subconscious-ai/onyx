@@ -290,8 +290,13 @@ def load_causl_context(
     selection: CauslSelection,
     *,
     start_research: bool = False,
+    persona_id: int | None = None,
 ) -> AuthorizedCauslContext:
     config = configuration()
+    if persona_id is not None:
+        if persona_id <= 0:
+            raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+        config = CauslConfiguration(persona_id, config.library_server_id)
     identity = require_session_identity(user.id)
     if actor is not None and identity.subject != actor.user_id:
         raise OnyxError(
