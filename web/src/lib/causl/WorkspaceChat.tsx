@@ -28,6 +28,8 @@ import AppChrome from "@/layouts/chromes/AppChrome";
 import AppPage from "@/views/AppPage";
 import { installCauslNavigation } from "@/lib/causl/navigation";
 
+import { WorkspaceAiUx } from "@/lib/causl/WorkspaceAiUx";
+
 import { parseCauslIdentity } from "@/lib/causl/colossus";
 
 interface WorkspaceChatProps {
@@ -347,101 +349,106 @@ export default function WorkspaceChat({
   return (
     <ProjectsProvider>
       <VoiceModeProvider>
-        <RootLayout.Root>
-          <AppChrome embedded>
-            <SearchFiltersProvider>
-              <AppPage
-                causlWorkspace={{
-                  draft: draft ?? undefined,
-                  onDraftConsumed: (id) => {
-                    const context = bridge.current?.navigationContext();
-                    if (
-                      draft?.id !== id ||
-                      !context ||
-                      JSON.stringify(context) !== JSON.stringify(draft.context)
-                    )
-                      return;
-                    window.parent.postMessage(
-                      { ...context, kind: "causl:draft-consumed", id },
-                      parentOrigin!
-                    );
-                    setDraft(null);
-                  },
-                  prepareSubmission: async () => {
-                    if (!bridge.current)
-                      throw new Error("Workspace unavailable");
-                    if (pageKind === "colossus") {
-                      refresh.current?.reject(
-                        new Error("Preparation replaced")
-                      );
-                      const id = crypto.randomUUID();
-                      let timer: ReturnType<typeof setTimeout>;
-                      try {
-                        await new Promise<void>((resolve, reject) => {
-                          refresh.current = { id, resolve, reject };
-                          timer = setTimeout(
-                            () =>
-                              reject(
-                                new Error("Current page context unavailable")
-                              ),
-                            10_000
-                          );
-                          window.parent.postMessage(
-                            {
-                              kind: "causl:request-context",
-                              nonce,
-                              requestId: id,
-                            },
-                            parentOrigin!
-                          );
-                        });
-                      } finally {
-                        clearTimeout(timer!);
-                        if (refresh.current?.id === id) refresh.current = null;
-                      }
-                    }
-                    if (!bridge.current) throw new Error("Workspace changed");
-                    const selection = await bridge.current.prepareSubmission();
-                    if (pageKind === "colossus") {
-                      const current = bridge.current?.navigationContext();
-                      if (current)
-                        window.parent.postMessage(
-                          { ...current, kind: "causl:prepared", selection },
-                          parentOrigin!
-                        );
-                    }
-                    if (!standalone.current) return selection;
-                    const context = bridge.current.navigationContext();
-                    if (!context) throw new Error("Workspace changed");
-                    // Verify the current native session and live Library membership before reading local content.
-                    try {
-                      await openCauslWorkspace(
-                        context,
-                        new AbortController().signal
-                      );
-                    } catch (error) {
+        <WorkspaceAiUx enabled={pageKind === "colossus"}>
+          <RootLayout.Root>
+            <AppChrome embedded>
+              <SearchFiltersProvider>
+                <AppPage
+                  causlWorkspace={{
+                    draft: draft ?? undefined,
+                    onDraftConsumed: (id) => {
+                      const context = bridge.current?.navigationContext();
+                      if (
+                        draft?.id !== id ||
+                        !context ||
+                        JSON.stringify(context) !==
+                          JSON.stringify(draft.context)
+                      )
+                        return;
                       window.parent.postMessage(
-                        { kind: "causl:unavailable", nonce },
+                        { ...context, kind: "causl:draft-consumed", id },
                         parentOrigin!
                       );
-                      throw error;
-                    }
-                    const modelPage = await captureModelPage(
-                      parentOrigin!,
-                      nonce!
-                    );
-                    if (
-                      !context ||
-                      bridge.current?.navigationContext() !== context
-                    )
-                      throw new Error("Workspace changed");
-                    return { ...selection, modelPage };
-                  },
-                }}
-              />
-            </SearchFiltersProvider>
-          </AppChrome>
-        </RootLayout.Root>
+                      setDraft(null);
+                    },
+                    prepareSubmission: async () => {
+                      if (!bridge.current)
+                        throw new Error("Workspace unavailable");
+                      if (pageKind === "colossus") {
+                        refresh.current?.reject(
+                          new Error("Preparation replaced")
+                        );
+                        const id = crypto.randomUUID();
+                        let timer: ReturnType<typeof setTimeout>;
+                        try {
+                          await new Promise<void>((resolve, reject) => {
+                            refresh.current = { id, resolve, reject };
+                            timer = setTimeout(
+                              () =>
+                                reject(
+                                  new Error("Current page context unavailable")
+                                ),
+                              10_000
+                            );
+                            window.parent.postMessage(
+                              {
+                                kind: "causl:request-context",
+                                nonce,
+                                requestId: id,
+                              },
+                              parentOrigin!
+                            );
+                          });
+                        } finally {
+                          clearTimeout(timer!);
+                          if (refresh.current?.id === id)
+                            refresh.current = null;
+                        }
+                      }
+                      if (!bridge.current) throw new Error("Workspace changed");
+                      const selection =
+                        await bridge.current.prepareSubmission();
+                      if (pageKind === "colossus") {
+                        const current = bridge.current?.navigationContext();
+                        if (current)
+                          window.parent.postMessage(
+                            { ...current, kind: "causl:prepared", selection },
+                            parentOrigin!
+                          );
+                      }
+                      if (!standalone.current) return selection;
+                      const context = bridge.current.navigationContext();
+                      if (!context) throw new Error("Workspace changed");
+                      // Verify the current native session and live Library membership before reading local content.
+                      try {
+                        await openCauslWorkspace(
+                          context,
+                          new AbortController().signal
+                        );
+                      } catch (error) {
+                        window.parent.postMessage(
+                          { kind: "causl:unavailable", nonce },
+                          parentOrigin!
+                        );
+                        throw error;
+                      }
+                      const modelPage = await captureModelPage(
+                        parentOrigin!,
+                        nonce!
+                      );
+                      if (
+                        !context ||
+                        bridge.current?.navigationContext() !== context
+                      )
+                        throw new Error("Workspace changed");
+                      return { ...selection, modelPage };
+                    },
+                  }}
+                />
+              </SearchFiltersProvider>
+            </AppChrome>
+          </RootLayout.Root>
+        </WorkspaceAiUx>
       </VoiceModeProvider>
     </ProjectsProvider>
   );

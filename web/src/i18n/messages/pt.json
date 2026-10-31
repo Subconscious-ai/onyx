@@ -14010,5 +14010,12 @@
       "contextUpdating": "Concluindo a pesquisa da empresa…",
       "email": "A pesquisa começa com {email}"
     }
+  },
+  "workspaceAi": {
+    "tools": "Ferramentas",
+    "stop": "Parar",
+    "sources": "{count, plural, one {# fonte} other {# fontes}}",
+    "preview": "Prévia da fonte: {title}",
+    "openSource": "Abrir fonte"
   }
 }

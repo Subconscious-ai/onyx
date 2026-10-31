@@ -14010,5 +14010,12 @@
       "contextUpdating": "Finishing company research…",
       "email": "يبدأ البحث من {email}"
     }
+  },
+  "workspaceAi": {
+    "tools": "الأدوات",
+    "stop": "إيقاف",
+    "sources": "{count, plural, one {# مصدر} other {# مصادر}}",
+    "preview": "معاينة المصدر: {title}",
+    "openSource": "فتح المصدر"
   }
 }

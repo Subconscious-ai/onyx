@@ -1,5 +1,6 @@
 "use client";
 
+import { useWorkspaceAiUx } from "@/lib/causl/WorkspaceAiUx";
 import React, { useMemo, useCallback } from "react";
 import { StopReason } from "@/app/app/services/streamingModels";
 import { FullChatState, RenderType } from "../interfaces";
@@ -159,7 +160,12 @@ export const AgentTimeline = React.memo(function AgentTimeline({
   );
 
   const { isExpanded, handleToggle, parallelActiveTab, setParallelActiveTab } =
-    useTimelineExpansion(stopPacketSeen, lastTurnGroup, hasDisplayContent);
+    useTimelineExpansion(
+      stopPacketSeen,
+      lastTurnGroup,
+      hasDisplayContent,
+      useWorkspaceAiUx()
+    );
 
   // Streaming duration tracking
   const streamingStartTime = useStreamingStartTime();
