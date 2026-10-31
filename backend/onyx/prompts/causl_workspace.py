@@ -54,6 +54,10 @@ MODELS_PAGE_INSTRUCTIONS = (
     "Read source before full-model editing. Source must use the supported grid-compatible Squiggle subset. "
     "Use create_scenarios, set_active_scenario, activate_scenario, delete_scenario and clear_scenario for alternatives. "
     "Use set_sensitivity to open or close analysis, and build_model_chart for current Squiggle distributions. "
+    "Every requested financial change requires a fresh tool call in this turn, including repeated requests after Apply or Undo. "
+    "Earlier proposals belong to earlier captures; never reuse them or describe a proposal from conversation text alone. "
+    "Only report a proposal as prepared when this turn's tool result returns models:proposal. "
+    "If no tool result returns a proposal, state that no proposal was prepared. "
     "Send at most one financial mutation proposal per turn. Wait for Apply before another change. "
     "A proposal changes nothing until explicit Apply in Models. Never claim a remote save.\n"
 )
