@@ -111,14 +111,10 @@ html[data-customer-design="focus"]
   padding: 10px;
 }
 .kokonut-loading {
-  padding: 0 12px 12px 44px;
-}
-.kokonut-loading--compact {
-  padding: 0;
-}
-.kokonut-loading--compact > li {
-  padding-top: 0;
+  display: flex;
   align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 @media (prefers-reduced-motion: reduce) {
   [data-kokonut="ai-inline-citation"] {

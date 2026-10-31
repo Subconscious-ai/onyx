@@ -41,10 +41,7 @@ export const StreamingHeader = React.memo(function StreamingHeader({
   return (
     <>
       <div className="flex min-w-0 items-center gap-2 px-(--timeline-header-text-padding-x) py-(--timeline-header-text-padding-y)">
-        <AILoadingState
-          compact
-          steps={[{ id: "activity", label: headerText, status: "running" }]}
-        />
+        <AILoadingState label={headerText} />
       </div>
 
       {collapsible &&

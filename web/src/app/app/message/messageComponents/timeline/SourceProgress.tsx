@@ -33,7 +33,14 @@ export default function SourceProgress({
         displayName={t("sourceCount", { count: unique.length })}
         sources={unique.map(documentToSourceInfo)}
         onSourceClick={
-          onOpen ? () => openDocument(unique[0]!, onOpen) : undefined
+          onOpen
+            ? (source) => {
+                const document = unique.find(
+                  (item) => item.document_id === source?.id
+                );
+                if (document) openDocument(document, onOpen);
+              }
+            : undefined
         }
       />
     </div>

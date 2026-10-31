@@ -2,7 +2,7 @@
 
 import React, { memo } from "react";
 import Text from "@/refresh-components/texts/Text";
-import { Button } from "@opal/components";
+import { Button, Text as OpalText } from "@opal/components";
 import {
   SvgArrowLeft,
   SvgArrowRight,
@@ -144,9 +144,11 @@ const SourceTagDetailsCardInner = ({
               {currentSource.title}
             </Text>
             {currentSource.sourceUrl && (
-              <Text secondaryBody text02 className="block truncate">
-                {currentSource.sourceUrl}
-              </Text>
+              <div className="truncate">
+                <OpalText font="secondary-body" color="text-02">
+                  {currentSource.sourceUrl}
+                </OpalText>
+              </div>
             )}
           </div>
         </div>

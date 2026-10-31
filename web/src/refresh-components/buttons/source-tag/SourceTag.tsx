@@ -277,8 +277,8 @@ export interface SourceTagProps {
   /** Array of sources for navigation in details card */
   sources: SourceInfo[];
 
-  /** Callback when a source is clicked in the details card */
-  onSourceClick?: () => void;
+  /** Callback with the source currently displayed in the details card */
+  onSourceClick?: (source: SourceInfo | undefined) => void;
 
   /** Whether to show the details card on hover (defaults to true) */
   showDetailsCard?: boolean;
@@ -419,12 +419,9 @@ const SourceTagInner = ({
     setCurrentIndex((prev) => Math.min(sources.length - 1, prev + 1));
   }, [sources.length]);
 
-  // Reset to first source when tooltip closes
+  // Keep the preview selection when focus returns to the source action.
   const handleOpenChange = useCallback((open: boolean) => {
     setIsOpen(open);
-    if (!open) {
-      setCurrentIndex(0);
-    }
   }, []);
 
   const handleClick = useCallback(() => {
@@ -432,8 +429,8 @@ const SourceTagInner = ({
     if (isQuery && !expanded && isTruncated) {
       setExpanded(true);
     }
-    onSourceClick?.();
-  }, [isQuery, expanded, isTruncated, onSourceClick]);
+    onSourceClick?.(sources[currentIndex]);
+  }, [isQuery, expanded, isTruncated, onSourceClick, sources, currentIndex]);
 
   const buttonContent = (
     <button

@@ -352,10 +352,7 @@ export const AgentTimeline = React.memo(function AgentTimeline({
         state={uiState}
         headerContent={
           <div className="flex w-full h-full items-center ps-(--timeline-header-padding-left) pe-(--timeline-header-padding-right)">
-            <AILoadingState
-              compact
-              steps={[{ id: "activity", label: headerText, status: "running" }]}
-            />
+            <AILoadingState label={headerText} />
           </div>
         }
       />
