@@ -3,11 +3,12 @@ import { render, screen, setupUser } from "@tests/setup/test-utils";
 import { MemoizedLink } from "@/app/app/message/MemoizedTextComponents";
 import { WorkspaceAiUx } from "@/lib/causl/WorkspaceAiUx";
 import { ValidSources } from "@/lib/types";
-import type { OnyxDocument } from "@/lib/search/interfaces";
+import type { LoadedOnyxDocument } from "@/lib/search/interfaces";
 
 test("native citation previews retain the full source URL and return keyboard focus", async () => {
   const user = setupUser();
-  const document: OnyxDocument = {
+  const document = {
+    icon: () => null,
     document_id: "saved-evidence",
     semantic_identifier: "Saved evidence",
     link: "https://data.worldbank.org/indicator/SP.POP.TOTL?locations=US",
@@ -21,7 +22,7 @@ test("native citation previews retain the full source URL and return keyboard fo
     metadata: {},
     updated_at: null,
     is_internet: true,
-  };
+  } satisfies LoadedOnyxDocument;
   render(<MemoizedLink document={document}>[1]</MemoizedLink>);
   await user.tab();
   await user.keyboard("{Enter}");
