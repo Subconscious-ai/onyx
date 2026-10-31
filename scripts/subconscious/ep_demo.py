@@ -11,7 +11,8 @@ Usage::
     python scripts/subconscious/ep_demo.py --base http://localhost:8088 \
         --persona 9 --demo quickstart --out ~/ep-demos
 
-Credentials come from ONYX_DEMO_EMAIL and ONYX_DEMO_PASSWORD. Never print them.
+Sign in with a cookie jar (--cookies), ONYX_API_KEY, or ONYX_DEMO_EMAIL and
+ONYX_DEMO_PASSWORD. Never print any of them.
 """
 
 from __future__ import annotations
@@ -140,6 +141,17 @@ class OnyxChat:
         self.base = base.rstrip("/")
         self.http = session or requests.Session()
 
+    def use_api_key(self, api_key: str) -> None:
+        self.http.headers["Authorization"] = f"Bearer {api_key}"
+
+    def use_cookies(self, path: str) -> None:
+        import http.cookiejar
+
+        jar = http.cookiejar.MozillaCookieJar(path)
+        jar.load(ignore_discard=True, ignore_expires=True)
+        for cookie in jar:
+            self.http.cookies.set(cookie.name, cookie.value, domain=cookie.domain)
+
     def login(self, email: str, password: str) -> None:
         response = self.http.post(
             f"{self.base}/auth/login",
@@ -232,16 +244,27 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--persona", type=int, required=True)
     parser.add_argument("--demo", choices=sorted(DEMOS), action="append", required=True)
     parser.add_argument("--out", type=Path, default=Path.home() / "ep-demos")
+    parser.add_argument(
+        "--cookies", help="Mozilla cookie jar from a signed-in browser session"
+    )
     args = parser.parse_args(argv)
+    chat = OnyxChat(args.base)
     email, password = (
         os.environ.get("ONYX_DEMO_EMAIL"),
         os.environ.get("ONYX_DEMO_PASSWORD"),
     )
-    if not email or not password:
-        print("Set ONYX_DEMO_EMAIL and ONYX_DEMO_PASSWORD.", file=sys.stderr)
+    if args.cookies:
+        chat.use_cookies(args.cookies)
+    elif os.environ.get("ONYX_API_KEY"):
+        chat.use_api_key(os.environ["ONYX_API_KEY"])
+    elif email and password:
+        chat.login(email, password)
+    else:
+        print(
+            "Give --cookies, or set ONYX_API_KEY, or ONYX_DEMO_EMAIL and ONYX_DEMO_PASSWORD.",
+            file=sys.stderr,
+        )
         return 2
-    chat = OnyxChat(args.base)
-    chat.login(email, password)
     for name in args.demo:
         folder = run_demo(chat, args.persona, name, args.out)
         summary = json.loads((folder / "transcript.json").read_text())
