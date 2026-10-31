@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import FactCitation from "./FactCitation";
+import FactCitation from "@/sections/executive/FactCitation";
 import AIInlineCitation from "@/sections/customer/AIInlineCitation";
 
 jest.mock("next-intl", () => ({ useTranslations: () => (key: string) => key }));

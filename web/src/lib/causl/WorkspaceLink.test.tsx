@@ -44,6 +44,11 @@ test("preserves formatted Markdown labels in source chips and previews", async (
       </MemoizedLink>
     </WorkspaceAiUx>
   );
+  expect(
+    screen.getByRole("button", {
+      name: "Preview source: World Bank population",
+    })
+  ).toHaveTextContent("World Bank population");
   await user.click(
     screen.getByRole("button", {
       name: "Preview source: World Bank population",

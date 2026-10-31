@@ -20,6 +20,7 @@ import "@/sections/customer/ai-elements.css";
 interface AIInlineCitationProps {
   source: Pick<SourceInfo, "title" | "sourceUrl" | "description">;
   label: string | RichStr;
+  triggerLabel?: string | RichStr;
   previewLabel?: string;
   openLabel?: string;
   quote?: string | null;
@@ -29,6 +30,7 @@ interface AIInlineCitationProps {
 export default function AIInlineCitation({
   source,
   label,
+  triggerLabel,
   previewLabel,
   openLabel,
   quote,
@@ -113,7 +115,7 @@ export default function AIInlineCitation({
               if (event.pointerType === "mouse") hide();
             }}
           >
-            {site}
+            {triggerLabel ?? site}
           </Button>
         </Popover.Anchor>
         <Popover.Content

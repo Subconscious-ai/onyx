@@ -37,6 +37,7 @@ export function WorkspaceCitation({
       <AIInlineCitation
         source={{ ...source, sourceUrl: url }}
         label={label}
+        triggerLabel={label}
         previewLabel={t("preview", { title: source.title })}
         openLabel={t("openSource")}
         onOpen={onOpen}
