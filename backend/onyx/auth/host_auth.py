@@ -164,10 +164,23 @@ def host_session_for(user_id: UUID) -> HostSession | None:
     return session
 
 
-def require_host_subscription_provider(provider: str) -> None:
+def require_host_subscription_provider(
+    provider: str,
+    api_key: str | None = None,
+    api_base: str | None = None,
+    has_provider_overrides: bool = False,
+) -> bool:
+    """Require subscription billing; return whether native Claude must be pinned."""
     session = _host_session.get()
     if session is None or provider == "chatgpt":
-        return
+        return False
+    if (
+        provider == "anthropic"
+        and bool(api_key and api_key.startswith("sk-ant-oat"))
+        and api_base in (None, "https://api.anthropic.com")
+        and not has_provider_overrides
+    ):
+        return True
     # Explicit local QA approval expires and never applies to other identities.
     try:
         qa_until = int(os.environ.get("CAUSL_KB_QA_BEDROCK_UNTIL", "0"))
@@ -180,10 +193,10 @@ def require_host_subscription_provider(provider: str) -> None:
         and session.organization_id == os.environ.get("CAUSL_KB_QA_BEDROCK_ORG_ID")
         and time.time() < qa_until
     ):
-        return
+        return False
     raise OnyxError(
         OnyxErrorCode.SERVICE_UNAVAILABLE,
-        "Application chat requires the configured ChatGPT subscription provider. "
+        "Application chat requires a configured ChatGPT or Claude subscription provider. "
         "Paid provider fallback is disabled.",
     )
 
