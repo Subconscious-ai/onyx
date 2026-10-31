@@ -135,7 +135,14 @@ export async function proxy(request: NextRequest) {
   // Host-only OAuth cookies must originate on the configured callback host.
   if (pathname === "/auth/login") {
     const loginUrl = new URL("/auth/login", getDomain(request));
-    if (loginUrl.origin !== request.nextUrl.origin) {
+    // Next.js can report the internal HTTP origin after TLS termination.
+    // Only the exact configured Host skips canonicalization; forwarded hosts
+    // never select the callback destination.
+    const canonicalHost =
+      request.headers.get("host") === loginUrl.host &&
+      request.headers.get("x-forwarded-proto") ===
+        loginUrl.protocol.slice(0, -1);
+    if (loginUrl.origin !== request.nextUrl.origin && !canonicalHost) {
       loginUrl.search = request.nextUrl.search;
       return withSecurityHeaders(NextResponse.redirect(loginUrl), pathname);
     }

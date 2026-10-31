@@ -1,5 +1,6 @@
 """Read current workspace context through native per-user Library OAuth."""
 
+import hashlib
 import json
 import os
 import re
@@ -298,18 +299,42 @@ def load_causl_context(
         )
     server = _library_server(db, user, config)
     url = context_url(server.server_url)
+    authority_selection = (
+        CauslSelection(page="workspace") if selection.page == "colossus" else selection
+    )
     envelope = _read(
         url,
         _headers(db, user, server, actor, identity.issuer),
-        selection,
+        authority_selection,
         start_research=start_research,
     )
-    _validate(envelope, actor or envelope.actor, selection)
+    _validate(envelope, actor or envelope.actor, authority_selection)
     if envelope.issuer != identity.issuer or envelope.actor.user_id != identity.subject:
         raise OnyxError(
             OnyxErrorCode.UNAUTHORIZED,
             "Your Library account does not match your Onyx sign-in.",
         )
+    if selection.page == "colossus":
+        # Keep browser view state separate from server-verified business memory.
+        # Native tools still enforce authorization for every additional service read.
+        assert selection.snapshot is not None  # Validated by CauslSelection.
+        snapshot = selection.snapshot.model_dump(mode="json")
+        envelope.context = {
+            "version": 2,
+            "page": "colossus",
+            "scopeKey": hashlib.sha256(
+                (envelope.context["scopeKey"] + ":colossus:v1").encode()
+            ).hexdigest(),
+            "digest": hashlib.sha256(
+                json.dumps(
+                    [envelope.context["digest"], snapshot],
+                    ensure_ascii=False,
+                    sort_keys=True,
+                ).encode()
+            ).hexdigest(),
+            "view_hints": snapshot,
+            "authority": "Identity and organization verified through native per-user Library OAuth. Page data is browser view state, not accepted facts.",
+        }
     return AuthorizedCauslContext(config, envelope)
 
 

@@ -12,14 +12,33 @@ from onyx.db.enums import Permission
 from onyx.db.models import User
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
-from onyx.server.query_and_chat.causl.context import load_causl_context
+from onyx.server.query_and_chat.causl.context import (
+    load_causl_context,
+    load_interview_context,
+)
 from onyx.server.query_and_chat.causl.models import (
+    CauslIdentityResponse,
+    CauslSelection,
     CauslWorkspaceRequest,
     CauslWorkspaceResponse,
 )
 from onyx.server.query_and_chat.causl.turn import read_workspace_context
 
 router = APIRouter()
+
+
+@router.get("/causl-identity")
+def workspace_identity(
+    response: Response,
+    user: User = Depends(require_permission(Permission.WRITE_CHAT)),
+    db_session: Session = Depends(get_session),
+) -> CauslIdentityResponse:
+    """Bootstrap a public geography parent from the existing verified native grant."""
+    loaded = load_interview_context(db_session, user)
+    response.headers["Cache-Control"] = "private, no-store"
+    return CauslIdentityResponse(
+        actor=loaded.envelope.actor, issuer=loaded.envelope.issuer
+    )
 
 
 @router.get("/causl-memory")
@@ -37,11 +56,18 @@ def read_memory(
         raise OnyxError(OnyxErrorCode.NOT_FOUND) from None
     if chat.user_id != user.id:
         raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
-    _, envelope = read_workspace_context(db_session, user, chat, None)
+    binding, envelope = read_workspace_context(db_session, user, chat, None)
     if envelope is None:
         raise OnyxError(
             OnyxErrorCode.NOT_FOUND, "Shared market memory is not connected."
         )
+    if binding is not None and binding.mode == "colossus":
+        loaded = load_causl_context(
+            db_session, user, binding.actor, CauslSelection(page="workspace")
+        )
+        if loaded.envelope.issuer != binding.issuer:
+            raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+        envelope = loaded.envelope
     response.headers["Cache-Control"] = "private, no-store"
     return {
         "library": envelope.context["library"],

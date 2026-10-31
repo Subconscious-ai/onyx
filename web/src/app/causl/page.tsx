@@ -41,6 +41,7 @@ export default async function CauslPage({
       libraryServerId={
         Number.isSafeInteger(libraryId) && libraryId > 0 ? libraryId : null
       }
+      pageKind={query.pageKind === "colossus" ? "colossus" : "kb"}
     />
   );
 }
