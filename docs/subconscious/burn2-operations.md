@@ -5,10 +5,57 @@ Burn 2.0 interviews an executive for customer behavior transitions and measurabl
 ## Ownership and persistence
 
 - Native Onyx owns chat authentication, saved conversations, streaming, tools and AWS inference. Ordinary turns have no second extraction call.
-- Automatic background preparation after a completed answer reads the owned native Postgres conversation, extracts a version-two brief, validates source quotes and identifiers, and saves the brief suffix in the latest assistant row. Original executive messages and spoken answers are preserved. A concurrent edit invalidates the save. A newer executive answer makes the brief stale.
+- Preparation reads the owned native Postgres conversation and validates a version-two brief before saving the latest assistant row's suffix. Original executive messages and spoken answers remain unchanged. A concurrent edit invalidates the save. A newer executive answer makes the brief stale.
+- Background preparation requires `BURN2_BACKGROUND_PREPARATION=true`; an unset value disables scheduling. The native browser polls saved status and requests preparation when background mode is off. See [scheduler](../../backend/onyx/server/query_and_chat/burn2/background.py) and [browser recovery](../../web/src/lib/executive/hooks.ts).
 - **Open business model** transfers a reviewed conversation through an origin/nonce-bound browser handoff, with a downloaded JSON fallback. Onyx does not hold a causl-kb administrator credential.
 - causl-kb derives organization authority from the authenticated session. The private model and individually selected supported journey states/transitions commit through the existing tenant transaction and ontology safe door. Draft relationships and incomplete OKRs do not become accepted facts.
 - Native Guesstimate supplies editing, unit checks and calculation. Unknown values remain empty. An executable symbolic structure is not a validated forecast or a measured causal effect.
+
+## Private API and contracts
+
+The [Burn router](../../backend/onyx/server/query_and_chat/burn2/api.py) implements the following private application operations.
+Call the operations through the frontend's `/api/chat` path with the existing native session.
+Each operation requires `WRITE_CHAT`. Burn operations return 404 unless `BURN2_ENABLED=true`.
+Brief operations also require an owned, saved executive conversation and access to the configured persona.
+
+| Operation | Input | Result or limit |
+| --- | --- | --- |
+| `POST /api/chat/executive-profile` | No body reuses retained preparation. Explicit refresh requires `operation_id`, `checked_at`, and `revision`. | Returns profile and research status. Reuse the operation UUID on retries; a stale receipt or revision returns 409. |
+| `PATCH /api/chat/executive-profile` | Current `revision` and `fields`. | Saves explicit corrections. Fields allow name, role, company, industry, website, product, and customer_segment; each value permits at most 500 characters. Conflicting revisions return 409. |
+| `GET /api/chat/executive-research` | Native caller identity. | Returns public research state. `needs_company`, `pending`, or `unavailable` does not prove completed research. |
+| `GET /api/chat/executive-brief?chat_id=<uuid>` | Owned chat UUID. | Reads current saved status; polling does not extract a new brief. `saved: false` can include background scheduling status. |
+| `POST /api/chat/executive-brief` | JSON containing only `chat_id`. | Returns `message_id`, `saved`, and `message` after preparation and configured Library delivery. The message contains the `<interview-brief>` suffix. |
+
+Brief preparation can call the configured Bedrock model and enforces existing usage limits.
+An active answer, concurrent preparation, or changed transcript returns 409; retry against the current saved conversation.
+Invalid preparation configuration returns 503. Extraction or validation failure returns 502 and preserves the saved conversation.
+A failed Library delivery does not prove that the local brief suffix was never saved.
+Read saved status again; a Library-bound interview requires the delivered transcript digest to match.
+Neither `saved: true` nor a research receipt proves accepted facts or a saved causl-kb model.
+The paired model still needs its own authorized save and reopen proof.
+See [Library delivery](../../backend/onyx/server/query_and_chat/causl/context.py) and [profile input types](../../backend/onyx/server/query_and_chat/burn2/models.py).
+
+### Schema visibility and regeneration
+
+The main API disables `/openapi.json`, `/docs`, and `/redoc` by default.
+[`ENABLE_PUBLIC_DOCS`](../../backend/onyx/configs/app_configs.py) controls route registration in [the application factory](../../backend/onyx/main.py).
+Enabling interactive docs does not filter the full schema to public operations.
+Keep private Burn operations outside public reference exports.
+The existing [exporter](../../backend/scripts/onyx_openapi_schema.py) retains tags with `--tagged-for-docs`.
+The [public transformer](../../backend/scripts/transform_openapi_for_docs.py) includes only operations tagged `public`.
+Use the tagged artifact as transformer input; the default client export removes tags.
+Prose changes alone do not change the generated API schema.
+
+The brief contract comes from [the frontend validator](../../web/src/lib/executive/brief.ts).
+With web dependencies installed, use repository-pinned Bun from the root after changing the contract:
+
+```bash
+bun scripts/subconscious/export_brief_schema.ts
+bun scripts/subconscious/export_brief_schema.ts --check
+```
+
+The generator writes `backend/onyx/server/query_and_chat/burn2/brief.schema.json`.
+Run the checks below after regeneration. Keep operation visibility and MCP membership unchanged.
 
 ## Runtime and CI recovery
 
@@ -108,7 +155,7 @@ not evidence that every provider or malformed-extraction failure will recover.
 
 Historically, the #13 candidate scheduled Jerry on the **fourth nonempty executive answer**, replacing the previous fifth-answer rule. Current guidance makes humor optional and prioritizes discovery or the model handoff. A short `Jerry:` punchline targets a volunteered business boast or contradiction. Opt-out and distress suppress humor. Jokes never become accepted evidence. Backend image and native persona reminder must both be released before hosted timing changes; a Vercel frontend build alone cannot change server guidance.
 
-1. Open `/app/executive` and select Burn 2.0. State a product, business objective, target, deadline and known customer decisions. Mark unavailable operating values unknown.
+1. Open `/app/executive`. The route selects an accessible Burn agent and redirects to native chat. If no agent is available, check workspace access and agent configuration. State a product, business objective, target, deadline and known customer decisions. Mark unavailable operating values unknown.
 2. Correct a target or state an unknown answer. Verify that the interview incorporates the correction without repeating the same question or inventing a baseline.
 3. Select **OKRs & model**. Reload the conversation. Verify the source labels, goal, deadline, customer states, proposed transitions and material gaps.
 4. Select **Open business model**. Sign into causl-kb, choose the organization market and review the imported brief. The downloaded file supports an explicit import if browser handoff is unavailable.
@@ -119,7 +166,7 @@ Historically, the #13 candidate scheduled Jerry on the **fourth nonempty executi
 Run deterministic checks with the existing backend validator dependency installed:
 
 ```bash
-PYTHONPATH=backend:scripts/subconscious python3 -m unittest test_profile_context test_eval_interview test_structured_brief test_requested_tool
+PYTHONPATH=backend:scripts/subconscious python3 -m unittest test_profile_context test_eval_interview test_structured_brief test_requested_tool test_research_startup test_adversarial_uat test_interviewer_comparison
 ```
 
 The scoped `Burn interview proof` workflow uses GitHub-hosted Ubuntu without model credentials, under explicit September 11 approval. The five-minute job is an exception to the workspace AWS default: the public fork cannot access the private-only runner group. Shared AWS runner security remains unchanged. Deterministic checks protect source validation and turn guidance. The hosted evaluator detects missing fourth-answer humor, fabricated unknowns, stale targets, unsuccessful preparation, transcript rewrites and optimistic save receipts. Generative joke quality still requires reviewing actual answers.

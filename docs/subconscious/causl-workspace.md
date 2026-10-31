@@ -74,7 +74,7 @@ exactly one saved human message, a real saved reply, model save and independent 
 One prepared answer took 65.489 seconds after login. Calculation matched 550 baseline and
 700 target contracts. A fresh empty chat retrieved the same accepted fact/source through
 its actual Library tool in 2.074 seconds; model-context readback took 0.239 seconds.
-Agent-dev still runs these tested pins. Source integration and CI do not update that runtime.
+These pins describe that dated test, not the current runtime. Source integration and CI do not update the serving runtime.
 Fresh PDL/research, realistic executive response time and full six-case timing remain unproven.
 
 October 18 agent-dev QA used Onyx `f10a31555b` and KB `a884ab3`. A standard member saved
@@ -138,7 +138,8 @@ Native CookieTransport currently defaults to `SameSite=Lax`.
 A KB page on `www.causl.io` cannot reuse that cookie in an iframe on a different site,
 even when both applications use the same Auth0 tenant.
 A proposed deployment pair is `www.causl.io` and `chat.causl.io`.
-The second hostname is a proposal; this change does not register or deploy it.
+This pairing describes the original proposal, not current DNS or deployment state.
+Verify the serving hostname and callback before configuring a deployment.
 Use HTTPS for both. Configure the existing Onyx frontend/backend `WEB_DOMAIN` and
 Auth0 callback for the reviewed native hostname. Keep the same verified issuer.
 A reverse proxy or approved sibling domain must preserve the native API and cookie paths.
