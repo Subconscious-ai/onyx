@@ -197,6 +197,36 @@ test.describe("LLM Runtime Selection", () => {
     }
   });
 
+  test("chat waits for the agent provider list before accepting input", async ({
+    page,
+  }) => {
+    let releaseProviders!: () => void;
+    const providersReady = new Promise<void>((resolve) => {
+      releaseProviders = resolve;
+    });
+    let providerRequestStarted!: () => void;
+    const providerRequest = new Promise<void>((resolve) => {
+      providerRequestStarted = resolve;
+    });
+    await page.route("**/api/llm/persona/*/providers", async (route) => {
+      providerRequestStarted();
+      await providersReady;
+      await route.continue();
+    });
+
+    try {
+      await page.goto("/app");
+      await providerRequest;
+      const input = page.locator("#onyx-chat-input-textbox");
+      await expect(input).toBeVisible();
+      await expect(input).toHaveAttribute("contenteditable", "false");
+      releaseProviders();
+      await expect(input).toHaveAttribute("contenteditable", "true");
+    } finally {
+      releaseProviders();
+    }
+  });
+
   test("model selection persists across refresh and subsequent messages in the same chat", async ({
     page,
   }, testInfo) => {

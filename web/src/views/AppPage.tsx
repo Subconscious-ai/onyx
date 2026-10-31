@@ -1189,6 +1189,7 @@ export default function AppPage({
                           // since LLM providers are already configured and the user can chat.
                           disabled={
                             isLoadingAgents ||
+                            llmManager.isLoadingProviders ||
                             !activeAgent ||
                             workspacePreparing ||
                             interviewLibrary.preparing ||
