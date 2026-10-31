@@ -9,8 +9,8 @@ import {
   createCauslBridge,
   openCauslWorkspace,
   CauslWorkspaceError,
-} from "./bridge";
-import type { CauslContextMessage, CauslDraft, CauslWorkspace } from "./types";
+} from "@/lib/causl/bridge";
+import type { CauslContextMessage, CauslDraft, CauslWorkspace } from "@/lib/causl/types";
 
 import {
   getMCPUserOAuthNavigationUrl,

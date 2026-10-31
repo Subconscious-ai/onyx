@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import {
   createHostTokenProvider,
   installHostAuthentication,
-} from "./host-auth";
+} from "@/lib/causl/host-auth";
 
 interface HostAuthShellProps {
   children: React.ReactNode;

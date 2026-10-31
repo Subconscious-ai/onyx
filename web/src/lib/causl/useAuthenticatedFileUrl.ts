@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { isHostAuthenticatedWorkspace } from "./host-auth";
+import { isHostAuthenticatedWorkspace } from "@/lib/causl/host-auth";
 
 /** Image/anchor browser requests cannot set the host bearer header themselves. */
 export function useAuthenticatedFileUrl(

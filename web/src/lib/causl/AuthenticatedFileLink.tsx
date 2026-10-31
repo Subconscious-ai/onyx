@@ -1,4 +1,4 @@
-import { useAuthenticatedFileUrl } from "./useAuthenticatedFileUrl";
+import { useAuthenticatedFileUrl } from "@/lib/causl/useAuthenticatedFileUrl";
 
 interface AuthenticatedFileLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   href: string;
