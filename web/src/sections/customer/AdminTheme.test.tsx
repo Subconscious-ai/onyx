@@ -22,7 +22,6 @@ jest.mock("@/providers/UserProvider", () => ({
 jest.mock("@/lib/settings/hooks", () => ({
   useSettings: () => ({ vectorDbEnabled: true, isLoading: false }),
 }));
-jest.mock("@/lib/app/hooks", () => ({ useAdminDocumentTitle: () => {} }));
 jest.mock("@/hooks/useScreenSize", () => ({
   __esModule: true,
   default: () => ({ isMobile: false }),

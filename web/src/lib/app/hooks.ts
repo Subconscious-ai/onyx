@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useAppPosition } from "@/lib/position/hooks";
 import { useSettings } from "@/lib/settings/hooks";
@@ -8,6 +8,19 @@ import useChatSessions from "@/hooks/useChatSessions";
 import { useCurrentSessionPersonaId } from "@/app/app/stores/useChatSessionStore";
 import { useActiveAgent, useAgents } from "@/lib/agents/hooks";
 import { SEARCH_TOOL_ID, WEB_SEARCH_TOOL_ID } from "@/lib/tools/constants";
+import "@/sections/customer/focus.css";
+
+export function useFocusTheme(enabled = true): void {
+  // The document boundary also themes native dialogs rendered in body portals.
+  useEffect(() => {
+    if (!enabled) return;
+    const root = document.documentElement;
+    root.dataset.customerDesign = "focus";
+    return () => {
+      delete root.dataset.customerDesign;
+    };
+  }, [enabled]);
+}
 
 export function useCustomFooterContent(): string {
   const settings = useSettings();

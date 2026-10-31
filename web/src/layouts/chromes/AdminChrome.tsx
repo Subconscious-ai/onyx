@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { Route } from "next";
 import { useEffect } from "react";
 import { useSettings } from "@/lib/settings/hooks";
-import { useAdminDocumentTitle } from "@/lib/app/hooks";
+import { useAdminDocumentTitle, useFocusTheme } from "@/lib/app/hooks";
 import { useUser } from "@/providers/UserProvider";
 import { ApplicationStatus } from "@/lib/settings/types";
 import { Button, Text } from "@opal/components";
@@ -24,7 +24,6 @@ import {
 } from "@/lib/permissions";
 import LiteModeIndexingNotice from "@/sections/admin/LiteModeIndexingNotice";
 import { useTranslations } from "next-intl";
-import useFocusTheme from "@/sections/customer/useFocusTheme";
 
 export interface AdminChromeProps {
   children: React.ReactNode;

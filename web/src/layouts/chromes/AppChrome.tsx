@@ -65,14 +65,17 @@ import {
 } from "@opal/icons";
 import { useIsSearchModeAvailable, useSettings } from "@/lib/settings/hooks";
 import type { AppMode } from "@/providers/QueryControllerProvider";
-import { useAppDocumentTitle, useCustomFooterContent } from "@/lib/app/hooks";
+import {
+  useAppDocumentTitle,
+  useCustomFooterContent,
+  useFocusTheme,
+} from "@/lib/app/hooks";
 import { useAppPosition } from "@/lib/position/hooks";
 import { useQueryController } from "@/providers/QueryControllerProvider";
 import { useTierAtLeast } from "@/hooks/useTierAtLeast";
 import { Tier } from "@/lib/settings/types";
 import { useFullWidthChat } from "@/providers/FullWidthChatProvider";
 import { useIncognito } from "@/providers/IncognitoProvider";
-import useFocusTheme from "@/sections/customer/useFocusTheme";
 
 // ---------------------------------------------------------------------------
 // Header
