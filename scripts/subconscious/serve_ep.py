@@ -1168,9 +1168,10 @@ def _failed_interviews(results: Any) -> tuple[int, str]:
     history = getattr(results, "task_history", None)
     if history is None or not getattr(history, "has_exceptions", False):
         return 0, ""
+    recorded = list(getattr(history, "exceptions", []) or [])
     unfixed = [
         collection
-        for collection in (getattr(history, "exceptions", []) or [])
+        for collection in recorded
         if not hasattr(collection, "num_unfixed") or collection.num_unfixed() > 0
     ]
     causes: list[str] = []
@@ -1178,10 +1179,13 @@ def _failed_interviews(results: Any) -> tuple[int, str]:
         for cause in _exception_causes(collection):
             if cause not in causes:
                 causes.append(cause)
-    failed = len(unfixed) or sum(
-        any(value is None for value in (row.get("answer") or {}).values())
-        for row in results
-    )
+    if recorded:
+        failed = len(unfixed)  # every recorded error was fixed: nothing failed
+    else:
+        failed = sum(
+            any(value is None for value in (row.get("answer") or {}).values())
+            for row in results
+        )
     return failed, "; ".join(causes[:3])
 
 
