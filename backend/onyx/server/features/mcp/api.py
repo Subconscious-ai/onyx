@@ -99,6 +99,10 @@ from onyx.server.features.mcp.elicitation import (
     ElicitationNotFound,
     submit_decision,
 )
+from onyx.server.features.mcp.experiment_run import (
+    ExperimentRunStatus,
+    get_experiment_run_status,
+)
 from onyx.server.features.mcp.models import (
     MCPApiKeyResponse,
     MCPAuthTemplate,
@@ -660,6 +664,17 @@ def answer_mcp_elicitation(
         raise OnyxError(
             OnyxErrorCode.CONFLICT, "This approval request was already answered."
         ) from error
+
+
+@router.get("/experiment-run/{run_id}", response_model=ExperimentRunStatus)
+def read_experiment_run(
+    run_id: str,
+    chat_session_id: UUID,
+    db: Session = Depends(get_session),
+    user: User = Depends(require_permission(Permission.BASIC_ACCESS)),
+) -> ExperimentRunStatus:
+    """Status of an experiment launched in the caller's own chat session."""
+    return get_experiment_run_status(db, user, chat_session_id, run_id)
 
 
 @router.post("/oauth/connect", response_model=MCPUserOAuthConnectResponse)

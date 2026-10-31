@@ -7,7 +7,6 @@ through the same function the HTTP route calls.
 """
 
 import json
-import socket
 import threading
 import time
 from queue import Empty, Queue
@@ -17,7 +16,6 @@ from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
-import uvicorn
 from fastmcp import Context, FastMCP
 from fastmcp.server.elicitation import AcceptedElicitation
 from mcp.shared._httpx_utils import create_mcp_http_client
@@ -34,6 +32,7 @@ from onyx.server.query_and_chat.streaming_models import (
 from onyx.tools.tool_implementations.mcp import mcp_tool
 from onyx.tools.tool_implementations.mcp.mcp_tool import MCPTool
 from tests.unit.onyx.server.features.mcp.mcp_fake_redis import FakeRedis
+from tests.unit.onyx.server.features.mcp.mcp_test_server import serve
 
 CONFIRMATION = "approve_exact_specification"
 
@@ -56,27 +55,8 @@ def _fake_rehoboam() -> FastMCP:
 
 @pytest.fixture
 def server_url() -> Iterator[str]:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        port = probe.getsockname()[1]
-    config = uvicorn.Config(
-        _fake_rehoboam().http_app(path="/mcp"),
-        host="127.0.0.1",
-        port=port,
-        log_level="warning",
-    )
-    server = uvicorn.Server(config)
-    thread = threading.Thread(target=server.run, daemon=True)
-    thread.start()
-    deadline = time.monotonic() + 10
-    while not server.started:
-        assert time.monotonic() < deadline, "fake MCP server did not start"
-        time.sleep(0.02)
-    try:
-        yield f"http://127.0.0.1:{port}/mcp"
-    finally:
-        server.should_exit = True
-        thread.join(timeout=10)
+    with serve(_fake_rehoboam()) as url:
+        yield url
 
 
 @pytest.fixture

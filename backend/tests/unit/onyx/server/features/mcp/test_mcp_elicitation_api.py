@@ -76,3 +76,29 @@ def test_a_second_answer_is_a_conflict(redis: FakeRedis) -> None:
 def test_only_approve_or_decline_are_accepted() -> None:
     with pytest.raises(ValueError):
         api.MCPElicitationAnswer(decision=cast(Any, "maybe"))
+
+
+def test_the_run_status_route_reads_through_the_run_status_module(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from uuid import UUID
+
+    from onyx.server.features.mcp.experiment_run import ExperimentRunStatus
+
+    seen: dict[str, Any] = {}
+
+    def read(_db: Any, user: Any, chat_session_id: UUID, run_id: str) -> Any:
+        seen.update(user=user, chat_session_id=chat_session_id, run_id=run_id)
+        return ExperimentRunStatus(
+            run_id=run_id, status="running", terminal=False, successful=None
+        )
+
+    monkeypatch.setattr(api, "get_experiment_run_status", read)
+    user, session_id = _user(), uuid4()
+
+    result = api.read_experiment_run("run1", session_id, cast(Any, object()), user)
+
+    assert result.status == "running"
+    assert seen["run_id"] == "run1"
+    assert seen["chat_session_id"] == session_id
+    assert seen["user"] is user
