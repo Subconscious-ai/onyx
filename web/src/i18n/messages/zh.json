@@ -14012,5 +14012,12 @@
       "contextUpdating": "Finishing company research…",
       "email": "研究从 {email} 开始"
     }
+  },
+  "workspaceAi": {
+    "tools": "工具",
+    "stop": "停止",
+    "sources": "{count, plural, one {# 个来源} other {# 个来源}}",
+    "preview": "来源预览：{title}",
+    "openSource": "打开来源"
   }
 }

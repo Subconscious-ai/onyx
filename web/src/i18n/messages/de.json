@@ -14012,5 +14012,12 @@
       "contextUpdating": "Unternehmensrecherche wird abgeschlossen…",
       "email": "Die Recherche beginnt mit {email}"
     }
+  },
+  "workspaceAi": {
+    "tools": "Werkzeuge",
+    "stop": "Stoppen",
+    "sources": "{count, plural, one {# Quelle} other {# Quellen}}",
+    "preview": "Quellenvorschau: {title}",
+    "openSource": "Quelle öffnen"
   }
 }

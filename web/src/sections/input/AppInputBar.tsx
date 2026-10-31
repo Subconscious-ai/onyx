@@ -148,6 +148,7 @@ const AppInputBar = React.memo(
     onToggleTabReading,
   }: AppInputBarProps) => {
     const t = useTranslations("chat.input");
+    const tWorkspace = useTranslations("workspaceAi");
     const tMessages = useTranslations("chat.messages");
     const { incognitoEnabled } = useIncognito();
     const [isRecording, setIsRecording] = useState(false);
@@ -713,6 +714,9 @@ const AppInputBar = React.memo(
 
     const chatControls = (
       <div
+        data-ai-composer-controls={
+          embeddedWorkspace && !isSearchMode ? "" : undefined
+        }
         {...(isSearchMode ? { inert: true } : {})}
         className={cn(
           "flex justify-between items-center w-full",
@@ -773,6 +777,7 @@ const AppInputBar = React.memo(
                 key={activeAgent.id}
                 agent={activeAgent}
                 toolConfiguration={toolConfiguration}
+                label={embeddedWorkspace ? tWorkspace("tools") : undefined}
                 disabled={disabled}
               />
             )}
@@ -873,6 +878,7 @@ const AppInputBar = React.memo(
             <Button
               icon={SvgStop}
               prominence="secondary"
+              data-ai-stop={embeddedWorkspace ? "" : undefined}
               aria-label={t("baseInputBar.stopButton.ariaLabel")}
               tooltip={t("baseInputBar.stopButton.tooltip")}
               onClick={() => {
@@ -1059,6 +1065,18 @@ const AppInputBar = React.memo(
                       data-placeholder={activePlaceholder}
                       data-empty={!message ? "" : undefined}
                       onKeyDown={(event) => {
+                        if (
+                          embeddedWorkspace &&
+                          chatState === "streaming" &&
+                          event.key === "Escape" &&
+                          !showPrompts &&
+                          !event.defaultPrevented
+                        ) {
+                          event.preventDefault();
+                          stopTTS({ manual: true });
+                          stopGenerating();
+                          return;
+                        }
                         if (
                           handleInputNavKeys(event, queueNav, handleTileKeyDown)
                         )

@@ -1,5 +1,6 @@
 "use client";
 
+import { useWorkspaceAiUx } from "@/lib/causl/WorkspaceAiUx";
 import React, { useMemo, useCallback } from "react";
 import { StopReason } from "@/app/app/services/streamingModels";
 import { FullChatState, RenderType } from "../interfaces";
@@ -30,7 +31,6 @@ import { ExpandedTimelineContent } from "./ExpandedTimelineContent";
 import { CollapsedStreamingContent } from "./CollapsedStreamingContent";
 import { TimelineRoot } from "@/app/app/message/messageComponents/timeline/primitives/TimelineRoot";
 import { TimelineHeaderRow } from "@/app/app/message/messageComponents/timeline/primitives/TimelineHeaderRow";
-import SourceProgress from "@/app/app/message/messageComponents/timeline/SourceProgress";
 
 // =============================================================================
 // Private Wrapper Components
@@ -162,7 +162,12 @@ export const AgentTimeline = React.memo(function AgentTimeline({
   );
 
   const { isExpanded, handleToggle, parallelActiveTab, setParallelActiveTab } =
-    useTimelineExpansion(stopPacketSeen, lastTurnGroup, hasDisplayContent);
+    useTimelineExpansion(
+      stopPacketSeen,
+      lastTurnGroup,
+      hasDisplayContent,
+      useWorkspaceAiUx()
+    );
 
   // Streaming duration tracking
   const streamingStartTime = useStreamingStartTime();
@@ -381,10 +386,6 @@ export const AgentTimeline = React.memo(function AgentTimeline({
         </div>
       }
     >
-      <SourceProgress
-        documents={chatState.docs ?? []}
-        onOpen={chatState.setPresentingDocument}
-      />
       {/* Collapsed streaming view - single step compact mode */}
       {showCollapsedCompact && lastStep && (
         <CollapsedStreamingContent

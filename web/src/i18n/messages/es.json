@@ -14012,5 +14012,12 @@
       "contextUpdating": "Terminando la investigación de la empresa…",
       "email": "La investigación parte de {email}"
     }
+  },
+  "workspaceAi": {
+    "tools": "Herramientas",
+    "stop": "Detener",
+    "sources": "{count, plural, one {# fuente} other {# fuentes}}",
+    "preview": "Vista previa: {title}",
+    "openSource": "Abrir fuente"
   }
 }
