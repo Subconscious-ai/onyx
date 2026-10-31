@@ -5,14 +5,13 @@ import { Text } from "@opal/components";
 import AIInlineCitation from "@/sections/customer/AIInlineCitation";
 import { safeSourceUrl } from "@/lib/executive/brief";
 
-/** Display only evidence admitted by the existing brief or Library boundary. */
-export default function FactCitation({
-  quote,
-  url,
-}: {
+interface FactCitationProps {
   quote?: string | null;
   url?: string | null;
-}) {
+}
+
+/** Display only evidence admitted by the existing brief or Library boundary. */
+export default function FactCitation({ quote, url }: FactCitationProps) {
   const t = useTranslations("executive");
   const sourceUrl = safeSourceUrl(url);
   if (!quote?.trim() && !sourceUrl) {

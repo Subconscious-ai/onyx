@@ -4,7 +4,7 @@ import useSWR from "swr";
 import { useTranslations } from "next-intl";
 import { Text } from "@opal/components";
 import { errorHandlingFetcher, skipRetryOnAuthError } from "@/lib/fetcher";
-import FactCitation from "./FactCitation";
+import FactCitation from "@/sections/executive/FactCitation";
 
 interface SharedMarketMemoryProps {
   chatId: string | null;
@@ -72,45 +72,44 @@ export default function SharedMarketMemory(props: SharedMarketMemoryProps) {
               {t("marketMemoryEmpty")}
             </Text>
           )}
-          {data.library.nodes.map((node) => (
-            <div key={`${node.type}:${node.id}`}>
-              <p className="executive-fact-line">
-                <Text font="main-ui-action">
-                  {String(
-                    node.properties.name ??
-                      node.properties.label ??
-                      node.properties.value ??
-                      node.id
-                  )}
-                </Text>
-                {typeof node.properties.definition !== "string" &&
-                  node.evidence.map((source, index) => (
-                    <FactCitation
-                      key={source.id ?? index}
-                      quote={source.reviewedStatement}
-                      url={source.sourceUrl}
-                    />
-                  ))}
-                {typeof node.properties.definition !== "string" &&
-                  !node.evidence.length && <FactCitation />}
-              </p>
-              {typeof node.properties.definition === "string" && (
+          {data.library.nodes.map((node) => {
+            const citations = node.evidence.length ? (
+              node.evidence.map((source, index) => (
+                <FactCitation
+                  key={source.id ?? index}
+                  quote={source.reviewedStatement}
+                  url={source.sourceUrl}
+                />
+              ))
+            ) : (
+              <FactCitation />
+            );
+            const hasDefinition =
+              typeof node.properties.definition === "string";
+            return (
+              <div key={`${node.type}:${node.id}`}>
                 <p className="executive-fact-line">
-                  <Text font="secondary-body">
-                    {node.properties.definition}
+                  <Text font="main-ui-action">
+                    {String(
+                      node.properties.name ??
+                        node.properties.label ??
+                        node.properties.value ??
+                        node.id
+                    )}
                   </Text>
-                  {node.evidence.map((source, index) => (
-                    <FactCitation
-                      key={source.id ?? index}
-                      quote={source.reviewedStatement}
-                      url={source.sourceUrl}
-                    />
-                  ))}
-                  {!node.evidence.length && <FactCitation />}
+                  {!hasDefinition && citations}
                 </p>
-              )}
-            </div>
-          ))}
+                {hasDefinition && (
+                  <p className="executive-fact-line">
+                    <Text font="secondary-body">
+                      {node.properties.definition!}
+                    </Text>
+                    {citations}
+                  </p>
+                )}
+              </div>
+            );
+          })}
           {data.library.truncated && (
             <Text as="p" font="secondary-body">
               {t("marketMemoryBounded")}

@@ -2,7 +2,7 @@
 import CompanyProfile, {
   createCompanyProfileState,
 } from "@/sections/executive/CompanyProfile";
-import FactCitation from "./FactCitation";
+import FactCitation from "@/sections/executive/FactCitation";
 import SharedMarketMemory from "@/sections/executive/SharedMarketMemory";
 import InterviewProgress from "@/sections/executive/InterviewProgress";
 
@@ -105,13 +105,12 @@ function Evidence({ note }: { note: BriefNote }) {
   );
 }
 
-function BriefFact({
-  note,
-  prefix = "",
-}: {
+interface BriefFactProps {
   note: BriefNote;
   prefix?: string;
-}) {
+}
+
+function BriefFact({ note, prefix = "" }: BriefFactProps) {
   return (
     <p className="executive-fact-line">
       <Text font="main-ui-body">{`${prefix}${note.text}`}</Text>{" "}

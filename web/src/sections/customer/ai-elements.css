@@ -60,10 +60,10 @@ html[data-customer-design="focus"]
 }
 html[data-customer-design="focus"]
   .executive-workspace
-  button.kokonut-citation {
+  button[data-kokonut="ai-inline-citation"] {
   border-radius: 999px !important;
 }
-.kokonut-citation {
+button[data-kokonut="ai-inline-citation"] {
   display: inline-flex;
   align-items: center;
   vertical-align: middle;
@@ -80,17 +80,18 @@ html[data-customer-design="focus"]
     color 150ms,
     background-color 150ms;
 }
-.kokonut-citation > span:last-child {
+button[data-kokonut="ai-inline-citation"] > div {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.kokonut-citation:hover,
-.kokonut-citation[data-state="open"] {
+button[data-kokonut="ai-inline-citation"]:hover,
+button[data-kokonut="ai-inline-citation"][data-state="open"] {
   color: var(--text-inverted-05);
   background: var(--background-neutral-inverted-00);
 }
-.kokonut-citation__monogram {
+button[data-kokonut="ai-inline-citation"]::before {
+  content: attr(data-monogram);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -126,7 +127,7 @@ html[data-customer-design="focus"]
   align-items: center;
 }
 @media (prefers-reduced-motion: reduce) {
-  .kokonut-citation {
+  button[data-kokonut="ai-inline-citation"] {
     transition: none;
   }
 }

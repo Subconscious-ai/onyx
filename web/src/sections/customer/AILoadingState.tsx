@@ -11,6 +11,7 @@
  */
 
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { Text } from "@opal/components";
 import { cn } from "@opal/utils";
 import "@/sections/customer/ai-elements.css";
 
@@ -24,7 +25,10 @@ export interface AgentStep {
 }
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 
-function StepIcon({ status }: { status: AgentStepStatus }) {
+interface StepIconProps {
+  status: AgentStepStatus;
+}
+function StepIcon({ status }: StepIconProps) {
   return (
     <span className="relative flex size-4 shrink-0 items-center justify-center">
       <AnimatePresence initial={false} mode="popLayout">
@@ -111,7 +115,10 @@ const WAVE_CSS = `
 `;
 
 /** A soft brightness wave through the running step's letters. */
-function WaveText({ text }: { text: string }) {
+interface WaveTextProps {
+  text: string;
+}
+function WaveText({ text }: WaveTextProps) {
   return (
     <>
       <style href="kokonut-ai-wave" precedence="default">
@@ -124,14 +131,20 @@ function WaveText({ text }: { text: string }) {
           key={i}
           style={{ animationDelay: `${i * 0.05}s` }}
         >
-          {char}
+          <Text font="secondary-body" color="inherit">
+            {char}
+          </Text>
         </span>
       ))}
     </>
   );
 }
 
-function StepRow({ step, isLast }: { step: AgentStep; isLast: boolean }) {
+interface StepRowProps {
+  step: AgentStep;
+  isLast: boolean;
+}
+function StepRow({ step, isLast }: StepRowProps) {
   return (
     <li className="relative flex gap-3 pt-3.5">
       {/* The rail between icons fills in as each step completes. */}
@@ -151,7 +164,7 @@ function StepRow({ step, isLast }: { step: AgentStep; isLast: boolean }) {
       <StepIcon status={step.status} />
       <div className="-mt-0.5 min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
-          <p
+          <div
             className={cn(
               "min-w-0 truncate text-sm transition-colors duration-200",
               step.status === "running" ? "text-text-05" : "text-text-03"
@@ -159,15 +172,19 @@ function StepRow({ step, isLast }: { step: AgentStep; isLast: boolean }) {
           >
             {step.status === "running" ? (
               <>
-                <span className="sr-only">{step.label}</span>
+                <span className="sr-only">
+                  <Text font="secondary-body">{step.label}</Text>
+                </span>
                 <span aria-hidden="true">
                   <WaveText text={step.label} />
                 </span>
               </>
             ) : (
-              step.label
+              <Text font="secondary-body" color="inherit">
+                {step.label}
+              </Text>
             )}
-          </p>
+          </div>
         </div>
       </div>
     </li>

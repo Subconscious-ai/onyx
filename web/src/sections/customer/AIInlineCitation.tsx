@@ -37,7 +37,7 @@ export default function AIInlineCitation({
   const [open, setOpen] = useState(false);
   const previewId = useId();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
+  const trigger = useRef<HTMLElement>(null);
   const preview = useRef<HTMLDivElement>(null);
   const keyboard = useRef(false);
   const returningFocus = useRef(false);
@@ -77,11 +77,13 @@ export default function AIInlineCitation({
     <MotionConfig reducedMotion="user">
       <Popover open={open} onOpenChange={setOpen}>
         <Popover.Anchor asChild>
-          <button
+          <Button
             ref={trigger}
             type="button"
             data-kokonut="ai-inline-citation"
-            className="kokonut-citation"
+            data-monogram={site.charAt(0).toUpperCase()}
+            prominence="tertiary"
+            size="sm"
             aria-label={previewLabel ?? source.title}
             aria-controls={open ? previewId : undefined}
             aria-haspopup="dialog"
@@ -109,13 +111,8 @@ export default function AIInlineCitation({
               if (event.pointerType === "mouse") hide();
             }}
           >
-            <span aria-hidden="true" className="kokonut-citation__monogram">
-              {site.charAt(0).toUpperCase()}
-            </span>
-            <Text font="figure-small-value" color="inherit">
-              {site}
-            </Text>
-          </button>
+            {site}
+          </Button>
         </Popover.Anchor>
         <Popover.Content
           id={previewId}
