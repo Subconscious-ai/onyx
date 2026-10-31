@@ -108,7 +108,11 @@ export function WorkspaceSources({ sources, onOpen }: WorkspaceSourcesProps) {
       </Button>
       <div className="workspace-ai-source-stack" aria-hidden="true">
         {unique.slice(0, 4).map((source) => (
-          <span key={source.id}>{source.title.slice(0, 1).toUpperCase()}</span>
+          <span key={source.id}>
+            <Text font="secondary-action">
+              {source.title.slice(0, 1).toUpperCase()}
+            </Text>
+          </span>
         ))}
       </div>
       {expanded && (
