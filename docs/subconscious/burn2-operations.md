@@ -20,12 +20,13 @@ Brief operations also require an owned, saved executive conversation and access 
 
 | Operation | Input | Result or limit |
 | --- | --- | --- |
-| `POST /api/chat/executive-profile` | No body reuses retained preparation. Explicit refresh requires `operation_id`, `checked_at`, and `revision`. | Returns profile and research status. Reuse the operation UUID on retries; a stale receipt or revision returns 409. |
+| `POST /api/chat/executive-profile` | No body reuses retained preparation when available. Without retained preparation, the operation can call configured PDL enrichment. Explicit refresh requires `operation_id`, `checked_at`, and `revision`. | Returns profile and research status. Reuse the operation UUID on retries; a stale receipt or revision returns 409. |
 | `PATCH /api/chat/executive-profile` | Current `revision` and `fields`. | Saves explicit corrections. Fields allow name, role, company, industry, website, product, and customer_segment; each value permits at most 500 characters. Conflicting revisions return 409. |
 | `GET /api/chat/executive-research` | Native caller identity. | Returns public research state. `needs_company`, `pending`, or `unavailable` does not prove completed research. |
 | `GET /api/chat/executive-brief?chat_id=<uuid>` | Owned chat UUID. | Reads current saved status; polling does not extract a new brief. `saved: false` can include background scheduling status. |
 | `POST /api/chat/executive-brief` | JSON containing only `chat_id`. | Returns `message_id`, `saved`, and `message` after preparation and configured Library delivery. The message contains the `<interview-brief>` suffix. |
 
+Profile preparation can also schedule configured company research. A no-body POST can make provider calls.
 Brief preparation can call the configured Bedrock model and enforces existing usage limits.
 An active answer, concurrent preparation, or changed transcript returns 409; retry against the current saved conversation.
 Invalid preparation configuration returns 503. Extraction or validation failure returns 502 and preserves the saved conversation.
