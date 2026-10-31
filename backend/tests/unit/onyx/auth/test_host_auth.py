@@ -46,8 +46,8 @@ def setup_host(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
     client.get_id_email = AsyncMock(return_value=(payload["sub"], "alice@example.test"))
     client.allows_verified_email_to_join.return_value = False
     provider = SimpleNamespace(name="auth0", allowed_email_domains=["example.test"])
-    monkeypatch.setattr(oidc_multi, "_resolve_oidc_provider", lambda *_: (provider, {}))
-    monkeypatch.setattr(oidc_multi, "_get_oauth_client", AsyncMock(return_value=client))
+    monkeypatch.setattr(oidc_multi, "resolve_oidc_provider", lambda *_: (provider, {}))
+    monkeypatch.setattr(oidc_multi, "get_oauth_client", AsyncMock(return_value=client))
     db = MagicMock()
     db.run_sync = AsyncMock(side_effect=lambda call: call(None))
     user = User(

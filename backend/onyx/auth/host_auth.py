@@ -96,14 +96,14 @@ async def authenticate_host(
 
     # Reuse the enabled native provider and its guarded discovery cache. Local
     # imports avoid the users -> OIDC router -> users module-load cycle.
-    from onyx.server.oidc_multi import _get_oauth_client, _resolve_oidc_provider
+    from onyx.server.oidc_multi import get_oauth_client, resolve_oidc_provider
 
     provider, config = await db.run_sync(
-        lambda session: _resolve_oidc_provider(
+        lambda session: resolve_oidc_provider(
             session, os.environ.get("CAUSL_KB_AUTH0_PROVIDER_NAME", "auth0")
         )
     )
-    client = await _get_oauth_client(provider, config)
+    client = await get_oauth_client(provider, config)
     if (
         not isinstance(client, VerifiedEmailOpenID)
         or client.expected_issuer != payload["iss"]

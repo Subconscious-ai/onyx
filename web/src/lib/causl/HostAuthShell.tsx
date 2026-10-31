@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Text } from "@opal/components";
 import {
   createHostTokenProvider,
   installHostAuthentication,
@@ -73,6 +74,10 @@ export default function HostAuthShell({
   }, [hosted, parentOrigin, nonce, sessionKey, allowedOrigins]);
   if (!hosted) return <>{children}</>;
   if (ready !== sessionKey)
-    return <p role="status">{t(failed ? "unavailable" : "opening")}</p>;
+    return (
+      <Text as="p" role="status">
+        {t(failed ? "unavailable" : "opening")}
+      </Text>
+    );
   return <>{children}</>;
 }
