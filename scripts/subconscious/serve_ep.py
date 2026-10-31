@@ -69,7 +69,14 @@ def envelope(fn: Callable[..., Any]) -> Callable[..., Any]:
         except ToolError as error:
             return err(error.code, str(error), error.suggestion)
         except Exception as error:  # noqa: BLE001 - every failure must be an envelope
-            return err("RUNTIME_ERROR", f"{type(error).__name__}: {error}")
+            first_line = (
+                str(error).strip().splitlines()[0] if str(error).strip() else ""
+            )
+            return err(
+                "RUNTIME_ERROR",
+                f"{type(error).__name__}: {first_line[:300]}",
+                "Check the tool's inputs against its description; list_question_types and list_objects show what exists.",
+            )
 
     return wrapped
 
@@ -193,6 +200,7 @@ def build_server(workspace: Workspace) -> FastMCP:
     _register_results(server, workspace)
     _register_plots(server, workspace)
     _register_conjoint(server, workspace)
+    _register_conjoint_plots(server, workspace)
     return server
 
 
@@ -382,7 +390,10 @@ def _register_imports(server: FastMCP, workspace: Workspace) -> None:
         from edsl import ScenarioList
 
         path = _temp_csv(csv_text)
-        scenarios = ScenarioList.from_source("csv", str(path))
+        try:
+            scenarios = ScenarioList.from_source("csv", str(path))
+        finally:
+            path.unlink(missing_ok=True)
         workspace.save("scenarios", name, scenarios)
         keys = sorted({key for scenario in scenarios for key in scenario.keys()})
         return ok({"scenarios": name, "count": len(scenarios), "keys": keys})
@@ -406,7 +417,10 @@ def _register_imports(server: FastMCP, workspace: Workspace) -> None:
         kwargs: dict[str, Any] = {}
         if name_field:
             kwargs["name_field"] = name_field
-        agents = AgentList.from_source("csv", str(path), **kwargs)
+        try:
+            agents = AgentList.from_source("csv", str(path), **kwargs)
+        finally:
+            path.unlink(missing_ok=True)
         if instruction:
             agents = AgentList(
                 [
@@ -521,37 +535,43 @@ def _register_runs(server: FastMCP, workspace: Workspace) -> None:
         from edsl import Cache
 
         job = _job(survey, agents, scenarios, model, canned_response, service)
-        cache_path = workspace.root / "cache.jsonl"
-        cache = Cache.from_jsonl(str(cache_path)) if cache_path.is_file() else Cache()
-        before = len(cache)
-        results = job.run(
-            disable_remote_inference=True,
-            disable_remote_cache=True,
-            progress_bar=False,
-            cache=cache,
-            stop_on_exception=False,
+        # The test model's answers depend on canned_response, which EDSL's cache
+        # key does not see, so each canned answer gets its own cache file.
+        suffix = (
+            f"-test-{_digest(canned_response or '')}" if model == DEFAULT_MODEL else ""
         )
-        cache.write_jsonl(str(cache_path))
-        new_entries = len(cache) - before
-        answers = len(results) * len(results.survey.questions)
+        cache_path = workspace.root / f"cache{suffix}.jsonl"
+        with _CACHE_LOCK:
+            cache = (
+                Cache.from_jsonl(str(cache_path)) if cache_path.is_file() else Cache()
+            )
+            results = job.run(
+                disable_remote_inference=True,
+                disable_remote_cache=True,
+                progress_bar=False,
+                cache=cache,
+                stop_on_exception=False,
+            )
+            cache.write_jsonl(str(cache_path))
+        hits, new_entries = _cache_counts(results)
         workspace.save("results", name, results)
-        incomplete = _incomplete(results)
+        failed = _failed_interviews(results)
         warnings = (
             [
-                f"{incomplete} of {len(results)} interviews have at least one missing answer: "
-                "the model's reply failed that question's validation."
+                f"{failed} of {len(results)} interviews have an answer the question "
+                "rejected (the model's reply failed validation); that answer is empty."
             ]
-            if incomplete
+            if failed
             else []
         )
         return ok(
             {
                 "results": name,
                 "interviews": len(results),
-                "incomplete_interviews": incomplete,
+                "incomplete_interviews": failed,
                 "model": model,
                 "simulated": True,
-                "cache": {"hits": max(0, answers - new_entries), "new": new_entries},
+                "cache": {"hits": hits, "new": new_entries},
                 "review": _review(results, 5),
             },
             warnings,
@@ -712,7 +732,7 @@ def _register_results(server: FastMCP, workspace: Workspace) -> None:
 
 
 def _register_plots(server: FastMCP, workspace: Workspace) -> None:
-    @server.tool()
+    @server.tool(output_schema=None)
     @envelope
     def plot_distribution(name: str, column: str, title: str | None = None) -> list:
         """Bar chart of how often each answer was given, as an image.
@@ -758,7 +778,7 @@ def _register_plots(server: FastMCP, workspace: Workspace) -> None:
             ),
         ]
 
-    @server.tool()
+    @server.tool(output_schema=None)
     @envelope
     def plot_means(
         name: str, group_by: str | None = None, title: str | None = None
@@ -826,117 +846,37 @@ def _register_plots(server: FastMCP, workspace: Workspace) -> None:
         )
 
 
-def _register_conjoint(server: FastMCP, workspace: Workspace) -> None:
+def _conjoint_analysis(
+    workspace: Workspace, results: str, design: str
+) -> tuple[dict, dict]:
     import ep_conjoint
 
-    designs = workspace.root / "conjoint"
-    designs.mkdir(exist_ok=True)
+    path = (
+        workspace.root / "conjoint" / f"{workspace.path('surveys', design).stem}.json"
+    )
+    if not path.is_file():
+        raise ToolError(
+            "NOT_FOUND",
+            f"No conjoint design named {design!r}.",
+            "Create one with conjoint_design.",
+        )
+    spec = json.loads(path.read_text())
+    rows = workspace.load("results", results).to_dicts(remove_prefix=False)
+    try:
+        return spec, ep_conjoint.analyze(rows, spec)
+    except ValueError as error:
+        raise ToolError(
+            "NOT_FOUND",
+            str(error),
+            "Run the conjoint survey on its version scenarios first.",
+        ) from error
 
-    def _design(name: str) -> dict:
-        path = designs / f"{workspace.path('surveys', name).stem}.json"
-        if not path.is_file():
-            raise ToolError(
-                "NOT_FOUND",
-                f"No conjoint design named {name!r}.",
-                "Create one with conjoint_design.",
-            )
-        return json.loads(path.read_text())
 
+def _register_conjoint_plots(server: FastMCP, workspace: Workspace) -> None:
     def _analysis(results: str, design: str) -> tuple[dict, dict]:
-        spec = _design(design)
-        rows = workspace.load("results", results).to_dicts(remove_prefix=False)
-        try:
-            return spec, ep_conjoint.analyze(rows, spec)
-        except ValueError as error:
-            raise ToolError(
-                "NOT_FOUND",
-                str(error),
-                "Run the conjoint survey on its version scenarios first.",
-            ) from error
+        return _conjoint_analysis(workspace, results, design)
 
-    @server.tool()
-    @envelope
-    def conjoint_design(
-        name: str,
-        attributes: dict[str, list[str]],
-        intro: str = "Consider the options below.",
-        tasks_per_version: int = 8,
-        profiles_per_task: int = 3,
-        n_versions: int = 4,
-        include_none: bool = False,
-        seed: int = 42,
-    ) -> dict:
-        """Design a choice-based conjoint and save its survey and version scenarios.
-
-        attributes maps each attribute to its levels, e.g. {"Price": ["$10", "$20"]}.
-        Each respondent sees tasks_per_version choice tasks of profiles_per_task
-        options; n_versions different versions spread the levels. Run the survey
-        `name` on scenarios `name_versions` (and an audience), then call
-        conjoint_analyze. Levels should be exact values with units.
-        """
-        from edsl import Question, Scenario, ScenarioList, Survey
-
-        try:
-            spec = ep_conjoint.generate_design(
-                attributes,
-                tasks_per_version,
-                profiles_per_task,
-                n_versions,
-                include_none,
-                seed=seed,
-            )
-        except ValueError as error:
-            raise ToolError("VALIDATION_ERROR", str(error)) from error
-        survey = Survey(
-            [Question(**q) for q in ep_conjoint.question_specs(spec, intro)]
-        )
-        workspace.save("surveys", name, survey)
-        versions = ScenarioList(
-            [Scenario(row) for row in ep_conjoint.scenario_rows(spec)]
-        )
-        workspace.save("scenarios", f"{name}_versions", versions)
-        (designs / f"{name}.json").write_text(json.dumps(spec))
-        first = spec["versions"][0]["choice_sets"][0]
-        return ok(
-            {
-                "survey": name,
-                "scenarios": f"{name}_versions",
-                "tasks_per_version": spec["n_tasks"],
-                "profiles_per_task": spec["profiles_per_task"],
-                "n_versions": spec["n_versions"],
-                "total_profiles": spec["total_profiles"],
-                "balance_scores": [v["balance_score"] for v in spec["versions"]],
-                "example_task": [ep_conjoint.describe(p) for p in first],
-            }
-        )
-
-    @server.tool()
-    @envelope
-    def conjoint_analyze(results: str, design: str) -> dict:
-        """Part-worth utilities, attribute importance and segment utilities.
-
-        Counting-based estimates from simulated choices: a drafting aid, not a
-        validated market estimate. Importance sums to 100.
-        """
-        _, analysis = _analysis(results, design)
-        return ok({"results": results, "design": design, "simulated": True, **analysis})
-
-    @server.tool()
-    @envelope
-    def conjoint_market_share(
-        results: str, design: str, profiles: list[dict[str, str]]
-    ) -> dict:
-        """Logit choice shares for complete competing profiles, from the fitted part-worths."""
-        _, analysis = _analysis(results, design)
-        return ok(
-            {
-                "results": results,
-                "simulated": True,
-                "profiles": ep_conjoint.market_shares(analysis["utilities"], profiles),
-            }
-        )
-
-    @server.tool()
+    @server.tool(output_schema=None)
     @envelope
     def plot_conjoint(results: str, design: str, chart: str = "importance") -> list:
         """One conjoint chart as an image: importance, utilities, position, segments or price."""
@@ -1038,6 +978,146 @@ def _register_conjoint(server: FastMCP, workspace: Workspace) -> None:
         ]
 
 
+def _register_conjoint(server: FastMCP, workspace: Workspace) -> None:
+    import ep_conjoint
+
+    designs = workspace.root / "conjoint"
+    designs.mkdir(exist_ok=True)
+
+    def _design(name: str) -> dict:
+        path = designs / f"{workspace.path('surveys', name).stem}.json"
+        if not path.is_file():
+            raise ToolError(
+                "NOT_FOUND",
+                f"No conjoint design named {name!r}.",
+                "Create one with conjoint_design.",
+            )
+        return json.loads(path.read_text())
+
+    def _analysis(results: str, design: str) -> tuple[dict, dict]:
+        spec = _design(design)
+        rows = workspace.load("results", results).to_dicts(remove_prefix=False)
+        try:
+            return spec, ep_conjoint.analyze(rows, spec)
+        except ValueError as error:
+            raise ToolError(
+                "NOT_FOUND",
+                str(error),
+                "Run the conjoint survey on its version scenarios first.",
+            ) from error
+
+    @server.tool()
+    @envelope
+    def conjoint_design(
+        name: str,
+        attributes: dict[str, list[str]],
+        intro: str = "Consider the options below.",
+        tasks_per_version: int = 8,
+        profiles_per_task: int = 3,
+        n_versions: int = 4,
+        include_none: bool = False,
+        seed: int = 42,
+    ) -> dict:
+        """Design a choice-based conjoint and save its survey and version scenarios.
+
+        attributes maps each attribute to its levels, e.g. {"Price": ["$10", "$20"]}.
+        Each respondent sees tasks_per_version choice tasks of profiles_per_task
+        options; n_versions different versions spread the levels. Run the survey
+        `name` on scenarios `name_versions` (and an audience), then call
+        conjoint_analyze. Levels should be exact values with units.
+        """
+        from edsl import Question, Scenario, ScenarioList, Survey
+
+        workspace.path(
+            "scenarios", f"{name}_versions"
+        )  # validates the derived name too
+        if workspace.path("surveys", name).is_file():
+            raise ToolError(
+                "CONFLICT",
+                f"A survey named {name!r} already exists.",
+                "Choose a new name; existing studies are kept so their results stay readable.",
+            )
+        try:
+            spec = ep_conjoint.generate_design(
+                attributes,
+                tasks_per_version,
+                profiles_per_task,
+                n_versions,
+                include_none,
+                seed=seed,
+            )
+        except ValueError as error:
+            raise ToolError("VALIDATION_ERROR", str(error)) from error
+        survey = Survey(
+            [Question(**q) for q in ep_conjoint.question_specs(spec, intro)]
+        )
+        workspace.save("surveys", name, survey)
+        versions = ScenarioList(
+            [Scenario(row) for row in ep_conjoint.scenario_rows(spec)]
+        )
+        workspace.save("scenarios", f"{name}_versions", versions)
+        (designs / f"{name}.json").write_text(json.dumps(spec))
+        first = spec["versions"][0]["choice_sets"][0]
+        return ok(
+            {
+                "survey": name,
+                "scenarios": f"{name}_versions",
+                "tasks_per_version": spec["n_tasks"],
+                "profiles_per_task": spec["profiles_per_task"],
+                "n_versions": spec["n_versions"],
+                "total_profiles": spec["total_profiles"],
+                "balance_scores": [v["balance_score"] for v in spec["versions"]],
+                "example_task": [ep_conjoint.describe(p) for p in first],
+            }
+        )
+
+    @server.tool()
+    @envelope
+    def conjoint_analyze(results: str, design: str) -> dict:
+        """Part-worth utilities, attribute importance and segment utilities.
+
+        Counting-based estimates from simulated choices: a drafting aid, not a
+        validated market estimate. Importance sums to 100.
+        """
+        _, analysis = _analysis(results, design)
+        return ok({"results": results, "design": design, "simulated": True, **analysis})
+
+    @server.tool()
+    @envelope
+    def conjoint_market_share(
+        results: str, design: str, profiles: list[dict[str, str]]
+    ) -> dict:
+        """Logit choice shares for complete competing profiles, from the fitted part-worths."""
+        spec, analysis = _analysis(results, design)
+        unknown = [
+            f"{attribute}={level}"
+            for profile in profiles
+            for attribute, level in profile.items()
+            if level not in spec["attributes"].get(attribute, [])
+        ]
+        missing = sorted(
+            {
+                attribute
+                for profile in profiles
+                for attribute in spec["attributes"]
+                if attribute not in profile
+            }
+        )
+        if unknown or missing:
+            raise ToolError(
+                "VALIDATION_ERROR",
+                f"Profiles must use the design's attributes and levels exactly. Unknown: {unknown or 'none'}; missing: {missing or 'none'}.",
+                f"Attributes and levels: {json.dumps(spec['attributes'])}",
+            )
+        return ok(
+            {
+                "results": results,
+                "simulated": True,
+                "profiles": ep_conjoint.market_shares(analysis["utilities"], profiles),
+            }
+        )
+
+
 def _numeric_prefix(text: str) -> float:
     match = re.search(r"[\d.]+", text)
     return float(match.group()) if match else 0.0
@@ -1062,13 +1142,42 @@ def _with_instruction(agent: Any, instruction: str) -> Any:
     return Agent(name=agent.name, traits=dict(agent.traits), instruction=instruction)
 
 
-def _incomplete(results: Any) -> int:
-    """Interviews where at least one question has no validated answer."""
-    answer_columns = [c for c in results.columns if c.startswith("answer.")]
-    if not answer_columns:
+_CACHE_LOCK = __import__("threading").Lock()
+
+
+def _digest(text: str) -> str:
+    import hashlib
+
+    return hashlib.sha256(text.encode()).hexdigest()[:10]
+
+
+def _failed_interviews(results: Any) -> int:
+    """Interviews where a model reply failed a question's validation.
+
+    A question skipped by a stop or skip rule is empty by design and is not
+    counted; EDSL records real failures on the task history.
+    """
+    history = getattr(results, "task_history", None)
+    if history is None or not getattr(history, "has_exceptions", False):
         return 0
-    rows = results.select(*answer_columns).to_dicts(remove_prefix=False)
-    return sum(any(row.get(c) is None for c in answer_columns) for row in rows)
+    failed = 0
+    for row in results:
+        comments = row.get("comments_dict") or {}
+        if any("validation error" in str(v).lower() for v in comments.values()):
+            failed += 1
+    return failed or 1
+
+
+def _cache_counts(results: Any) -> tuple[int, int]:
+    """(answers served from the cache, answers newly generated) in this run."""
+    hits = new = 0
+    for row in results:
+        for used in (row.get("cache_used_dict") or {}).values():
+            if used:
+                hits += 1
+            else:
+                new += 1
+    return hits, new
 
 
 def _is_number(text: str) -> bool:

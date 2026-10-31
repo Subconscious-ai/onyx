@@ -289,7 +289,7 @@ def test_an_answer_the_question_rejects_is_reported_not_hidden(client: Client) -
 
     assert body["status"] == "ok"
     assert body["data"]["incomplete_interviews"] == 1
-    assert "missing answer" in body["warnings"][0]
+    assert "rejected" in body["warnings"][0]
     assert error(client, "plot_means", name="bad")["code"] == "NOT_FOUND"
 
 
@@ -446,9 +446,9 @@ def test_agents_can_differ_by_instruction_alone(client: Client) -> None:
     prompts = data(client, "show_prompts", survey="cls", agents="readers", limit=2)[
         "prompts"
     ]
-    assert {p["system_prompt"][:9] for p in prompts} == {"Classify "} or all(
-        "Classify" in p["system_prompt"] for p in prompts
-    )
+    systems = [p["system_prompt"] for p in prompts]
+    assert any("only explicit statements" in text for text in systems)
+    assert any("likely intent" in text for text in systems)
 
 
 def test_results_export_returns_csv_text(client: Client) -> None:
@@ -692,3 +692,95 @@ def test_a_conjoint_is_designed_run_analyzed_and_charted(client: Client) -> None
         ],
     )
     assert abs(sum(p["share"] for p in shares["profiles"]) - 1) < 1e-6
+
+
+def test_a_stop_rule_skip_is_not_a_failure_and_counts_cache_right(
+    client: Client,
+) -> None:
+    data(
+        client,
+        "build_survey",
+        name="gate",
+        questions=[
+            {
+                "question_type": "yes_no",
+                "question_name": "used",
+                "question_text": "Used it?",
+            },
+            {
+                "question_type": "free_text",
+                "question_name": "problem",
+                "question_text": "What problem?",
+            },
+        ],
+        stop_rules=[{"question": "used", "expression": "{{ used.answer }} == 'No'"}],
+    )
+    body, _ = call(client, "run_survey", survey="gate", name="g", canned_response="No")
+
+    assert body["status"] == "ok" and body["warnings"] == []
+    assert body["data"]["incomplete_interviews"] == 0
+    assert body["data"]["cache"] == {"hits": 0, "new": 1}
+
+
+def test_a_new_canned_answer_is_not_served_from_the_old_runs_cache(
+    client: Client,
+) -> None:
+    data(client, "build_survey", name="one", questions=MESSAGE_SURVEY[:1])
+    data(client, "run_survey", survey="one", name="x", canned_response="Clear")
+    second = data(
+        client, "run_survey", survey="one", name="y", canned_response="Unclear"
+    )
+
+    assert second["cache"] == {"hits": 0, "new": 1}
+    rows = data(client, "results_select", name="y", columns=["clarity"])["rows"]
+    assert rows == [{"answer.clarity": "Unclear"}]
+
+
+def test_market_share_refuses_a_profile_outside_the_design(client: Client) -> None:
+    data(
+        client,
+        "conjoint_design",
+        name="plan",
+        attributes={"Price": ["$10", "$20"], "Data": ["5 GB", "20 GB"]},
+        tasks_per_version=2,
+        profiles_per_task=2,
+        n_versions=1,
+        seed=1,
+    )
+    data(
+        client,
+        "run_survey",
+        survey="plan",
+        name="plan_r",
+        scenarios="plan_versions",
+        canned_response="Option A",
+    )
+
+    problem = error(
+        client,
+        "conjoint_market_share",
+        results="plan_r",
+        design="plan",
+        profiles=[{"price": "$10"}, {"Price": "$99", "Data": "5 GB"}],
+    )
+    assert problem["code"] == "VALIDATION_ERROR"
+    assert "Price=$99" in problem["message"] and "Data" in problem["message"]
+
+    taken = error(
+        client,
+        "conjoint_design",
+        name="plan",
+        attributes={"Price": ["$10", "$20"], "Data": ["5 GB", "20 GB"]},
+    )
+    assert taken["code"] == "CONFLICT"
+
+
+def test_a_runtime_error_is_one_bounded_line_with_a_next_step(client: Client) -> None:
+    data(client, "build_survey", name="one", questions=MESSAGE_SURVEY[:1])
+    problem = error(
+        client, "run_survey", survey="one", name="r", model="no-such-model-xyz"
+    )
+
+    assert problem["code"] == "RUNTIME_ERROR"
+    assert "\n" not in problem["message"] and len(problem["message"]) <= 340
+    assert problem["suggestion"]
