@@ -41,6 +41,7 @@ export default function WorkspaceChat({
   const params = useSearchParams();
   const standalone = useRef(false);
   const revision = useRef(0);
+  const hosted = params.get("hostAuth") === "1";
   const bridge = useRef<ReturnType<typeof createCauslBridge> | null>(null);
   const [workspace, setWorkspace] = useState<CauslWorkspace | null>(null);
   const [draft, setDraft] = useState<
@@ -193,7 +194,7 @@ export default function WorkspaceChat({
     params.get("chatId") === workspace.chatId &&
     params.get("agentId") === String(workspace.agentId);
   if (!parentOrigin || !nonce) return <Text as="p">{t("notConfigured")}</Text>;
-  if (!authenticated || error === "signin")
+  if (!hosted && (!authenticated || error === "signin"))
     return (
       <div className="flex h-full flex-col items-start justify-center gap-3 p-4">
         <Text as="p">{t("signin")}</Text>
@@ -209,14 +210,16 @@ export default function WorkspaceChat({
         </Button>
       </div>
     );
-  if (error)
+  if (error || !authenticated)
     return (
       <div
         className="flex h-full flex-col items-start justify-center gap-3 p-4"
         role="status"
       >
-        <Text as="p">{t(error === "access" ? "access" : "unavailable")}</Text>
-        {error === "access" && libraryServerId && (
+        <Text as="p">
+          {t(!hosted && error === "access" ? "access" : "unavailable")}
+        </Text>
+        {!hosted && error === "access" && libraryServerId && (
           <Button onClick={connectLibrary}>
             {t(connecting ? "connecting" : "connectLibrary")}
           </Button>

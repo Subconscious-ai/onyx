@@ -4,9 +4,11 @@ import { useState } from "react";
 import { buildImgUrl } from "./utils";
 import { FullImageModal } from "./FullImageModal";
 import { useTranslations } from "next-intl";
+import { useAuthenticatedFileUrl } from "@/lib/causl/useAuthenticatedFileUrl";
 
 export function InputBarPreviewImage({ fileId }: { fileId: string }) {
   const t = useTranslations("chat.files");
+  const imageUrl = useAuthenticatedFileUrl(buildImgUrl(fileId));
   const [fullImageShowing, setFullImageShowing] = useState(false);
 
   return (
@@ -36,7 +38,7 @@ export function InputBarPreviewImage({ fileId }: { fileId: string }) {
         <img
           alt={t("inputBarPreviewImage.image.alt")}
           className="h-6 w-6 object-cover rounded-lg bg-background cursor-pointer"
-          src={buildImgUrl(fileId)}
+          src={imageUrl}
         />
       </button>
     </>

@@ -117,7 +117,8 @@ Set these existing database IDs only on a reviewed deployment:
 
 The server must use OAuth with per-user authentication.
 Its URL must end in `/api/mcp/library` and use HTTPS outside local development.
-No administrator token, legacy capability or browser-supplied token can replace the user's OAuth grant.
+No administrator token or legacy capability can replace the user's authority.
+The optional host authentication mode below uses the user's verified KB access token.
 
 The paired KB endpoint is in [causl-kb PR #689](https://github.com/Subconscious-ai/causl-kb/pull/689).
 Its organization OAuth dependency is [PR #674](https://github.com/Subconscious-ai/causl-kb/pull/674).
@@ -133,7 +134,7 @@ Set frontend `CAUSL_KB_MCP_SERVER_ID` to the same Library server ID as the backe
 Invalid entries fail closed. Normal application, administration and login routes retain
 their existing frame policy.
 
-The two applications must share a browser site for the existing native session cookie.
+The default cookie mode requires both applications to share a browser site.
 Native CookieTransport currently defaults to `SameSite=Lax`.
 A KB page on `www.causl.io` cannot reuse that cookie in an iframe on a different site,
 even when both applications use the same Auth0 tenant.
@@ -144,11 +145,54 @@ Auth0 callback for the reviewed native hostname. Keep the same verified issuer.
 A reverse proxy or approved sibling domain must preserve the native API and cookie paths.
 Do not change global cookie policy to work around cross-site embedding.
 
+### One KB login for embedded chat
+
+The paired KB rollout flag `ENABLE_ONYX_HOST_AUTH=true` selects `/causl?hostAuth=1`.
+The native chat composer, private history, context reader, and Library tools remain the application surface.
+The generic upstream widget does not carry this workspace context and action contract.
+Host mode uses the existing Onyx JWT verifier and native OIDC admission.
+It does not need a native Onyx cookie or a separate Library OAuth popup.
+
+Set these backend values on the reviewed single-workspace deployment:
+
+- `CAUSL_KB_HOST_AUTH_ENABLED=true` opts into strict host token authentication.
+- `JWT_PUBLIC_KEY_URL` names the existing Auth0 JWKS endpoint.
+- `JWT_EXPECTED_ISSUER` equals the KB `DECISION_MODEL_AUTH0_ISSUER_BASE_URL`.
+- `JWT_EXPECTED_AUDIENCE` equals the KB `DECISION_MODEL_AUTH0_AUDIENCE`.
+- `CAUSL_KB_AUTH0_PROVIDER_NAME` defaults to the enabled native OIDC provider `auth0`.
+- `CAUSL_KB_HOST_ORIGIN` names the exact HTTPS KB origin, without a path.
+
+The configured Library server URL must use that exact origin and `/api/mcp/library`.
+The existing frontend origin allowlist and Library server ID remain required.
+Multi-tenant Onyx fails closed because this flow has no verified native workspace pin.
+This limit does not change KB organization membership checks.
+
+The iframe requests a credential with `{kind: "causl:auth-request", nonce, id}`.
+The parent replies with `{kind: "causl:auth", nonce, id, token, expiresAt}` or `causl:auth-error`.
+`expiresAt` uses Unix seconds. Both sides check the source window, exact origin, nonce, and request ID.
+The KB POST `/api/assistant/session` refreshes the SDK session and verifies the token's subject and organization.
+The Auth0 API access token needs `openid profile email` for first-user native admission through trusted userinfo.
+No token enters a URL, browser storage, native session cookie, or stored native OAuth grant.
+Every host API call rechecks the parent session. Requests omit native cookies and disable browser caching.
+Protected file tags and downloads use authenticated fetch and temporary blob URLs.
+
+Onyx binds the cryptographically verified issuer and subject to the exact native OAuth account.
+A first user follows the enabled provider's invite, domain, and verified-email admission rules.
+Trusted userinfo must return the same subject. Every existing-email collision fails closed.
+No email match attaches an existing account. Existing native users retain their private chat history.
+The generic email-based JWT fallback is disabled while host authentication is enabled.
+
+Library forwarding uses only the request's bearer and the configured Library server and origin.
+KB verifies issuer, subject, token organization, and current membership on each read or action.
+Native context identity is scoped to the request and reset after completion.
+Standalone native login and stored per-user Library OAuth retain their current behavior.
+Disable both rollout flags to restore the existing cookie flow for embedded chat.
+
 The handshake accepts only the configured parent/frame origins and a per-frame nonce.
 Page selection is a hint; the backend verifies identity, membership and record ownership.
 Organization, caller and market changes replace the frame. Collapse and ordinary page
 navigation preserve it. Unchanged renders do not restart context requests.
-Native sign-in and Library OAuth recovery open a separate window. The customer then
+In cookie mode, native sign-in and Library OAuth recovery open a separate window. The customer then
 reopens the conversation. Preferences and administrator recovery also stay outside
 the embedded conversation.
 Draft text remains available when workspace preparation refuses a send.
