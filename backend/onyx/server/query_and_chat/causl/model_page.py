@@ -13,6 +13,8 @@ from typing import Any
 import httpx
 from jsonschema import Draft202012Validator
 
+from onyx.tools.tool_name import sanitize_tool_name
+
 _CONTRACT_PATH = Path(__file__).with_name("model_tool_contract.json")
 _CONTRACT_SHA256 = "93eb6c55393b2b14adc2243545fe2676d6d171cc0732d47517ae120a7861d801"
 
@@ -31,7 +33,9 @@ def model_page_tool_schema(name: str) -> dict[str, Any]:
     return model_page_tools()[name]["schema"]
 
 
-def model_page_history_name(default: str, response: str | None) -> str:
+def model_page_history_name(
+    default: str, response: str | None, server_name: str | None = None
+) -> str:
     """Recover aliases from the native CustomToolCallSummary persistence format."""
     if default != "inspect_model" and not default.endswith("_inspect_model"):
         return default
@@ -43,9 +47,13 @@ def model_page_history_name(default: str, response: str | None) -> str:
         return default
     name = data.get("tool_name")
     prefix = default.removesuffix("inspect_model")
-    if isinstance(name, str) and name in {
-        prefix + canonical for canonical in model_page_tools()
-    }:
+    allowed = {prefix + canonical for canonical in model_page_tools()}
+    if server_name is not None:
+        allowed.update(
+            sanitize_tool_name(f"mcp_{server_name}_{canonical}")
+            for canonical in model_page_tools()
+        )
+    if isinstance(name, str) and name in allowed:
         return name
     return default
 

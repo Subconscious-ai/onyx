@@ -226,3 +226,21 @@ def test_history_recovery_stays_inside_the_authorized_models_slot(
     )
     assert model_page_history_name(default, response) == expected
     assert model_page_history_name(default, "bad json") == default
+
+
+def test_history_recovery_uses_the_database_server_namespace() -> None:
+    def response(name: str) -> str:
+        return json.dumps({"response_type": "json", "tool_name": name})
+
+    assert (
+        model_page_history_name(
+            "inspect_model", response("mcp_Library_apply_model_source"), "Library"
+        )
+        == "mcp_Library_apply_model_source"
+    )
+    assert (
+        model_page_history_name(
+            "inspect_model", response("mcp_Other_apply_model_source"), "Library"
+        )
+        == "inspect_model"
+    )

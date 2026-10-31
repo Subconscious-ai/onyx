@@ -980,6 +980,11 @@ def build_chat_turn(
 
     all_tools = get_tools(db_session)
     tool_id_to_name_map = {tool.id: tool.name for tool in all_tools}
+    models_tool_server_names = {
+        tool.id: tool.mcp_server.name
+        for tool in all_tools
+        if tool.name == "inspect_model" and tool.mcp_server is not None
+    }
 
     search_tool_id = next(
         (tool.id for tool in all_tools if tool.in_code_tool_id == SEARCH_TOOL_ID), None
@@ -1160,6 +1165,7 @@ def build_chat_turn(
         additional_context=additional_context or new_msg_req.additional_context,
         token_counter=token_counter,
         tool_id_to_name_map=tool_id_to_name_map,
+        models_tool_server_names=models_tool_server_names,
     )
     simple_chat_history = chat_history_result.simple_messages
     # Incognito rows are content-free, so earlier turns come from the store and

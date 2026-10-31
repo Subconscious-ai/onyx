@@ -728,6 +728,7 @@ def convert_chat_history(
     additional_context: str | None,
     token_counter: Callable[[str], int],
     tool_id_to_name_map: dict[int, str],
+    models_tool_server_names: dict[int, str] | None = None,
 ) -> ChatHistoryResult:
     """Convert ChatMessage history to ChatMessageSimple format.
 
@@ -850,6 +851,7 @@ def convert_chat_history(
                         tool_name = model_page_history_name(
                             tool_id_to_name_map.get(tool_call.tool_id, "unknown"),
                             tool_call.tool_call_response,
+                            (models_tool_server_names or {}).get(tool_call.tool_id),
                         )
                         tool_calls_simple.append(
                             ToolCallSimple(
@@ -879,6 +881,7 @@ def convert_chat_history(
                         tool_name = model_page_history_name(
                             tool_id_to_name_map.get(tool_call.tool_id, "unknown"),
                             tool_call.tool_call_response,
+                            (models_tool_server_names or {}).get(tool_call.tool_id),
                         )
                         tool_response_message = (
                             _build_tool_call_response_history_message(
