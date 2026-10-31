@@ -401,3 +401,81 @@ def test_hosted_chat_reuses_native_chatgpt_provider() -> None:
             deployment_name=None,
         )
         assert client.call_args.kwargs["model_provider"] == "chatgpt"
+
+
+def test_hosted_chat_reuses_native_claude_subscription_provider() -> None:
+    identity = SessionIdentity(
+        native_user_id=uuid4(), issuer="https://auth.example/", subject="staff"
+    )
+    with (
+        host_request(HostSession(identity, "org", "provider-token")),
+        patch("onyx.llm.factory.LitellmLLM") as client,
+    ):
+        get_llm(
+            provider="anthropic",
+            model="claude-haiku-4-5",
+            api_key="sk-ant-oat-test-subscription",
+            max_input_tokens=4096,
+            deployment_name=None,
+        )
+        assert client.call_args.kwargs["model_provider"] == "anthropic"
+        assert client.call_args.kwargs["api_key"] == "sk-ant-oat-test-subscription"
+        assert client.call_args.kwargs["api_base"] == "https://api.anthropic.com"
+
+
+@pytest.mark.parametrize(
+    "api_key,api_base",
+    [
+        ("sk-ant-api-test-paid", None),
+        (None, None),
+        ("sk-ant-oat-test-subscription", "https://gateway.example"),
+    ],
+)
+def test_hosted_claude_rejects_paid_keys_and_gateway_routes(
+    api_key: str | None, api_base: str | None
+) -> None:
+    identity = SessionIdentity(
+        native_user_id=uuid4(), issuer="https://auth.example/", subject="staff"
+    )
+    with (
+        host_request(HostSession(identity, "org", "provider-token")),
+        patch("onyx.llm.factory.LitellmLLM") as client,
+    ):
+        with pytest.raises(OnyxError, match="subscription"):
+            get_llm(
+                provider="anthropic",
+                model="claude-haiku-4-5",
+                api_key=api_key,
+                api_base=api_base,
+                max_input_tokens=4096,
+                deployment_name=None,
+            )
+        client.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "override", ["model_kwargs", "policy_model_kwargs", "custom_config"]
+)
+def test_hosted_claude_rejects_credential_and_route_overrides(override: str) -> None:
+    identity = SessionIdentity(
+        native_user_id=uuid4(), issuer="https://auth.example/", subject="staff"
+    )
+    with (
+        host_request(HostSession(identity, "org", "provider-token")),
+        patch("onyx.llm.factory.LitellmLLM") as client,
+    ):
+        with pytest.raises(OnyxError, match="subscription"):
+            get_llm(
+                provider="anthropic",
+                model="claude-haiku-4-5",
+                api_key="sk-ant-oat-test-subscription",
+                max_input_tokens=4096,
+                deployment_name=None,
+                **{
+                    override: {
+                        "api_key": "sk-ant-api-test-paid",
+                        "api_base": "https://gateway.example",
+                    }
+                },
+            )
+        client.assert_not_called()
