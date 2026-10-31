@@ -53,6 +53,74 @@ DEMOS: dict[str, list[str]] = {
         "Tally clarity by message condition and draw the distribution chart and "
         "the mean score by condition.",
     ],
+    # docs/examples/importing_data.py + files.py
+    "import_csv": [
+        "Here is customer feedback as CSV:\nrecord_id,feedback\nf1,The setup was easy.\n"
+        "f2,The export button is missing.\n\nAnd profiles:\nprofile_id,experience\n"
+        "p1,new user\np2,frequent user\n\nLoad both, classify each feedback as "
+        "Positive, Neutral or Negative for each profile on the test model with "
+        "canned answer 'Positive', and show record_id, profile and sentiment.",
+    ],
+    # docs/examples/labeling.py + qualitative.py
+    "labeling": [
+        "Code these support requests with this codebook: Billing (a charge or "
+        "payment issue), Access (cannot enter a page), Feature request. Requests: "
+        "'I was charged twice', 'I cannot reset my password', 'Please add a dark "
+        "theme'. Use a checkbox question that allows zero to three codes, then a "
+        "free-text question that quotes the evidence and can see the codes. Run on "
+        "the test model with canned answer '[\"Billing\"]' and tally the codes.",
+    ],
+    # docs/examples/pretesting.py + prompt_sensitivity.py + prompts.py
+    "pretest": [
+        "Pretest two survey items, 'Do you use this service regularly?' and 'On "
+        "how many of the past 7 days did you use this service?'. Ask a reviewer "
+        "to pick the main issue (Ambiguous timeframe, Double-barreled, Leading, "
+        "None identified) and suggest a revision. Use two reviewer agents that "
+        "differ only by instruction: one classifies literally, one infers intent. "
+        "Show me the exact prompts first, then run on the test model with canned "
+        "answer 'Ambiguous timeframe'.",
+    ],
+    # docs/examples/results.py + dataset.py + caching.py
+    "results_cache": [
+        "Rerun the agents_scenarios study exactly as before on the test model and "
+        "tell me how many answers came from the cache. Then export condition, "
+        "role and clarity as CSV, filtered to the short condition.",
+    ],
+    # notebooks nps_survey + yoga_studio_name_survey
+    "nps": [
+        "Draft five diverse customer personas for a landscaping company with "
+        "different satisfaction levels. Build an NPS survey: a 0 to 10 recommend "
+        "question, then one 1 to 5 satisfaction rating each for product quality, "
+        "customer support and purchasing, as separate questions. Run on the test "
+        "model with canned answer '4' and draw the mean ratings.",
+    ],
+    # notebooks analyze_evaluations + summarizing_transcripts
+    "two_pass": [
+        "Course evaluations: 'Great pace, clear slides', 'Too fast but good "
+        "examples', 'Slides were hard to read'. First ask for up to three themes "
+        'per evaluation on the test model with canned answer \'["Pace", '
+        '"Slides"]\'. Then induce a codebook from the distinct themes, and code '
+        "every evaluation with a checkbox of those themes plus 'None of these', "
+        "canned answer '[\"Pace\"]'. Show the theme counts.",
+    ],
+    # notebooks updating_agents + digital_twin
+    "enrich_agents": [
+        "Interview one agent, a college student named s1, about the career they "
+        "want (test model, canned answer 'Teacher'). Then add that answer as a "
+        "trait and show me the prompts for a follow-up survey that asks why they "
+        "chose {{ agent.career }}.",
+    ],
+    # ep-skills conjoint-study + analyze-conjoint-results
+    "conjoint": [
+        "Design a choice-based conjoint for a phone plan with Price ($10, $20, "
+        "$30), Data (5 GB, 20 GB) and Contract (None, 12 months): four tasks per "
+        "version, three options per task, two versions. Run it for two segments, "
+        "student and family, on the test model with canned answer 'Option A'.",
+        "Analyze the conjoint: importance, part-worths and segments. Draw the "
+        "importance chart, the part-worth chart and the price curve. Then give "
+        "the choice shares for $10 with 20 GB and no contract versus $30 with 5 GB "
+        "and a 12-month contract.",
+    ],
 }
 
 FILE_URL = re.compile(r"/api/chat/file/([0-9a-f-]{16,})")
