@@ -113,6 +113,8 @@ class SendMessageRequest(BaseModel):
     # Test-only override for deterministic LiteLLM mock responses.
     mock_llm_response: str | None = None
 
+    # Shared callers can restrict execution to the supplied, audience-approved context.
+    shared_context_only: bool = False
     allowed_tool_ids: list[int] | None = None
     forced_tool_id: int | None = None
 
@@ -158,6 +160,22 @@ class SendMessageRequest(BaseModel):
 
     @model_validator(mode="after")
     def check_chat_session_id_or_info(self) -> "SendMessageRequest":
+        if self.shared_context_only:
+            if (
+                self.file_descriptors
+                or self.forced_tool_id is not None
+                or self.deep_research
+                or self.internal_search_filters is not None
+                or self.causl_selection is not None
+                or self.allowed_tool_ids
+                or self.chat_session_id is not None
+                or self.chat_session_info is not None
+                and self.chat_session_info.project_id is not None
+            ):
+                raise ValueError(
+                    "Shared context chat cannot include private sources or history"
+                )
+            self.allowed_tool_ids = []
         if self.causl_selection is not None and self.chat_session_id is None:
             raise ValueError("Workspace messages require a bound conversation.")
         # If neither is provided, default to creating a new chat session using the

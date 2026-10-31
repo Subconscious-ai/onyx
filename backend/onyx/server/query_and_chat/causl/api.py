@@ -1,7 +1,7 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
 from onyx.auth.host_auth import host_session_for
@@ -40,6 +40,7 @@ def workspace_identity(
     if host is not None:
         response.headers["Cache-Control"] = "private, no-store"
         return CauslIdentityResponse(
+            native_user_id=user.id,
             actor=CauslActor(
                 org_id=host.organization_id, user_id=host.identity.subject
             ),
@@ -50,6 +51,35 @@ def workspace_identity(
     return CauslIdentityResponse(
         actor=loaded.envelope.actor, issuer=loaded.envelope.issuer
     )
+
+
+@router.get("/causl-workspace/identity")
+def workspace_source_identity(
+    response: Response,
+    org_id: str = Query(alias="orgId", min_length=1, max_length=120),
+    persona_id: int = Query(alias="personaId", gt=0),
+    user: User = Depends(require_permission(Permission.WRITE_CHAT)),
+    db_session: Session = Depends(get_session),
+) -> dict[str, Any]:
+    from onyx.auth.session_identity import require_session_identity
+
+    identity = require_session_identity(user.id)
+    loaded = load_causl_context(
+        db_session,
+        user,
+        CauslActor(org_id=org_id, user_id=identity.subject),
+        CauslSelection(page="workspace"),
+        persona_id=persona_id,
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    return {
+        "nativeUserId": str(user.id),
+        "issuer": loaded.envelope.issuer,
+        "subject": loaded.envelope.actor.user_id,
+        "orgId": loaded.envelope.actor.org_id,
+        "personaId": loaded.configuration.persona_id,
+        "libraryServerId": loaded.configuration.library_server_id,
+    }
 
 
 @router.get("/causl-memory")
