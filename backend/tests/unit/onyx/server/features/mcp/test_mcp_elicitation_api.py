@@ -34,7 +34,9 @@ def test_the_owner_approves_and_the_answer_is_recorded(redis: FakeRedis) -> None
     user = _user()
     _pending(redis, APPROVAL_ID, str(user.id))
 
-    api.answer_mcp_elicitation(APPROVAL_ID, api.MCPElicitationAnswer(decision="approve"), user)
+    api.answer_mcp_elicitation(
+        APPROVAL_ID, api.MCPElicitationAnswer(decision="approve"), user
+    )
 
     assert redis.get(_answer_key(APPROVAL_ID)) == "approve"
 
@@ -64,7 +66,9 @@ def test_an_expired_approval_is_not_found() -> None:
 def test_a_second_answer_is_a_conflict(redis: FakeRedis) -> None:
     user = _user()
     _pending(redis, APPROVAL_ID, str(user.id))
-    api.answer_mcp_elicitation(APPROVAL_ID, api.MCPElicitationAnswer(decision="decline"), user)
+    api.answer_mcp_elicitation(
+        APPROVAL_ID, api.MCPElicitationAnswer(decision="decline"), user
+    )
 
     with pytest.raises(OnyxError) as error:
         api.answer_mcp_elicitation(
