@@ -24,6 +24,7 @@ import {
 } from "@/lib/permissions";
 import LiteModeIndexingNotice from "@/sections/admin/LiteModeIndexingNotice";
 import { useTranslations } from "next-intl";
+import useFocusTheme from "@/sections/customer/useFocusTheme";
 
 export interface AdminChromeProps {
   children: React.ReactNode;
@@ -60,6 +61,7 @@ export default function AdminChrome({
   const { isMobile } = useScreenSize();
   const pathname = usePathname();
   const { vectorDbEnabled, isLoading, application_status } = useSettings();
+  useFocusTheme();
   useAdminDocumentTitle();
   const router = useRouter();
   const { adminCapabilities: liveAdminCapabilities, isUserLoading } = useUser();

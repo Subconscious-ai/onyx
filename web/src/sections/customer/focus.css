@@ -1,8 +1,8 @@
 @import "./contract.css";
 @import "./ai-chat.css";
 
-/* The canonical contract reaches native Opal controls and body portals only
-   while AppChrome owns a customer route. Settings keep their existing theme. */
+/* Customer and admin layouts share the canonical contract for native Opal
+   controls, sidebars and body portals. Authentication keeps its native theme. */
 html[data-customer-design="focus"] {
   --text-05: var(--color);
   --text-04: var(--grey-700);
