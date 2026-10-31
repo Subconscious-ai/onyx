@@ -680,14 +680,20 @@ def build_chat_turn(
             )
         )
     )
-    causl_binding, workspace_context = workspace_turn(
-        db_session,
-        user,
-        chat_session,
-        new_msg_req.causl_selection,
-        saved_fact_request=saved_fact_request,
+    causl_binding, workspace_context = (
+        (None, None)
+        if new_msg_req.shared_context_only
+        else workspace_turn(
+            db_session,
+            user,
+            chat_session,
+            new_msg_req.causl_selection,
+            saved_fact_request=saved_fact_request,
+        )
     )
-    interview_mode = causl_binding is None or causl_binding.mode == "interview"
+    interview_mode = not new_msg_req.shared_context_only and (
+        causl_binding is None or causl_binding.mode == "interview"
+    )
     saved_fact_request = (
         saved_fact_request and causl_binding is not None and interview_mode
     )
@@ -901,7 +907,7 @@ def build_chat_turn(
 
     user_memory_context = (
         UserMemoryContext(user_info=UserInfo())
-        if causl_binding is not None
+        if causl_binding is not None or new_msg_req.shared_context_only
         else get_memories(user, db_session)
     )
 
@@ -946,7 +952,9 @@ def build_chat_turn(
     # Only the default persona inside a project uses the project's files.
     context_user_files = (
         []
-        if causl_binding is not None and not interview_mode
+        if new_msg_req.shared_context_only
+        or causl_binding is not None
+        and not interview_mode
         else resolve_context_user_files(
             persona=persona,
             project_id=chat_session.project_id,
@@ -980,6 +988,11 @@ def build_chat_turn(
 
     all_tools = get_tools(db_session)
     tool_id_to_name_map = {tool.id: tool.name for tool in all_tools}
+    models_tool_server_names = {
+        tool.id: tool.mcp_server.name
+        for tool in all_tools
+        if tool.name == "inspect_model" and tool.mcp_server is not None
+    }
 
     search_tool_id = next(
         (tool.id for tool in all_tools if tool.in_code_tool_id == SEARCH_TOOL_ID), None
@@ -1160,6 +1173,7 @@ def build_chat_turn(
         additional_context=additional_context or new_msg_req.additional_context,
         token_counter=token_counter,
         tool_id_to_name_map=tool_id_to_name_map,
+        models_tool_server_names=models_tool_server_names,
     )
     simple_chat_history = chat_history_result.simple_messages
     # Incognito rows are content-free, so earlier turns come from the store and
@@ -1508,6 +1522,7 @@ def _run_models(
 
         if (
             os.environ.get("BURN2_ENABLED") == "true"
+            and not setup.new_msg_req.shared_context_only
             and (setup.causl_binding is None or setup.causl_binding.mode == "interview")
             and setup.persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
             and setup.incognito_record_mode is None
@@ -1563,7 +1578,8 @@ def _run_models(
                 ),
                 allowed_tool_ids=setup.new_msg_req.allowed_tool_ids,
                 search_usage_forcing_setting=setup.search_params.search_usage,
-                allow_user_context=(
+                allow_user_context=not setup.new_msg_req.shared_context_only
+                and (
                     setup.causl_binding is None
                     or setup.causl_binding.mode == "interview"
                 ),
@@ -1588,6 +1604,7 @@ def _run_models(
                     )
             forced_tool_id = initial_profile_tool(
                 enabled=os.environ.get("BURN2_ENABLED") == "true"
+                and not setup.new_msg_req.shared_context_only
                 and (
                     setup.causl_binding is None
                     or setup.causl_binding.mode == "interview"
@@ -1643,7 +1660,8 @@ def _run_models(
                     reasoning_effort=setup.reasoning_effort,
                     include_citations=setup.new_msg_req.include_citations,
                     all_injected_file_metadata=setup.all_injected_file_metadata,
-                    inject_memories_in_prompt=user.use_memories,
+                    inject_memories_in_prompt=user.use_memories
+                    and not setup.new_msg_req.shared_context_only,
                     workspace_instructions=WORKSPACE_INSTRUCTIONS
                     if setup.causl_binding is not None
                     and setup.causl_binding.mode in ("workspace", "colossus")

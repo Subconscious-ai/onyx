@@ -196,14 +196,6 @@ export const MemoizedLink = memo(
         ? getDisplayNameForSource(document as OnyxDocument)
         : question?.question || t("memoizedLink.questionFallback.label");
 
-      if (workspaceAi)
-        return (
-          <WorkspaceCitation
-            source={sourceInfo}
-            label={valueText.slice(1, -1)}
-            onOpen={handleSourceClick}
-          />
-        );
       if (documentSourceInfo) {
         return (
           <AIInlineCitation
@@ -213,6 +205,15 @@ export const MemoizedLink = memo(
           />
         );
       }
+
+      if (workspaceAi)
+        return (
+          <WorkspaceCitation
+            source={sourceInfo}
+            label={valueText.slice(1, -1)}
+            onOpen={handleSourceClick}
+          />
+        );
 
       return (
         <SourceTag

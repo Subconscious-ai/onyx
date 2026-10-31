@@ -40,9 +40,11 @@ export class ChatPage {
     return this.aiMessages.nth(index);
   }
 
-  async goto(): Promise<void> {
+  async goto(options: { waitForNetworkIdle?: boolean } = {}): Promise<void> {
     await this.page.goto("/app");
-    await this.page.waitForLoadState("networkidle");
+    if (options.waitForNetworkIdle !== false) {
+      await this.page.waitForLoadState("networkidle");
+    }
     await this.inputBar.textbox.waitFor({ state: "visible", timeout: 15000 });
   }
 

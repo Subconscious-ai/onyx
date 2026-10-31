@@ -1,4 +1,5 @@
 @import "./contract.css";
+@import "./ai-chat.css";
 
 /* The canonical contract reaches native Opal controls and body portals only
    while AppChrome owns a customer route. Settings keep their existing theme. */
@@ -102,7 +103,7 @@ html[data-customer-design="focus"] #onyx-chat-input:focus-within {
   outline-offset: 3px;
 }
 
-/* The composer owns the focus indicator for its editable message field. */
+/* The composer supplies the editor focus indicator. */
 html[data-customer-design="focus"] #onyx-chat-input-textbox:focus-visible {
   outline: none;
 }

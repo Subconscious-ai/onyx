@@ -4,6 +4,8 @@ from io import BytesIO
 from typing import cast
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from onyx.chat.chat_utils import (
     _build_tool_call_response_history_message,
     _get_or_extract_plaintext,
@@ -12,9 +14,13 @@ from onyx.chat.chat_utils import (
 )
 from onyx.chat.models import ChatLoadedFile
 from onyx.configs.constants import DEFAULT_PERSONA_ID, MessageType
-from onyx.db.models import ChatMessage
+from onyx.db.models import ChatMessage, MCPServer, ToolCall
 from onyx.file_store.models import ChatFileType
 from onyx.prompts.chat_prompts import TOOL_CALL_RESPONSE_CROSS_MESSAGE
+from onyx.server.query_and_chat.causl.models import CauslActor
+from onyx.tools.models import CustomToolCallSummary
+from onyx.tools.tool_constructor import _disambiguate_mcp_tool_names
+from onyx.tools.tool_implementations.mcp.mcp_tool import MCPTool
 
 
 class TestGetCustomAgentPrompt:
@@ -348,3 +354,83 @@ class TestConvertChatHistory:
         assert len(tool_responses) == 1
         assert tool_responses[0].message == TOOL_CALL_RESPONSE_CROSS_MESSAGE
         assert tool_responses[0].token_count == len(TOOL_CALL_RESPONSE_CROSS_MESSAGE)
+
+
+@pytest.mark.parametrize("collision", [False, True])
+def test_models_aliases_replay_with_persisted_tool_names(collision: bool) -> None:
+    """Database tool IDs identify the permission slot, not the native alias."""
+    server = MCPServer(id=22, name="Library")
+    base = MCPTool(
+        tool_id=42,
+        emitter=MagicMock(),
+        mcp_server=server,
+        tool_name="inspect_model",
+        tool_description="Inspect financial model",
+        tool_definition={},
+        bound_actor=CauslActor(org_id="org_b", user_id="auth0|alice"),
+        bound_model_page='{"version":1}',
+    )
+    tools = base.with_model_page_tools()
+    if collision:
+        tools.append(
+            MCPTool(
+                tool_id=99,
+                emitter=MagicMock(),
+                mcp_server=MCPServer(id=23, name="Other"),
+                tool_name="apply_model_source",
+                tool_description="Unrelated source tool",
+                tool_definition={},
+            )
+        )
+    _disambiguate_mcp_tool_names(tools)
+    names = {tool._mcp_tool_name: tool.name for tool in tools if tool.id == 42}
+    assert names["apply_model_source"] == (
+        "mcp_Library_apply_model_source" if collision else "apply_model_source"
+    )
+    calls = [
+        ToolCall(
+            turn_number=index,
+            tool_id=42,
+            tool_call_id=f"call-{index}",
+            tool_call_arguments=arguments,
+            tool_call_tokens=10,
+            tool_call_response=CustomToolCallSummary(
+                tool_name=names[name],
+                response_type="json",
+                tool_result={"status": "Awaiting Apply"},
+            ).model_dump_json(),
+        )
+        for index, (name, arguments) in enumerate(
+            [
+                ("apply_model_source", {"source": "cost = 500"}),
+                ("create_scenarios", {"scenarios": []}),
+                ("build_model_chart", {"metricId": "cost"}),
+            ]
+        )
+    ]
+    assistant = ChatMessage(
+        message="Review the proposal",
+        message_type=MessageType.ASSISTANT,
+        token_count=5,
+        tool_calls=calls,
+    )
+    result = convert_chat_history(
+        chat_history=[assistant],
+        files=[],
+        context_image_files=[],
+        additional_context=None,
+        token_counter=len,
+        tool_id_to_name_map={42: "inspect_model"},
+        models_tool_server_names={42: server.name},
+    )
+    replay = [
+        call for message in result.simple_messages for call in message.tool_calls or []
+    ]
+    assert [call.tool_name for call in replay] == [
+        names["apply_model_source"],
+        names["create_scenarios"],
+        names["build_model_chart"],
+    ]
+    assert [call.tool_arguments for call in replay] == [
+        call.tool_call_arguments for call in calls
+    ]

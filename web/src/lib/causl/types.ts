@@ -15,6 +15,7 @@ export interface CauslSelection {
   record?: { type: string; id: string };
   runId?: string;
   studioId?: string;
+  modelPage?: string;
 }
 
 /** Native context protocol v2. Snapshot v1 contains browser view hints, never tenant authority. */
@@ -45,6 +46,7 @@ export interface CauslWorkspace {
   agentId: number;
   scopeKey: string;
   contextDigest: string;
+  actor?: CauslActor;
 }
 
 export interface CauslDraft {

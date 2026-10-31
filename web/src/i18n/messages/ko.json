@@ -13,6 +13,7 @@
     "connecting": "연결 중…",
     "unavailable": "작업 공간 컨텍스트를 사용할 수 없습니다. 저장된 대화는 유지됩니다.",
     "opening": "대화를 여는 중…",
+    "modelContextUnavailable": "Models 페이지 캡처에 실패했거나 크기 제한을 초과했습니다. 완전한 모델을 열고 다시 시도하세요. 로컬 초안은 변경되지 않습니다.",
     "contextChanged": "메시지를 보내기 전에 작업 공간이 변경되었습니다. 현재 컨텍스트를 확인하고 다시 보내세요."
   },
   "accountPopover": {
@@ -9310,7 +9311,8 @@
         },
         "stopButton": {
           "ariaLabel": "생성 중지",
-          "tooltip": "중지 · esc"
+          "tooltip": "중지 · esc",
+          "label": "중지"
         }
       },
       "buildFileCard": {

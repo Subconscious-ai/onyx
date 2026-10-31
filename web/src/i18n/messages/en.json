@@ -13,6 +13,7 @@
     "connecting": "Connecting…",
     "unavailable": "The workspace context is unavailable. Your saved conversation is retained.",
     "opening": "Opening your workspace conversation…",
+    "modelContextUnavailable": "Models page capture failed or exceeded the size limit. Open a complete model and retry. Local drafts remain unchanged.",
     "contextChanged": "The workspace changed before this message was sent. Review the current context and send it again."
   },
   "accountPopover": {
@@ -9310,7 +9311,8 @@
         },
         "stopButton": {
           "ariaLabel": "Stop generating",
-          "tooltip": "Stop · esc"
+          "tooltip": "Stop · esc",
+          "label": "Stop"
         }
       },
       "buildFileCard": {

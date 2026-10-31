@@ -11,10 +11,11 @@ import type { ComponentPropsWithRef } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { Text } from "@opal/components";
 import { cn } from "@opal/utils";
+import type { RichStr } from "@opal/types";
 import "@/sections/customer/ai-elements.css";
 
 interface AIInputSearchProps extends ComponentPropsWithRef<"div"> {
-  toolLabel?: string;
+  toolLabel?: string | RichStr;
   onFocusInput: () => void;
 }
 
@@ -47,7 +48,7 @@ export default function AIInputSearch({
         <AnimatePresence initial={false} mode="popLayout">
           {toolLabel && (
             <motion.div
-              key={toolLabel}
+              key={typeof toolLabel === "string" ? toolLabel : toolLabel.raw}
               className="kokonut-input-search__tool"
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}

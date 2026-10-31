@@ -7,6 +7,7 @@ import { Button } from "@opal/components";
 import { Hoverable } from "@opal/core";
 import { cn, clickOnKeyDown } from "@opal/utils";
 import { useTranslations } from "next-intl";
+import { useAuthenticatedFileUrl } from "@/lib/causl/hooks";
 
 const DEFAULT_SHAPE: ImageShape = "square";
 
@@ -41,6 +42,7 @@ export const InMessageImage = memo(function InMessageImage({
   shape = DEFAULT_SHAPE,
 }: InMessageImageProps) {
   const t = useTranslations("chat.files");
+  const imageUrl = useAuthenticatedFileUrl(buildImgUrl(fileId));
   const [fullImageShowing, setFullImageShowing] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(loadedImages.has(fileId));
 
@@ -107,7 +109,7 @@ export const InMessageImage = memo(function InMessageImage({
               shapeImageClasses,
               imageLoaded ? "opacity-100" : "opacity-0"
             )}
-            src={buildImgUrl(fileId)}
+            src={imageUrl}
             loading="lazy"
           />
 

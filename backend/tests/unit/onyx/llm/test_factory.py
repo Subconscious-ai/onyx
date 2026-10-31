@@ -1,12 +1,18 @@
 from functools import partial
 from unittest.mock import MagicMock, patch
+from uuid import uuid4
 
+import pytest
+
+from onyx.auth.host_auth import HostSession, host_request
+from onyx.auth.session_identity import SessionIdentity
 from onyx.chat.incognito import (
     BIFROST_DISABLE_CONTENT_LOGGING_HEADER,
     incognito_llm_extra_headers,
     incognito_llm_request_policy,
 )
 from onyx.db.enums import IncognitoRecordMode
+from onyx.error_handling.exceptions import OnyxError
 from onyx.llm.constants import LlmProviderNames
 from onyx.llm.factory import (
     _build_provider_extra_headers,
@@ -355,3 +361,121 @@ class TestPolicyFnForwarding:
             assert (
                 mock_from_provider.call_args.kwargs["policy_fn"] is _sentinel_policy_fn
             )
+
+
+@pytest.mark.parametrize(
+    "provider", ["bedrock", "openai", "anthropic", "openai-compatible"]
+)
+def test_hosted_chat_rejects_paid_provider_before_constructing_client(
+    provider: str,
+) -> None:
+    identity = SessionIdentity(
+        native_user_id=uuid4(), issuer="https://auth.example/", subject="staff"
+    )
+    with (
+        host_request(HostSession(identity, "org", "provider-token")),
+        patch("onyx.llm.factory.LitellmLLM") as client,
+    ):
+        with pytest.raises(OnyxError, match="subscription"):
+            get_llm(
+                provider=provider,
+                model="model",
+                max_input_tokens=4096,
+                deployment_name=None,
+            )
+        client.assert_not_called()
+
+
+def test_hosted_chat_reuses_native_chatgpt_provider() -> None:
+    identity = SessionIdentity(
+        native_user_id=uuid4(), issuer="https://auth.example/", subject="staff"
+    )
+    with (
+        host_request(HostSession(identity, "org", "provider-token")),
+        patch("onyx.llm.factory.LitellmLLM") as client,
+    ):
+        get_llm(
+            provider="chatgpt",
+            model="gpt-6.1-sol",
+            max_input_tokens=4096,
+            deployment_name=None,
+        )
+        assert client.call_args.kwargs["model_provider"] == "chatgpt"
+
+
+def test_hosted_chat_reuses_native_claude_subscription_provider() -> None:
+    identity = SessionIdentity(
+        native_user_id=uuid4(), issuer="https://auth.example/", subject="staff"
+    )
+    with (
+        host_request(HostSession(identity, "org", "provider-token")),
+        patch("onyx.llm.factory.LitellmLLM") as client,
+    ):
+        get_llm(
+            provider="anthropic",
+            model="claude-haiku-4-5",
+            api_key="sk-ant-oat-test-subscription",
+            max_input_tokens=4096,
+            deployment_name=None,
+        )
+        assert client.call_args.kwargs["model_provider"] == "anthropic"
+        assert client.call_args.kwargs["api_key"] == "sk-ant-oat-test-subscription"
+        assert client.call_args.kwargs["api_base"] == "https://api.anthropic.com"
+
+
+@pytest.mark.parametrize(
+    "api_key,api_base",
+    [
+        ("sk-ant-api-test-paid", None),
+        (None, None),
+        ("sk-ant-oat-test-subscription", "https://gateway.example"),
+    ],
+)
+def test_hosted_claude_rejects_paid_keys_and_gateway_routes(
+    api_key: str | None, api_base: str | None
+) -> None:
+    identity = SessionIdentity(
+        native_user_id=uuid4(), issuer="https://auth.example/", subject="staff"
+    )
+    with (
+        host_request(HostSession(identity, "org", "provider-token")),
+        patch("onyx.llm.factory.LitellmLLM") as client,
+    ):
+        with pytest.raises(OnyxError, match="subscription"):
+            get_llm(
+                provider="anthropic",
+                model="claude-haiku-4-5",
+                api_key=api_key,
+                api_base=api_base,
+                max_input_tokens=4096,
+                deployment_name=None,
+            )
+        client.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "override", ["model_kwargs", "policy_model_kwargs", "custom_config"]
+)
+def test_hosted_claude_rejects_credential_and_route_overrides(override: str) -> None:
+    identity = SessionIdentity(
+        native_user_id=uuid4(), issuer="https://auth.example/", subject="staff"
+    )
+    with (
+        host_request(HostSession(identity, "org", "provider-token")),
+        patch("onyx.llm.factory.LitellmLLM") as client,
+    ):
+        with pytest.raises(OnyxError, match="subscription"):
+            get_llm(
+                provider="anthropic",
+                model="claude-haiku-4-5",
+                api_key="sk-ant-oat-test-subscription",
+                max_input_tokens=4096,
+                deployment_name=None,
+                **{
+                    override: {
+                        "api_key": "sk-ant-api-test-paid",
+                        "api_base": "https://gateway.example",
+                    }
+                },
+            )
+        client.assert_not_called()

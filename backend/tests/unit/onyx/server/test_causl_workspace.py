@@ -1166,6 +1166,37 @@ def test_native_brief_handoff_retains_only_matching_bounded_preparation(
     (tmp_path / "native-handoff.json").write_text(json.dumps(payload))
 
 
+def test_standalone_bootstrap_derives_actor_only_from_verified_native_and_library_identity(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, user, _server = connected
+    requests = http_response(monkeypatch, envelope())
+    loaded = context.load_causl_context(db, user, None, SELECTION)
+    assert loaded.envelope.actor == ACTOR
+    assert requests[0].headers["x-causl-expected-subject"] == "auth0|alice"
+    assert "x-causl-expected-organization" not in requests[0].headers
+
+
+@pytest.mark.parametrize(
+    "field,value", [("userId", "auth0|foreign"), ("issuer", "https://foreign.example/")]
+)
+def test_standalone_bootstrap_rejects_foreign_native_identity(
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+    field: str,
+    value: str,
+) -> None:
+    db, user, _server = connected
+    payload = envelope()
+    if field == "issuer":
+        payload["issuer"] = value
+    else:
+        payload["actor"][field] = value
+    http_response(monkeypatch, payload)
+    with pytest.raises(OnyxError):
+        context.load_causl_context(db, user, None, SELECTION)
+
+
 def colossus_selection(revision: int = 1) -> CauslSelection:
     return CauslSelection.model_validate(
         {
@@ -1301,3 +1332,135 @@ def test_colossus_memory_uses_verified_library_and_turns_require_current_selecti
     assert missing_context.value.status_code == 400
     assert "Open this conversation in Colossus" in missing_context.value.detail
     read.assert_not_called()
+
+
+def test_host_models_context_does_not_require_optional_library(connected, monkeypatch):
+    from onyx.auth.host_auth import HostSession, host_request
+
+    db, user, _ = connected
+    identity = context.require_session_identity(user.id)
+
+    def no_library(*_args, **_kwargs):
+        pytest.fail("Basic app context must not read Library")
+
+    monkeypatch.setattr(context, "_library_server", no_library)
+    with host_request(HostSession(identity, ACTOR.org_id, "test-only-token")):
+        loaded = context.load_causl_context(
+            db, user, None, CauslSelection(page="models")
+        )
+        assert loaded.envelope.actor == ACTOR
+        assert loaded.envelope.issuer == identity.issuer
+        assert loaded.envelope.context["library"] == {}
+        assert loaded.envelope.context["page"] == "models"
+        with pytest.raises(OnyxError):
+            context.load_causl_context(
+                db,
+                user,
+                ACTOR.model_copy(update={"org_id": "foreign"}),
+                CauslSelection(page="models"),
+            )
+
+
+def test_host_models_context_preserves_persona_denial(connected, monkeypatch):
+    from onyx.auth.host_auth import HostSession, host_request
+
+    db, user, _ = connected
+    monkeypatch.setattr(context, "user_can_access_persona", lambda *_args: False)
+    with host_request(
+        HostSession(
+            context.require_session_identity(user.id), ACTOR.org_id, "test-only-token"
+        )
+    ):
+        with pytest.raises(OnyxError):
+            context.load_causl_context(db, user, None, CauslSelection(page="models"))
+
+
+def test_host_colossus_context_and_identity_need_no_library(connected, monkeypatch):
+    from fastapi import Response
+
+    from onyx.auth.host_auth import HostSession, host_request
+    from onyx.server.query_and_chat.causl.api import workspace_identity
+
+    db, user, _ = connected
+
+    def no_library(*_args, **_kwargs):
+        pytest.fail("Basic app context must not read Library")
+
+    monkeypatch.setattr(context, "_library_server", no_library)
+    with host_request(
+        HostSession(
+            context.require_session_identity(user.id), ACTOR.org_id, "test-only-token"
+        )
+    ):
+        identity = workspace_identity(Response(), user, db)
+        assert identity.actor == ACTOR
+        assert identity.native_user_id == user.id
+        assert identity.shared_context_supported is True
+        first = context.load_causl_context(db, user, ACTOR, colossus_selection())
+        second = context.load_causl_context(db, user, ACTOR, colossus_selection(2))
+        assert first.envelope.context["view_hints"]["revision"] == 1
+        assert second.envelope.context["view_hints"]["revision"] == 2
+        assert first.envelope.context["digest"] != second.envelope.context["digest"]
+        assert "library" not in first.envelope.context
+
+
+def test_host_context_cannot_replace_library_record_authorization(
+    connected, monkeypatch
+):
+    from onyx.auth.host_auth import HostSession, host_request
+
+    db, user, _ = connected
+
+    def denied(*_args, **_kwargs):
+        raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+
+    monkeypatch.setattr(context, "_library_server", denied)
+    with host_request(
+        HostSession(
+            context.require_session_identity(user.id), ACTOR.org_id, "test-only-token"
+        )
+    ):
+        with pytest.raises(OnyxError):
+            context.load_causl_context(db, user, ACTOR, SELECTION)
+
+
+@pytest.mark.parametrize("denied", [None, "persona", "organization"])
+def test_saved_twenty_source_checks_current_persona_and_library_identity(
+    connected, monkeypatch, denied
+):
+    from fastapi import Response
+
+    from onyx.auth import session_identity
+    from onyx.server.query_and_chat.causl.api import workspace_source_identity
+
+    db, user, _ = connected
+    monkeypatch.setattr(
+        session_identity, "require_session_identity", context.require_session_identity
+    )
+    persona_access = MagicMock(return_value=denied != "persona")
+    monkeypatch.setattr(context, "user_can_access_persona", persona_access)
+    payload = envelope()
+    payload["context"].update(page="workspace", market=None)
+    http_response(monkeypatch, payload)
+    response = Response()
+    if denied:
+        with pytest.raises(OnyxError):
+            workspace_source_identity(
+                response,
+                "foreign" if denied == "organization" else ACTOR.org_id,
+                17,
+                user,
+                db,
+            )
+        return
+    identity = workspace_source_identity(response, ACTOR.org_id, 17, user, db)
+    assert identity == {
+        "nativeUserId": str(user.id),
+        "issuer": "https://auth.example/",
+        "subject": ACTOR.user_id,
+        "orgId": ACTOR.org_id,
+        "personaId": 17,
+        "libraryServerId": 22,
+    }
+    persona_access.assert_called_once_with(db, 17, user)
+    assert response.headers["Cache-Control"] == "private, no-store"

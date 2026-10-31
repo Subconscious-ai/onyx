@@ -63,7 +63,7 @@ html[data-customer-design="focus"]
   button[data-kokonut="ai-inline-citation"] {
   border-radius: 999px !important;
 }
-button[data-kokonut="ai-inline-citation"] {
+[data-kokonut="ai-inline-citation"] {
   display: inline-flex;
   align-items: center;
   vertical-align: middle;
@@ -80,17 +80,17 @@ button[data-kokonut="ai-inline-citation"] {
     color 150ms,
     background-color 150ms;
 }
-button[data-kokonut="ai-inline-citation"] > div {
+[data-kokonut="ai-inline-citation"] span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-button[data-kokonut="ai-inline-citation"]:hover,
-button[data-kokonut="ai-inline-citation"][data-state="open"] {
+[data-kokonut="ai-inline-citation"]:hover,
+[data-kokonut="ai-inline-citation"][data-state="open"] {
   color: var(--text-inverted-05);
   background: var(--background-neutral-inverted-00);
 }
-button[data-kokonut="ai-inline-citation"]::before {
+[data-kokonut="ai-inline-citation"]::before {
   content: attr(data-monogram);
   display: flex;
   align-items: center;
@@ -110,24 +110,21 @@ button[data-kokonut="ai-inline-citation"]::before {
   gap: 8px;
   padding: 10px;
 }
+.kokonut-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-kokonut="ai-inline-citation"] {
+    transition: none;
+  }
+}
+
 .kokonut-citation-preview blockquote {
   max-height: 18rem;
   overflow: auto;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-.kokonut-loading {
-  padding: 0 12px 12px 44px;
-}
-.kokonut-loading--compact {
-  padding: 0;
-}
-.kokonut-loading--compact > li {
-  padding-top: 0;
-  align-items: center;
-}
-@media (prefers-reduced-motion: reduce) {
-  button[data-kokonut="ai-inline-citation"] {
-    transition: none;
-  }
 }

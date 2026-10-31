@@ -402,7 +402,7 @@ export default function useChatController({
       // Read at submit time so no caller can capture a stale value.
       const incognito = incognitoEnabledRef.current ?? false;
       // Wait before touching input or session state; unresolved is not agent 0.
-      if (!incognito && !activeAgent) return;
+      if ((!incognito && !activeAgent) || llmManager.isLoadingProviders) return;
       const isMultiModel =
         !regenerationRequest && (selectedModels?.length ?? 0) >= 2;
       const projectId = searchParams.get(SEARCH_PARAM_NAMES.PROJECT_ID);
@@ -1161,6 +1161,20 @@ export default function useChatController({
               setStreamingStartTime(frozenSessionId, Date.now());
             }
 
+            if (packet && typeof packet === "object" && "obj" in packet) {
+              const object = packet.obj;
+              if (
+                object &&
+                typeof object === "object" &&
+                "type" in object &&
+                object.type === "custom_tool_delta" &&
+                "data" in object
+              ) {
+                window.dispatchEvent(
+                  new CustomEvent("models:tool-result", { detail: object.data })
+                );
+              }
+            }
             if ((packet as MessageResponseIDInfo).user_message_id) {
               newUserMessageId = (packet as MessageResponseIDInfo)
                 .user_message_id;
@@ -1500,6 +1514,7 @@ export default function useChatController({
       searchFilters.selectedTags,
       searchFilters.timeRange,
       llmManager.currentLlm,
+      llmManager.isLoadingProviders,
       llmManager.temperature,
       llmManager.hasTemperatureOverride,
       llmManager.persistOverrides,
@@ -1615,7 +1630,7 @@ export default function useChatController({
   );
 
   useEffect(() => {
-    if (!llmManager.hasAnyProvider) return;
+    if (llmManager.isLoadingProviders || !llmManager.hasAnyProvider) return;
 
     let cancelled = false;
 
@@ -1660,6 +1675,7 @@ export default function useChatController({
     currentSessionId,
     existingChatSessionId,
     activeAgent?.id,
+    llmManager.isLoadingProviders,
     llmManager.hasAnyProvider,
     llmManager.currentLlm.modelConfigurationId,
   ]);

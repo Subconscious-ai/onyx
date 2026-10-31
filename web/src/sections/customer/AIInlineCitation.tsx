@@ -83,7 +83,9 @@ export default function AIInlineCitation({
             data-kokonut="ai-inline-citation"
             data-monogram={site.charAt(0).toUpperCase()}
             prominence="tertiary"
-            size="sm"
+            variant="default"
+            size="fit"
+            data-ai-citation=""
             aria-label={previewLabel ?? source.title}
             aria-controls={open ? previewId : undefined}
             aria-haspopup="dialog"

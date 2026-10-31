@@ -874,15 +874,33 @@ const AppInputBar = React.memo(
               />
             ))}
 
+          {chatState === "streaming" && (
+            <Button
+              icon={SvgStop}
+              prominence="secondary"
+              data-ai-stop={embeddedWorkspace ? "" : undefined}
+              aria-label={t("baseInputBar.stopButton.ariaLabel")}
+              tooltip={t("baseInputBar.stopButton.tooltip")}
+              onClick={() => {
+                stopTTS({ manual: true });
+                stopGenerating();
+              }}
+            >
+              {t("baseInputBar.stopButton.label")}
+            </Button>
+          )}
           <Button
             disabled={
-              !(embeddedWorkspace && chatState === "streaming") &&
-              ((chatState === "input" &&
+              (embeddedWorkspace && chatState !== "input") ||
+              (!embeddedWorkspace &&
+                chatState !== "input" &&
+                !message.trim()) ||
+              (chatState === "input" &&
                 !isVoicePlaybackControllable &&
                 !message) ||
-                hasUploadingFiles ||
-                hasIndexingFiles ||
-                isClassifying)
+              hasUploadingFiles ||
+              hasIndexingFiles ||
+              isClassifying
             }
             tooltip={
               hasUploadingFiles || hasIndexingFiles
@@ -890,24 +908,19 @@ const AppInputBar = React.memo(
                 : undefined
             }
             id="onyx-chat-input-send-button"
-            data-ai-stop={
-              embeddedWorkspace && chatState === "streaming" ? "" : undefined
-            }
             aria-label={
               !embeddedWorkspace && chatState !== "input" && message.trim()
                 ? t("baseInputBar.sendButton.queueLabel")
-                : chatState === "streaming"
-                  ? t("baseInputBar.stopButton.ariaLabel")
-                  : isVoicePlaybackControllable
-                    ? tMessages("tts.stopButton.tooltip")
-                    : t("baseInputBar.sendButton.sendLabel")
+                : isVoicePlaybackControllable && chatState === "input"
+                  ? tMessages("tts.stopButton.tooltip")
+                  : t("baseInputBar.sendButton.sendLabel")
             }
             icon={
               isClassifying
                 ? SvgSimpleLoader
                 : !embeddedWorkspace && chatState !== "input" && message.trim()
                   ? SvgArrowUp
-                  : chatState === "streaming" || isVoicePlaybackControllable
+                  : isVoicePlaybackControllable && chatState === "input"
                     ? SvgStop
                     : SvgArrowUp
             }
@@ -930,11 +943,7 @@ const AppInputBar = React.memo(
                 submitMessage(message);
               }
             }}
-          >
-            {embeddedWorkspace && chatState === "streaming"
-              ? tWorkspace("stop")
-              : undefined}
-          </Button>
+          />
         </div>
       </div>
     );
@@ -951,6 +960,7 @@ const AppInputBar = React.memo(
           <AIInputSearch
             ref={containerRef}
             id="onyx-chat-input"
+            data-ai-composer=""
             onFocusInput={() => inputRef.current?.focus()}
             toolLabel={
               activeAgent?.tools.find((tool) => tool.id === forcedToolId)

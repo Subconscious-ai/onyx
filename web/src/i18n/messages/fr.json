@@ -13,6 +13,7 @@
     "connecting": "Connexion…",
     "unavailable": "Le contexte est indisponible. Votre conversation enregistrée est conservée.",
     "opening": "Ouverture de votre conversation…",
+    "modelContextUnavailable": "La capture de la page Models a échoué ou dépassé la taille limite. Ouvrez un modèle complet et réessayez. Les brouillons locaux restent inchangés.",
     "contextChanged": "L’espace a changé avant l’envoi. Vérifiez le contexte actuel et renvoyez le message."
   },
   "accountPopover": {
@@ -9310,7 +9311,8 @@
         },
         "stopButton": {
           "ariaLabel": "Arrêter la génération",
-          "tooltip": "Arrêter · échap"
+          "tooltip": "Arrêter · échap",
+          "label": "Arrêter"
         }
       },
       "buildFileCard": {

@@ -13,6 +13,7 @@
     "connecting": "Conectando…",
     "unavailable": "El contexto no está disponible. Su conversación guardada se conserva.",
     "opening": "Abriendo su conversación…",
+    "modelContextUnavailable": "La captura de la página de Models falló o superó el límite de tamaño. Abra un modelo completo e inténtelo de nuevo. Los borradores locales permanecen sin cambios.",
     "contextChanged": "El espacio cambió antes de enviar el mensaje. Revise el contexto actual y vuelva a enviarlo."
   },
   "accountPopover": {
@@ -9310,7 +9311,8 @@
         },
         "stopButton": {
           "ariaLabel": "Detener la generación",
-          "tooltip": "Detener · esc"
+          "tooltip": "Detener · esc",
+          "label": "Detener"
         }
       },
       "buildFileCard": {

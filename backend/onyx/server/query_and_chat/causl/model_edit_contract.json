@@ -1,0 +1,303 @@
+{
+  "version": 1,
+  "source": "guesstimate-v3 modelEditSchema",
+  "maxEdits": 24,
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "distribution": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "POINT",
+                  "NORMAL",
+                  "LOGNORMAL",
+                  "BETA",
+                  "PERT",
+                  "GAMMA",
+                  "EXPONENTIAL",
+                  "BERNOULLI",
+                  "POISSON",
+                  "BINOMIAL",
+                  "UNIFORM",
+                  "TRIANGULAR",
+                  "LOGISTIC",
+                  "CAUCHY"
+                ]
+              },
+              {
+                "type": "string",
+                "const": "FUNCTION"
+              }
+            ]
+          },
+          "expression": {
+            "type": "string",
+            "maxLength": 20000
+          },
+          "kind": {
+            "type": "string",
+            "const": "create-metric"
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "column": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "row": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              }
+            },
+            "required": [
+              "column",
+              "row"
+            ],
+            "additionalProperties": false
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 180
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "readableId": {
+            "type": "string",
+            "maxLength": 120,
+            "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "AUTO",
+                  "NUMBER",
+                  "PERCENT",
+                  "USD",
+                  "COUNT",
+                  "USD_PER_COUNT"
+                ]
+              },
+              {
+                "type": "string",
+                "pattern": "^CUSTOM:[A-Za-z][A-Za-z0-9 _-]{0,31}$"
+              }
+            ]
+          }
+        },
+        "required": [
+          "distribution",
+          "expression",
+          "kind",
+          "location",
+          "name",
+          "notes",
+          "readableId"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "delete-metric"
+          },
+          "metricId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "kind",
+          "metricId"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "move-metric"
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "column": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "row": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              }
+            },
+            "required": [
+              "column",
+              "row"
+            ],
+            "additionalProperties": false
+          },
+          "metricId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "kind",
+          "location",
+          "metricId"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "distribution": {
+            "type": "string",
+            "enum": [
+              "POINT",
+              "NORMAL",
+              "LOGNORMAL",
+              "BETA",
+              "PERT",
+              "GAMMA",
+              "EXPONENTIAL",
+              "BERNOULLI",
+              "POISSON",
+              "BINOMIAL",
+              "UNIFORM",
+              "TRIANGULAR",
+              "LOGISTIC",
+              "CAUCHY"
+            ]
+          },
+          "expression": {
+            "type": "string",
+            "maxLength": 20000
+          },
+          "kind": {
+            "type": "string",
+            "const": "set-assumption"
+          },
+          "metricId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "distribution",
+          "expression",
+          "kind",
+          "metricId"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "expression": {
+            "type": "string",
+            "maxLength": 20000
+          },
+          "kind": {
+            "type": "string",
+            "const": "set-formula"
+          },
+          "metricId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "expression",
+          "kind",
+          "metricId"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "set-notes"
+          },
+          "metricId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "kind",
+          "metricId",
+          "notes"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "set-unit"
+          },
+          "metricId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "AUTO",
+                  "NUMBER",
+                  "PERCENT",
+                  "USD",
+                  "COUNT",
+                  "USD_PER_COUNT"
+                ]
+              },
+              {
+                "type": "string",
+                "pattern": "^CUSTOM:[A-Za-z][A-Za-z0-9 _-]{0,31}$"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "metricId",
+          "unit"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  }
+}
