@@ -469,3 +469,23 @@ def test_a_call_with_nowhere_to_show_the_card_is_never_offered_an_approval(
         _callback_given_to_the_server(monkeypatch, _tool("user-1", NullEmitter()))
         is None
     )
+
+
+@pytest.mark.parametrize(
+    "obj",
+    [
+        CustomToolApprovalRequest(
+            tool_name="mcp_rehoboam_start_experiment",
+            approval_id="a1",
+            message=SPEC_MESSAGE,
+            title="Paid experiment approval",
+            description=None,
+            expires_in_seconds=180,
+        ),
+        CustomToolApprovalResult(approval_id="a1", outcome="approved"),
+    ],
+)
+def test_approval_packets_survive_the_wire_the_chat_stream_uses(obj: Any) -> None:
+    packet = Packet(placement=Placement(turn_index=0, tab_index=0), obj=obj)
+
+    assert Packet.model_validate_json(packet.model_dump_json()) == packet
