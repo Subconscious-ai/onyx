@@ -9649,6 +9649,24 @@
         "finished": {
           "text": "Concluído. Peça os resultados à Beca."
         },
+        "followUp": {
+          "audience": {
+            "label": "Testar outro público",
+            "text": "Proponha executar o desenho do experimento {runId} com outro público. Pergunte-me qual e mostre o rascunho para revisão antes de executar qualquer coisa."
+          },
+          "explain": {
+            "label": "Explicar este resultado",
+            "text": "Explique o resultado do experimento {runId} em termos simples, com o principal risco e a próxima decisão que ele apoia."
+          },
+          "replace": {
+            "label": "Substituir atributos fracos",
+            "text": "Quais atributos do experimento {runId} menos influenciaram a escolha? Proponha um estudo de acompanhamento que os substitua e mostre-o para revisão antes de executar qualquer coisa."
+          },
+          "segments": {
+            "label": "Comparar segmentos",
+            "text": "Compare como diferentes segmentos responderam no experimento {runId} e diga se a mesma ação serve para cada um."
+          }
+        },
         "openResults": {
           "label": "Abrir resultados"
         },

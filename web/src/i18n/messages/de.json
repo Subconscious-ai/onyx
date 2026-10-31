@@ -9649,6 +9649,24 @@
         "finished": {
           "text": "Abgeschlossen. Fragen Sie Beca nach den Ergebnissen."
         },
+        "followUp": {
+          "audience": {
+            "label": "Anderes Publikum testen",
+            "text": "Schlage vor, das Design von Experiment {runId} mit einem anderen Publikum durchzuführen. Frage mich, welches Publikum, und zeige den Entwurf zur Prüfung, bevor etwas läuft."
+          },
+          "explain": {
+            "label": "Ergebnis erklären",
+            "text": "Erkläre das Ergebnis von Experiment {runId} in einfachen Worten, mit dem wichtigsten Risiko und der nächsten Entscheidung, die es stützt."
+          },
+          "replace": {
+            "label": "Schwache Attribute ersetzen",
+            "text": "Welche Attribute in Experiment {runId} haben die Wahl am wenigsten beeinflusst? Schlage eine Folgestudie vor, die sie ersetzt, und zeige sie zur Prüfung, bevor etwas läuft."
+          },
+          "segments": {
+            "label": "Segmente vergleichen",
+            "text": "Vergleiche, wie verschiedene Segmente in Experiment {runId} reagiert haben, und sage, ob dieselbe Maßnahme zu jedem passt."
+          }
+        },
         "openResults": {
           "label": "Ergebnisse öffnen"
         },

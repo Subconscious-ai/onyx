@@ -5,6 +5,7 @@ import ExecutiveWorkspace, {
 } from "./ExecutiveWorkspace";
 import { useAutomaticBrief, useExecutiveContext } from "@/lib/executive/hooks";
 import { createModelHandoff } from "@/lib/executive/model-handoff";
+import { useAskAssistant } from "@/app/app/message/messageComponents/AskAssistantContext";
 
 jest.mock("@/lib/executive/model-handoff", () => ({
   ...jest.requireActual("@/lib/executive/model-handoff"),
@@ -537,4 +538,51 @@ it("shows the available company research when Beca opens instead of an unrelated
   );
   expect(screen.getByText(/Acme sells paid pilots/)).toBeVisible();
   expect(screen.getByText(/Pat/)).toBeVisible();
+});
+
+describe("follow-ups from inside a message", () => {
+  function Asker() {
+    const assistant = useAskAssistant();
+    return (
+      <button
+        disabled={!assistant || assistant.busy}
+        onClick={() => assistant?.ask("next step")}
+      >
+        {assistant ? "ask" : "no assistant"}
+      </button>
+    );
+  }
+
+  it("lets the chat ask the assistant, even when the interview panel is off", () => {
+    const onAsk = jest.fn();
+    render(
+      <ExecutiveWorkspace active={false} messages={[]} onAsk={onAsk}>
+        <Asker />
+      </ExecutiveWorkspace>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "ask" }));
+
+    expect(onAsk).toHaveBeenCalledWith("next step");
+  });
+
+  it("holds the ask while the assistant is answering", () => {
+    render(
+      <ExecutiveWorkspace active={false} messages={[]} busy onAsk={jest.fn()}>
+        <Asker />
+      </ExecutiveWorkspace>
+    );
+
+    expect(screen.getByRole("button", { name: "ask" })).toBeDisabled();
+  });
+
+  it("offers nothing where there is nowhere to send", () => {
+    render(
+      <ExecutiveWorkspace active={false} messages={[]}>
+        <Asker />
+      </ExecutiveWorkspace>
+    );
+
+    expect(screen.getByRole("button", { name: "no assistant" })).toBeDisabled();
+  });
 });

@@ -9649,6 +9649,24 @@
         "finished": {
           "text": "Terminado. Pídele los resultados a Beca."
         },
+        "followUp": {
+          "audience": {
+            "label": "Probar otra audiencia",
+            "text": "Propón ejecutar el diseño del experimento {runId} con otra audiencia. Pregúntame cuál y muéstrame el borrador para revisarlo antes de ejecutar nada."
+          },
+          "explain": {
+            "label": "Explicar este resultado",
+            "text": "Explica el resultado del experimento {runId} en términos sencillos, con su principal riesgo y la siguiente decisión que respalda."
+          },
+          "replace": {
+            "label": "Reemplazar atributos débiles",
+            "text": "¿Qué atributos del experimento {runId} influyeron menos en la elección? Propón un estudio de seguimiento que los reemplace y muéstramelo para revisarlo antes de ejecutar nada."
+          },
+          "segments": {
+            "label": "Comparar segmentos",
+            "text": "Compara cómo respondieron los distintos segmentos en el experimento {runId} y di si la misma acción sirve para cada uno."
+          }
+        },
         "openResults": {
           "label": "Abrir resultados"
         },

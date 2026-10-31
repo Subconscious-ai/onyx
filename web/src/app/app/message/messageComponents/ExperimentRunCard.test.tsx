@@ -1,5 +1,7 @@
 import { render, screen, waitFor } from "@tests/setup/test-utils";
+import userEvent from "@testing-library/user-event";
 import ExperimentRunCard from "./ExperimentRunCard";
+import { AskAssistantProvider } from "./AskAssistantContext";
 import { useChatSessionStore } from "@/app/app/stores/useChatSessionStore";
 
 const RUN_ID = "9e1bddd9-cffe-4a6c-95b4-66a70eeb69bf";
@@ -114,4 +116,79 @@ it("never builds a link from an address that is not http or https", async () => 
 
   await screen.findByText("Finished. Ask Beca for the results.");
   expect(screen.queryByRole("link")).toBeNull();
+});
+
+describe("follow-ups after a result", () => {
+  const finished = { status: "finished", terminal: true, successful: true };
+
+  function renderWithAsk(ask: jest.Mock, busy = false) {
+    return render(
+      <AskAssistantProvider value={{ ask, busy }}>
+        <ExperimentRunCard runId={RUN_ID} />
+      </AskAssistantProvider>
+    );
+  }
+
+  it("offers one-click next steps once the run finished", async () => {
+    status(finished);
+    renderWithAsk(jest.fn());
+
+    for (const label of [
+      "Explain this result",
+      "Replace weak attributes",
+      "Compare segments",
+      "Try another audience",
+    ]) {
+      expect(await screen.findByRole("button", { name: label })).toBeEnabled();
+    }
+  });
+
+  it("sends the chosen next step to the assistant as the user's own message", async () => {
+    status(finished);
+    const ask = jest.fn();
+    const user = userEvent.setup();
+    renderWithAsk(ask);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Replace weak attributes" })
+    );
+
+    expect(ask).toHaveBeenCalledTimes(1);
+    expect(ask.mock.calls[0][0]).toMatch(/replaces them/);
+    // Every proposal is shown for review first; nothing runs from a chip.
+    expect(ask.mock.calls[0][0]).toMatch(/before anything runs/);
+  });
+
+  it("holds the next steps while the assistant is already answering", async () => {
+    status(finished);
+    renderWithAsk(jest.fn(), true);
+
+    expect(
+      await screen.findByRole("button", { name: "Explain this result" })
+    ).toBeDisabled();
+  });
+
+  it("offers nothing while the run is still going", async () => {
+    status({ status: "running", terminal: false, successful: null });
+    renderWithAsk(jest.fn());
+
+    await screen.findByText("Running. This can take several minutes.");
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("offers nothing when the run did not finish", async () => {
+    status({ status: "failed", terminal: true, successful: false });
+    renderWithAsk(jest.fn());
+
+    await screen.findByText(/Did not finish/);
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("offers nothing where messages cannot be sent", async () => {
+    status(finished);
+    render(<ExperimentRunCard runId={RUN_ID} />);
+
+    await screen.findByText("Finished. Ask Beca for the results.");
+    expect(screen.queryByRole("button")).toBeNull();
+  });
 });

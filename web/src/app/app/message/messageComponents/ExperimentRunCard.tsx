@@ -2,9 +2,10 @@
 
 import useSWR from "swr";
 import { useTranslations } from "next-intl";
-import { MessageCard } from "@opal/components";
+import { Button, MessageCard } from "@opal/components";
 import { errorHandlingFetcher } from "@/lib/fetcher";
 import { useChatSessionStore } from "@/app/app/stores/useChatSessionStore";
+import { useAskAssistant } from "@/app/app/message/messageComponents/AskAssistantContext";
 
 interface ExperimentRunStatus {
   run_id: string;
@@ -52,6 +53,7 @@ function resultsUrl(runId: string): string | null {
 export default function ExperimentRunCard({ runId }: ExperimentRunCardProps) {
   const t = useTranslations("chat.messages.experimentRun");
   const chatSessionId = useChatSessionStore((state) => state.currentSessionId);
+  const assistant = useAskAssistant();
 
   const { data, error } = useSWR<ExperimentRunStatus>(
     chatSessionId
@@ -66,6 +68,14 @@ export default function ExperimentRunCard({ runId }: ExperimentRunCardProps) {
   const phase = phaseOf(data);
   const shortId = runId.slice(0, 8);
   const link = phase === "finished" ? resultsUrl(runId) : null;
+
+  const followUps = (
+    ["explain", "replace", "segments", "audience"] as const
+  ).map((key) => ({
+    key,
+    label: t(`followUp.${key}.label`),
+    message: t(`followUp.${key}.text`, { runId }),
+  }));
 
   const variants = {
     starting: "pending",
@@ -91,6 +101,20 @@ export default function ExperimentRunCard({ runId }: ExperimentRunCardProps) {
       bottomChildren={
         <>
           {error && !data && <div role="status">{t("unavailable.text")}</div>}
+          {phase === "finished" && assistant && (
+            <div className="flex flex-wrap gap-2">
+              {followUps.map((followUp) => (
+                <Button
+                  key={followUp.key}
+                  prominence="secondary"
+                  disabled={assistant.busy}
+                  onClick={() => assistant.ask(followUp.message)}
+                >
+                  {followUp.label}
+                </Button>
+              ))}
+            </div>
+          )}
           {link && (
             <a
               href={link}
