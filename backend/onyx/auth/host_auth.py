@@ -164,13 +164,30 @@ def host_session_for(user_id: UUID) -> HostSession | None:
     return session
 
 
-def require_host_subscription_provider(provider: str) -> None:
-    if _host_session.get() is not None and provider != "chatgpt":
+def require_host_subscription_provider(
+    provider: str,
+    api_key: str | None = None,
+    api_base: str | None = None,
+    has_provider_overrides: bool = False,
+) -> bool:
+    """Require subscription billing; return whether native Claude must be pinned."""
+    claude_subscription = (
+        provider == "anthropic"
+        and bool(api_key and api_key.startswith("sk-ant-oat"))
+        and api_base in (None, "https://api.anthropic.com")
+        and not has_provider_overrides
+    )
+    if (
+        _host_session.get() is not None
+        and provider != "chatgpt"
+        and not claude_subscription
+    ):
         raise OnyxError(
             OnyxErrorCode.SERVICE_UNAVAILABLE,
-            "Application chat requires the configured ChatGPT subscription provider. "
+            "Application chat requires a configured ChatGPT or Claude subscription provider. "
             "Paid provider fallback is disabled.",
         )
+    return _host_session.get() is not None and claude_subscription
 
 
 def library_host_token(user_id: UUID, server_id: int, server_url: str) -> str | None:
