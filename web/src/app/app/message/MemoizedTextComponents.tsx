@@ -14,6 +14,7 @@ import { ProjectFile } from "@/lib/projects/types";
 import { BlinkingBar } from "./BlinkingBar";
 import Text from "@/refresh-components/texts/Text";
 import SourceTag from "@/refresh-components/buttons/source-tag/SourceTag";
+import AIInlineCitation from "@/sections/customer/AIInlineCitation";
 import {
   documentToSourceInfo,
   questionToSourceInfo,
@@ -194,6 +195,16 @@ export const MemoizedLink = memo(
       const displayName = document
         ? getDisplayNameForSource(document as OnyxDocument)
         : question?.question || t("memoizedLink.questionFallback.label");
+
+      if (documentSourceInfo) {
+        return (
+          <AIInlineCitation
+            source={documentSourceInfo}
+            label={displayName}
+            onOpen={handleSourceClick}
+          />
+        );
+      }
 
       if (workspaceAi)
         return (

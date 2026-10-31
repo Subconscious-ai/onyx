@@ -9310,7 +9310,8 @@
         },
         "stopButton": {
           "ariaLabel": "Stop generating",
-          "tooltip": "Stop · esc"
+          "tooltip": "Stop · esc",
+          "label": "Stop"
         }
       },
       "buildFileCard": {

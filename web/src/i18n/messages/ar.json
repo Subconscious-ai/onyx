@@ -9310,7 +9310,8 @@
         },
         "stopButton": {
           "ariaLabel": "إيقاف التوليد",
-          "tooltip": "إيقاف · esc"
+          "tooltip": "إيقاف · esc",
+          "label": "إيقاف"
         }
       },
       "buildFileCard": {

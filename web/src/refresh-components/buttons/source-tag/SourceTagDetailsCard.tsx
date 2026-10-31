@@ -2,7 +2,7 @@
 
 import React, { memo } from "react";
 import Text from "@/refresh-components/texts/Text";
-import { Button } from "@opal/components";
+import { Button, Text as OpalText } from "@opal/components";
 import {
   SvgArrowLeft,
   SvgArrowRight,
@@ -85,7 +85,10 @@ const SourceTagDetailsCardInner = ({
   );
 
   return (
-    <div className="w-70 bg-background-neutral-00 border border-border-01 rounded-12 shadow-box-01 overflow-hidden">
+    <div
+      data-ai-source-preview=""
+      className="w-70 max-w-[calc(100vw-2rem)] bg-background-neutral-00 border border-border-01 rounded-12 shadow-box-01 overflow-hidden"
+    >
       {/* Navigation header - only shown for multiple sources */}
       {showNavigation && (
         <div className="flex items-center justify-between p-2 bg-background-tint-01 border-b border-border-01">
@@ -140,6 +143,13 @@ const SourceTagDetailsCardInner = ({
             >
               {currentSource.title}
             </Text>
+            {currentSource.sourceUrl && (
+              <div className="truncate">
+                <OpalText font="secondary-body" color="text-02">
+                  {currentSource.sourceUrl}
+                </OpalText>
+              </div>
+            )}
           </div>
         </div>
 
