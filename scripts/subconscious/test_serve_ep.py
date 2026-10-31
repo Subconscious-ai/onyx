@@ -471,3 +471,161 @@ def test_a_second_identical_run_reuses_the_cache(client: Client) -> None:
     )
     assert first["cache"]["hits"] == 0 and first["cache"]["new"] == 1
     assert second["cache"]["hits"] == 1 and second["cache"]["new"] == 0
+
+
+def test_one_runs_answers_become_the_next_runs_scenarios(client: Client) -> None:
+    """notebooks analyze_evaluations and summarizing_transcripts: two-pass coding."""
+    data(
+        client,
+        "build_survey",
+        name="themes",
+        questions=[
+            {
+                "question_type": "list",
+                "question_name": "themes",
+                "question_text": "List up to 3 themes in: {{ scenario.evaluation }}",
+                "max_list_items": 3,
+            }
+        ],
+    )
+    data(
+        client,
+        "build_scenarios",
+        name="evals",
+        scenarios=[
+            {"evaluation": "Great pace."},
+            {"evaluation": "Too fast, good slides."},
+        ],
+    )
+    data(
+        client,
+        "run_survey",
+        survey="themes",
+        name="pass1",
+        scenarios="evals",
+        canned_response='["Pace", "Slides"]',
+    )
+
+    values = data(client, "results_values", name="pass1", column="themes", flatten=True)
+    assert values["values"] == ["Pace", "Slides", "Pace", "Slides"]
+    assert values["unique"] == ["Pace", "Slides"]
+
+    carried = data(
+        client,
+        "results_to_scenarios",
+        name="pass1",
+        scenarios="pass2_input",
+        columns=["evaluation", "themes"],
+    )
+    assert carried["count"] == 2 and set(carried["keys"]) == {"evaluation", "themes"}
+
+    data(
+        client,
+        "build_survey",
+        name="code",
+        questions=[
+            {
+                "question_type": "checkbox",
+                "question_name": "coded",
+                "question_text": "Which apply to: {{ scenario.evaluation }}",
+                "question_options": values["unique"] + ["None of these"],
+            }
+        ],
+    )
+    run = data(
+        client,
+        "run_survey",
+        survey="code",
+        name="pass2",
+        scenarios="pass2_input",
+        canned_response='["Pace"]',
+    )
+    assert run["interviews"] == 2 and run["incomplete_interviews"] == 0
+
+
+def test_answers_become_traits_of_a_new_audience(client: Client) -> None:
+    """notebook updating_agents: a first interview enriches the agents."""
+    data(
+        client,
+        "build_agents",
+        name="students",
+        agents=[{"persona": "college student", "name": "s1"}],
+    )
+    data(
+        client,
+        "build_survey",
+        name="career",
+        questions=[
+            {
+                "question_type": "free_text",
+                "question_name": "career",
+                "question_text": "What career do you want?",
+            }
+        ],
+    )
+    data(
+        client,
+        "run_survey",
+        survey="career",
+        name="interview",
+        agents="students",
+        canned_response="Teacher",
+    )
+
+    enriched = data(
+        client,
+        "results_to_agents",
+        name="interview",
+        agents="students2",
+        answers=["career"],
+    )
+    assert enriched["count"] == 1
+    assert set(enriched["traits"]) == {"persona", "career"}
+    data(
+        client,
+        "build_survey",
+        name="why",
+        questions=[
+            {
+                "question_type": "free_text",
+                "question_name": "why",
+                "question_text": "Why {{ agent.career }}?",
+            }
+        ],
+    )
+    prompts = data(client, "show_prompts", survey="why", agents="students2")["prompts"]
+    assert any(
+        "Teacher" in p["system_prompt"] or "Teacher" in p["user_prompt"]
+        for p in prompts
+    )
+
+
+def test_a_question_loops_over_items_into_one_wide_survey(client: Client) -> None:
+    """notebook nps_survey: one rating per experience, as separate questions."""
+    built = data(
+        client,
+        "build_survey",
+        name="nps",
+        questions=[
+            {
+                "question_type": "linear_scale",
+                "question_name": "satisfied_{{ scenario.experience }}",
+                "question_text": "How satisfied with {{ scenario.experience }}?",
+                "question_options": [1, 2, 3, 4, 5],
+            }
+        ],
+        loop_over=[{"experience": "quality"}, {"experience": "support"}],
+    )
+    assert [q["name"] for q in built["questions"]] == [
+        "satisfied_quality",
+        "satisfied_support",
+    ]
+    run = data(client, "run_survey", survey="nps", name="nps_r", canned_response="4")
+    assert run["interviews"] == 1
+    row = data(
+        client,
+        "results_select",
+        name="nps_r",
+        columns=["satisfied_quality", "satisfied_support"],
+    )["rows"][0]
+    assert row == {"answer.satisfied_quality": 4, "answer.satisfied_support": 4}

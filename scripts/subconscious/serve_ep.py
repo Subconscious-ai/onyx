@@ -222,6 +222,7 @@ def _register_builders(server: FastMCP, workspace: Workspace) -> None:
         skip_rules: list[dict] | None = None,
         targeted_memory: list[dict] | None = None,
         full_memory: bool = False,
+        loop_over: list[dict] | None = None,
     ) -> dict:
         """Create and save a survey.
 
@@ -232,6 +233,11 @@ def _register_builders(server: FastMCP, workspace: Workspace) -> None:
         stop_rules and skip_rules are [{"question": name, "expression": "..."}].
         targeted_memory is [{"focal": name, "prior": name}] so the focal
         question sees the prior answer. full_memory shows every earlier answer.
+        loop_over is a list of dicts: every question is copied once per dict
+        with '{{ scenario.key }}' filled in now, including in question_name,
+        so one survey asks the same thing about each item (wide results).
+        Without loop_over, use build_scenarios to vary items across interviews
+        (long results, one row per item).
         """
         from edsl import Question, Survey
 
@@ -245,7 +251,15 @@ def _register_builders(server: FastMCP, workspace: Workspace) -> None:
                     "Each question needs a question_type.",
                     "Call list_question_types for the types and their fields.",
                 )
-            built.append(Question(**spec))
+            question = Question(**spec)
+            if loop_over:
+                from edsl import Scenario, ScenarioList
+
+                built.extend(
+                    question.loop(ScenarioList([Scenario(item) for item in loop_over]))
+                )
+            else:
+                built.append(question)
         survey = Survey(built)
         for rule in stop_rules or []:
             survey = survey.add_stop_rule(rule["question"], rule["expression"])
@@ -602,6 +616,59 @@ def _register_results(server: FastMCP, workspace: Workspace) -> None:
                 "rows": _rows(dataset, max(1, min(limit, MAX_ROWS))),
             }
         )
+
+    @server.tool()
+    @envelope
+    def results_values(
+        name: str, column: str, flatten: bool = False, limit: int = 500
+    ) -> dict:
+        """All values of one column, plus the distinct ones.
+
+        flatten spreads list answers (checkbox, list questions) into single
+        values, which is how a codebook is induced from open answers.
+        """
+        results = workspace.load("results", name)
+        full = _column(results, column)
+        values = results.select(full).to_list(flatten=flatten)
+        values = [_bounded(v) for v in values][: max(1, limit)]
+        unique: list[Any] = []
+        for value in values:
+            if value not in unique:
+                unique.append(value)
+        return ok({"results": name, "column": full, "values": values, "unique": unique})
+
+    @server.tool()
+    @envelope
+    def results_to_scenarios(name: str, scenarios: str, columns: list[str]) -> dict:
+        """Save chosen result columns as a new scenario list for the next study.
+
+        This is the second pass of a two-pass design: answers from pass one
+        become the items pass two asks about.
+        """
+        results = workspace.load("results", name)
+        full = [_column(results, c) for c in columns]
+        scenario_list = results.select(*full).to_scenario_list(remove_prefix=True)
+        workspace.save("scenarios", scenarios, scenario_list)
+        keys = sorted({key for scenario in scenario_list for key in scenario.keys()})
+        return ok({"scenarios": scenarios, "count": len(scenario_list), "keys": keys})
+
+    @server.tool()
+    @envelope
+    def results_to_agents(name: str, agents: str, answers: list[str]) -> dict:
+        """Save the respondents with chosen answers added as new traits.
+
+        A first interview enriches the audience for the next survey.
+        """
+        from edsl import AgentList
+
+        results = workspace.load("results", name)
+        full = [_column(results, a) for a in answers]
+        enriched = AgentList.from_results(
+            results, question_names=[c.split(".", 1)[-1] for c in full]
+        )
+        workspace.save("agents", agents, enriched)
+        traits = sorted({key for agent in enriched for key in agent.traits})
+        return ok({"agents": agents, "count": len(enriched), "traits": traits})
 
     @server.tool()
     @envelope
