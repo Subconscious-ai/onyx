@@ -76,13 +76,23 @@ it("says the status is unavailable when it cannot be read, without calling the r
   expect(screen.queryByText(/Did not finish/)).toBeNull();
 });
 
-it("does not ask anything when there is no conversation, as in a shared read-only view", () => {
+it("shows nothing when there is no conversation, as in a shared read-only view", () => {
   useChatSessionStore.setState({ currentSessionId: null });
+
+  const { container } = render(<ExperimentRunCard runId={RUN_ID} />);
+
+  expect(fetchMock).not.toHaveBeenCalled();
+  expect(container).toBeEmptyDOMElement();
+});
+
+it("does not call a run failed or finished when it ended without a verdict", async () => {
+  status({ status: "unknown", terminal: true, successful: null });
 
   render(<ExperimentRunCard runId={RUN_ID} />);
 
-  expect(fetchMock).not.toHaveBeenCalled();
-  expect(screen.getByText("Starting.")).toBeInTheDocument();
+  await screen.findByText("Starting.");
+  expect(screen.queryByText(/Did not finish/)).toBeNull();
+  expect(screen.queryByText(/^Finished/)).toBeNull();
 });
 
 it("links to the results of a finished run only where the deployment knows its address", async () => {
@@ -91,7 +101,7 @@ it("links to the results of a finished run only where the deployment knows its a
 
   render(<ExperimentRunCard runId={RUN_ID} />);
 
-  const link = await screen.findByRole("link", { name: "Open results" });
+  const link = await screen.findByRole("link", { name: /Open results/ });
   expect(link).toHaveAttribute(
     "href",
     `https://app.example.com/insights/${RUN_ID}`

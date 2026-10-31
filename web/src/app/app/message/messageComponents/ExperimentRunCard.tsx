@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import { useTranslations } from "next-intl";
-import { Button, MessageCard } from "@opal/components";
+import { Button, LinkButton, MessageCard, Text } from "@opal/components";
 import { errorHandlingFetcher } from "@/lib/fetcher";
 import { useChatSessionStore } from "@/app/app/stores/useChatSessionStore";
 import { useAskAssistant } from "@/app/app/message/messageComponents/AskAssistantContext";
@@ -23,9 +23,15 @@ const POLL_INTERVAL_MS = 30_000;
 
 type Phase = "starting" | "queued" | "running" | "finished" | "failed";
 
+/** A run has ended with a verdict. A terminal status with none is not a verdict. */
+function hasVerdict(status: ExperimentRunStatus | undefined): boolean {
+  return Boolean(status?.terminal) && status?.successful !== null;
+}
+
 function phaseOf(status: ExperimentRunStatus | undefined): Phase {
   if (!status) return "starting";
-  if (status.terminal) return status.successful ? "finished" : "failed";
+  if (status.terminal && status.successful === true) return "finished";
+  if (status.terminal && status.successful === false) return "failed";
   if (status.status === "in-queue") return "queued";
   if (status.status === "running") return "running";
   return "starting";
@@ -61,9 +67,13 @@ export default function ExperimentRunCard({ runId }: ExperimentRunCardProps) {
       : null,
     errorHandlingFetcher,
     {
-      refreshInterval: (latest) => (latest?.terminal ? 0 : POLL_INTERVAL_MS),
+      refreshInterval: (latest) => (hasVerdict(latest) ? 0 : POLL_INTERVAL_MS),
     }
   );
+
+  // Without a conversation (a shared read-only view) nothing can be read, and
+  // a card that claims "Starting" forever would mislead.
+  if (!chatSessionId) return null;
 
   const phase = phaseOf(data);
   const shortId = runId.slice(0, 8);
@@ -116,14 +126,9 @@ export default function ExperimentRunCard({ runId }: ExperimentRunCardProps) {
             </div>
           )}
           {link && (
-            <a
-              href={link}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm text-action-selection-01 hover:underline"
-            >
+            <LinkButton href={link} target="_blank">
               {t("openResults.label")}
-            </a>
+            </LinkButton>
           )}
         </>
       }

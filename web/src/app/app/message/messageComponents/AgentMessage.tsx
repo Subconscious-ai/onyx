@@ -15,6 +15,8 @@ import { FeedbackType } from "@/app/app/interfaces";
 import { handleCopy } from "@/app/app/message/copyingUtils";
 import { useAuthErrors } from "@/app/app/message/messageComponents/hooks/useAuthErrors";
 import { useExperimentLaunches } from "@/app/app/message/messageComponents/hooks/useExperimentLaunches";
+import { useToolApprovals } from "@/app/app/message/messageComponents/hooks/useToolApprovals";
+import CustomToolApprovalCard from "@/app/app/message/messageComponents/CustomToolApprovalCard";
 import ExperimentRunCard from "@/app/app/message/messageComponents/ExperimentRunCard";
 import { useMessageSwitching } from "@/app/app/message/messageComponents/hooks/useMessageSwitching";
 import { RendererComponent } from "@/app/app/message/messageComponents/renderMessageComponent";
@@ -200,6 +202,7 @@ const AgentMessage = React.memo(function AgentMessage({
 
   const authErrors = useAuthErrors(rawPackets);
   const experimentLaunches = useExperimentLaunches(rawPackets);
+  const toolApprovals = useToolApprovals(rawPackets);
 
   // Message switching logic
   const {
@@ -345,6 +348,20 @@ const AgentMessage = React.memo(function AgentMessage({
           }
         }}
       >
+        {/* A tool server is waiting on the user. This sits outside the tool
+            timeline, which collapses once the assistant has written text and
+            tucks parallel calls behind tabs, so the question is always seen. */}
+        {toolApprovals.length > 0 && (
+          <div className="flex flex-col gap-3 pb-3">
+            {toolApprovals.map(({ request, outcome }) => (
+              <CustomToolApprovalCard
+                key={request.approval_id}
+                request={request}
+                outcome={outcome}
+              />
+            ))}
+          </div>
+        )}
         {pacedDisplayGroups.length > 0 && (
           <div ref={finalAnswerRef} className="flex flex-col gap-3">
             {authErrors.map((authError, i) => (

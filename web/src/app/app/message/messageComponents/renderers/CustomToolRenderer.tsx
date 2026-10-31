@@ -7,8 +7,6 @@ import {
   CustomToolArgs,
   CustomToolDelta,
   CustomToolErrorInfo,
-  CustomToolApprovalOutcome,
-  CustomToolApprovalRequest,
   SectionEnd,
 } from "../../../services/streamingModels";
 import { MessageRenderer, RenderType } from "../interfaces";
@@ -20,7 +18,6 @@ import hljs from "highlight.js/lib/core";
 import json from "highlight.js/lib/languages/json";
 import FadingEdgeContainer from "@/refresh-components/FadingEdgeContainer";
 import { IoBlockLabel } from "@/app/app/message/messageComponents/IoBlockLabel";
-import CustomToolApprovalCard from "@/app/app/message/messageComponents/CustomToolApprovalCard";
 
 // Lazy registration for hljs JSON language
 function ensureHljsRegistered() {
@@ -84,33 +81,7 @@ function constructCustomToolState(
   const isRunning = Boolean(toolStart && !toolEnd);
   const isComplete = Boolean(toolStart && toolEnd);
 
-  // Questions the tool server put to the user, each with its outcome once the
-  // server has closed it.
-  const closedApprovals = new Map<string, CustomToolApprovalOutcome>();
-  for (const packet of packets) {
-    if (packet.obj.type === "custom_tool_approval_result") {
-      closedApprovals.set(packet.obj.approval_id, packet.obj.outcome);
-    }
-  }
-  const approvals: {
-    request: CustomToolApprovalRequest;
-    outcome: CustomToolApprovalOutcome | null;
-  }[] = [];
-  for (const packet of packets) {
-    if (packet.obj.type === "custom_tool_approval_request") {
-      approvals.push({
-        request: packet.obj,
-        outcome: closedApprovals.get(packet.obj.approval_id) ?? null,
-      });
-    }
-  }
-  const hasPendingApproval = approvals.some(
-    (approval) => approval.outcome === null
-  );
-
   return {
-    approvals,
-    hasPendingApproval,
     toolName,
     toolArgs,
     responseType,
@@ -130,8 +101,6 @@ export const CustomToolRenderer: MessageRenderer<CustomToolPacket, {}> = ({
 }) => {
   const t = useTranslations("chat.messages");
   const {
-    approvals,
-    hasPendingApproval,
     toolName,
     toolArgs,
     responseType,
@@ -188,18 +157,8 @@ export const CustomToolRenderer: MessageRenderer<CustomToolPacket, {}> = ({
   const content = useMemo(
     () => (
       <div className="flex flex-col gap-3">
-        {/* Questions the tool server put to the user */}
-        {approvals.map(({ request, outcome }) => (
-          <CustomToolApprovalCard
-            key={request.approval_id}
-            request={request}
-            outcome={outcome}
-          />
-        ))}
-
         {/* Loading indicator */}
         {isRunning &&
-          !hasPendingApproval &&
           !error &&
           !fileIds &&
           (data === undefined || data === null) && (
@@ -303,17 +262,7 @@ export const CustomToolRenderer: MessageRenderer<CustomToolPacket, {}> = ({
         )}
       </div>
     ),
-    [
-      approvals,
-      hasPendingApproval,
-      toolArgsJson,
-      dataJson,
-      data,
-      fileIds,
-      error,
-      isRunning,
-      t,
-    ]
+    [toolArgsJson, dataJson, data, fileIds, error, isRunning, t]
   );
 
   // Auth error: always render FULL with error surface
@@ -325,20 +274,6 @@ export const CustomToolRenderer: MessageRenderer<CustomToolPacket, {}> = ({
         supportsCollapsible: false,
         noPaddingRight: true,
         surfaceBackground: "error" as const,
-        content,
-      },
-    ]);
-  }
-
-  // The tool is waiting on the user: show the whole question, never a clipped
-  // preview, whatever view the timeline is in.
-  if (hasPendingApproval) {
-    return children([
-      {
-        icon,
-        status,
-        supportsCollapsible: false,
-        noPaddingRight: true,
         content,
       },
     ]);

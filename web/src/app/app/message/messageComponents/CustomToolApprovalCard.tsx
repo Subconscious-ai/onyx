@@ -64,6 +64,7 @@ export default function CustomToolApprovalCard({
     <div className="flex flex-col gap-1">
       <IoBlockLabel label={t("messageBlock.label")} />
       <pre
+        dir="auto"
         className="m-0 max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-08 bg-background-tint-01 p-2 font-secondary-mono text-sm text-text-03"
         data-testid="approval-exact-action"
       >

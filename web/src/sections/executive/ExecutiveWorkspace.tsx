@@ -300,9 +300,19 @@ export default function ExecutiveWorkspace({
   const companyProfileState = useState(createCompanyProfileState);
   const briefTrigger = useRef<HTMLDivElement>(null);
   const briefReturnFocus = useRef<HTMLElement | null>(null);
+  // AppPage passes a new onAsk on every render; keep the context value steady
+  // so the cards that read it do not re-render with each keystroke elsewhere.
+  const onAskRef = useRef(onAsk);
+  useEffect(() => {
+    onAskRef.current = onAsk;
+  }, [onAsk]);
+  const canAsk = onAsk !== undefined;
   const assistant = useMemo(
-    () => (onAsk ? { ask: onAsk, busy } : null),
-    [onAsk, busy]
+    () =>
+      canAsk
+        ? { ask: (message: string) => onAskRef.current?.(message), busy }
+        : null,
+    [canAsk, busy]
   );
   if (!active) {
     return (
