@@ -17,6 +17,10 @@ class Emitter:
         drain_done: Optional event set by ``_run_models`` when the drain loop
             exits early (e.g. HTTP disconnect). When set, ``emit`` returns
             immediately so worker threads can exit fast.
+        interactive: True only when a person is watching this stream in a
+            browser and can answer a question put to them (a tool server's
+            request for approval). The non-streaming API, Slack and evals run
+            the same pipeline with nobody to answer.
     """
 
     def __init__(
@@ -24,19 +28,25 @@ class Emitter:
         merged_queue: Queue[tuple[int, Packet | Exception | object]],
         model_idx: int = 0,
         drain_done: threading.Event | None = None,
+        interactive: bool = False,
     ) -> None:
         self._model_idx = model_idx
         self._merged_queue = merged_queue
         self._drain_done = drain_done
+        self._interactive = interactive
 
     @property
     def is_live(self) -> bool:
-        """True while a chat stream is reading these packets and has not stopped.
+        """True while a person is watching this stream and has not stopped it.
 
-        False for an emitter with no stream behind it (a sub-agent's private
-        queue) and once the stream has ended or the user stopped it.
+        False for an emitter nobody watches (a sub-agent's private queue, the
+        non-streaming API, Slack, evals) and once the user stopped the stream.
         """
-        return self._drain_done is not None and not self._drain_done.is_set()
+        return (
+            self._interactive
+            and self._drain_done is not None
+            and not self._drain_done.is_set()
+        )
 
     def emit(self, packet: Packet) -> None:
         if self._drain_done is not None and self._drain_done.is_set():
@@ -60,6 +70,7 @@ class NullEmitter(Emitter):
         self._model_idx = 0
         self._merged_queue = None
         self._drain_done = None
+        self._interactive = False
 
     def emit(self, packet: Packet) -> None:
         pass

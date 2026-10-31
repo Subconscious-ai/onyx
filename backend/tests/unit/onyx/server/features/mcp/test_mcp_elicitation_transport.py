@@ -81,7 +81,9 @@ def _launch_from_a_chat_turn(
     server.transport = None
     tool = MCPTool(
         tool_id=1,
-        emitter=Emitter(merged_queue=queue, drain_done=threading.Event()),
+        emitter=Emitter(
+            merged_queue=queue, drain_done=threading.Event(), interactive=True
+        ),
         mcp_server=server,
         tool_name="start_experiment",
         tool_description="Paid run",

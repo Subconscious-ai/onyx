@@ -83,7 +83,9 @@ def _build(
     queue = _Stream()
     callback = build_elicitation_callback(
         redis_client=cast(Any, redis),
-        emitter=Emitter(merged_queue=queue, drain_done=queue.drain_done),
+        emitter=Emitter(
+            merged_queue=queue, drain_done=queue.drain_done, interactive=True
+        ),
         placement=Placement(turn_index=0, tab_index=0),
         tool_name="mcp_rehoboam_start_experiment",
         user_id=user_id,
@@ -483,7 +485,9 @@ def _callback_given_to_the_server(monkeypatch: pytest.MonkeyPatch, tool: Any) ->
 def test_a_signed_in_chat_user_can_be_asked_to_approve(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    emitter = Emitter(merged_queue=Queue(), drain_done=threading.Event())
+    emitter = Emitter(
+        merged_queue=Queue(), drain_done=threading.Event(), interactive=True
+    )
 
     callback = _callback_given_to_the_server(monkeypatch, _tool("user-1", emitter))
 
@@ -493,7 +497,9 @@ def test_a_signed_in_chat_user_can_be_asked_to_approve(
 def test_a_call_with_no_user_is_never_offered_an_approval(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    emitter = Emitter(merged_queue=Queue(), drain_done=threading.Event())
+    emitter = Emitter(
+        merged_queue=Queue(), drain_done=threading.Event(), interactive=True
+    )
 
     assert _callback_given_to_the_server(monkeypatch, _tool("", emitter)) is None
 
@@ -507,12 +513,22 @@ def test_a_sub_agent_with_a_private_queue_is_never_offered_an_approval(
     assert _callback_given_to_the_server(monkeypatch, _tool("user-1", emitter)) is None
 
 
+def test_a_stream_nobody_watches_is_never_offered_an_approval(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The non-streaming API, Slack and evals run the chat pipeline with a stream
+    # buffer but no person to click a card.
+    emitter = Emitter(merged_queue=Queue(), drain_done=threading.Event())
+
+    assert _callback_given_to_the_server(monkeypatch, _tool("user-1", emitter)) is None
+
+
 def test_a_stream_that_already_ended_is_never_offered_an_approval(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     ended = threading.Event()
     ended.set()
-    emitter = Emitter(merged_queue=Queue(), drain_done=ended)
+    emitter = Emitter(merged_queue=Queue(), drain_done=ended, interactive=True)
 
     assert _callback_given_to_the_server(monkeypatch, _tool("user-1", emitter)) is None
 
