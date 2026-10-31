@@ -1159,7 +1159,7 @@ def _answered(results: Any) -> int:
 
 
 def _failed_interviews(results: Any) -> tuple[int, str]:
-    """(interviews with an unfixed error, the kinds of error) from EDSL's task history.
+    """(interviews with an unfixed error, what went wrong) from EDSL's task history.
 
     A question skipped by a stop or skip rule is empty by design and does not
     count. Neither does an error EDSL fixed by retrying. A rejected reply, a
@@ -1173,25 +1173,34 @@ def _failed_interviews(results: Any) -> tuple[int, str]:
         for collection in (getattr(history, "exceptions", []) or [])
         if not hasattr(collection, "num_unfixed") or collection.num_unfixed() > 0
     ]
-    kinds: list[str] = []
+    causes: list[str] = []
     for collection in unfixed:
-        for name in _exception_names(collection):
-            if name not in kinds:
-                kinds.append(name)
-    return len(unfixed), ", ".join(kinds[:3])
+        for cause in _exception_causes(collection):
+            if cause not in causes:
+                causes.append(cause)
+    failed = len(unfixed) or sum(
+        any(value is None for value in (row.get("answer") or {}).values())
+        for row in results
+    )
+    return failed, "; ".join(causes[:3])
 
 
-def _exception_names(collection: Any) -> list[str]:
-    """Exception type names in one interview's collection (a dict by question)."""
-    names = []
-    data = getattr(collection, "data", None) or {}
-    for entries in data.values():
-        for entry in entries:
+def _exception_causes(collection: Any) -> list[str]:
+    """What went wrong in one interview, in the error's own words, one line each.
+
+    EDSL types every entry as a plain Exception here, so the type name does
+    not separate a rejected reply from a model error; the message does.
+    """
+    causes = []
+    entries = getattr(collection, "unfixed_exceptions", None)
+    data = entries() if callable(entries) else (getattr(collection, "data", None) or {})
+    for question_entries in data.values() if isinstance(data, dict) else data:
+        for entry in question_entries:
             exception = getattr(entry, "exception", entry)
-            name = getattr(entry, "exception_type", None) or type(exception).__name__
-            if name:
-                names.append(str(name))
-    return names
+            text = str(exception).strip().splitlines()
+            first = text[0][:120] if text else type(exception).__name__
+            causes.append(first)
+    return causes
 
 
 def _is_number(text: str) -> bool:

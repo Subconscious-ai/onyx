@@ -290,6 +290,7 @@ def test_an_answer_the_question_rejects_is_reported_not_hidden(client: Client) -
     assert body["status"] == "ok"
     assert body["data"]["incomplete_interviews"] == 1
     assert "rejected reply" in body["warnings"][0]
+    assert "validation error" in body["warnings"][0]  # the cause, in the error's words
     # A rejected reply is not an answer served from the cache.
     assert body["data"]["cache"]["hits"] == 0
     assert error(client, "plot_means", name="bad")["code"] == "NOT_FOUND"
@@ -809,6 +810,6 @@ def test_every_failed_interview_is_counted_with_its_cause(
     assert body["data"]["incomplete_interviews"] == 3
     assert body["data"]["cache"]["hits"] == 0
     assert "3 of 3 interviews raised an error" in body["warnings"][0]
-    # The kind named is the error itself, not EDSL's container for it.
+    # The cause named is the error's own words, not EDSL's container for it.
     assert "InterviewExceptionCollection" not in body["warnings"][0]
-    assert "(" in body["warnings"][0]
+    assert "test error" in body["warnings"][0]
