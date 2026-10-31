@@ -245,3 +245,39 @@ def test_library_forwarding_is_bound_to_user_server_and_exact_origin(
     assert host_auth.host_session_for(s.user.id) is None
     with pytest.raises(OnyxError):
         require_session_identity(s.user.id)
+
+
+def test_bedrock_qa_grant_is_user_org_and_time_bound(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    user_id = uuid4()
+    session = host_auth.HostSession(
+        identity=SessionIdentity(
+            native_user_id=user_id, issuer="https://auth.example/", subject="auth0|qa"
+        ),
+        organization_id="org_qa",
+        access_token="private",
+    )
+    with host_auth.host_request(session):
+        with pytest.raises(OnyxError):
+            host_auth.require_host_subscription_provider("bedrock")
+        monkeypatch.setenv("CAUSL_KB_QA_BEDROCK_USER_ID", str(user_id))
+        monkeypatch.setenv("CAUSL_KB_QA_BEDROCK_ORG_ID", "org_qa")
+        monkeypatch.setenv("CAUSL_KB_QA_BEDROCK_UNTIL", str(int(time.time()) + 600))
+        host_auth.require_host_subscription_provider("bedrock")
+        with pytest.raises(OnyxError):
+            host_auth.require_host_subscription_provider("openai")
+        monkeypatch.setenv("CAUSL_KB_QA_BEDROCK_ORG_ID", "org_other")
+        with pytest.raises(OnyxError):
+            host_auth.require_host_subscription_provider("bedrock")
+        monkeypatch.setenv("CAUSL_KB_QA_BEDROCK_ORG_ID", "org_qa")
+        monkeypatch.setenv("CAUSL_KB_QA_BEDROCK_USER_ID", str(uuid4()))
+        with pytest.raises(OnyxError):
+            host_auth.require_host_subscription_provider("bedrock")
+        monkeypatch.setenv("CAUSL_KB_QA_BEDROCK_USER_ID", str(user_id))
+        monkeypatch.setenv("CAUSL_KB_QA_BEDROCK_UNTIL", str(int(time.time()) - 1))
+        with pytest.raises(OnyxError):
+            host_auth.require_host_subscription_provider("bedrock")
+        monkeypatch.setenv("CAUSL_KB_QA_BEDROCK_UNTIL", "invalid")
+        with pytest.raises(OnyxError):
+            host_auth.require_host_subscription_provider("bedrock")

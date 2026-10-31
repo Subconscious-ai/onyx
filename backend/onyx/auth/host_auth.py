@@ -165,12 +165,27 @@ def host_session_for(user_id: UUID) -> HostSession | None:
 
 
 def require_host_subscription_provider(provider: str) -> None:
-    if _host_session.get() is not None and provider != "chatgpt":
-        raise OnyxError(
-            OnyxErrorCode.SERVICE_UNAVAILABLE,
-            "Application chat requires the configured ChatGPT subscription provider. "
-            "Paid provider fallback is disabled.",
-        )
+    session = _host_session.get()
+    if session is None or provider == "chatgpt":
+        return
+    # Explicit local QA approval expires and never applies to other identities.
+    try:
+        qa_until = int(os.environ.get("CAUSL_KB_QA_BEDROCK_UNTIL", "0"))
+    except ValueError:
+        qa_until = 0
+    if (
+        provider == "bedrock"
+        and str(session.identity.native_user_id)
+        == os.environ.get("CAUSL_KB_QA_BEDROCK_USER_ID")
+        and session.organization_id == os.environ.get("CAUSL_KB_QA_BEDROCK_ORG_ID")
+        and time.time() < qa_until
+    ):
+        return
+    raise OnyxError(
+        OnyxErrorCode.SERVICE_UNAVAILABLE,
+        "Application chat requires the configured ChatGPT subscription provider. "
+        "Paid provider fallback is disabled.",
+    )
 
 
 def library_host_token(user_id: UUID, server_id: int, server_url: str) -> str | None:
