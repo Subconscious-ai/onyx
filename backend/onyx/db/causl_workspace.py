@@ -47,9 +47,16 @@ def _write(db: Session, key: str, value: dict[str, Any]) -> None:
 
 
 def _scope_key(
-    user_id: UUID, actor: CauslActor, issuer: str, market_id: str | None
+    user_id: UUID,
+    actor: CauslActor,
+    issuer: str,
+    market_id: str | None,
+    *,
+    colossus: bool = False,
 ) -> str:
     scope = json.dumps([str(user_id), issuer, actor.org_id, actor.user_id, market_id])
+    if colossus:
+        scope += ":colossus:v1"
     return f"causl:scope:{hashlib.sha256(scope.encode()).hexdigest()}"
 
 
@@ -147,7 +154,10 @@ def open_causl_chat(
     requested_chat_id: UUID | None = None,
 ) -> CauslChatBinding:
     """Create or restore under one transaction; never adopt an unbound old chat."""
-    key = _scope_key(user.id, actor, issuer, selection.market_id)
+    mode = "colossus" if selection.page == "colossus" else "workspace"
+    key = _scope_key(
+        user.id, actor, issuer, selection.market_id, colossus=mode == "colossus"
+    )
     db.execute(
         text("select pg_advisory_xact_lock(hashtextextended(:key, 0))"), {"key": key}
     )
@@ -163,6 +173,7 @@ def open_causl_chat(
             or binding.issuer != issuer
             or binding.market_id != selection.market_id
             or binding.library_server_id != library_server_id
+            or binding.mode != mode
         ):
             raise OnyxError(
                 OnyxErrorCode.UNAUTHORIZED,
@@ -190,6 +201,7 @@ def open_causl_chat(
         chat_id=chat.id,
         selection=selection,
         library_server_id=library_server_id,
+        mode=mode,
     )
     _write(db, f"causl:chat:{chat.id}", binding.model_dump(mode="json"))
     _write(db, key, {"chat_id": str(chat.id)})

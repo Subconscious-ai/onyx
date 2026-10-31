@@ -52,7 +52,11 @@ export function AuthenticationShell({ children }: AuthenticationShellProps) {
 
   function handleLogin() {
     if (embeddedWorkspace) {
-      window.open("/auth/login?next=%2Fapp", "_blank", "noopener,noreferrer");
+      window.open(
+        "/auth/login?provider=auth0&next=%2Fapp",
+        "_blank",
+        "noopener,noreferrer"
+      );
       return;
     }
     const { isExtension } = getExtensionContext();

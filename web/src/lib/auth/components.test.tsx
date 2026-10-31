@@ -34,7 +34,7 @@ describe("Embedded workspace session recovery", () => {
       );
       await user.click(screen.getByRole("button", { name: /sign in|log in/i }));
       expect(opened).toHaveBeenCalledWith(
-        "/auth/login?next=%2Fapp",
+        "/auth/login?provider=auth0&next=%2Fapp",
         "_blank",
         "noopener,noreferrer"
       );

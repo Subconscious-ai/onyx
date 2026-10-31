@@ -8,6 +8,7 @@ from onyx.db.models import ChatSession, User
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
 from onyx.prompts.causl_workspace import (
+    COLOSSUS_PAGE_INSTRUCTIONS,
     SAVED_FACT_RETRIEVAL_INSTRUCTIONS,
     WORKSPACE_INSTRUCTIONS,
 )
@@ -31,6 +32,7 @@ def read_workspace_context(
     selection: CauslSelection | None,
     *,
     start_research: bool = False,
+    require_current_colossus: bool = False,
 ) -> tuple[CauslChatBinding | None, CauslContextEnvelope | None]:
     binding = read_causl_binding(db, user.id, chat.id)
     if (
@@ -60,6 +62,12 @@ def read_workspace_context(
                 OnyxErrorCode.UNAUTHORIZED, "Open this conversation from the workspace."
             )
         return None, None
+    if require_current_colossus and binding.mode == "colossus" and selection is None:
+        raise OnyxError(
+            OnyxErrorCode.BAD_REQUEST,
+            "Open this conversation in Colossus before sending, retrying, or regenerating. "
+            "A current page snapshot is required; saved history cannot supply current geography.",
+        )
     current = selection or binding.selection
     config = configuration()
     if (
@@ -69,6 +77,7 @@ def read_workspace_context(
         or chat.incognito_record_mode is not None
         or config.persona_id != chat.persona_id
         or config.library_server_id != binding.library_server_id
+        or (current.page == "colossus") != (binding.mode == "colossus")
     ):
         raise OnyxError(
             OnyxErrorCode.UNAUTHORIZED,
@@ -106,10 +115,18 @@ def workspace_turn(
         chat,
         selection,
         start_research=not saved_fact_request and not native_preparation,
+        require_current_colossus=True,
     )
     if binding is None or envelope is None:
         return None, None
     current = selection or binding.selection
+    if current.page == "colossus":
+        return binding, (
+            COLOSSUS_PAGE_INSTRUCTIONS
+            + json.dumps(
+                envelope.model_dump(mode="json", by_alias=True), ensure_ascii=False
+            )
+        )
     model = envelope.context.get("model")
     model_phase = ""
     if (

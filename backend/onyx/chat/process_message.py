@@ -1646,7 +1646,7 @@ def _run_models(
                     inject_memories_in_prompt=user.use_memories,
                     workspace_instructions=WORKSPACE_INSTRUCTIONS
                     if setup.causl_binding is not None
-                    and setup.causl_binding.mode == "workspace"
+                    and setup.causl_binding.mode in ("workspace", "colossus")
                     else None,
                 )
 
