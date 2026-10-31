@@ -629,3 +629,66 @@ def test_a_question_loops_over_items_into_one_wide_survey(client: Client) -> Non
         columns=["satisfied_quality", "satisfied_support"],
     )["rows"][0]
     assert row == {"answer.satisfied_quality": 4, "answer.satisfied_support": 4}
+
+
+def test_a_conjoint_is_designed_run_analyzed_and_charted(client: Client) -> None:
+    """ep-skills conjoint-study and analyze-conjoint-results, end to end."""
+    design = data(
+        client,
+        "conjoint_design",
+        name="phone",
+        intro="You are choosing a phone plan.",
+        attributes={
+            "Price": ["$10", "$20", "$30"],
+            "Data": ["5 GB", "20 GB"],
+            "Contract": ["None", "12 months"],
+        },
+        tasks_per_version=4,
+        profiles_per_task=3,
+        n_versions=2,
+        seed=7,
+    )
+    assert design["survey"] == "phone" and design["scenarios"] == "phone_versions"
+    assert design["total_profiles"] == 12 and len(design["example_task"]) == 3
+    data(
+        client,
+        "build_agents",
+        name="segs",
+        agents=[{"segment": "student"}, {"segment": "family"}],
+    )
+    run = data(
+        client,
+        "run_survey",
+        survey="phone",
+        name="phone_r",
+        scenarios="phone_versions",
+        agents="segs",
+        canned_response="Option A",
+    )
+    assert run["interviews"] == 4 and run["incomplete_interviews"] == 0
+
+    analysis = data(client, "conjoint_analyze", results="phone_r", design="phone")
+    assert analysis["n_observations"] == 16
+    assert set(analysis["importance"]) == {"Price", "Data", "Contract"}
+    assert abs(sum(analysis["importance"].values()) - 100) < 1e-6
+    assert set(analysis["segments"]["segment"]) == {"student", "family"}
+    assert analysis["position_counts"] == {"Option A": 16}
+
+    for chart in ("importance", "utilities", "position", "segments", "price"):
+        body, images = call(
+            client, "plot_conjoint", results="phone_r", design="phone", chart=chart
+        )
+        assert body["status"] == "ok", (chart, body)
+        assert len(images) == 1, chart
+
+    shares = data(
+        client,
+        "conjoint_market_share",
+        results="phone_r",
+        design="phone",
+        profiles=[
+            {"Price": "$10", "Data": "20 GB", "Contract": "None"},
+            {"Price": "$30", "Data": "5 GB", "Contract": "12 months"},
+        ],
+    )
+    assert abs(sum(p["share"] for p in shares["profiles"]) - 1) < 1e-6

@@ -192,6 +192,7 @@ def build_server(workspace: Workspace) -> FastMCP:
     _register_runs(server, workspace)
     _register_results(server, workspace)
     _register_plots(server, workspace)
+    _register_conjoint(server, workspace)
     return server
 
 
@@ -823,6 +824,223 @@ def _register_plots(server: FastMCP, workspace: Workspace) -> None:
             text_chars=TEXT_CHARS,
             group_by=groups,
         )
+
+
+def _register_conjoint(server: FastMCP, workspace: Workspace) -> None:
+    import ep_conjoint
+
+    designs = workspace.root / "conjoint"
+    designs.mkdir(exist_ok=True)
+
+    def _design(name: str) -> dict:
+        path = designs / f"{workspace.path('surveys', name).stem}.json"
+        if not path.is_file():
+            raise ToolError(
+                "NOT_FOUND",
+                f"No conjoint design named {name!r}.",
+                "Create one with conjoint_design.",
+            )
+        return json.loads(path.read_text())
+
+    def _analysis(results: str, design: str) -> tuple[dict, dict]:
+        spec = _design(design)
+        rows = workspace.load("results", results).to_dicts(remove_prefix=False)
+        try:
+            return spec, ep_conjoint.analyze(rows, spec)
+        except ValueError as error:
+            raise ToolError(
+                "NOT_FOUND",
+                str(error),
+                "Run the conjoint survey on its version scenarios first.",
+            ) from error
+
+    @server.tool()
+    @envelope
+    def conjoint_design(
+        name: str,
+        attributes: dict[str, list[str]],
+        intro: str = "Consider the options below.",
+        tasks_per_version: int = 8,
+        profiles_per_task: int = 3,
+        n_versions: int = 4,
+        include_none: bool = False,
+        seed: int = 42,
+    ) -> dict:
+        """Design a choice-based conjoint and save its survey and version scenarios.
+
+        attributes maps each attribute to its levels, e.g. {"Price": ["$10", "$20"]}.
+        Each respondent sees tasks_per_version choice tasks of profiles_per_task
+        options; n_versions different versions spread the levels. Run the survey
+        `name` on scenarios `name_versions` (and an audience), then call
+        conjoint_analyze. Levels should be exact values with units.
+        """
+        from edsl import Question, Scenario, ScenarioList, Survey
+
+        try:
+            spec = ep_conjoint.generate_design(
+                attributes,
+                tasks_per_version,
+                profiles_per_task,
+                n_versions,
+                include_none,
+                seed=seed,
+            )
+        except ValueError as error:
+            raise ToolError("VALIDATION_ERROR", str(error)) from error
+        survey = Survey(
+            [Question(**q) for q in ep_conjoint.question_specs(spec, intro)]
+        )
+        workspace.save("surveys", name, survey)
+        versions = ScenarioList(
+            [Scenario(row) for row in ep_conjoint.scenario_rows(spec)]
+        )
+        workspace.save("scenarios", f"{name}_versions", versions)
+        (designs / f"{name}.json").write_text(json.dumps(spec))
+        first = spec["versions"][0]["choice_sets"][0]
+        return ok(
+            {
+                "survey": name,
+                "scenarios": f"{name}_versions",
+                "tasks_per_version": spec["n_tasks"],
+                "profiles_per_task": spec["profiles_per_task"],
+                "n_versions": spec["n_versions"],
+                "total_profiles": spec["total_profiles"],
+                "balance_scores": [v["balance_score"] for v in spec["versions"]],
+                "example_task": [ep_conjoint.describe(p) for p in first],
+            }
+        )
+
+    @server.tool()
+    @envelope
+    def conjoint_analyze(results: str, design: str) -> dict:
+        """Part-worth utilities, attribute importance and segment utilities.
+
+        Counting-based estimates from simulated choices: a drafting aid, not a
+        validated market estimate. Importance sums to 100.
+        """
+        _, analysis = _analysis(results, design)
+        return ok({"results": results, "design": design, "simulated": True, **analysis})
+
+    @server.tool()
+    @envelope
+    def conjoint_market_share(
+        results: str, design: str, profiles: list[dict[str, str]]
+    ) -> dict:
+        """Logit choice shares for complete competing profiles, from the fitted part-worths."""
+        _, analysis = _analysis(results, design)
+        return ok(
+            {
+                "results": results,
+                "simulated": True,
+                "profiles": ep_conjoint.market_shares(analysis["utilities"], profiles),
+            }
+        )
+
+    @server.tool()
+    @envelope
+    def plot_conjoint(results: str, design: str, chart: str = "importance") -> list:
+        """One conjoint chart as an image: importance, utilities, position, segments or price."""
+        import matplotlib.pyplot as plt
+
+        style = _plot_style()
+        spec, analysis = _analysis(results, design)
+        blue, red = style.CATEGORICAL[0], style.CATEGORICAL[4]
+        ranked = sorted(
+            analysis["importance"], key=analysis["importance"].get, reverse=True
+        )
+        if chart == "importance":
+            fig, ax = plt.subplots(figsize=(9, max(4, len(ranked) * 0.8)))
+            bars = ax.barh(
+                ranked, [analysis["importance"][a] for a in ranked], color=blue
+            )
+            ax.bar_label(bars, fmt="%.1f%%", padding=3)
+            ax.invert_yaxis()
+            ax.set_xlabel("Importance (%)")
+            style.set_chart_title(ax, "Attribute importance", "simulated respondents")
+        elif chart == "utilities":
+            fig, axes = plt.subplots(1, len(ranked), figsize=(4 * len(ranked), 4.5))
+            for ax, attribute in zip(
+                [axes] if len(ranked) == 1 else axes, ranked, strict=True
+            ):
+                values = analysis["utilities"][attribute]
+                levels = sorted(values, key=values.get, reverse=True)
+                ax.barh(
+                    levels,
+                    [values[level] for level in levels],
+                    color=[blue if values[level] >= 0 else red for level in levels],
+                )
+                ax.axvline(0, color="gray", linewidth=0.5)
+                ax.invert_yaxis()
+                ax.set_title(attribute)
+            fig.suptitle("Part-worth utilities (simulated)")
+        elif chart == "position":
+            counts = analysis["position_counts"]
+            labels = sorted(counts)
+            fig, ax = plt.subplots(figsize=(7, 4.5))
+            bars = ax.bar(labels, [counts[level] for level in labels], color=blue)
+            ax.bar_label(bars, padding=3)
+            ax.axhline(
+                sum(counts.values()) / max(1, len(labels)),
+                color=red,
+                linestyle="--",
+                label="expected if unbiased",
+            )
+            ax.legend()
+            style.set_chart_title(ax, "Position bias check")
+        elif chart == "segments":
+            segments = analysis["segments"]
+            if not segments:
+                raise ToolError("NOT_FOUND", "No agent traits to segment by.")
+            trait = next(iter(segments))
+            groups = sorted(segments[trait])
+            matrix = [
+                [segments[trait][g]["importance"].get(a, 0.0) for a in ranked]
+                for g in groups
+            ]
+            fig, ax = plt.subplots(
+                figsize=(max(7, len(ranked) * 1.5), max(4, len(groups) * 0.7))
+            )
+            image = ax.imshow(matrix, cmap="YlOrRd", aspect="auto")
+            ax.set_xticks(range(len(ranked)), ranked, rotation=30, ha="right")
+            ax.set_yticks(range(len(groups)), groups)
+            for i, row in enumerate(matrix):
+                for j, value in enumerate(row):
+                    ax.text(j, i, f"{value:.0f}%", ha="center", va="center", fontsize=9)
+            fig.colorbar(image, label="Importance (%)")
+            style.set_chart_title(ax, f"Importance by {trait}")
+        elif chart == "price":
+            price = next((a for a in spec["attributes"] if "price" in a.lower()), None)
+            if price is None:
+                raise ToolError("NOT_FOUND", "No attribute named like 'price'.")
+            values = analysis["utilities"][price]
+            levels = sorted(values, key=_numeric_prefix)
+            fig, ax = plt.subplots(figsize=(7, 4.5))
+            ax.plot(
+                levels,
+                [values[level] for level in levels],
+                marker="o",
+                color=blue,
+                linewidth=2,
+            )
+            ax.axhline(0, color="gray", linewidth=0.5)
+            ax.set_ylabel("Part-worth utility")
+            style.set_chart_title(ax, "Price sensitivity", "simulated respondents")
+        else:
+            raise ToolError(
+                "USAGE_ERROR",
+                f"Unknown chart {chart!r}.",
+                "Use importance, utilities, position, segments or price.",
+            )
+        fig.tight_layout()
+        return [
+            _png(fig),
+            json.dumps(ok({"results": results, "chart": chart, "simulated": True})),
+        ]
+
+
+def _numeric_prefix(text: str) -> float:
+    match = re.search(r"[\d.]+", text)
+    return float(match.group()) if match else 0.0
 
 
 def _temp_csv(csv_text: str) -> Path:
