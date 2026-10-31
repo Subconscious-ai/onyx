@@ -515,6 +515,7 @@ export default function ToolsPopover({
               interaction={open ? "hover" : "rest"}
               prominence="tertiary"
               tooltip={t("toolsPopover.manageActions.tooltip")}
+              aria-label={t("toolsPopover.manageActions.tooltip")}
             />
           </div>
         </Popover.Trigger>

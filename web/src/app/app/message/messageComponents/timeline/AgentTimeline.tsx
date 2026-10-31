@@ -30,6 +30,7 @@ import { ExpandedTimelineContent } from "./ExpandedTimelineContent";
 import { CollapsedStreamingContent } from "./CollapsedStreamingContent";
 import { TimelineRoot } from "@/app/app/message/messageComponents/timeline/primitives/TimelineRoot";
 import { TimelineHeaderRow } from "@/app/app/message/messageComponents/timeline/primitives/TimelineHeaderRow";
+import SourceProgress from "@/app/app/message/messageComponents/timeline/SourceProgress";
 
 // =============================================================================
 // Private Wrapper Components
@@ -39,15 +40,17 @@ interface TimelineContainerProps {
   agent: FullChatState["agent"];
   headerContent?: React.ReactNode;
   children?: React.ReactNode;
+  state?: TimelineUIState;
 }
 
 function TimelineContainer({
   agent,
   headerContent,
   children,
+  state,
 }: TimelineContainerProps) {
   return (
-    <TimelineRoot>
+    <TimelineRoot state={state}>
       <TimelineHeaderRow left={<AgentAvatar agent={agent} size={24} />}>
         {headerContent}
       </TimelineHeaderRow>
@@ -346,6 +349,7 @@ export const AgentTimeline = React.memo(function AgentTimeline({
     return (
       <TimelineContainer
         agent={chatState.agent}
+        state={uiState}
         headerContent={
           <div className="flex w-full h-full items-center ps-(--timeline-header-padding-left) pe-(--timeline-header-padding-right)">
             <ShimmerText>{headerText}</ShimmerText>
@@ -363,6 +367,7 @@ export const AgentTimeline = React.memo(function AgentTimeline({
   return (
     <TimelineContainer
       agent={chatState.agent}
+      state={uiState}
       headerContent={
         <div
           className={cn(
@@ -376,6 +381,10 @@ export const AgentTimeline = React.memo(function AgentTimeline({
         </div>
       }
     >
+      <SourceProgress
+        documents={chatState.docs ?? []}
+        onOpen={chatState.setPresentingDocument}
+      />
       {/* Collapsed streaming view - single step compact mode */}
       {showCollapsedCompact && lastStep && (
         <CollapsedStreamingContent

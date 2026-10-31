@@ -1,4 +1,5 @@
 @import "./contract.css";
+@import "./ai-chat.css";
 
 /* The canonical contract reaches native Opal controls and body portals only
    while AppChrome owns a customer route. Settings keep their existing theme. */

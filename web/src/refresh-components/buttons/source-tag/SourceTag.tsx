@@ -438,6 +438,7 @@ const SourceTagInner = ({
   const buttonContent = (
     <button
       type="button"
+      data-ai-citation={inlineCitation ? "" : undefined}
       className={cn(
         "group inline-flex items-center transition-all duration-150",
         "appearance-none border-none",

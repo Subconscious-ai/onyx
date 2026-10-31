@@ -1,0 +1,85 @@
+/* Kokonut AI Input Search, Inline Citations and AI State Loading compositions.
+   Native Onyx owns files, sources, tool packets, timing and cancellation. */
+html[data-customer-design="focus"] [data-ai-composer] {
+  padding: var(--sp-2);
+  overflow: hidden;
+}
+
+html[data-customer-design="focus"] [data-ai-composer] [role="textbox"] {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+html[data-customer-design="focus"] [data-ai-composer] button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+html[data-customer-design="focus"] [data-ai-progress] {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-adopted);
+  background: color-mix(in srgb, var(--color) 2%, var(--backgroundColor));
+  padding: var(--sp-2);
+  margin-block: var(--sp-2);
+  min-width: 0;
+}
+
+html[data-customer-design="focus"] [data-ai-progress] [role="status"] {
+  min-width: 0;
+  font-size: var(--fs-meta);
+}
+
+html[data-customer-design="focus"] [data-ai-source-progress] {
+  border-top: 1px solid var(--hairline);
+  padding-block-start: var(--sp-2);
+  padding-inline-start: var(--sp-2);
+  margin-block-start: var(--sp-2);
+}
+
+html[data-customer-design="focus"] [data-ai-running] {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: var(--radius-dot);
+  background: var(--color);
+  animation: ai-activity 1.6s ease-in-out infinite;
+}
+
+html[data-customer-design="focus"] [data-ai-citation] {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-adopted) !important;
+  padding: 2px 6px;
+  vertical-align: baseline;
+  background: color-mix(in srgb, var(--color) 5%, var(--backgroundColor));
+  transition: background-color var(--dur-fast) var(--ease-causal);
+}
+
+html[data-customer-design="focus"]
+  p:has([data-ai-citation]:is(:hover, :focus-visible)) {
+  background: color-mix(in srgb, var(--color) 4%, var(--backgroundColor));
+}
+
+html[data-customer-design="focus"] [data-ai-source-preview] {
+  border-radius: var(--radius-adopted);
+  border-color: var(--hairline);
+  box-shadow: var(--shadow-adopted);
+  padding: var(--sp-2);
+  background: var(--backgroundColor);
+  color: var(--color);
+  font-family: var(--font-body);
+}
+
+@keyframes ai-activity {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-customer-design="focus"] [data-ai-running] {
+    animation: none;
+  }
+  html[data-customer-design="focus"] [data-ai-citation] {
+    transition: none;
+  }
+}

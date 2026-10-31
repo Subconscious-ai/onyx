@@ -749,6 +749,7 @@ const AppInputBar = React.memo(
                 disabled={disabled}
                 icon={SvgPaperclip}
                 tooltip={t("appInputBar.attachFilesButton.tooltip")}
+                aria-label={t("appInputBar.attachFilesButton.tooltip")}
                 interaction={open ? "hover" : "rest"}
                 prominence="tertiary"
               />
@@ -867,8 +868,26 @@ const AppInputBar = React.memo(
               />
             ))}
 
+          {chatState === "streaming" && (
+            <Button
+              icon={SvgStop}
+              prominence="secondary"
+              aria-label={t("baseInputBar.stopButton.ariaLabel")}
+              tooltip={t("baseInputBar.stopButton.tooltip")}
+              onClick={() => {
+                stopTTS({ manual: true });
+                stopGenerating();
+              }}
+            >
+              {t("baseInputBar.stopButton.label")}
+            </Button>
+          )}
           <Button
             disabled={
+              (embeddedWorkspace && chatState !== "input") ||
+              (!embeddedWorkspace &&
+                chatState !== "input" &&
+                !message.trim()) ||
               (chatState === "input" &&
                 !isVoicePlaybackControllable &&
                 !message) ||
@@ -885,18 +904,16 @@ const AppInputBar = React.memo(
             aria-label={
               !embeddedWorkspace && chatState !== "input" && message.trim()
                 ? t("baseInputBar.sendButton.queueLabel")
-                : chatState === "streaming"
-                  ? t("baseInputBar.stopButton.ariaLabel")
-                  : isVoicePlaybackControllable
-                    ? tMessages("tts.stopButton.tooltip")
-                    : t("baseInputBar.sendButton.sendLabel")
+                : isVoicePlaybackControllable && chatState === "input"
+                  ? tMessages("tts.stopButton.tooltip")
+                  : t("baseInputBar.sendButton.sendLabel")
             }
             icon={
               isClassifying
                 ? SvgSimpleLoader
                 : !embeddedWorkspace && chatState !== "input" && message.trim()
                   ? SvgArrowUp
-                  : chatState === "streaming" || isVoicePlaybackControllable
+                  : isVoicePlaybackControllable && chatState === "input"
                     ? SvgStop
                     : SvgArrowUp
             }
@@ -936,6 +953,7 @@ const AppInputBar = React.memo(
           <div
             ref={containerRef}
             id="onyx-chat-input"
+            data-ai-composer=""
             className={cn(
               "relative w-full flex flex-col shadow-box-01 bg-background-neutral-00 rounded-16"
               // # Note (from @raunakab):

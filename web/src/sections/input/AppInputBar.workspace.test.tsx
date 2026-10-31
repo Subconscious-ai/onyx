@@ -520,3 +520,40 @@ test.each(["accepted", "cancelled"] as const)(
     open.mockRestore();
   }
 );
+
+test("can stop native generation while a follow-up draft is ready to queue", async () => {
+  const submit = jest.fn();
+  const initial = props(submit);
+  const rendered = render(
+    <AppInputBar {...initial} embeddedWorkspace={false} />
+  );
+  const input = rendered.container.querySelector<HTMLElement>(
+    '[contenteditable="true"]'
+  )!;
+  await waitFor(() => expect(input).toHaveTextContent("Independent draft D"));
+  const user = setupUser();
+  await user.click(screen.getByRole("button", { name: "Stop generating" }));
+  expect(initial.stopGenerating).toHaveBeenCalledTimes(1);
+  expect(input).toHaveTextContent("Independent draft D");
+  expect(submit).not.toHaveBeenCalled();
+  expect(screen.getByRole("button", { name: "Queue message" })).toBeEnabled();
+});
+
+test("stops an embedded response without sending or clearing the follow-up draft", async () => {
+  const submit = jest.fn();
+  const initial = props(submit);
+  const rendered = render(<AppInputBar {...initial} />);
+  const input = rendered.container.querySelector('[contenteditable="true"]')!;
+  await waitFor(() => expect(input).toHaveTextContent("Independent draft D"));
+  await setupUser().click(
+    screen.getByRole("button", { name: "Stop generating" })
+  );
+  expect(initial.stopGenerating).toHaveBeenCalledTimes(1);
+  expect(submit).not.toHaveBeenCalled();
+  expect(input).toHaveTextContent("Independent draft D");
+  expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
+  expect(
+    useChatSessionStore.getState().sessions.get("workspace-chat")!
+      .queuedMessages
+  ).toHaveLength(1);
+});

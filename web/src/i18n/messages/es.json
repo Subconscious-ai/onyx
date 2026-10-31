@@ -9310,7 +9310,8 @@
         },
         "stopButton": {
           "ariaLabel": "Detener la generación",
-          "tooltip": "Detener · esc"
+          "tooltip": "Detener · esc",
+          "label": "Detener"
         }
       },
       "buildFileCard": {
@@ -9952,7 +9953,8 @@
           "searching": {
             "status": "Buscando en la web"
           }
-        }
+        },
+        "sourceCount": "{count, plural, one {# fuente} other {# fuentes}}"
       },
       "toolbar": {
         "dislikeButton": {

@@ -9310,7 +9310,8 @@
         },
         "stopButton": {
           "ariaLabel": "생성 중지",
-          "tooltip": "중지 · esc"
+          "tooltip": "중지 · esc",
+          "label": "중지"
         }
       },
       "buildFileCard": {
@@ -9952,7 +9953,8 @@
           "searching": {
             "status": "웹 검색 중"
           }
-        }
+        },
+        "sourceCount": "{count, plural, one {출처 #개} other {출처 #개}}"
       },
       "toolbar": {
         "dislikeButton": {
