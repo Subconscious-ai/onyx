@@ -188,6 +188,7 @@ def build_server(workspace: Workspace) -> FastMCP:
     )
     _register_catalog(server, workspace)
     _register_builders(server, workspace)
+    _register_imports(server, workspace)
     _register_runs(server, workspace)
     _register_results(server, workspace)
     _register_plots(server, workspace)
@@ -275,8 +276,11 @@ def _register_builders(server: FastMCP, workspace: Workspace) -> None:
     ) -> dict:
         """Create and save the respondents: a list of trait dicts, one per agent.
 
-        An optional 'name' key becomes the agent's name. instruction tells every
-        agent how to answer (for example 'You are filling in an online survey').
+        An optional 'name' key becomes the agent's name and an optional
+        'instruction' key tells that one agent how to answer; instruction here
+        applies to every agent without its own (for example 'You are filling
+        in an online survey'). Traits may be empty when only the instruction
+        differs.
         codebook explains trait keys to the model, e.g. {"hh_inc": "household income"}.
         """
         from edsl import Agent, AgentList
@@ -289,11 +293,12 @@ def _register_builders(server: FastMCP, workspace: Workspace) -> None:
                 raise ToolError("VALIDATION_ERROR", "Each agent is a dict of traits.")
             traits = dict(traits)
             agent_name = traits.pop("name", None)
+            own_instruction = traits.pop("instruction", None)
             kwargs: dict[str, Any] = {"traits": traits}
             if agent_name is not None:
                 kwargs["name"] = str(agent_name)
-            if instruction:
-                kwargs["instruction"] = instruction
+            if own_instruction or instruction:
+                kwargs["instruction"] = str(own_instruction or instruction)
             if codebook:
                 kwargs["codebook"] = codebook
             built.append(Agent(**kwargs))
@@ -303,7 +308,12 @@ def _register_builders(server: FastMCP, workspace: Workspace) -> None:
                 "agents": name,
                 "count": len(built),
                 "traits": sorted(
-                    {key for traits in agents for key in traits if key != "name"}
+                    {
+                        key
+                        for traits in agents
+                        for key in traits
+                        if key not in ("name", "instruction")
+                    }
                 ),
             }
         )
@@ -344,6 +354,56 @@ def _register_builders(server: FastMCP, workspace: Workspace) -> None:
         )
         text = getattr(rendered, "text", None) or str(rendered)
         return ok({"survey": survey, "mermaid": text})
+
+
+def _register_imports(server: FastMCP, workspace: Workspace) -> None:
+    @server.tool()
+    @envelope
+    def build_scenarios_from_csv(name: str, csv_text: str) -> dict:
+        """Create scenarios from CSV text: one row per scenario, headers as keys.
+
+        Paste the file's contents. An id column travels through to the results.
+        """
+        from edsl import ScenarioList
+
+        path = _temp_csv(csv_text)
+        scenarios = ScenarioList.from_source("csv", str(path))
+        workspace.save("scenarios", name, scenarios)
+        keys = sorted({key for scenario in scenarios for key in scenario.keys()})
+        return ok({"scenarios": name, "count": len(scenarios), "keys": keys})
+
+    @server.tool()
+    @envelope
+    def build_agents_from_csv(
+        name: str,
+        csv_text: str,
+        name_field: str | None = None,
+        instruction: str | None = None,
+    ) -> dict:
+        """Create agents from CSV text: one row per agent, headers as trait names.
+
+        name_field names the column that becomes each agent's name. instruction
+        tells every agent how to answer.
+        """
+        from edsl import AgentList
+
+        path = _temp_csv(csv_text)
+        kwargs: dict[str, Any] = {}
+        if name_field:
+            kwargs["name_field"] = name_field
+        agents = AgentList.from_source("csv", str(path), **kwargs)
+        if instruction:
+            agents = AgentList(
+                [
+                    agent.add_instruction(instruction)
+                    if hasattr(agent, "add_instruction")
+                    else _with_instruction(agent, instruction)
+                    for agent in agents
+                ]
+            )
+        workspace.save("agents", name, agents)
+        traits = sorted({key for agent in agents for key in agent.traits})
+        return ok({"agents": name, "count": len(agents), "traits": traits})
 
 
 def _register_runs(server: FastMCP, workspace: Workspace) -> None:
@@ -440,18 +500,25 @@ def _register_runs(server: FastMCP, workspace: Workspace) -> None:
         model 'test' is free and answers with canned_response (or a fixed
         string); use it to check a design. Any other model name spends money:
         call estimate_cost first and say so. Simulated respondents are not
-        people; label their answers as simulated evidence.
+        people; label their answers as simulated evidence. Answers are cached
+        in the workspace, so repeating an identical run spends nothing new.
         """
         from edsl import Cache
 
         job = _job(survey, agents, scenarios, model, canned_response, service)
+        cache_path = workspace.root / "cache.jsonl"
+        cache = Cache.from_jsonl(str(cache_path)) if cache_path.is_file() else Cache()
+        before = len(cache)
         results = job.run(
             disable_remote_inference=True,
             disable_remote_cache=True,
             progress_bar=False,
-            cache=Cache(),
+            cache=cache,
             stop_on_exception=False,
         )
+        cache.write_jsonl(str(cache_path))
+        new_entries = len(cache) - before
+        answers = len(results) * len(results.survey.questions)
         workspace.save("results", name, results)
         incomplete = _incomplete(results)
         warnings = (
@@ -469,6 +536,7 @@ def _register_runs(server: FastMCP, workspace: Workspace) -> None:
                 "incomplete_interviews": incomplete,
                 "model": model,
                 "simulated": True,
+                "cache": {"hits": max(0, answers - new_entries), "new": new_entries},
                 "review": _review(results, 5),
             },
             warnings,
@@ -532,6 +600,37 @@ def _register_results(server: FastMCP, workspace: Workspace) -> None:
                 "results": name,
                 "row_count": len(results),
                 "rows": _rows(dataset, max(1, min(limit, MAX_ROWS))),
+            }
+        )
+
+    @server.tool()
+    @envelope
+    def results_export(
+        name: str,
+        columns: list[str] | None = None,
+        filter_expression: str | None = None,
+        limit: int = 1000,
+    ) -> dict:
+        """Saved results as CSV text, for the user to download or analyze elsewhere."""
+        results = workspace.load("results", name)
+        if filter_expression:
+            results = results.filter(filter_expression)
+        full = (
+            [_column(results, c) for c in columns]
+            if columns
+            else [
+                c
+                for c in results.columns
+                if c.startswith(("answer.", "agent.", "scenario."))
+            ]
+        )
+        frame = results.select(*full).to_pandas(remove_prefix=False).head(max(1, limit))
+        return ok(
+            {
+                "results": name,
+                "format": "csv",
+                "rows": len(frame),
+                "csv": frame.to_csv(index=False),
             }
         )
 
@@ -657,6 +756,25 @@ def _register_plots(server: FastMCP, workspace: Workspace) -> None:
             text_chars=TEXT_CHARS,
             group_by=groups,
         )
+
+
+def _temp_csv(csv_text: str) -> Path:
+    import tempfile
+
+    if not csv_text.strip():
+        raise ToolError("VALIDATION_ERROR", "The CSV text is empty.")
+    handle = tempfile.NamedTemporaryFile(
+        "w", suffix=".csv", delete=False, encoding="utf-8"
+    )
+    with handle:
+        handle.write(csv_text)
+    return Path(handle.name)
+
+
+def _with_instruction(agent: Any, instruction: str) -> Any:
+    from edsl import Agent
+
+    return Agent(name=agent.name, traits=dict(agent.traits), instruction=instruction)
 
 
 def _incomplete(results: Any) -> int:

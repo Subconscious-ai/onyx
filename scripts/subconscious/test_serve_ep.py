@@ -324,3 +324,150 @@ def test_objects_persist_across_servers_on_the_same_workspace(tmp_path: Path) ->
     second = Client(build_server(Workspace(root)))
     assert data(second, "list_objects", kind="surveys")["names"] == ["kept"]
     assert data(second, "show_prompts", survey="kept")["interviews"] == 1
+
+
+FEEDBACK_CSV = (
+    "record_id,feedback\nf1,The setup was easy.\nf2,The export button is missing.\n"
+)
+PROFILES_CSV = "profile_id,experience\np1,new user\np2,frequent user\n"
+
+
+def test_csv_rows_become_scenarios_and_agents(client: Client) -> None:
+    """docs/examples/importing_data.py and files.py."""
+    rows = data(
+        client, "build_scenarios_from_csv", name="feedback", csv_text=FEEDBACK_CSV
+    )
+    assert rows["count"] == 2 and rows["keys"] == ["feedback", "record_id"]
+
+    agents = data(
+        client,
+        "build_agents_from_csv",
+        name="profiles",
+        csv_text=PROFILES_CSV,
+        name_field="profile_id",
+    )
+    assert agents["count"] == 2 and agents["traits"] == ["experience"]
+
+    data(
+        client,
+        "build_survey",
+        name="sentiment",
+        questions=[
+            {
+                "question_type": "multiple_choice",
+                "question_name": "sentiment",
+                "question_text": "Classify this feedback: {{ scenario.feedback }}",
+                "question_options": ["Positive", "Neutral", "Negative"],
+            }
+        ],
+    )
+    run = data(
+        client,
+        "run_survey",
+        survey="sentiment",
+        name="s",
+        scenarios="feedback",
+        agents="profiles",
+        canned_response="Positive",
+    )
+    assert run["interviews"] == 4
+    rows = data(
+        client,
+        "results_select",
+        name="s",
+        columns=["record_id", "agent_name", "sentiment"],
+    )
+    assert {r["scenario.record_id"] for r in rows["rows"]} == {"f1", "f2"}
+    assert {r["agent.agent_name"] for r in rows["rows"]} == {"p1", "p2"}
+
+
+def test_a_codebook_labeling_survey_with_evidence(client: Client) -> None:
+    """docs/examples/labeling.py and qualitative.py: checkbox with bounds, memory."""
+    built = data(
+        client,
+        "build_survey",
+        name="codebook",
+        questions=[
+            {
+                "question_type": "checkbox",
+                "question_name": "themes",
+                "question_text": "Apply the codebook to: {{ scenario.text }}. Discovery: finding a control; Format: choosing a file format.",
+                "question_options": ["Discovery", "Format"],
+                "min_selections": 0,
+                "max_selections": 2,
+            },
+            {
+                "question_type": "free_text",
+                "question_name": "evidence",
+                "question_text": "Quote evidence for each selected theme: {{ scenario.text }}",
+            },
+        ],
+        targeted_memory=[{"focal": "evidence", "prior": "themes"}],
+    )
+    assert [q["type"] for q in built["questions"]] == ["checkbox", "free_text"]
+    data(
+        client,
+        "build_scenarios",
+        name="excerpts",
+        scenarios=[{"excerpt_id": "e1", "text": "I found the export button."}],
+    )
+    run = data(
+        client,
+        "run_survey",
+        survey="codebook",
+        name="coded",
+        scenarios="excerpts",
+        canned_response='["Discovery"]',
+    )
+    assert run["incomplete_interviews"] == 0
+    tally = data(client, "results_tally", name="coded", column="themes")
+    assert tally["counts"][0]["count"] == 1
+
+
+def test_agents_can_differ_by_instruction_alone(client: Client) -> None:
+    """docs/examples/prompt_sensitivity.py: same traits, different instructions."""
+    agents = data(
+        client,
+        "build_agents",
+        name="readers",
+        agents=[
+            {
+                "instruction_id": "literal",
+                "instruction": "Classify only explicit statements.",
+            },
+            {
+                "instruction_id": "inference",
+                "instruction": "Classify the likely intent.",
+            },
+        ],
+    )
+    assert agents["traits"] == ["instruction_id"]
+    data(client, "build_survey", name="cls", questions=MESSAGE_SURVEY[:1])
+    prompts = data(client, "show_prompts", survey="cls", agents="readers", limit=2)[
+        "prompts"
+    ]
+    assert {p["system_prompt"][:9] for p in prompts} == {"Classify "} or all(
+        "Classify" in p["system_prompt"] for p in prompts
+    )
+
+
+def test_results_export_returns_csv_text(client: Client) -> None:
+    data(client, "build_survey", name="msgs", questions=MESSAGE_SURVEY[:1])
+    data(client, "run_survey", survey="msgs", name="r", canned_response="Clear")
+    exported = data(client, "results_export", name="r", columns=["clarity"])
+    assert exported["format"] == "csv"
+    assert exported["csv"].splitlines()[0] == "answer.clarity"
+    assert exported["csv"].splitlines()[1] == "Clear"
+
+
+def test_a_second_identical_run_reuses_the_cache(client: Client) -> None:
+    """docs/examples/caching.py: the same job again costs nothing new."""
+    data(client, "build_survey", name="msgs", questions=MESSAGE_SURVEY[:1])
+    first = data(
+        client, "run_survey", survey="msgs", name="r1", canned_response="Clear"
+    )
+    second = data(
+        client, "run_survey", survey="msgs", name="r2", canned_response="Clear"
+    )
+    assert first["cache"]["hits"] == 0 and first["cache"]["new"] == 1
+    assert second["cache"]["hits"] == 1 and second["cache"]["new"] == 0
