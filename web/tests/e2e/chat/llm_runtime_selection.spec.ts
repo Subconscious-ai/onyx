@@ -215,9 +215,10 @@ test.describe("LLM Runtime Selection", () => {
     });
 
     try {
-      await page.goto("/app");
+      const chatPage = new ChatPage(page);
+      await chatPage.goto({ waitForNetworkIdle: false });
       await providerRequest;
-      const input = page.locator("#onyx-chat-input-textbox");
+      const input = chatPage.inputBar.textbox;
       await expect(input).toBeVisible();
       await expect(input).toHaveAttribute("contenteditable", "false");
       releaseProviders();
