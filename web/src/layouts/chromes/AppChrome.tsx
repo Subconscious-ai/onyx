@@ -681,6 +681,7 @@ export default function AppChrome({
     appPosition.isChat() ||
     appPosition.isNewSession() ||
     appPosition.isAgent() ||
+    appPosition.isMoreAgents() ||
     appPosition.isProject();
 
   // The root boundary also reaches native dialogs portaled outside AppChrome.

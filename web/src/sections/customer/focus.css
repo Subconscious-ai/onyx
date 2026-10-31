@@ -102,6 +102,11 @@ html[data-customer-design="focus"] #onyx-chat-input:focus-within {
   outline-offset: 3px;
 }
 
+/* The composer owns the focus indicator for its editable message field. */
+html[data-customer-design="focus"] #onyx-chat-input-textbox:focus-visible {
+  outline: none;
+}
+
 html[data-customer-design="focus"] .executive-workspace button {
   border-radius: var(--radius-adopted) !important;
 }

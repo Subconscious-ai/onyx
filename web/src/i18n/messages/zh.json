@@ -13855,6 +13855,8 @@
   },
   "executive": {
     "marketMemoryEvidence": "来源：{quote}",
+    "factCitationConversation": "对话",
+    "factCitationUnavailable": "来源不可用",
     "savedMarketFacts": "已保存的市场事实",
     "marketMemoryUnavailable": "共享市场记忆暂不可用。",
     "marketMemoryLoading": "正在读取已保存的市场事实…",

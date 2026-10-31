@@ -13855,6 +13855,8 @@
   },
   "executive": {
     "marketMemoryEvidence": "المصدر: {quote}",
+    "factCitationConversation": "المحادثة",
+    "factCitationUnavailable": "المصدر غير متاح",
     "savedMarketFacts": "حقائق السوق المحفوظة",
     "marketMemoryUnavailable": "ذاكرة السوق المشتركة غير متاحة.",
     "marketMemoryLoading": "جارٍ قراءة حقائق السوق المحفوظة…",

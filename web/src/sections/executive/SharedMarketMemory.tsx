@@ -4,6 +4,7 @@ import useSWR from "swr";
 import { useTranslations } from "next-intl";
 import { Text } from "@opal/components";
 import { errorHandlingFetcher, skipRetryOnAuthError } from "@/lib/fetcher";
+import FactCitation from "./FactCitation";
 
 interface SharedMarketMemoryProps {
   chatId: string | null;
@@ -23,7 +24,11 @@ interface MemoryView {
         value?: string | number | boolean | null;
         definition?: string | null;
       };
-      evidence: { reviewedStatement?: string | null }[];
+      evidence: {
+        id?: string;
+        reviewedStatement?: string | null;
+        sourceUrl?: string | null;
+      }[];
     }[];
     omitted: number;
     truncated: boolean;
@@ -69,27 +74,40 @@ export default function SharedMarketMemory(props: SharedMarketMemoryProps) {
           )}
           {data.library.nodes.map((node) => (
             <div key={`${node.type}:${node.id}`}>
-              <Text as="p" font="main-ui-action">
-                {String(
-                  node.properties.name ??
-                    node.properties.label ??
-                    node.properties.value ??
-                    node.id
-                )}
-              </Text>
-              {typeof node.properties.definition === "string" && (
-                <Text as="p" font="secondary-body">
-                  {node.properties.definition}
+              <p className="executive-fact-line">
+                <Text font="main-ui-action">
+                  {String(
+                    node.properties.name ??
+                      node.properties.label ??
+                      node.properties.value ??
+                      node.id
+                  )}
                 </Text>
-              )}
-              {node.evidence.map((source, index) =>
-                source.reviewedStatement ? (
-                  <Text as="p" key={index} font="secondary-body">
-                    {t("marketMemoryEvidence", {
-                      quote: source.reviewedStatement,
-                    })}
+                {typeof node.properties.definition !== "string" &&
+                  node.evidence.map((source, index) => (
+                    <FactCitation
+                      key={source.id ?? index}
+                      quote={source.reviewedStatement}
+                      url={source.sourceUrl}
+                    />
+                  ))}
+                {typeof node.properties.definition !== "string" &&
+                  !node.evidence.length && <FactCitation />}
+              </p>
+              {typeof node.properties.definition === "string" && (
+                <p className="executive-fact-line">
+                  <Text font="secondary-body">
+                    {node.properties.definition}
                   </Text>
-                ) : null
+                  {node.evidence.map((source, index) => (
+                    <FactCitation
+                      key={source.id ?? index}
+                      quote={source.reviewedStatement}
+                      url={source.sourceUrl}
+                    />
+                  ))}
+                  {!node.evidence.length && <FactCitation />}
+                </p>
               )}
             </div>
           ))}

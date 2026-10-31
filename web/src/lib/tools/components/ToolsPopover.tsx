@@ -10,7 +10,13 @@ import {
   Popover,
   PopoverMenu,
 } from "@opal/components";
-import { SvgActions, SvgKey, SvgSliders, SvgSimpleLoader } from "@opal/icons";
+import {
+  SvgActions,
+  SvgKey,
+  SvgSliders,
+  SvgSimpleLoader,
+  SvgChevronDown,
+} from "@opal/icons";
 
 import { ADMIN_ROUTES } from "@/lib/admin-routes";
 import { MinimalAgent } from "@/lib/agents/types";
@@ -62,12 +68,14 @@ export interface ToolsPopoverProps {
    */
   toolConfiguration: ToolConfigurationHandle;
   disabled?: boolean;
+  showLabel?: boolean;
 }
 
 export default function ToolsPopover({
   agent,
   toolConfiguration,
   disabled = false,
+  showLabel = false,
 }: ToolsPopoverProps) {
   const t = useTranslations("actions");
   const builtInToolNames = useBuiltInToolNames();
@@ -514,8 +522,11 @@ export default function ToolsPopover({
               icon={SvgSliders}
               interaction={open ? "hover" : "rest"}
               prominence="tertiary"
+              rightIcon={showLabel ? SvgChevronDown : undefined}
               tooltip={t("toolsPopover.manageActions.tooltip")}
-            />
+            >
+              {showLabel ? t("toolsPopover.manageActions.tooltip") : undefined}
+            </Button>
           </div>
         </Popover.Trigger>
         <Popover.Content side="bottom" align="start" width="lg">
