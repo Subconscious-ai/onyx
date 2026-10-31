@@ -10,7 +10,7 @@ import { SvgFileText, SvgX, SvgSimpleLoader } from "@opal/icons";
 import { Interactive, Hoverable } from "@opal/core";
 import { AttachmentItemLayout } from "@/layouts/general-layouts";
 import { Spacer } from "@opal/components";
-import { useAuthenticatedFileUrl } from "@/lib/causl/useAuthenticatedFileUrl";
+import { useAuthenticatedFileUrl } from "@/lib/causl/hooks";
 
 interface RemovableProps {
   onRemove?: () => void;

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { buildImgUrl } from "./utils";
 import { FullImageModal } from "./FullImageModal";
 import { useTranslations } from "next-intl";
-import { useAuthenticatedFileUrl } from "@/lib/causl/useAuthenticatedFileUrl";
+import { useAuthenticatedFileUrl } from "@/lib/causl/hooks";
 
 export function InputBarPreviewImage({ fileId }: { fileId: string }) {
   const t = useTranslations("chat.files");

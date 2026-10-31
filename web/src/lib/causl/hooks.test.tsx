@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { useAuthenticatedFileUrl } from "./useAuthenticatedFileUrl";
+import { useAuthenticatedFileUrl } from "@/lib/causl/hooks";
 
 const originalFetch = global.fetch;
 const originalCreate = URL.createObjectURL;

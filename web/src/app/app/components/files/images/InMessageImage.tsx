@@ -7,7 +7,7 @@ import { Button } from "@opal/components";
 import { Hoverable } from "@opal/core";
 import { cn, clickOnKeyDown } from "@opal/utils";
 import { useTranslations } from "next-intl";
-import { useAuthenticatedFileUrl } from "@/lib/causl/useAuthenticatedFileUrl";
+import { useAuthenticatedFileUrl } from "@/lib/causl/hooks";
 
 const DEFAULT_SHAPE: ImageShape = "square";
 

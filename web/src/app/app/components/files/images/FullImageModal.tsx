@@ -5,7 +5,7 @@ import { buildImgUrl } from "@/app/app/components/files/images/utils";
 import { cn } from "@opal/utils";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useTranslations } from "next-intl";
-import { useAuthenticatedFileUrl } from "@/lib/causl/useAuthenticatedFileUrl";
+import { useAuthenticatedFileUrl } from "@/lib/causl/hooks";
 
 interface FullImageModalProps {
   fileId: string;

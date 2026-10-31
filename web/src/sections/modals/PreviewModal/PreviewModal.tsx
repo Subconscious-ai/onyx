@@ -18,7 +18,7 @@ import {
 import { fetchChatFile } from "@/lib/chat/svc";
 import { PreviewContext } from "@/sections/modals/PreviewModal/interfaces";
 import { resolveVariant } from "@/sections/modals/PreviewModal/variants";
-import { useAuthenticatedFileUrl } from "@/lib/causl/useAuthenticatedFileUrl";
+import { useAuthenticatedFileUrl } from "@/lib/causl/hooks";
 
 interface PreviewModalProps {
   presentingDocument: MinimalOnyxDocument;
