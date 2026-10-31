@@ -65,14 +65,17 @@ import {
 } from "@opal/icons";
 import { useIsSearchModeAvailable, useSettings } from "@/lib/settings/hooks";
 import type { AppMode } from "@/providers/QueryControllerProvider";
-import { useAppDocumentTitle, useCustomFooterContent } from "@/lib/app/hooks";
+import {
+  useAppDocumentTitle,
+  useCustomFooterContent,
+  useFocusTheme,
+} from "@/lib/app/hooks";
 import { useAppPosition } from "@/lib/position/hooks";
 import { useQueryController } from "@/providers/QueryControllerProvider";
 import { useTierAtLeast } from "@/hooks/useTierAtLeast";
 import { Tier } from "@/lib/settings/types";
 import { useFullWidthChat } from "@/providers/FullWidthChatProvider";
 import { useIncognito } from "@/providers/IncognitoProvider";
-import "@/sections/customer/focus.css";
 
 // ---------------------------------------------------------------------------
 // Header
@@ -684,16 +687,7 @@ export default function AppChrome({
     appPosition.isMoreAgents() ||
     appPosition.isProject();
 
-  // The root boundary also reaches native dialogs portaled outside AppChrome.
-  // Leaving customer routes restores settings and administration tokens.
-  useEffect(() => {
-    if (!customerSurface) return;
-    const root = document.documentElement;
-    root.dataset.customerDesign = "focus";
-    return () => {
-      delete root.dataset.customerDesign;
-    };
-  }, [customerSurface]);
+  useFocusTheme(customerSurface);
 
   useAppDocumentTitle();
 

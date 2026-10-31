@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { Route } from "next";
 import { useEffect } from "react";
 import { useSettings } from "@/lib/settings/hooks";
-import { useAdminDocumentTitle } from "@/lib/app/hooks";
+import { useAdminDocumentTitle, useFocusTheme } from "@/lib/app/hooks";
 import { useUser } from "@/providers/UserProvider";
 import { ApplicationStatus } from "@/lib/settings/types";
 import { Button, Text } from "@opal/components";
@@ -60,6 +60,7 @@ export default function AdminChrome({
   const { isMobile } = useScreenSize();
   const pathname = usePathname();
   const { vectorDbEnabled, isLoading, application_status } = useSettings();
+  useFocusTheme();
   useAdminDocumentTitle();
   const router = useRouter();
   const { adminCapabilities: liveAdminCapabilities, isUserLoading } = useUser();
