@@ -55,3 +55,20 @@ Live native proof must use an authorized account, the real Onyx composer and
 subscription-backed agent runtime. Verify the requested tool result, visible
 grid change after Apply, complete restoration after Undo and fresh capture after
 each model change. Keep financial snapshots and browser credentials private.
+
+Hosted chat accepts the native ChatGPT provider or the native Anthropic provider
+with a Claude subscription OAuth credential. Configure credentials through the
+existing provider administration path. Obtain credentials from Doppler `beca`.
+Restrict the provider to the existing authorized workspace persona. Do not change
+the global model default or user permissions for a preview.
+
+Hosted Claude requests use `https://api.anthropic.com` explicitly. Paid API keys,
+gateway URLs, custom configuration and passthrough model overrides fail closed.
+The existing LiteLLM adapter owns OAuth headers and native tool calling.
+
+Run the subscription guard regressions with:
+
+```sh
+PYTHONPATH=backend python -m pytest -q \
+  backend/tests/unit/onyx/llm/test_factory.py
+```
