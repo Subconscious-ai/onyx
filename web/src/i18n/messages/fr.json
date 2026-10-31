@@ -13855,6 +13855,8 @@
   },
   "executive": {
     "marketMemoryEvidence": "Source : {quote}",
+    "factCitationConversation": "Conversation",
+    "factCitationUnavailable": "Source indisponible",
     "savedMarketFacts": "Faits de marché enregistrés",
     "marketMemoryUnavailable": "La mémoire partagée du marché est indisponible.",
     "marketMemoryLoading": "Lecture des faits de marché enregistrés…",

@@ -14,6 +14,7 @@ import { ProjectFile } from "@/lib/projects/types";
 import { BlinkingBar } from "./BlinkingBar";
 import Text from "@/refresh-components/texts/Text";
 import SourceTag from "@/refresh-components/buttons/source-tag/SourceTag";
+import AIInlineCitation from "@/sections/customer/AIInlineCitation";
 import {
   documentToSourceInfo,
   questionToSourceInfo,
@@ -203,6 +204,15 @@ export const MemoizedLink = memo(
             onOpen={handleSourceClick}
           />
         );
+      if (documentSourceInfo) {
+        return (
+          <AIInlineCitation
+            source={documentSourceInfo}
+            label={displayName}
+            onOpen={handleSourceClick}
+          />
+        );
+      }
 
       return (
         <SourceTag

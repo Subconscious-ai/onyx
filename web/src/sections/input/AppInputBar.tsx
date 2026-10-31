@@ -23,6 +23,7 @@ import { useAppPosition } from "@/lib/position/hooks";
 import { useDraft, draftKey } from "@/hooks/useDraft";
 import { getPastedFilesIfNoText } from "@/lib/clipboard";
 import PasteTilePopover from "@/sections/input/PasteTilePopover";
+import AIInputSearch from "@/sections/customer/AIInputSearch";
 import { cn } from "@opal/utils";
 import { firstStrongTextDir } from "@/lib/rehypeDirection";
 import { Disabled } from "@opal/core";
@@ -947,22 +948,14 @@ const AppInputBar = React.memo(
           onHighlight={queueNav.setHighlightedIndex}
         />
         <Disabled disabled={disabled} allowClick>
-          <div
+          <AIInputSearch
             ref={containerRef}
             id="onyx-chat-input"
-            className={cn(
-              "relative w-full flex flex-col shadow-box-01 bg-background-neutral-00 rounded-16"
-              // # Note (from @raunakab):
-              //
-              // `shadow-box-01` extends ~14px below the element (2px offset + 12px blur).
-              // Because the content area in `Root` (app-layouts.tsx) uses `overflow-auto`,
-              // shadows that exceed the container bounds are clipped.
-              //
-              // The 14px breathing room is now applied externally via animated spacer
-              // divs in `AppPage.tsx` (above and below the AppInputBar) so that the
-              // spacing can transition smoothly when switching between search and chat
-              // modes. See the corresponding note there for details.
-            )}
+            onFocusInput={() => inputRef.current?.focus()}
+            toolLabel={
+              activeAgent?.tools.find((tool) => tool.id === forcedToolId)
+                ?.display_name
+            }
           >
             {/* Voice waveform overlay (positioned outside normal flow to avoid resizing input) */}
             {isTTSActuallySpeaking ? (
@@ -1220,7 +1213,7 @@ const AppInputBar = React.memo(
                 onExpand={() => expandTile(tilePopover.tile)}
               />
             )}
-          </div>
+          </AIInputSearch>
         </Disabled>
         {/* Stays for the whole session: the warning is most relevant
             once the user is actually chatting. */}

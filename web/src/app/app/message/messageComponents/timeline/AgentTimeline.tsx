@@ -2,12 +2,12 @@
 
 import { useWorkspaceAiUx } from "@/lib/causl/WorkspaceAiUx";
 import React, { useMemo, useCallback } from "react";
+import AILoadingState from "@/sections/customer/AILoadingState";
 import { StopReason } from "@/app/app/services/streamingModels";
 import { FullChatState, RenderType } from "../interfaces";
 import { TurnGroup } from "./transformers";
 import { cn } from "@opal/utils";
 import AgentAvatar from "@/refresh-components/avatars/AgentAvatar";
-import ShimmerText from "@/refresh-components/texts/ShimmerText";
 import { useTimelineExpansion } from "@/app/app/message/messageComponents/timeline/hooks/useTimelineExpansion";
 import { useTimelineMetrics } from "@/app/app/message/messageComponents/timeline/hooks/useTimelineMetrics";
 import { useTimelineHeader } from "@/app/app/message/messageComponents/timeline/hooks/useTimelineHeader";
@@ -354,7 +354,10 @@ export const AgentTimeline = React.memo(function AgentTimeline({
         agent={chatState.agent}
         headerContent={
           <div className="flex w-full h-full items-center ps-(--timeline-header-padding-left) pe-(--timeline-header-padding-right)">
-            <ShimmerText>{headerText}</ShimmerText>
+            <AILoadingState
+              compact
+              steps={[{ id: "activity", label: headerText, status: "running" }]}
+            />
           </div>
         }
       />

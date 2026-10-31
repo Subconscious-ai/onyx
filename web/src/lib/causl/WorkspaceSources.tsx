@@ -2,8 +2,9 @@
 
 import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Button, Popover, Text } from "@opal/components";
-import { SvgArrowUpRight, SvgChevronDown, SvgSearch } from "@opal/icons";
+import { Button } from "@opal/components";
+import AIInlineCitation from "@/sections/customer/AIInlineCitation";
+import { SvgChevronDown, SvgSearch } from "@opal/icons";
 import type { RichStr } from "@opal/types";
 import type { SourceInfo } from "@/refresh-components/buttons/source-tag/SourceTagDetailsCard";
 
@@ -31,50 +32,15 @@ export function WorkspaceCitation({
 }: WorkspaceCitationProps) {
   const t = useTranslations("workspaceAi");
   const url = sourceWebUrl(source.sourceUrl);
-  const host = url ? new URL(url).hostname : undefined;
   return (
     <span className="workspace-ai-citation">
-      <Popover>
-        <Popover.Trigger asChild>
-          <Button
-            prominence="secondary"
-            size="sm"
-            aria-label={t("preview", { title: source.title })}
-          >
-            {label}
-          </Button>
-        </Popover.Trigger>
-        <Popover.Content side="top" align="start" width="xl">
-          <div className="workspace-ai-source-preview">
-            {host && (
-              <Text font="secondary-body" color="text-03">
-                {host}
-              </Text>
-            )}
-            <Text as="p" font="main-ui-action">
-              {source.title}
-            </Text>
-            {source.description && (
-              <Text as="p" font="secondary-body">
-                {source.description}
-              </Text>
-            )}
-            {url ? (
-              <a href={url} target="_blank" rel="noopener noreferrer">
-                <Text font="secondary-body" wordWrap="wrap-anywhere">
-                  {url}
-                </Text>
-                <SvgArrowUpRight size={14} />
-              </a>
-            ) : null}
-            {onOpen ? (
-              <Button prominence="secondary" size="sm" onClick={onOpen}>
-                {t("openSource")}
-              </Button>
-            ) : null}
-          </div>
-        </Popover.Content>
-      </Popover>
+      <AIInlineCitation
+        source={{ ...source, sourceUrl: url }}
+        label={label}
+        previewLabel={t("preview", { title: source.title })}
+        openLabel={t("openSource")}
+        onOpen={onOpen}
+      />
     </span>
   );
 }
