@@ -121,3 +121,10 @@ html[data-customer-design="focus"]
     transition: none;
   }
 }
+
+.kokonut-citation-preview blockquote {
+  max-height: 18rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

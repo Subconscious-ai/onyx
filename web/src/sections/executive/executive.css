@@ -312,6 +312,18 @@
   position: relative;
   padding-bottom: 10px;
 }
+.executive-cited-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+}
+.executive-fact-line {
+  line-height: 1.65;
+}
+.executive-fact-line > .kokonut-citation {
+  margin-inline-start: 6px;
+}
 :is(.executive-journey, [data-executive~="executive-journey"])
   li:not(:last-child)::after {
   content: "";

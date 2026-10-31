@@ -13857,6 +13857,8 @@
   },
   "executive": {
     "marketMemoryEvidence": "출처: {quote}",
+    "factCitationConversation": "대화",
+    "factCitationUnavailable": "출처 없음",
     "savedMarketFacts": "저장된 시장 정보",
     "marketMemoryUnavailable": "공유 시장 메모리를 사용할 수 없습니다.",
     "marketMemoryLoading": "저장된 시장 정보를 읽는 중…",

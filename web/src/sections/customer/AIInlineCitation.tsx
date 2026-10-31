@@ -12,19 +12,28 @@ import { useEffect, useId, useRef, useState } from "react";
 import { MotionConfig, motion } from "motion/react";
 import { Popover, Text, Button } from "@opal/components";
 import { SvgArrowUpRight } from "@opal/icons";
-import type { RichStr } from "@opal/types";
 import type { SourceInfo } from "@/refresh-components/buttons/source-tag/SourceTagDetailsCard";
+import type { RichStr } from "@opal/types";
+import { safeSourceUrl } from "@/lib/executive/brief";
 import "@/sections/customer/ai-elements.css";
 
 interface AIInlineCitationProps {
-  source: SourceInfo;
+  source: Pick<SourceInfo, "title" | "sourceUrl" | "description">;
   label: string | RichStr;
-  onOpen: () => void;
+  triggerLabel?: string | RichStr;
+  previewLabel?: string;
+  openLabel?: string;
+  quote?: string | null;
+  onOpen?: () => void;
 }
 
 export default function AIInlineCitation({
   source,
   label,
+  triggerLabel,
+  previewLabel,
+  openLabel,
+  quote,
   onOpen,
 }: AIInlineCitationProps) {
   const [open, setOpen] = useState(false);
@@ -36,7 +45,7 @@ export default function AIInlineCitation({
   const returningFocus = useRef(false);
   useEffect(() => {
     if (open && keyboard.current)
-      preview.current?.querySelector("button")?.focus();
+      (preview.current?.querySelector("button") ?? preview.current)?.focus();
   }, [open]);
   function clearTimer() {
     if (timer.current) clearTimeout(timer.current);
@@ -56,12 +65,11 @@ export default function AIInlineCitation({
     },
     []
   );
+  const url = safeSourceUrl(source.sourceUrl);
   let site = source.title;
-  if (source.sourceUrl) {
+  if (url) {
     try {
-      site =
-        new URL(source.sourceUrl).hostname.replace(/^www\./, "") ||
-        source.title;
+      site = new URL(url).hostname.replace(/^www\./, "");
     } catch {
       // Indexed files need no public URL. The native source label is valid.
     }
@@ -73,14 +81,14 @@ export default function AIInlineCitation({
         <Popover.Anchor asChild>
           <Button
             ref={trigger}
-            variant="default"
-            prominence="tertiary"
-            size="fit"
             type="button"
             data-kokonut="ai-inline-citation"
-            data-ai-citation=""
             data-monogram={site.charAt(0).toUpperCase()}
-            aria-label={source.title}
+            prominence="tertiary"
+            variant="default"
+            size="fit"
+            data-ai-citation=""
+            aria-label={previewLabel ?? source.title}
             aria-controls={open ? previewId : undefined}
             aria-haspopup="dialog"
             aria-expanded={open}
@@ -95,7 +103,9 @@ export default function AIInlineCitation({
                 event.preventDefault();
                 keyboard.current = true;
                 show(true);
-                preview.current?.querySelector("button")?.focus();
+                (
+                  preview.current?.querySelector("button") ?? preview.current
+                )?.focus();
               }
             }}
             onPointerEnter={(event) => {
@@ -105,7 +115,7 @@ export default function AIInlineCitation({
               if (event.pointerType === "mouse") hide();
             }}
           >
-            {site}
+            {triggerLabel ?? site}
           </Button>
         </Popover.Anchor>
         <Popover.Content
@@ -117,7 +127,9 @@ export default function AIInlineCitation({
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             if (keyboard.current)
-              preview.current?.querySelector("button")?.focus();
+              (
+                preview.current?.querySelector("button") ?? preview.current
+              )?.focus();
           }}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
@@ -135,6 +147,7 @@ export default function AIInlineCitation({
         >
           <motion.div
             ref={preview}
+            tabIndex={-1}
             data-kokonut="ai-citation-preview"
             className="kokonut-citation-preview"
             initial={{ opacity: 0, scale: 0.97 }}
@@ -147,31 +160,38 @@ export default function AIInlineCitation({
             <Text font="main-ui-body" color="text-05">
               {source.title}
             </Text>
-            {source.sourceUrl && (
-              <Text
-                font="secondary-body"
-                color="text-03"
-                wordWrap="wrap-anywhere"
-              >
-                {source.sourceUrl}
-              </Text>
-            )}
             {source.description && (
               <Text font="secondary-body" color="text-03" maxLines={3}>
                 {source.description}
               </Text>
             )}
-            <Button
-              prominence="tertiary"
-              rightIcon={SvgArrowUpRight}
-              onClick={() => {
-                setOpen(false);
-                onOpen();
-              }}
-              width="full"
-            >
-              {label}
-            </Button>
+            {quote && (
+              <blockquote>
+                <Text font="secondary-body" color="text-05">
+                  {quote}
+                </Text>
+              </blockquote>
+            )}
+            {url && (
+              <a href={url} target="_blank" rel="noopener noreferrer">
+                <Text font="secondary-body" wordWrap="wrap-anywhere">
+                  {url}
+                </Text>
+              </a>
+            )}
+            {onOpen && (
+              <Button
+                prominence="tertiary"
+                rightIcon={SvgArrowUpRight}
+                onClick={() => {
+                  setOpen(false);
+                  onOpen();
+                }}
+                width="full"
+              >
+                {openLabel ?? label}
+              </Button>
+            )}
           </motion.div>
         </Popover.Content>
       </Popover>

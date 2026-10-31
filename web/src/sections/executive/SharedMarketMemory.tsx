@@ -4,6 +4,7 @@ import useSWR from "swr";
 import { useTranslations } from "next-intl";
 import { Text } from "@opal/components";
 import { errorHandlingFetcher, skipRetryOnAuthError } from "@/lib/fetcher";
+import FactCitation from "@/sections/executive/FactCitation";
 
 interface SharedMarketMemoryProps {
   chatId: string | null;
@@ -23,7 +24,11 @@ interface MemoryView {
         value?: string | number | boolean | null;
         definition?: string | null;
       };
-      evidence: { reviewedStatement?: string | null }[];
+      evidence: {
+        id?: string;
+        reviewedStatement?: string | null;
+        sourceUrl?: string | null;
+      }[];
     }[];
     omitted: number;
     truncated: boolean;
@@ -67,32 +72,44 @@ export default function SharedMarketMemory(props: SharedMarketMemoryProps) {
               {t("marketMemoryEmpty")}
             </Text>
           )}
-          {data.library.nodes.map((node) => (
-            <div key={`${node.type}:${node.id}`}>
-              <Text as="p" font="main-ui-action">
-                {String(
-                  node.properties.name ??
-                    node.properties.label ??
-                    node.properties.value ??
-                    node.id
-                )}
-              </Text>
-              {typeof node.properties.definition === "string" && (
-                <Text as="p" font="secondary-body">
-                  {node.properties.definition}
-                </Text>
-              )}
-              {node.evidence.map((source, index) =>
-                source.reviewedStatement ? (
-                  <Text as="p" key={index} font="secondary-body">
-                    {t("marketMemoryEvidence", {
-                      quote: source.reviewedStatement,
-                    })}
+          {data.library.nodes.map((node) => {
+            const citations = node.evidence.length ? (
+              node.evidence.map((source, index) => (
+                <FactCitation
+                  key={source.id ?? index}
+                  quote={source.reviewedStatement}
+                  url={source.sourceUrl}
+                />
+              ))
+            ) : (
+              <FactCitation />
+            );
+            const hasDefinition =
+              typeof node.properties.definition === "string";
+            return (
+              <div key={`${node.type}:${node.id}`}>
+                <p className="executive-fact-line">
+                  <Text font="main-ui-action">
+                    {String(
+                      node.properties.name ??
+                        node.properties.label ??
+                        node.properties.value ??
+                        node.id
+                    )}
                   </Text>
-                ) : null
-              )}
-            </div>
-          ))}
+                  {!hasDefinition && citations}
+                </p>
+                {hasDefinition && (
+                  <p className="executive-fact-line">
+                    <Text font="secondary-body">
+                      {node.properties.definition!}
+                    </Text>
+                    {citations}
+                  </p>
+                )}
+              </div>
+            );
+          })}
           {data.library.truncated && (
             <Text as="p" font="secondary-body">
               {t("marketMemoryBounded")}

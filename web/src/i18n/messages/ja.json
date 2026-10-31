@@ -13857,6 +13857,8 @@
   },
   "executive": {
     "marketMemoryEvidence": "出典: {quote}",
+    "factCitationConversation": "会話",
+    "factCitationUnavailable": "出典なし",
     "savedMarketFacts": "保存済みの市場情報",
     "marketMemoryUnavailable": "共有市場メモリを利用できません。",
     "marketMemoryLoading": "保存済みの市場情報を読み込み中…",
