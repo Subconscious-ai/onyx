@@ -10,7 +10,11 @@ import {
   openCauslWorkspace,
   CauslWorkspaceError,
 } from "@/lib/causl/bridge";
-import type { CauslContextMessage, CauslDraft, CauslWorkspace } from "@/lib/causl/types";
+import type {
+  CauslContextMessage,
+  CauslDraft,
+  CauslWorkspace,
+} from "@/lib/causl/types";
 
 import {
   getMCPUserOAuthNavigationUrl,
@@ -140,6 +144,16 @@ export default function WorkspaceChat({
             });
           return;
         }
+        if (
+          event.data?.kind === "causl:focus" &&
+          event.data.nonce === nonce &&
+          controller.navigationContext()
+        ) {
+          document
+            .querySelector<HTMLElement>('[contenteditable="true"]')
+            ?.focus();
+          return;
+        }
         const draft = controller.receiveDraft(event.data);
         const context = controller.navigationContext();
         if (draft && context) setDraft({ ...draft, context });
@@ -160,7 +174,7 @@ export default function WorkspaceChat({
     const proposal = (event: Event) => {
       if (!standalone.current || !controller.navigationContext()) return;
       const data = (event as CustomEvent).detail;
-      if (data?.kind === "models:proposal")
+      if (data?.kind === "models:proposal" || data?.kind === "models:view")
         window.parent.postMessage({ ...data, nonce }, parentOrigin);
     };
     window.addEventListener("models:tool-result", proposal);
@@ -390,7 +404,11 @@ export default function WorkspaceChat({
                     const selection = await bridge.current.prepareSubmission();
                     if (pageKind === "colossus") {
                       const current = bridge.current?.navigationContext();
-                      if (current) window.parent.postMessage({ ...current, kind: "causl:prepared", selection }, parentOrigin!);
+                      if (current)
+                        window.parent.postMessage(
+                          { ...current, kind: "causl:prepared", selection },
+                          parentOrigin!
+                        );
                     }
                     if (!standalone.current) return selection;
                     const context = bridge.current.navigationContext();
@@ -418,7 +436,6 @@ export default function WorkspaceChat({
                     )
                       throw new Error("Workspace changed");
                     return { ...selection, modelPage };
-
                   },
                 }}
               />

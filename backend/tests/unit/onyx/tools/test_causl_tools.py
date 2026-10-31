@@ -586,3 +586,40 @@ def test_unsaved_page_proposal_uses_local_validator_without_saved_market_call(
     assert "models:proposal" in response.llm_facing_response
     assert "turn-1" in response.llm_facing_response
     assert emitter.emit.call_args.args[0].obj.data["captureId"] == "turn-1"
+
+
+@pytest.mark.parametrize("bound", [True, False])
+def test_financial_tool_catalog_requires_actor_bound_models_slot(bound: bool) -> None:
+    from onyx.server.query_and_chat.causl.model_page import model_page_tools
+
+    server = MCPServer(
+        id=22,
+        name="KB",
+        server_url="https://kb.example/api/mcp/library",
+        auth_type=MCPAuthenticationType.NONE,
+    )
+    tool = mcp_tool.MCPTool(
+        7,
+        MagicMock(),
+        server,
+        "inspect_model",
+        "Inspect model",
+        {"type": "object"},
+        bound_actor=CauslActor(org_id="org_b", user_id="auth0|alice")
+        if bound
+        else None,
+        bound_model_page='{"version":1}' if bound else None,
+    )
+    expanded = tool.with_model_page_tools()
+    if not bound:
+        assert expanded == [tool]
+        return
+    names = {entry.name for entry in expanded}
+    assert names == set(model_page_tools()) - {"prepare_model_change"}
+    assert all(entry.id == tool.id for entry in expanded)
+    for entry in expanded:
+        schema = entry.tool_definition()["function"]["parameters"]
+        assert schema == model_page_tools()[entry.name]["schema"]
+        assert not {"market", "document", "revision", "action"} & set(
+            schema.get("properties", {})
+        )

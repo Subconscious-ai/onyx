@@ -12,9 +12,10 @@ from onyx.chat.chat_utils import (
 )
 from onyx.chat.models import ChatLoadedFile
 from onyx.configs.constants import DEFAULT_PERSONA_ID, MessageType
-from onyx.db.models import ChatMessage
+from onyx.db.models import ChatMessage, ToolCall
 from onyx.file_store.models import ChatFileType
 from onyx.prompts.chat_prompts import TOOL_CALL_RESPONSE_CROSS_MESSAGE
+from onyx.tools.models import CustomToolCallSummary
 
 
 class TestGetCustomAgentPrompt:
@@ -348,3 +349,53 @@ class TestConvertChatHistory:
         assert len(tool_responses) == 1
         assert tool_responses[0].message == TOOL_CALL_RESPONSE_CROSS_MESSAGE
         assert tool_responses[0].token_count == len(TOOL_CALL_RESPONSE_CROSS_MESSAGE)
+
+
+def test_models_aliases_replay_with_persisted_tool_names() -> None:
+    """Database tool IDs identify the permission slot, not the native alias."""
+    calls = [
+        ToolCall(
+            turn_number=index,
+            tool_id=42,
+            tool_call_id=f"call-{index}",
+            tool_call_arguments=arguments,
+            tool_call_tokens=10,
+            tool_call_response=CustomToolCallSummary(
+                tool_name=name,
+                response_type="json",
+                tool_result={"status": "Awaiting Apply"},
+            ).model_dump_json(),
+        )
+        for index, (name, arguments) in enumerate(
+            [
+                ("apply_model_source", {"source": "cost = 500"}),
+                ("create_scenarios", {"scenarios": []}),
+                ("build_model_chart", {"metricId": "cost"}),
+            ]
+        )
+    ]
+    assistant = ChatMessage(
+        message="Review the proposal",
+        message_type=MessageType.ASSISTANT,
+        token_count=5,
+        tool_calls=calls,
+    )
+    result = convert_chat_history(
+        chat_history=[assistant],
+        files=[],
+        context_image_files=[],
+        additional_context=None,
+        token_counter=len,
+        tool_id_to_name_map={42: "inspect_model"},
+    )
+    replay = [
+        call for message in result.simple_messages for call in message.tool_calls or []
+    ]
+    assert [call.tool_name for call in replay] == [
+        "apply_model_source",
+        "create_scenarios",
+        "build_model_chart",
+    ]
+    assert [call.tool_arguments for call in replay] == [
+        call.tool_call_arguments for call in calls
+    ]

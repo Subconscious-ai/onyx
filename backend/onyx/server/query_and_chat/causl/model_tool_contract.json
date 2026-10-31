@@ -1,0 +1,1006 @@
+{
+  "version": 2,
+  "source": "guesstimate-v3 src/lib/model-page/nativeTools.ts and model-agent/contracts.ts",
+  "tools": {
+    "inspect_model": {
+      "action": "inspect-model",
+      "description": "Inspect the current financial model, outputs and scenarios.",
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "additionalProperties": false
+      },
+      "readOnly": true
+    },
+    "inspect_metric": {
+      "action": "inspect-metric",
+      "description": "Calculate a cell, its lineage and sensitivity. Use metricId from inspect_model.",
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "metricId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "metricId"
+        ],
+        "additionalProperties": false
+      },
+      "readOnly": true
+    },
+    "inspect_scenario": {
+      "action": "inspect-scenario",
+      "description": "Inspect the active and saved scenarios and calculated comparisons.",
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "readOnly": true
+    },
+    "read_model_source": {
+      "action": "inspect-source",
+      "description": "Read the current complete grid-compatible Squiggle source before whole-model editing.",
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "readOnly": true
+    },
+    "run_model_scratchpad": {
+      "action": "run-scratchpad",
+      "description": "Run bounded read-only Squiggle checks against current model variables. No model changes.",
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "maxLength": 20000
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "additionalProperties": false
+      },
+      "readOnly": true
+    },
+    "prepare_model_change": {
+      "action": "apply-edits",
+      "description": "Propose typed cell additions, deletions, moves, assumptions, formulas, notes or units. Calculate and require explicit Apply in Models.",
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "edits": {
+            "minItems": 1,
+            "maxItems": 24,
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "distribution": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "POINT",
+                            "NORMAL",
+                            "LOGNORMAL",
+                            "BETA",
+                            "PERT",
+                            "GAMMA",
+                            "EXPONENTIAL",
+                            "BERNOULLI",
+                            "POISSON",
+                            "BINOMIAL",
+                            "UNIFORM",
+                            "TRIANGULAR",
+                            "LOGISTIC",
+                            "CAUCHY"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "const": "FUNCTION"
+                        }
+                      ]
+                    },
+                    "expression": {
+                      "type": "string",
+                      "maxLength": 20000
+                    },
+                    "kind": {
+                      "type": "string",
+                      "const": "create-metric"
+                    },
+                    "location": {
+                      "type": "object",
+                      "properties": {
+                        "column": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 10000
+                        },
+                        "row": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 10000
+                        }
+                      },
+                      "required": [
+                        "column",
+                        "row"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 180
+                    },
+                    "notes": {
+                      "type": "string",
+                      "maxLength": 4000
+                    },
+                    "readableId": {
+                      "type": "string",
+                      "maxLength": 120,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+                    },
+                    "unit": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "AUTO",
+                            "NUMBER",
+                            "PERCENT",
+                            "USD",
+                            "COUNT",
+                            "USD_PER_COUNT"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^CUSTOM:[A-Za-z][A-Za-z0-9 _-]{0,31}$"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "distribution",
+                    "expression",
+                    "kind",
+                    "location",
+                    "name",
+                    "notes",
+                    "readableId"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "delete-metric"
+                    },
+                    "metricId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "metricId"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "move-metric"
+                    },
+                    "location": {
+                      "type": "object",
+                      "properties": {
+                        "column": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 10000
+                        },
+                        "row": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 10000
+                        }
+                      },
+                      "required": [
+                        "column",
+                        "row"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "metricId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "location",
+                    "metricId"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "distribution": {
+                      "type": "string",
+                      "enum": [
+                        "POINT",
+                        "NORMAL",
+                        "LOGNORMAL",
+                        "BETA",
+                        "PERT",
+                        "GAMMA",
+                        "EXPONENTIAL",
+                        "BERNOULLI",
+                        "POISSON",
+                        "BINOMIAL",
+                        "UNIFORM",
+                        "TRIANGULAR",
+                        "LOGISTIC",
+                        "CAUCHY"
+                      ]
+                    },
+                    "expression": {
+                      "type": "string",
+                      "maxLength": 20000
+                    },
+                    "kind": {
+                      "type": "string",
+                      "const": "set-assumption"
+                    },
+                    "metricId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    }
+                  },
+                  "required": [
+                    "distribution",
+                    "expression",
+                    "kind",
+                    "metricId"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "maxLength": 20000
+                    },
+                    "kind": {
+                      "type": "string",
+                      "const": "set-formula"
+                    },
+                    "metricId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    }
+                  },
+                  "required": [
+                    "expression",
+                    "kind",
+                    "metricId"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "set-notes"
+                    },
+                    "metricId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "notes": {
+                      "type": "string",
+                      "maxLength": 4000
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "metricId",
+                    "notes"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "set-unit"
+                    },
+                    "metricId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "unit": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "AUTO",
+                            "NUMBER",
+                            "PERCENT",
+                            "USD",
+                            "COUNT",
+                            "USD_PER_COUNT"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^CUSTOM:[A-Za-z][A-Za-z0-9 _-]{0,31}$"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "metricId",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "edits",
+          "rationale"
+        ],
+        "additionalProperties": false
+      },
+      "readOnly": false
+    },
+    "apply_model_edits": {
+      "action": "apply-edits",
+      "description": "Propose typed cell edits. Formula expressions use stable references, e.g. =${metric:revenue}-${metric:cost}. Use set-assumption for fixed values or distributions. Changing distribution changes a cell type; set-formula creates a formula cell. Requires explicit Apply.",
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "edits": {
+            "minItems": 1,
+            "maxItems": 24,
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "distribution": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "POINT",
+                            "NORMAL",
+                            "LOGNORMAL",
+                            "BETA",
+                            "PERT",
+                            "GAMMA",
+                            "EXPONENTIAL",
+                            "BERNOULLI",
+                            "POISSON",
+                            "BINOMIAL",
+                            "UNIFORM",
+                            "TRIANGULAR",
+                            "LOGISTIC",
+                            "CAUCHY"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "const": "FUNCTION"
+                        }
+                      ]
+                    },
+                    "expression": {
+                      "type": "string",
+                      "maxLength": 20000
+                    },
+                    "kind": {
+                      "type": "string",
+                      "const": "create-metric"
+                    },
+                    "location": {
+                      "type": "object",
+                      "properties": {
+                        "column": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 10000
+                        },
+                        "row": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 10000
+                        }
+                      },
+                      "required": [
+                        "column",
+                        "row"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 180
+                    },
+                    "notes": {
+                      "type": "string",
+                      "maxLength": 4000
+                    },
+                    "readableId": {
+                      "type": "string",
+                      "maxLength": 120,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+                    },
+                    "unit": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "AUTO",
+                            "NUMBER",
+                            "PERCENT",
+                            "USD",
+                            "COUNT",
+                            "USD_PER_COUNT"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^CUSTOM:[A-Za-z][A-Za-z0-9 _-]{0,31}$"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "distribution",
+                    "expression",
+                    "kind",
+                    "location",
+                    "name",
+                    "notes",
+                    "readableId"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "delete-metric"
+                    },
+                    "metricId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "metricId"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "move-metric"
+                    },
+                    "location": {
+                      "type": "object",
+                      "properties": {
+                        "column": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 10000
+                        },
+                        "row": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 10000
+                        }
+                      },
+                      "required": [
+                        "column",
+                        "row"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "metricId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "location",
+                    "metricId"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "distribution": {
+                      "type": "string",
+                      "enum": [
+                        "POINT",
+                        "NORMAL",
+                        "LOGNORMAL",
+                        "BETA",
+                        "PERT",
+                        "GAMMA",
+                        "EXPONENTIAL",
+                        "BERNOULLI",
+                        "POISSON",
+                        "BINOMIAL",
+                        "UNIFORM",
+                        "TRIANGULAR",
+                        "LOGISTIC",
+                        "CAUCHY"
+                      ]
+                    },
+                    "expression": {
+                      "type": "string",
+                      "maxLength": 20000
+                    },
+                    "kind": {
+                      "type": "string",
+                      "const": "set-assumption"
+                    },
+                    "metricId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    }
+                  },
+                  "required": [
+                    "distribution",
+                    "expression",
+                    "kind",
+                    "metricId"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "maxLength": 20000
+                    },
+                    "kind": {
+                      "type": "string",
+                      "const": "set-formula"
+                    },
+                    "metricId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    }
+                  },
+                  "required": [
+                    "expression",
+                    "kind",
+                    "metricId"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "set-notes"
+                    },
+                    "metricId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "notes": {
+                      "type": "string",
+                      "maxLength": 4000
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "metricId",
+                    "notes"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "set-unit"
+                    },
+                    "metricId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "unit": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "AUTO",
+                            "NUMBER",
+                            "PERCENT",
+                            "USD",
+                            "COUNT",
+                            "USD_PER_COUNT"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^CUSTOM:[A-Za-z][A-Za-z0-9 _-]{0,31}$"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "metricId",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "edits",
+          "rationale"
+        ],
+        "additionalProperties": false
+      },
+      "readOnly": false
+    },
+    "apply_model_source": {
+      "action": "apply-source",
+      "description": "Create or restructure a complete financial model using restricted grid-compatible Squiggle source. Read source first. Requires explicit Apply.",
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "maxLength": 100000
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "source",
+          "rationale"
+        ],
+        "additionalProperties": false
+      },
+      "readOnly": false
+    },
+    "set_active_scenario": {
+      "action": "set-scenario",
+      "description": "Propose one active intervention from the original baseline. Requires explicit Apply.",
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "distribution": {
+            "type": "string",
+            "enum": [
+              "POINT",
+              "NORMAL",
+              "LOGNORMAL",
+              "BETA",
+              "PERT",
+              "GAMMA",
+              "EXPONENTIAL",
+              "BERNOULLI",
+              "POISSON",
+              "BINOMIAL",
+              "UNIFORM",
+              "TRIANGULAR",
+              "LOGISTIC",
+              "CAUCHY"
+            ]
+          },
+          "expression": {
+            "type": "string",
+            "maxLength": 20000
+          },
+          "metricId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 180
+          },
+          "primaryOutcomeMetricId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "distribution",
+          "expression",
+          "metricId",
+          "name",
+          "rationale"
+        ],
+        "additionalProperties": false
+      },
+      "readOnly": false
+    },
+    "create_scenarios": {
+      "action": "create-scenarios",
+      "description": "Create and save up to three independent named one-cell alternatives from the same baseline. Requires explicit Apply.",
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "scenarios": {
+            "minItems": 1,
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "distribution": {
+                  "type": "string",
+                  "enum": [
+                    "POINT",
+                    "NORMAL",
+                    "LOGNORMAL",
+                    "BETA",
+                    "PERT",
+                    "GAMMA",
+                    "EXPONENTIAL",
+                    "BERNOULLI",
+                    "POISSON",
+                    "BINOMIAL",
+                    "UNIFORM",
+                    "TRIANGULAR",
+                    "LOGISTIC",
+                    "CAUCHY"
+                  ]
+                },
+                "expression": {
+                  "type": "string",
+                  "maxLength": 20000
+                },
+                "metricId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 120
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 180
+                },
+                "primaryOutcomeMetricId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 120
+                }
+              },
+              "required": [
+                "distribution",
+                "expression",
+                "metricId",
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "scenarios",
+          "rationale"
+        ],
+        "additionalProperties": false
+      },
+      "readOnly": false
+    },
+    "clear_scenario": {
+      "action": "clear-scenario",
+      "description": "Restore the original baseline while retaining saved alternatives. Requires explicit Apply.",
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "rationale"
+        ]
+      },
+      "readOnly": false
+    },
+    "delete_scenario": {
+      "action": "delete-scenario",
+      "description": "Remove a saved scenario by scenarioId. Preserve the current grid and active intervention. Requires explicit Apply.",
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "scenarioId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "scenarioId",
+          "rationale"
+        ],
+        "additionalProperties": false
+      },
+      "readOnly": false
+    },
+    "activate_scenario": {
+      "action": "activate-scenario",
+      "description": "Activate a saved scenario by scenarioId. Reject stale baselines. Requires explicit Apply.",
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "scenarioId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "scenarioId",
+          "rationale"
+        ],
+        "additionalProperties": false
+      },
+      "readOnly": false
+    },
+    "set_sensitivity": {
+      "action": "sensitivity",
+      "description": "Open or close the existing sensitivity analysis for metricId. Does not edit financial assumptions.",
+      "readOnly": true,
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "metricId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "metricId",
+          "enabled"
+        ]
+      }
+    },
+    "build_model_chart": {
+      "action": "chart",
+      "description": "Build a distribution histogram for a grid metricId using current Squiggle simulation draws. Does not change the financial model.",
+      "readOnly": true,
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "metricId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "metricId"
+        ]
+      }
+    }
+  }
+}

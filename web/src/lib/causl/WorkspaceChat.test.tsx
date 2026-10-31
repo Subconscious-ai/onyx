@@ -475,3 +475,40 @@ test.each(["signin", "access"] as const)(
     expect(screen.getByText("Reopen conversation")).toBeInTheDocument();
   }
 );
+
+test.each(["models:proposal", "models:view"])(
+  "standalone native Onyx forwards %s to the authenticated Models host",
+  async (kind) => {
+    jest
+      .mocked(openCauslWorkspace)
+      .mockResolvedValue({ ...mockWorkspace, actor: context.actor });
+    render(
+      <WorkspaceChat
+        parentOrigin="https://kb.example"
+        nonce="frame-nonce"
+        authenticated
+        libraryServerId={null}
+      />
+    );
+    receive({ kind: "models:open", nonce: "frame-nonce" });
+    await screen.findByText("No pending question");
+    post.mockClear();
+    const data = {
+      kind,
+      version: 1,
+      captureId: "capture",
+      workspaceScope: "local:one",
+      baseRevision: "revision-1",
+      arguments: { metricId: "profit" },
+    };
+    act(() =>
+      window.dispatchEvent(
+        new CustomEvent("models:tool-result", { detail: data })
+      )
+    );
+    expect(post).toHaveBeenCalledWith(
+      { ...data, nonce: "frame-nonce" },
+      "https://kb.example"
+    );
+  }
+);

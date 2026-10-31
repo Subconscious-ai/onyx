@@ -478,9 +478,11 @@ def _construct_tools_impl(
         # Handle MCP tools
         elif db_tool_model.mcp_server_id:
             if db_tool_model.mcp_server_id in mcp_tool_cache:
-                tool_dict[db_tool_model.id] = [
-                    mcp_tool_cache[db_tool_model.mcp_server_id][db_tool_model.id]
-                ]
+                tool_dict[db_tool_model.id] = list(
+                    mcp_tool_cache[db_tool_model.mcp_server_id][
+                        db_tool_model.id
+                    ].with_model_page_tools()
+                )
                 continue
 
             mcp_server = get_mcp_server_by_id(db_tool_model.mcp_server_id, db_session)
@@ -565,7 +567,7 @@ def _construct_tools_impl(
                 mcp_tool_cache[db_tool_model.mcp_server_id][saved_tool.id] = mcp_tool
 
                 if saved_tool.id == db_tool_model.id:
-                    tool_dict[saved_tool.id] = [cast(Tool, mcp_tool)]
+                    tool_dict[saved_tool.id] = list(mcp_tool.with_model_page_tools())
             if db_tool_model.id not in tool_dict:
                 logger.warning(
                     "Tool '%s' not found in MCP server '%s'",

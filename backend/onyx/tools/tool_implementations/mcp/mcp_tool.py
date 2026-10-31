@@ -1,3 +1,4 @@
+import copy
 import json
 import time
 from typing import Any
@@ -23,6 +24,7 @@ from onyx.server.metrics.mcp_common import MCPToolCallStatus
 from onyx.server.query_and_chat.causl.model_page import (
     model_page_tool_result,
     model_page_tool_schema,
+    model_page_tools,
 )
 from onyx.server.query_and_chat.causl.models import CauslActor
 from onyx.server.query_and_chat.causl.statement import (
@@ -146,8 +148,26 @@ class MCPTool(Tool[None]):
         return (
             self._bound_actor is not None
             and bool(self._bound_model_page)
-            and self._mcp_tool_name in {"inspect_model", "prepare_model_change"}
+            and self._mcp_tool_name in model_page_tools()
         )
+
+    def with_model_page_tools(self) -> list["MCPTool"]:
+        """Expand only the actor-bound Models slot; retain Library authorization."""
+        if self._mcp_tool_name != "inspect_model" or not self._uses_model_page():
+            return [self]
+        tools = [self]
+        for name, entry in model_page_tools().items():
+            # prepare_model_change retains its existing persona permission and slot.
+            if name in {"inspect_model", "prepare_model_change"}:
+                continue
+            tool = copy.copy(self)
+            tool._mcp_tool_name = name
+            tool._name = name
+            tool._llm_name = sanitize_tool_name(f"mcp_{self.mcp_server.name}_{name}")
+            tool._display_name = name
+            tool._description = entry["description"]
+            tools.append(tool)
+        return tools
 
     def tool_definition(self) -> dict:
         """Return the tool definition from the MCP server"""
