@@ -20,6 +20,7 @@ from onyx.db.enums import MCPAuthenticationType
 from onyx.error_handling.exceptions import OnyxError
 from onyx.server.features.mcp import client as mcp_client
 from onyx.server.features.mcp import experiment_run
+from onyx.tools.models import CustomToolCallSummary
 from tests.unit.onyx.server.features.mcp.mcp_test_server import serve
 
 CHAT_SESSION = uuid4()
@@ -64,10 +65,21 @@ def server_url(rehoboam: FakeRehoboam) -> Iterator[str]:
         yield url
 
 
-def _launch_result(run_id: str) -> str:
-    """What the chat saved for the launch tool call."""
+def _launch_result(run_id: str, shape: str = "chat") -> str:
+    """What the conversation saved for the launch tool call.
+
+    ``chat`` is what the chat loop writes for an MCP tool: the whole
+    ``CustomToolCallSummary``. ``wrapped`` is the inner wrapper alone, which
+    other code paths save.
+    """
     inner = json.dumps({"wandb_run_id": run_id, "launch_state": "submitted"})
-    return json.dumps({"tool_result": inner})
+    if shape == "wrapped":
+        return json.dumps({"tool_result": inner})
+    return CustomToolCallSummary(
+        tool_name="start_experiment",
+        response_type="json",
+        tool_result={"tool_result": inner},
+    ).model_dump_json()
 
 
 @pytest.fixture
@@ -112,13 +124,16 @@ def conversation(monkeypatch: pytest.MonkeyPatch, server_url: str) -> dict[str, 
 
     def launch_tool_calls(db_session: Any, chat_session_id: Any, run_id: str) -> Any:
         del db_session, chat_session_id
+        shape = state.get("launch_shape", "chat")
         response = state.get("raw_launch_response")
         if response is not None:
             return [
                 SimpleNamespace(tool_id=LAUNCH_TOOL_ID, tool_call_response=response)
             ]
         return [
-            SimpleNamespace(tool_id=tool_id, tool_call_response=_launch_result(run_id))
+            SimpleNamespace(
+                tool_id=tool_id, tool_call_response=_launch_result(run_id, shape)
+            )
             for tool_id in state["launches"].get(run_id, [])
         ]
 
@@ -171,6 +186,14 @@ def test_a_running_launch_reports_running_and_not_done() -> None:
         "terminal": False,
         "successful": None,
     }
+
+
+def test_a_launch_saved_in_the_other_wrapper_shape_is_read_too(
+    conversation: dict[str, Any],
+) -> None:
+    conversation["launch_shape"] = "wrapped"
+
+    assert _read("run1").status == "running"
 
 
 @pytest.mark.usefixtures("conversation")
@@ -250,7 +273,11 @@ def test_a_launch_result_for_a_different_run_does_not_authorize_this_one(
     inner = json.dumps(
         {"wandb_run_id": "run2", "launch_state": "submitted", "note": "after run1"}
     )
-    response = json.dumps({"tool_result": inner})
+    response = CustomToolCallSummary(
+        tool_name="start_experiment",
+        response_type="json",
+        tool_result={"tool_result": inner},
+    ).model_dump_json()
     conversation["raw_launch_response"] = response
 
     with pytest.raises(OnyxError) as error:

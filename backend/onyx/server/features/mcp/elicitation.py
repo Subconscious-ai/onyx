@@ -13,6 +13,7 @@ cannot interpret.
 
 import asyncio
 import json
+import re
 import time
 import uuid
 from collections.abc import Awaitable, Callable
@@ -41,6 +42,7 @@ APPROVAL_TIMEOUT_SECONDS = 180
 # The user must be able to read the whole action they approve.
 MAX_APPROVAL_MESSAGE_CHARS = 200_000
 _KEY_PREFIX = "mcp_elicitation"
+_APPROVAL_ID = re.compile(r"^[0-9a-f]{32}$")
 _POLL_INTERVAL_SECONDS = 0.5
 
 
@@ -78,6 +80,8 @@ def submit_decision(
     decision: Literal["approve", "decline"],
 ) -> None:
     """Record the user's answer. Raises if it is not theirs, gone, or answered."""
+    if not _APPROVAL_ID.fullmatch(approval_id):
+        raise ElicitationNotFound()
     raw = _text(redis_client.get(_request_key(approval_id)))
     if raw is None:
         raise ElicitationNotFound()
@@ -183,7 +187,11 @@ def build_elicitation_callback(
         outcome: Literal["approved", "declined", "expired"] = "expired"
         try:
             decision = await _wait_for_answer(
-                redis_client, approval_id, timeout_seconds, poll_interval_seconds
+                redis_client,
+                approval_id,
+                timeout_seconds,
+                poll_interval_seconds,
+                stream_is_live=lambda: emitter.is_live,
             )
             if decision == ElicitationDecision.APPROVE.value:
                 outcome = "approved"
@@ -214,6 +222,7 @@ async def _wait_for_answer(
     approval_id: str,
     timeout_seconds: float,
     poll_interval_seconds: float,
+    stream_is_live: Callable[[], bool],
 ) -> str | None:
     deadline = time.monotonic() + timeout_seconds
     read: Callable[[], Awaitable[Any]] = lambda: asyncio.to_thread(  # noqa: E731
@@ -223,6 +232,7 @@ async def _wait_for_answer(
         answer = _text(await read())
         if answer is not None:
             return answer
-        if time.monotonic() >= deadline:
+        # A stopped or closed stream leaves no card to click: stop waiting.
+        if time.monotonic() >= deadline or not stream_is_live():
             return None
         await asyncio.sleep(poll_interval_seconds)

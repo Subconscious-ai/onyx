@@ -8,6 +8,7 @@ user answers over HTTP, and the server receives the answer.
 
 import asyncio
 import json
+import threading
 from queue import Empty, Queue
 from typing import Any, cast
 
@@ -65,16 +66,24 @@ def _params(
     )
 
 
+class _Stream(Queue):
+    """The packet queue of a chat stream, with the event that ends it."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.drain_done = threading.Event()
+
+
 def _build(
     *,
     redis: FakeRedis,
     user_id: str = "user-1",
     timeout_seconds: float = 2.0,
-) -> tuple[Any, Queue]:
-    queue: Queue = Queue()
+) -> tuple[Any, _Stream]:
+    queue = _Stream()
     callback = build_elicitation_callback(
         redis_client=cast(Any, redis),
-        emitter=Emitter(merged_queue=queue),
+        emitter=Emitter(merged_queue=queue, drain_done=queue.drain_done),
         placement=Placement(turn_index=0, tab_index=0),
         tool_name="mcp_rehoboam_start_experiment",
         user_id=user_id,
@@ -205,7 +214,36 @@ async def test_first_answer_wins() -> None:
 
 def test_answering_an_unknown_or_expired_approval_is_not_found() -> None:
     with pytest.raises(ElicitationNotFound):
-        submit_decision(cast(Any, FakeRedis()), "never-issued", "user-1", "approve")
+        submit_decision(cast(Any, FakeRedis()), "0" * 32, "user-1", "approve")
+
+
+@pytest.mark.parametrize(
+    "approval_id", ["never-issued", "a1:answer", "", "../x", "A" * 32, "0" * 31]
+)
+def test_an_id_that_is_not_one_we_issued_never_reaches_storage(
+    approval_id: str,
+) -> None:
+    class Untouchable(FakeRedis):
+        def get(self, key: str) -> str | None:
+            raise AssertionError(f"storage was read with {key!r}")
+
+    with pytest.raises(ElicitationNotFound):
+        submit_decision(cast(Any, Untouchable()), approval_id, "user-1", "approve")
+
+
+@pytest.mark.asyncio
+async def test_stopping_the_stream_ends_the_wait_and_nothing_launches() -> None:
+    redis = FakeRedis()
+    callback, queue = _build(redis=redis, timeout_seconds=30)
+
+    task = asyncio.create_task(callback(None, _params()))
+    await _next_packet(queue, CustomToolApprovalRequest)
+    queue.drain_done.set()  # the user pressed stop, or the page went away
+    result = await asyncio.wait_for(task, timeout=2)
+
+    assert isinstance(result, types.ElicitResult)
+    assert result.action == "cancel"
+    assert redis.store == {}
 
 
 @pytest.mark.asyncio
@@ -445,7 +483,7 @@ def _callback_given_to_the_server(monkeypatch: pytest.MonkeyPatch, tool: Any) ->
 def test_a_signed_in_chat_user_can_be_asked_to_approve(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    emitter = Emitter(merged_queue=Queue())
+    emitter = Emitter(merged_queue=Queue(), drain_done=threading.Event())
 
     callback = _callback_given_to_the_server(monkeypatch, _tool("user-1", emitter))
 
@@ -455,9 +493,28 @@ def test_a_signed_in_chat_user_can_be_asked_to_approve(
 def test_a_call_with_no_user_is_never_offered_an_approval(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    emitter = Emitter(merged_queue=Queue())
+    emitter = Emitter(merged_queue=Queue(), drain_done=threading.Event())
 
     assert _callback_given_to_the_server(monkeypatch, _tool("", emitter)) is None
+
+
+def test_a_sub_agent_with_a_private_queue_is_never_offered_an_approval(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # No chat stream reads this emitter, so nobody could ever see the card.
+    emitter = Emitter(merged_queue=Queue())
+
+    assert _callback_given_to_the_server(monkeypatch, _tool("user-1", emitter)) is None
+
+
+def test_a_stream_that_already_ended_is_never_offered_an_approval(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ended = threading.Event()
+    ended.set()
+    emitter = Emitter(merged_queue=Queue(), drain_done=ended)
+
+    assert _callback_given_to_the_server(monkeypatch, _tool("user-1", emitter)) is None
 
 
 def test_a_call_with_nowhere_to_show_the_card_is_never_offered_an_approval(

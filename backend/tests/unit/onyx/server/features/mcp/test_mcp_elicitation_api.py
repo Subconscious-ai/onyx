@@ -9,8 +9,10 @@ import pytest
 
 from onyx.error_handling.exceptions import OnyxError
 from onyx.server.features.mcp import api
-from onyx.server.features.mcp.elicitation import _request_key
+from onyx.server.features.mcp.elicitation import _answer_key, _request_key
 from tests.unit.onyx.server.features.mcp.mcp_fake_redis import FakeRedis
+
+APPROVAL_ID = "0123456789abcdef0123456789abcdef"
 
 
 @pytest.fixture
@@ -30,23 +32,23 @@ def _user() -> Any:
 
 def test_the_owner_approves_and_the_answer_is_recorded(redis: FakeRedis) -> None:
     user = _user()
-    _pending(redis, "a1", str(user.id))
+    _pending(redis, APPROVAL_ID, str(user.id))
 
-    api.answer_mcp_elicitation("a1", api.MCPElicitationAnswer(decision="approve"), user)
+    api.answer_mcp_elicitation(APPROVAL_ID, api.MCPElicitationAnswer(decision="approve"), user)
 
-    assert redis.get("mcp_elicitation:a1:answer") == "approve"
+    assert redis.get(_answer_key(APPROVAL_ID)) == "approve"
 
 
 def test_another_user_gets_not_found_and_records_nothing(redis: FakeRedis) -> None:
-    _pending(redis, "a1", str(uuid4()))
+    _pending(redis, APPROVAL_ID, str(uuid4()))
 
     with pytest.raises(OnyxError) as error:
         api.answer_mcp_elicitation(
-            "a1", api.MCPElicitationAnswer(decision="approve"), _user()
+            APPROVAL_ID, api.MCPElicitationAnswer(decision="approve"), _user()
         )
 
     assert error.value.status_code == 404
-    assert redis.get("mcp_elicitation:a1:answer") is None
+    assert redis.get(_answer_key(APPROVAL_ID)) is None
 
 
 @pytest.mark.usefixtures("redis")
@@ -61,16 +63,16 @@ def test_an_expired_approval_is_not_found() -> None:
 
 def test_a_second_answer_is_a_conflict(redis: FakeRedis) -> None:
     user = _user()
-    _pending(redis, "a1", str(user.id))
-    api.answer_mcp_elicitation("a1", api.MCPElicitationAnswer(decision="decline"), user)
+    _pending(redis, APPROVAL_ID, str(user.id))
+    api.answer_mcp_elicitation(APPROVAL_ID, api.MCPElicitationAnswer(decision="decline"), user)
 
     with pytest.raises(OnyxError) as error:
         api.answer_mcp_elicitation(
-            "a1", api.MCPElicitationAnswer(decision="approve"), user
+            APPROVAL_ID, api.MCPElicitationAnswer(decision="approve"), user
         )
 
     assert error.value.status_code == 409
-    assert redis.get("mcp_elicitation:a1:answer") == "decline"
+    assert redis.get(_answer_key(APPROVAL_ID)) == "decline"
 
 
 def test_only_approve_or_decline_are_accepted() -> None:

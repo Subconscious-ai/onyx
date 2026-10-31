@@ -4,7 +4,7 @@ from typing import Any
 
 from mcp.client.auth import OAuthClientProvider
 
-from onyx.chat.emitter import Emitter, NullEmitter
+from onyx.chat.emitter import Emitter
 from onyx.db.enums import MCPAuthenticationType, MCPTransport
 from onyx.db.models import MCPConnectionConfig, MCPServer
 from onyx.redis.redis_pool import get_redis_client
@@ -321,9 +321,9 @@ class MCPTool(Tool[None]):
                 )
 
             # A server may stop this call to ask the signed-in user to approve
-            # one exact action. That needs a user and a chat stream to show it in.
+            # one exact action. That needs a user and a live chat stream to show it in.
             elicitation_callback = None
-            if self._user_id and not isinstance(self.emitter, NullEmitter):
+            if self._user_id and self.emitter.is_live:
                 elicitation_callback = build_elicitation_callback(
                     redis_client=get_redis_client(),
                     emitter=self.emitter,

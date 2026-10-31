@@ -59,15 +59,29 @@ def _launch_tool_calls(
 
 
 def _launched_run_id(tool_call_response: str) -> str | None:
-    """The run id inside a saved launch result, or None if it is not one."""
-    try:
-        result: Any = json.loads(tool_call_response).get("tool_result")
-        if isinstance(result, str):
-            result = json.loads(result)
-        run_id = result.get("wandb_run_id")
-    except (ValueError, AttributeError):
-        return None
-    return run_id if isinstance(run_id, str) else None
+    """The run id inside a saved launch result, or None if it is not one.
+
+    The chat loop saves an MCP result as ``CustomToolCallSummary`` JSON, whose
+    ``tool_result`` is itself ``{"tool_result": "<the server's JSON text>"}``.
+    Other paths save the inner wrapper alone. Peel wrappers until the launch
+    fields appear.
+    """
+    data: Any = tool_call_response
+    for _ in range(4):
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except ValueError:
+                return None
+        if not isinstance(data, dict):
+            return None
+        if "wandb_run_id" in data:
+            run_id = data["wandb_run_id"]
+            return run_id if isinstance(run_id, str) else None
+        if "tool_result" not in data:
+            return None
+        data = data["tool_result"]
+    return None
 
 
 def _launching_server_id(

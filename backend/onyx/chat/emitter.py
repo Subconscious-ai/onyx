@@ -29,6 +29,15 @@ class Emitter:
         self._merged_queue = merged_queue
         self._drain_done = drain_done
 
+    @property
+    def is_live(self) -> bool:
+        """True while a chat stream is reading these packets and has not stopped.
+
+        False for an emitter with no stream behind it (a sub-agent's private
+        queue) and once the stream has ended or the user stopped it.
+        """
+        return self._drain_done is not None and not self._drain_done.is_set()
+
     def emit(self, packet: Packet) -> None:
         if self._drain_done is not None and self._drain_done.is_set():
             return
