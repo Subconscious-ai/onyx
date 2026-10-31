@@ -289,7 +289,9 @@ def test_an_answer_the_question_rejects_is_reported_not_hidden(client: Client) -
 
     assert body["status"] == "ok"
     assert body["data"]["incomplete_interviews"] == 1
-    assert "rejected" in body["warnings"][0]
+    assert "rejected reply" in body["warnings"][0]
+    # A rejected reply is not an answer served from the cache.
+    assert body["data"]["cache"]["hits"] == 0
     assert error(client, "plot_means", name="bad")["code"] == "NOT_FOUND"
 
 
@@ -784,3 +786,26 @@ def test_a_runtime_error_is_one_bounded_line_with_a_next_step(client: Client) ->
     assert problem["code"] == "RUNTIME_ERROR"
     assert "\n" not in problem["message"] and len(problem["message"]) <= 340
     assert problem["suggestion"]
+
+
+def test_every_failed_interview_is_counted_with_its_cause(
+    client: Client, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A model error on every agent reports three failures, not one validation failure."""
+    import serve_ep
+    from edsl import Model
+
+    data(client, "build_survey", name="one", questions=MESSAGE_SURVEY[:1])
+    data(client, "build_agents", name="three", agents=[{"id": 1}, {"id": 2}, {"id": 3}])
+    monkeypatch.setattr(
+        serve_ep,
+        "_model_for",
+        lambda *_: Model("test", throw_exception=True),
+    )
+
+    body, _ = call(client, "run_survey", survey="one", name="boom", agents="three")
+
+    assert body["status"] == "ok"
+    assert body["data"]["incomplete_interviews"] == 3
+    assert body["data"]["cache"]["hits"] == 0
+    assert "3 of 3 interviews raised an error" in body["warnings"][0]

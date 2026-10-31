@@ -444,20 +444,12 @@ def _register_runs(server: FastMCP, workspace: Workspace) -> None:
         canned_response: str | None,
         service: str | None,
     ) -> Any:
-        from edsl import Model
-
         job = workspace.load("surveys", survey)
         if scenarios:
             job = job.by(workspace.load("scenarios", scenarios))
         if agents:
             job = job.by(workspace.load("agents", agents))
-        if model == DEFAULT_MODEL:
-            kwargs = {"canned_response": canned_response} if canned_response else {}
-            job = job.by(Model(DEFAULT_MODEL, **kwargs))
-        else:
-            kwargs = {"service_name": service} if service else {}
-            job = job.by(Model(model, **kwargs))
-        return job
+        return job.by(_model_for(model, canned_response, service))
 
     @server.tool()
     @envelope
@@ -541,10 +533,13 @@ def _register_runs(server: FastMCP, workspace: Workspace) -> None:
             f"-test-{_digest(canned_response or '')}" if model == DEFAULT_MODEL else ""
         )
         cache_path = workspace.root / f"cache{suffix}.jsonl"
-        with _CACHE_LOCK:
+        # One lock per cache file: runs that share a file take turns so neither
+        # drops the other's entries; runs on other files proceed in parallel.
+        with _cache_lock(cache_path):
             cache = (
                 Cache.from_jsonl(str(cache_path)) if cache_path.is_file() else Cache()
             )
+            before = len(cache)
             results = job.run(
                 disable_remote_inference=True,
                 disable_remote_cache=True,
@@ -553,13 +548,15 @@ def _register_runs(server: FastMCP, workspace: Workspace) -> None:
                 stop_on_exception=False,
             )
             cache.write_jsonl(str(cache_path))
-        hits, new_entries = _cache_counts(results)
+            new_entries = len(cache) - before
+        hits = max(0, _answered(results) - new_entries)
         workspace.save("results", name, results)
-        failed = _failed_interviews(results)
+        failed, kinds = _failed_interviews(results)
         warnings = (
             [
-                f"{failed} of {len(results)} interviews have an answer the question "
-                "rejected (the model's reply failed validation); that answer is empty."
+                f"{failed} of {len(results)} interviews raised an error"
+                + (f" ({kinds})" if kinds else "")
+                + ": a rejected reply, a model error or a timeout. Those answers are empty."
             ]
             if failed
             else []
@@ -984,27 +981,8 @@ def _register_conjoint(server: FastMCP, workspace: Workspace) -> None:
     designs = workspace.root / "conjoint"
     designs.mkdir(exist_ok=True)
 
-    def _design(name: str) -> dict:
-        path = designs / f"{workspace.path('surveys', name).stem}.json"
-        if not path.is_file():
-            raise ToolError(
-                "NOT_FOUND",
-                f"No conjoint design named {name!r}.",
-                "Create one with conjoint_design.",
-            )
-        return json.loads(path.read_text())
-
     def _analysis(results: str, design: str) -> tuple[dict, dict]:
-        spec = _design(design)
-        rows = workspace.load("results", results).to_dicts(remove_prefix=False)
-        try:
-            return spec, ep_conjoint.analyze(rows, spec)
-        except ValueError as error:
-            raise ToolError(
-                "NOT_FOUND",
-                str(error),
-                "Run the conjoint survey on its version scenarios first.",
-            ) from error
+        return _conjoint_analysis(workspace, results, design)
 
     @server.tool()
     @envelope
@@ -1142,7 +1120,25 @@ def _with_instruction(agent: Any, instruction: str) -> Any:
     return Agent(name=agent.name, traits=dict(agent.traits), instruction=instruction)
 
 
-_CACHE_LOCK = __import__("threading").Lock()
+_CACHE_LOCKS: dict[str, Any] = {}
+_CACHE_LOCKS_GUARD = __import__("threading").Lock()
+
+
+def _cache_lock(path: Path) -> Any:
+    import threading
+
+    with _CACHE_LOCKS_GUARD:
+        return _CACHE_LOCKS.setdefault(str(path), threading.Lock())
+
+
+def _model_for(model: str, canned_response: str | None, service: str | None) -> Any:
+    from edsl import Model
+
+    if model == DEFAULT_MODEL:
+        kwargs = {"canned_response": canned_response} if canned_response else {}
+        return Model(DEFAULT_MODEL, **kwargs)
+    kwargs = {"service_name": service} if service else {}
+    return Model(model, **kwargs)
 
 
 def _digest(text: str) -> str:
@@ -1151,33 +1147,48 @@ def _digest(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:10]
 
 
-def _failed_interviews(results: Any) -> int:
-    """Interviews where a model reply failed a question's validation.
+def _answered(results: Any) -> int:
+    """Answers that exist: a rejected reply or a rule-skipped question is empty."""
+    return sum(
+        1
+        for row in results
+        for value in (row.get("answer") or {}).values()
+        if value is not None
+    )
 
-    A question skipped by a stop or skip rule is empty by design and is not
-    counted; EDSL records real failures on the task history.
+
+def _failed_interviews(results: Any) -> tuple[int, str]:
+    """(interviews that raised, what kinds) from EDSL's own task history.
+
+    A question skipped by a stop or skip rule is empty by design and does not
+    count. A rejected reply, a model error or a timeout does.
     """
     history = getattr(results, "task_history", None)
     if history is None or not getattr(history, "has_exceptions", False):
-        return 0
-    failed = 0
-    for row in results:
-        comments = row.get("comments_dict") or {}
-        if any("validation error" in str(v).lower() for v in comments.values()):
-            failed += 1
-    return failed or 1
+        return 0, ""
+    exceptions = list(getattr(history, "exceptions", []) or [])
+    kinds: list[str] = []
+    for entry in exceptions:
+        for name in _exception_names(entry):
+            if name not in kinds:
+                kinds.append(name)
+    failed = len(exceptions) or sum(
+        any(value is None for value in (row.get("answer") or {}).values())
+        for row in results
+    )
+    return failed, ", ".join(kinds[:3])
 
 
-def _cache_counts(results: Any) -> tuple[int, int]:
-    """(answers served from the cache, answers newly generated) in this run."""
-    hits = new = 0
-    for row in results:
-        for used in (row.get("cache_used_dict") or {}).values():
-            if used:
-                hits += 1
-            else:
-                new += 1
-    return hits, new
+def _exception_names(entry: Any) -> list[str]:
+    names = []
+    for attribute in ("exceptions", "exception_entries"):
+        for item in getattr(entry, attribute, None) or []:
+            inner = getattr(item, "exception", item)
+            names.append(type(inner).__name__)
+    if not names:
+        inner = getattr(entry, "exception", entry)
+        names.append(type(inner).__name__)
+    return names
 
 
 def _is_number(text: str) -> bool:
