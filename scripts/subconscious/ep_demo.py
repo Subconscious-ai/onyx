@@ -55,7 +55,6 @@ DEMOS: dict[str, list[str]] = {
     ],
 }
 
-TOOL_TYPES = {"custom_tool_start", "custom_tool_args", "custom_tool_delta"}
 FILE_URL = re.compile(r"/api/chat/file/([0-9a-f-]{16,})")
 
 
@@ -112,18 +111,17 @@ class OnyxChat:
 
 
 def parse_turn(prompt: str, body: dict[str, Any]) -> Turn:
-    """Pull the answer, tool calls and image ids out of a non-streaming reply."""
+    """Pull the answer, tool calls and image ids out of a non-streaming reply.
+
+    The reply is Onyx's ChatFullResponse: ``answer`` and ``tool_calls`` with
+    ``tool_name``, ``tool_arguments`` and ``tool_result``. An image a tool
+    returned shows up as a ``/api/chat/file/<id>`` link in its result.
+    """
     turn = Turn(prompt=prompt, raw=body)
-    turn.answer = body.get("answer") or body.get("message") or ""
-    for item in body.get("tool_calls") or body.get("top_documents") or []:
-        if isinstance(item, dict) and ("tool_name" in item or "tool_call_id" in item):
+    turn.answer = body.get("answer") or ""
+    for item in body.get("tool_calls") or []:
+        if isinstance(item, dict) and "tool_name" in item:
             turn.tools.append(item)
-    for packet in body.get("packets") or []:
-        obj = packet.get("obj", packet) if isinstance(packet, dict) else {}
-        if obj.get("type") in TOOL_TYPES:
-            turn.tools.append(obj)
-        for file_id in obj.get("file_ids") or []:
-            turn.images.append(file_id)
     for file_id in FILE_URL.findall(json.dumps(body)):
         if file_id not in turn.images:
             turn.images.append(file_id)
