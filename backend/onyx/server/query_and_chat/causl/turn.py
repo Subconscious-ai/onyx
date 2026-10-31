@@ -9,6 +9,7 @@ from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
 from onyx.prompts.causl_workspace import (
     COLOSSUS_PAGE_INSTRUCTIONS,
+    MODELS_PAGE_INSTRUCTIONS,
     SAVED_FACT_RETRIEVAL_INSTRUCTIONS,
     WORKSPACE_INSTRUCTIONS,
 )
@@ -96,7 +97,9 @@ def read_workspace_context(
         or loaded.configuration.persona_id != chat.persona_id
     ):
         raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
-    return binding, loaded.envelope
+    return binding.model_copy(
+        update={"model_page": current.model_page}
+    ), loaded.envelope
 
 
 def workspace_turn(
@@ -169,4 +172,6 @@ def workspace_turn(
         + model_phase
         + json.dumps(prompt_context, ensure_ascii=False)
     )
+    if current.page == "models" and current.model_page:
+        prompt += MODELS_PAGE_INSTRUCTIONS + current.model_page
     return binding, prompt

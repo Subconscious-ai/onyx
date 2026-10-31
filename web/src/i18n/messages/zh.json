@@ -13,6 +13,7 @@
     "connecting": "正在连接…",
     "unavailable": "工作区上下文暂不可用。已保存的对话仍然保留。",
     "opening": "正在打开工作区对话…",
+    "modelContextUnavailable": "Models 页面捕获失败或超出大小限制。请打开完整模型后重试。本地草稿保持不变。",
     "contextChanged": "消息发送前工作区已变更。请检查当前上下文后重新发送。"
   },
   "accountPopover": {

@@ -32,6 +32,51 @@ function pending() {
 }
 
 describe("native workspace context bridge", () => {
+  test("bootstraps Models with the verified server actor and no browser actor", async () => {
+    const original = global.fetch;
+    const actor = message(1).actor;
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ ...workspace, actor })));
+    global.fetch = fetchMock;
+    try {
+      const ready = await openCauslWorkspace(
+        { selection: { page: "models" } },
+        new AbortController().signal
+      );
+      expect(ready.actor).toEqual(actor);
+      expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+        selection: { page: "models" },
+      });
+    } finally {
+      global.fetch = original;
+    }
+  });
+
+  test.each([
+    { status: 401, reason: "signin" },
+    { status: 403, reason: "access" },
+    { status: 500, reason: "unavailable" },
+  ])(
+    "Models bootstrap maps HTTP $status to $reason",
+    async ({ status, reason }) => {
+      const original = global.fetch;
+      global.fetch = jest
+        .fn()
+        .mockResolvedValue(new Response(null, { status }));
+      try {
+        await expect(
+          openCauslWorkspace(
+            { selection: { page: "models" } },
+            new AbortController().signal
+          )
+        ).rejects.toMatchObject({ reason });
+      } finally {
+        global.fetch = original;
+      }
+    }
+  );
+
   test("rejects draft handoff while a newer page context is pending and after a scope switch", async () => {
     const next = pending();
     const open = jest

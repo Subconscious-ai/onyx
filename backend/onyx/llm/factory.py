@@ -3,6 +3,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from onyx.auth.host_auth import require_host_subscription_provider
 from onyx.auth.permissions import has_global_permission
 from onyx.configs.model_configs import GEN_AI_TEMPERATURE
 from onyx.db.engine.sql_engine import get_session_with_current_tenant
@@ -480,6 +481,7 @@ def get_llm(
     reasoning_effort_user_default: ReasoningEffort | None = None,
     reasoning_effort_max: ReasoningEffort | None = None,
 ) -> LLM:
+    require_host_subscription_provider(provider)
     if temperature is None:
         temperature = GEN_AI_TEMPERATURE
 

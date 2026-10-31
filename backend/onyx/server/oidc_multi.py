@@ -158,7 +158,7 @@ def _state_workspace(state_data: dict[str, Any]) -> str | None:
     return tenant_id if isinstance(tenant_id, str) and tenant_id else None
 
 
-def _resolve_oidc_provider(
+def resolve_oidc_provider(
     db_session: Session, provider_name: str
 ) -> tuple[SSOProvider, dict[str, Any]]:
     provider = fetch_sso_provider_by_name(
@@ -265,7 +265,7 @@ def _get_cache_key(
     return get_current_tenant_id(), provider.name, provider.provider_type, config_hash
 
 
-async def _get_oauth_client(
+async def get_oauth_client(
     provider: SSOProvider, config: dict[str, Any]
 ) -> BaseOAuth2[Any]:
     # Building an OIDC client fetches the IdP discovery doc over the network, so
@@ -320,8 +320,8 @@ async def oidc_login_for_provider(
     request: Request,
     db_session: Session = Depends(get_authorize_session),
 ) -> Response:
-    provider, config = _resolve_oidc_provider(db_session, provider_name)
-    client = await _get_oauth_client(provider, config)
+    provider, config = resolve_oidc_provider(db_session, provider_name)
+    client = await get_oauth_client(provider, config)
     redirect_uri = _callback_uri(provider, config)
     next_url = sanitize_next_url(request.query_params.get("next"))
     csrf_token = generate_csrf_token()
@@ -463,8 +463,8 @@ async def oidc_login_callback_for_provider(
     # keyed on the current tenant, and session issuance reads the override.
     with _pinned_workspace(pinned_tenant_id):
         with get_session_with_current_tenant() as db_session:
-            provider, config = _resolve_oidc_provider(db_session, provider_name)
-            client = await _get_oauth_client(provider, config)
+            provider, config = resolve_oidc_provider(db_session, provider_name)
+            client = await get_oauth_client(provider, config)
             redirect_uri = _callback_uri(provider, config)
             allowed_email_domains = list(provider.allowed_email_domains)
             # A tenant-controlled OIDC IdP can assert any address, so its login

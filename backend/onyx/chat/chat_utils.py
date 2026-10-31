@@ -63,6 +63,7 @@ from onyx.prompts.chat_prompts import (
     TOOL_CALL_RESPONSE_CROSS_MESSAGE,
 )
 from onyx.prompts.tool_prompts import TOOL_CALL_FAILURE_PROMPT
+from onyx.server.query_and_chat.causl.model_page import model_page_history_name
 from onyx.server.query_and_chat.models import ChatSessionCreationRequest
 from onyx.server.query_and_chat.streaming_models import CitationInfo
 from onyx.tools.models import ChatFile, ToolCallKickoff
@@ -727,6 +728,7 @@ def convert_chat_history(
     additional_context: str | None,
     token_counter: Callable[[str], int],
     tool_id_to_name_map: dict[int, str],
+    models_tool_server_names: dict[int, str] | None = None,
 ) -> ChatHistoryResult:
     """Convert ChatMessage history to ChatMessageSimple format.
 
@@ -846,8 +848,10 @@ def convert_chat_history(
                     # Build ToolCallSimple list for this turn
                     tool_calls_simple: list[ToolCallSimple] = []
                     for tool_call in turn_tool_calls:
-                        tool_name = tool_id_to_name_map.get(
-                            tool_call.tool_id, "unknown"
+                        tool_name = model_page_history_name(
+                            tool_id_to_name_map.get(tool_call.tool_id, "unknown"),
+                            tool_call.tool_call_response,
+                            (models_tool_server_names or {}).get(tool_call.tool_id),
                         )
                         tool_calls_simple.append(
                             ToolCallSimple(
@@ -874,8 +878,10 @@ def convert_chat_history(
 
                     # Add TOOL_CALL_RESPONSE messages for each tool call in this turn
                     for tool_call in turn_tool_calls:
-                        tool_name = tool_id_to_name_map.get(
-                            tool_call.tool_id, "unknown"
+                        tool_name = model_page_history_name(
+                            tool_id_to_name_map.get(tool_call.tool_id, "unknown"),
+                            tool_call.tool_call_response,
+                            (models_tool_server_names or {}).get(tool_call.tool_id),
                         )
                         tool_response_message = (
                             _build_tool_call_response_history_message(

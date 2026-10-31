@@ -1161,6 +1161,20 @@ export default function useChatController({
               setStreamingStartTime(frozenSessionId, Date.now());
             }
 
+            if (packet && typeof packet === "object" && "obj" in packet) {
+              const object = packet.obj;
+              if (
+                object &&
+                typeof object === "object" &&
+                "type" in object &&
+                object.type === "custom_tool_delta" &&
+                "data" in object
+              ) {
+                window.dispatchEvent(
+                  new CustomEvent("models:tool-result", { detail: object.data })
+                );
+              }
+            }
             if ((packet as MessageResponseIDInfo).user_message_id) {
               newUserMessageId = (packet as MessageResponseIDInfo)
                 .user_message_id;

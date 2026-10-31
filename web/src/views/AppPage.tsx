@@ -1,5 +1,7 @@
 "use client";
 
+import { ModelPageCaptureError } from "@/lib/causl/modelPage";
+
 import { redirect, useRouter, useSearchParams } from "next/navigation";
 import { endIncognitoSession } from "@/app/app/services/lib";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -477,9 +479,15 @@ export default function AppPage({
         let causlSelection;
         try {
           causlSelection = await causlWorkspace.prepareSubmission();
-        } catch {
+        } catch (error) {
           params.onInputRejected?.();
-          toast.error(workspaceLabels("contextChanged"));
+          toast.error(
+            workspaceLabels(
+              error instanceof ModelPageCaptureError
+                ? "modelContextUnavailable"
+                : "contextChanged"
+            )
+          );
           return;
         } finally {
           workspacePreparingRef.current = false;

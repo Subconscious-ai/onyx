@@ -60,7 +60,7 @@ def test_resolve_oidc_returns_config(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         oidc_multi, "fetch_sso_provider_by_name", lambda **_kw: provider
     )
-    resolved, config = oidc_multi._resolve_oidc_provider(_DB, "okta")
+    resolved, config = oidc_multi.resolve_oidc_provider(_DB, "okta")
     assert resolved is provider
     assert config == {
         **_OIDC_CONFIG,
@@ -81,7 +81,7 @@ def test_resolve_google_returns_config(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         oidc_multi, "fetch_sso_provider_by_name", lambda **_kw: provider
     )
-    _resolved, config = oidc_multi._resolve_oidc_provider(_DB, "google")
+    _resolved, config = oidc_multi.resolve_oidc_provider(_DB, "google")
     assert config == {
         **_GOOGLE_CONFIG,
         "legacy_callback": False,
@@ -93,7 +93,7 @@ def test_resolve_google_returns_config(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_resolve_fail_closed_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(oidc_multi, "fetch_sso_provider_by_name", lambda **_kw: None)
     with pytest.raises(OnyxError):
-        oidc_multi._resolve_oidc_provider(_DB, "missing")
+        oidc_multi.resolve_oidc_provider(_DB, "missing")
 
 
 def test_resolve_fail_closed_saml_type(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -102,7 +102,7 @@ def test_resolve_fail_closed_saml_type(monkeypatch: pytest.MonkeyPatch) -> None:
         oidc_multi, "fetch_sso_provider_by_name", lambda **_kw: provider
     )
     with pytest.raises(OnyxError):
-        oidc_multi._resolve_oidc_provider(_DB, "saml-row")
+        oidc_multi.resolve_oidc_provider(_DB, "saml-row")
 
 
 def test_resolve_fail_closed_incomplete_config(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -114,7 +114,7 @@ def test_resolve_fail_closed_incomplete_config(monkeypatch: pytest.MonkeyPatch) 
         oidc_multi, "fetch_sso_provider_by_name", lambda **_kw: provider
     )
     with pytest.raises(OnyxError):
-        oidc_multi._resolve_oidc_provider(_DB, "okta")
+        oidc_multi.resolve_oidc_provider(_DB, "okta")
 
 
 def test_cache_key_stable_and_config_sensitive() -> None:
@@ -237,12 +237,12 @@ async def test_client_cache_hits_and_rebuilds_on_config_change(
     monkeypatch.setattr(oidc_multi, "_build_client", _fake_build)
     provider = _provider()
 
-    await oidc_multi._get_oauth_client(provider, dict(_OIDC_CONFIG))
-    await oidc_multi._get_oauth_client(provider, dict(_OIDC_CONFIG))
+    await oidc_multi.get_oauth_client(provider, dict(_OIDC_CONFIG))
+    await oidc_multi.get_oauth_client(provider, dict(_OIDC_CONFIG))
     assert builds["count"] == 1  # same key is a cache hit
 
     # A rotated secret changes the config hash, so the key changes and rebuilds.
-    await oidc_multi._get_oauth_client(
+    await oidc_multi.get_oauth_client(
         provider, {**_OIDC_CONFIG, "client_secret": "rotated"}
     )
     assert builds["count"] == 2
