@@ -164,6 +164,15 @@ def host_session_for(user_id: UUID) -> HostSession | None:
     return session
 
 
+def require_host_subscription_provider(provider: str) -> None:
+    if _host_session.get() is not None and provider != "chatgpt":
+        raise OnyxError(
+            OnyxErrorCode.SERVICE_UNAVAILABLE,
+            "Application chat requires the configured ChatGPT subscription provider. "
+            "Paid provider fallback is disabled.",
+        )
+
+
 def library_host_token(user_id: UUID, server_id: int, server_url: str) -> str | None:
     session = host_session_for(user_id)
     if session is None or str(server_id) != os.environ.get("CAUSL_KB_MCP_SERVER_ID"):
