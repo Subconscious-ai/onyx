@@ -549,6 +549,7 @@ def _register_runs(server: FastMCP, workspace: Workspace) -> None:
             )
             cache.write_jsonl(str(cache_path))
             new_entries = len(cache) - before
+        # EDSL also caches rejected replies, so after a rejection hits can read low.
         hits = max(0, _answered(results) - new_entries)
         workspace.save("results", name, results)
         failed, kinds = _failed_interviews(results)
@@ -1158,36 +1159,38 @@ def _answered(results: Any) -> int:
 
 
 def _failed_interviews(results: Any) -> tuple[int, str]:
-    """(interviews that raised, what kinds) from EDSL's own task history.
+    """(interviews with an unfixed error, the kinds of error) from EDSL's task history.
 
     A question skipped by a stop or skip rule is empty by design and does not
-    count. A rejected reply, a model error or a timeout does.
+    count. Neither does an error EDSL fixed by retrying. A rejected reply, a
+    model error or a timeout that stayed unfixed does.
     """
     history = getattr(results, "task_history", None)
     if history is None or not getattr(history, "has_exceptions", False):
         return 0, ""
-    exceptions = list(getattr(history, "exceptions", []) or [])
+    unfixed = [
+        collection
+        for collection in (getattr(history, "exceptions", []) or [])
+        if not hasattr(collection, "num_unfixed") or collection.num_unfixed() > 0
+    ]
     kinds: list[str] = []
-    for entry in exceptions:
-        for name in _exception_names(entry):
+    for collection in unfixed:
+        for name in _exception_names(collection):
             if name not in kinds:
                 kinds.append(name)
-    failed = len(exceptions) or sum(
-        any(value is None for value in (row.get("answer") or {}).values())
-        for row in results
-    )
-    return failed, ", ".join(kinds[:3])
+    return len(unfixed), ", ".join(kinds[:3])
 
 
-def _exception_names(entry: Any) -> list[str]:
+def _exception_names(collection: Any) -> list[str]:
+    """Exception type names in one interview's collection (a dict by question)."""
     names = []
-    for attribute in ("exceptions", "exception_entries"):
-        for item in getattr(entry, attribute, None) or []:
-            inner = getattr(item, "exception", item)
-            names.append(type(inner).__name__)
-    if not names:
-        inner = getattr(entry, "exception", entry)
-        names.append(type(inner).__name__)
+    data = getattr(collection, "data", None) or {}
+    for entries in data.values():
+        for entry in entries:
+            exception = getattr(entry, "exception", entry)
+            name = getattr(entry, "exception_type", None) or type(exception).__name__
+            if name:
+                names.append(str(name))
     return names
 
 

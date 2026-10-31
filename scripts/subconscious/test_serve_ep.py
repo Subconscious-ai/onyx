@@ -809,3 +809,6 @@ def test_every_failed_interview_is_counted_with_its_cause(
     assert body["data"]["incomplete_interviews"] == 3
     assert body["data"]["cache"]["hits"] == 0
     assert "3 of 3 interviews raised an error" in body["warnings"][0]
+    # The kind named is the error itself, not EDSL's container for it.
+    assert "InterviewExceptionCollection" not in body["warnings"][0]
+    assert "(" in body["warnings"][0]
