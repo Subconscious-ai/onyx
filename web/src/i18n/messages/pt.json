@@ -9311,7 +9311,8 @@
         },
         "stopButton": {
           "ariaLabel": "Parar a geração",
-          "tooltip": "Parar · esc"
+          "tooltip": "Parar · esc",
+          "label": "Parar"
         }
       },
       "buildFileCard": {

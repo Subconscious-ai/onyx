@@ -4,6 +4,7 @@ import { getTimelineStyles, TimelineTokens } from "./tokens";
 export interface TimelineRootProps {
   children: React.ReactNode;
   tokens?: Partial<TimelineTokens>;
+  state?: string;
 }
 
 /**
@@ -11,11 +12,12 @@ export interface TimelineRootProps {
  * It sets CSS variables derived from TimelineTokens so rail width, header height,
  * and padding stay consistent across the timeline.
  */
-export function TimelineRoot({ children, tokens }: TimelineRootProps) {
+export function TimelineRoot({ children, tokens, state }: TimelineRootProps) {
   return (
     <div
       className="flex flex-col ps-(--timeline-agent-message-padding-left)"
       style={getTimelineStyles(tokens)}
+      data-ai-progress={state}
     >
       {children}
     </div>

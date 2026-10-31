@@ -9311,7 +9311,8 @@
         },
         "stopButton": {
           "ariaLabel": "生成を停止",
-          "tooltip": "停止 · esc"
+          "tooltip": "停止 · esc",
+          "label": "停止"
         }
       },
       "buildFileCard": {

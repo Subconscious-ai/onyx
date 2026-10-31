@@ -9311,7 +9311,8 @@
         },
         "stopButton": {
           "ariaLabel": "Generierung stoppen",
-          "tooltip": "Stopp · Esc"
+          "tooltip": "Stopp · Esc",
+          "label": "Stoppen"
         }
       },
       "buildFileCard": {

@@ -1,0 +1,123 @@
+/* Kokonut shapes and motion; canonical Subconscious paint and typography. */
+.kokonut-input-search {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 4px;
+  border-radius: 22px;
+  background: var(--background-neutral-02);
+}
+.kokonut-input-search__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--border-01);
+  border-radius: 18px;
+  background: var(--background-neutral-00);
+}
+.kokonut-input-search__tool {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding-inline: 12px;
+}
+html[data-customer-design="focus"]
+  .kokonut-input-search
+  [data-testid="action-management-toggle"]
+  button {
+  border: 1px solid var(--hairline);
+  background: var(--bg-2);
+}
+.kokonut-input-search__card > .flex:has(#onyx-chat-input-textbox) {
+  padding: 4px 4px 0;
+}
+.kokonut-input-search #onyx-chat-input-textbox {
+  font-size: 16px;
+  line-height: 1.6;
+}
+html[data-customer-design="focus"] #onyx-chat-input.kokonut-input-search {
+  border: 0;
+  border-radius: 22px;
+  background: var(--bg-active);
+  box-shadow: none;
+}
+html[data-customer-design="focus"]
+  .kokonut-input-search:focus-within
+  .kokonut-input-search__card {
+  border-color: var(--grey-500);
+}
+html[data-customer-design="focus"] .kokonut-input-search button {
+  border-radius: 999px !important;
+}
+html[data-customer-design="focus"]
+  .kokonut-input-search
+  #onyx-chat-input-send-button {
+  border-radius: 12px !important;
+  background: var(--color);
+  color: var(--backgroundColor);
+}
+html[data-customer-design="focus"]
+  .executive-workspace
+  button[data-kokonut="ai-inline-citation"] {
+  border-radius: 999px !important;
+}
+[data-kokonut="ai-inline-citation"] {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  gap: 4px;
+  max-width: min(14rem, 100%);
+  min-height: 24px;
+  margin-inline: 2px;
+  padding: 2px 8px 2px 2px;
+  border-radius: 999px !important;
+  color: var(--text-04);
+  background: var(--background-neutral-02);
+  cursor: pointer;
+  transition:
+    color 150ms,
+    background-color 150ms;
+}
+[data-kokonut="ai-inline-citation"] span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+[data-kokonut="ai-inline-citation"]:hover,
+[data-kokonut="ai-inline-citation"][data-state="open"] {
+  color: var(--text-inverted-05);
+  background: var(--background-neutral-inverted-00);
+}
+[data-kokonut="ai-inline-citation"]::before {
+  content: attr(data-monogram);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--background-neutral-00);
+  color: var(--text-05);
+  font-size: 10px;
+  font-weight: 600;
+}
+.kokonut-citation-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}
+.kokonut-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-kokonut="ai-inline-citation"] {
+    transition: none;
+  }
+}
