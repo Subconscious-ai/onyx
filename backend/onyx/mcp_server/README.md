@@ -89,7 +89,7 @@ The server provides three tools for searching and retrieving information:
 
 1. `search_indexed_documents`
 Search the user's private knowledge base indexed in Onyx. Returns `{"results": [...]}` in relevance order.
-Each result contains `title`, `url`, `source_type`, `content`, and `updated_at`; no numeric score is returned.
+Each result contains `title`, `url`, `source_type`, `content`, and `updated_at`. The response contains no numeric score.
 `content` contains the selected document chunk, with the search blurb as a fallback.
 
 Pass `agent` with an agent name to run the search as that Onyx agent. The search then applies the agent's knowledge scope (document sets, attached documents, start date) and its configured model. An unresolvable name returns an error listing the agents available to the user, so no lookup call is needed first.
@@ -97,7 +97,7 @@ Pass `agent` with an agent name to run the search as that Onyx agent. The search
 `agent` and `document_set_names` are mutually exclusive. Explicit document sets replace an agent's knowledge scope rather than narrowing it, so passing both is rejected instead of silently returning out-of-scope results.
 
 Optional filters include `source_types` and an ISO 8601 `time_cutoff`.
-Invalid source names are skipped. An invalid time value logs a warning and applies no time filter.
+The search skips invalid source names. An invalid time value logs a warning and applies no time filter.
 Clients that require a strict time boundary must validate the timestamp before sending a request.
 `skip_query_expansion` defaults to false. Skipping expansion does not disable the rest of the search pipeline.
 
