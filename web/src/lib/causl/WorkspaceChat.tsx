@@ -349,7 +349,7 @@ export default function WorkspaceChat({
   return (
     <ProjectsProvider>
       <VoiceModeProvider>
-        <WorkspaceAiUx enabled={pageKind === "colossus"}>
+        <WorkspaceAiUx enabled={pageKind === "colossus" || standalone.current}>
           <RootLayout.Root>
             <AppChrome embedded>
               <SearchFiltersProvider>

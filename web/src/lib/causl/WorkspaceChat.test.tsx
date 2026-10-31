@@ -53,12 +53,21 @@ jest.mock("@/views/AppPage", () => ({
       onDraftConsumed: (id: string) => void;
     };
   }) => {
+    const { useWorkspaceAiUx } = jest.requireActual(
+      "@/lib/causl/WorkspaceAiUx"
+    );
+    const workspaceAi = useWorkspaceAiUx();
     mockConsume = causlWorkspace.onDraftConsumed;
     mockPrepare = causlWorkspace.prepareSubmission;
     return (
-      <div data-testid="pending-draft">
-        {causlWorkspace.draft?.text ?? "No pending question"}
-      </div>
+      <>
+        <div data-testid="pending-draft">
+          {causlWorkspace.draft?.text ?? "No pending question"}
+        </div>
+        <span>
+          {workspaceAi ? "Workspace AI controls" : "Standard controls"}
+        </span>
+      </>
     );
   },
 }));
@@ -512,3 +521,25 @@ test.each(["models:proposal", "models:view"])(
     );
   }
 );
+
+test("standalone Models enables the shared composer, citation, and progress presentation", async () => {
+  jest.mocked(openCauslWorkspace).mockResolvedValue({
+    ...mockWorkspace,
+    actor: context.actor,
+  });
+  render(
+    <WorkspaceChat
+      parentOrigin="https://kb.example"
+      nonce="frame-nonce"
+      authenticated
+      libraryServerId={null}
+    />
+  );
+  receive({ kind: "models:open", nonce: "frame-nonce" });
+  expect(await screen.findByText("Workspace AI controls")).toBeVisible();
+});
+
+test("ordinary KB keeps the existing chat presentation", async () => {
+  await open();
+  expect(screen.getByText("Standard controls")).toBeVisible();
+});
