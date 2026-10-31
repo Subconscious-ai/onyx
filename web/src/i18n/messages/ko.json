@@ -14012,5 +14012,12 @@
       "contextUpdating": "Finishing company research…",
       "email": "{email}을 바탕으로 조사를 시작합니다"
     }
+  },
+  "workspaceAi": {
+    "tools": "도구",
+    "stop": "중지",
+    "sources": "{count, plural, one {소스 #개} other {소스 #개}}",
+    "preview": "소스 미리보기: {title}",
+    "openSource": "소스 열기"
   }
 }

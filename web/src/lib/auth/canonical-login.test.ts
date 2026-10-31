@@ -29,10 +29,47 @@ describe("canonical hosted login", () => {
     );
   });
 
+  test("canonical HTTPS login does not repeat behind a TLS proxy", async () => {
+    const response = await proxy(
+      new NextRequest("http://localhost:3182/auth/login?next=%2Fapp", {
+        headers: {
+          host: "interview.example",
+          "x-forwarded-proto": "https",
+        },
+      })
+    );
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  test("genuine HTTP login still reaches HTTPS", async () => {
+    const response = await proxy(
+      new NextRequest("http://interview.example/auth/login", {
+        headers: { host: "interview.example", "x-forwarded-proto": "http" },
+      })
+    );
+    expect(response.headers.get("location")).toBe(
+      "https://interview.example/auth/login"
+    );
+  });
+
   test("forwarding headers cannot select the login destination", async () => {
     const response = await proxy(
       new NextRequest("https://preview.example/auth/login", {
-        headers: { "x-forwarded-host": "attacker.example" },
+        headers: {
+          host: "preview.example",
+          "x-forwarded-host": "interview.example",
+        },
+      })
+    );
+    expect(response.headers.get("location")).toBe(
+      "https://interview.example/auth/login"
+    );
+  });
+
+  test("a different port still reaches the configured callback host", async () => {
+    const response = await proxy(
+      new NextRequest("http://localhost:3182/auth/login", {
+        headers: { host: "interview.example:3181" },
       })
     );
     expect(response.headers.get("location")).toBe(

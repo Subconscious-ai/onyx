@@ -48,6 +48,7 @@ import {
   startMCPUserOAuth,
 } from "@/lib/tools/svc";
 import { useUser } from "@/providers/UserProvider";
+import type { RichStr } from "@opal/types";
 
 /**
  * The actions popover.
@@ -68,14 +69,14 @@ export interface ToolsPopoverProps {
    */
   toolConfiguration: ToolConfigurationHandle;
   disabled?: boolean;
-  showLabel?: boolean;
+  label?: string | RichStr;
 }
 
 export default function ToolsPopover({
   agent,
   toolConfiguration,
   disabled = false,
-  showLabel = false,
+  label,
 }: ToolsPopoverProps) {
   const t = useTranslations("actions");
   const builtInToolNames = useBuiltInToolNames();
@@ -522,10 +523,11 @@ export default function ToolsPopover({
               icon={SvgSliders}
               interaction={open ? "hover" : "rest"}
               prominence="tertiary"
-              rightIcon={showLabel ? SvgChevronDown : undefined}
+              rightIcon={label ? SvgChevronDown : undefined}
               tooltip={t("toolsPopover.manageActions.tooltip")}
+              aria-label={t("toolsPopover.manageActions.tooltip")}
             >
-              {showLabel ? t("toolsPopover.manageActions.tooltip") : undefined}
+              {label}
             </Button>
           </div>
         </Popover.Trigger>

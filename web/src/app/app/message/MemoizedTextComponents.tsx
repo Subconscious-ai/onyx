@@ -1,3 +1,5 @@
+import { useWorkspaceAiUx } from "@/lib/causl/WorkspaceAiUx";
+import { WorkspaceCitation, sourceWebUrl } from "@/lib/causl/WorkspaceSources";
 import React, { memo, JSX, useMemo, useCallback } from "react";
 import { SourceIcon } from "@/components/SourceIcon";
 import { WebResultIcon } from "@/components/WebResultIcon";
@@ -30,6 +32,18 @@ interface DocumentCardProps {
 interface QuestionCardProps {
   question: SubQuestionDetail;
   openQuestion: (question: SubQuestionDetail) => void;
+}
+
+function linkText(children: React.ReactNode): string {
+  return React.Children.toArray(children)
+    .map((child) => {
+      if (typeof child === "string" || typeof child === "number")
+        return String(child);
+      return React.isValidElement<{ children?: React.ReactNode }>(child)
+        ? linkText(child.props.children)
+        : "";
+    })
+    .join("");
 }
 
 export const MemoizedAnchor = memo(
@@ -145,7 +159,9 @@ export const MemoizedLink = memo(
     [key: string]: any;
   }) => {
     const t = useTranslations("chat.messages");
+    const workspaceAi = useWorkspaceAiUx();
     const value = rest.children;
+    const valueText = linkText(value);
 
     // Convert document to SourceInfo for SourceTag
     const documentSourceInfo = useMemo(() => {
@@ -168,9 +184,9 @@ export const MemoizedLink = memo(
       }
     }, [document, updatePresentingDocument, question, openQuestion]);
 
-    if (value?.toString().startsWith("*")) {
+    if (valueText.startsWith("*")) {
       return <BlinkingBar addMargin />;
-    } else if (value?.toString().startsWith("[")) {
+    } else if (valueText.startsWith("[")) {
       const sourceInfo = documentSourceInfo || questionSourceInfo;
       if (!sourceInfo) {
         return <>{rest.children}</>;
@@ -180,6 +196,14 @@ export const MemoizedLink = memo(
         ? getDisplayNameForSource(document as OnyxDocument)
         : question?.question || t("memoizedLink.questionFallback.label");
 
+      if (workspaceAi)
+        return (
+          <WorkspaceCitation
+            source={sourceInfo}
+            label={valueText.slice(1, -1)}
+            onOpen={handleSourceClick}
+          />
+        );
       if (documentSourceInfo) {
         return (
           <AIInlineCitation
@@ -224,6 +248,21 @@ export const MemoizedLink = memo(
         >
           {rest.children}
         </button>
+      );
+    }
+
+    if (workspaceAi && sourceWebUrl(url)) {
+      const title = valueText || new URL(url!).hostname;
+      return (
+        <WorkspaceCitation
+          source={{
+            id: url!,
+            title,
+            sourceType: ValidSources.Web,
+            sourceUrl: url,
+          }}
+          label={title}
+        />
       );
     }
 

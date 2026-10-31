@@ -2,7 +2,18 @@
 
 Status: implementation plan. No Design-system or downstream application changes ship from this document.
 
-## Local Onyx proof
+## Current citation change
+
+Saved facts, brief facts, native chat, and Colossus source lists use one citation preview.
+The preview shows the admitted quote and safe source URL when available.
+Missing evidence shows an explicit unavailable label.
+This change preserves existing extraction, permissions, and saved records.
+The current account cannot open the saved customer chat or select an agent.
+Current browser acceptance remains unverified.
+
+## Earlier local Onyx proof
+
+The following results describe the earlier native chat check, before the current citation change.
 
 The native implementation runs at [local Onyx](https://agent-dev.taila3aadb.ts.net:3125/app?agentId=2).
 An existing synthetic QA account sent a new message and received a saved reply with a real NASA citation.
@@ -65,7 +76,7 @@ The registry examples show both native editor composition and a simple controlle
 
 ## Delivery order
 
-1. **Native Onyx proof is complete locally.** Retain the verified send, progress, saved reply, source, and Stop behavior.
+1. **Repeat native Onyx proof on the publication candidate.** Retain send, progress, saved reply, source, and Stop behavior.
    Repeat the same proof after canonical registry installation.
 2. **Confirm the second consumer in Guesstimate.** Check the three contracts against the existing `ModelAgentPanel`.
    Promote only contracts required by both Onyx and Guesstimate, as required by Design-system `DECISIONS.md`.

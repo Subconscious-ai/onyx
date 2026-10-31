@@ -13,11 +13,15 @@ import { MotionConfig, motion } from "motion/react";
 import { Popover, Text, Button } from "@opal/components";
 import { SvgArrowUpRight } from "@opal/icons";
 import type { SourceInfo } from "@/refresh-components/buttons/source-tag/SourceTagDetailsCard";
+import type { RichStr } from "@opal/types";
+import { safeSourceUrl } from "@/lib/executive/brief";
 import "@/sections/customer/ai-elements.css";
 
 interface AIInlineCitationProps {
   source: Pick<SourceInfo, "title" | "sourceUrl" | "description">;
-  label: string;
+  label: string | RichStr;
+  previewLabel?: string;
+  openLabel?: string;
   quote?: string | null;
   onOpen?: () => void;
 }
@@ -25,6 +29,8 @@ interface AIInlineCitationProps {
 export default function AIInlineCitation({
   source,
   label,
+  previewLabel,
+  openLabel,
   quote,
   onOpen,
 }: AIInlineCitationProps) {
@@ -57,10 +63,11 @@ export default function AIInlineCitation({
     },
     []
   );
-  let site = quote || !onOpen ? source.title : label;
-  if (source.sourceUrl) {
+  const url = safeSourceUrl(source.sourceUrl);
+  let site = source.title;
+  if (url) {
     try {
-      site = new URL(source.sourceUrl).hostname.replace(/^www\./, "");
+      site = new URL(url).hostname.replace(/^www\./, "");
     } catch {
       // Indexed files need no public URL. The native source label is valid.
     }
@@ -75,7 +82,7 @@ export default function AIInlineCitation({
             type="button"
             data-kokonut="ai-inline-citation"
             className="kokonut-citation"
-            aria-label={source.title}
+            aria-label={previewLabel ?? source.title}
             aria-controls={open ? previewId : undefined}
             aria-haspopup="dialog"
             aria-expanded={open}
@@ -164,6 +171,13 @@ export default function AIInlineCitation({
                 </Text>
               </blockquote>
             )}
+            {url && (
+              <a href={url} target="_blank" rel="noopener noreferrer">
+                <Text font="secondary-body" wordWrap="wrap-anywhere">
+                  {url}
+                </Text>
+              </a>
+            )}
             {onOpen && (
               <Button
                 prominence="tertiary"
@@ -174,7 +188,7 @@ export default function AIInlineCitation({
                 }}
                 width="full"
               >
-                {label}
+                {openLabel ?? label}
               </Button>
             )}
           </motion.div>

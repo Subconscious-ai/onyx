@@ -44,3 +44,21 @@ test.each([
 ])("preserves other deployments' login choices: %s", (settings) => {
   expect(automaticAuth0Provider(settings)).toBeNull();
 });
+
+test("an explicit Auth0 handoff reuses SSO without changing password policy", () => {
+  expect(
+    automaticAuth0Provider(
+      { ...metadata, passwordAuthEnabled: true },
+      false,
+      "auth0"
+    )
+  ).toBe(provider);
+  expect(
+    automaticAuth0Provider(
+      { ...metadata, passwordAuthEnabled: true },
+      false,
+      "other"
+    )
+  ).toBeNull();
+  expect(automaticAuth0Provider(metadata, true, "auth0")).toBeNull();
+});
