@@ -298,7 +298,7 @@ def test_an_answer_the_question_rejects_is_reported_not_hidden(client: Client) -
 
 def test_mistakes_come_back_as_envelopes_with_a_next_step(client: Client) -> None:
     missing = error(client, "run_survey", survey="nope", name="x")
-    assert missing["code"] == "NOT_FOUND" and "list_objects" in missing["suggestion"]
+    assert missing["code"] == "NOT_FOUND" and "none yet" in missing["message"]
 
     bad = error(client, "build_survey", name="bad", questions=[{"question_name": "q"}])
     assert bad["code"] == "VALIDATION_ERROR"
@@ -813,3 +813,81 @@ def test_every_failed_interview_is_counted_with_its_cause(
     # The cause named is the error's own words, not EDSL's container for it.
     assert "InterviewExceptionCollection" not in body["warnings"][0]
     assert "test error" in body["warnings"][0]
+
+
+def test_build_survey_accepts_common_guesses(client, tmp_path):
+    out, _ = call(
+        client,
+        "build_survey",
+        name="guessed",
+        questions=[
+            {"question_type": "open", "question_name": "why", "question_text": "Why?"},
+            {
+                "question_type": "single_choice",
+                "question_name": "pick",
+                "question_text": "Pick one",
+                "question_options": ["A", "B"],
+                "opt_out": True,
+            },
+            {
+                "question_type": "scale",
+                "question_name": "score",
+                "question_text": "Score it",
+                "question_options": {
+                    "min": 0,
+                    "max": 10,
+                    "labels": {"0": "Low", "10": "High"},
+                },
+            },
+            {
+                "question_type": "yes_no",
+                "question_name": "used",
+                "question_text": "Used it?",
+                "question_options": ["Yes", "No", "Prefer not to say"],
+                "stop_rules": [{"expression": "{{ used.answer }} == 'No'"}],
+            },
+        ],
+    )
+    assert out["status"] == "ok", out
+    assert [q["type"] for q in out["data"]["questions"]] == [
+        "free_text",
+        "multiple_choice",
+        "linear_scale",
+        "yes_no",
+    ]
+    assert any("opt_out" in w for w in out["warnings"])
+    assert any("yes_no takes no options" in w for w in out["warnings"])
+    from edsl import Survey
+
+    survey = Survey.from_dict(
+        json.loads((tmp_path / "ws" / "surveys" / "guessed.json").read_text())
+    )
+    assert survey.questions[2].question_options == list(range(11))
+    assert survey.rule_collection.non_default_rules, "the stop rule was hoisted"
+
+
+def test_build_agents_sanitises_trait_keys(client):
+    out, _ = call(
+        client,
+        "build_agents",
+        name="coded",
+        agents=[{"Feature request": True, "name": "a1"}],
+        codebook={"Feature request": "asks for a feature"},
+    )
+    assert out["status"] == "ok", out
+    assert out["data"]["traits"] == ["Feature_request"]
+    assert any("Feature request" in w for w in out["warnings"])
+
+
+def test_not_found_lists_saved_names(client):
+    data(
+        client,
+        "build_survey",
+        name="exists",
+        questions=[
+            {"question_type": "free_text", "question_name": "q", "question_text": "Q?"}
+        ],
+    )
+    err = error(client, "run_survey", name="r", survey="missing", model="test")
+    assert err["code"] == "NOT_FOUND"
+    assert "exists" in err["message"]

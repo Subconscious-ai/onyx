@@ -107,10 +107,11 @@ class Workspace:
     def load(self, kind: str, name: str) -> Any:
         target = self.path(kind, name)
         if not target.is_file():
+            existing = ", ".join(self.names(kind)) or "none yet"
             raise ToolError(
                 "NOT_FOUND",
-                f"No {kind[:-1]} named {name!r}.",
-                f"Build it first, or list what exists with list_objects(kind='{kind}').",
+                f"No {kind[:-1]} named {name!r}. Saved {kind}: {existing}.",
+                "Use one of the saved names, or build it first.",
             )
         return _loader(kind).from_dict(json.loads(target.read_text()))
 
@@ -194,6 +195,7 @@ def build_server(workspace: Workspace) -> FastMCP:
         ),
     )
     _register_catalog(server, workspace)
+    _register_survey_builder(server, workspace)
     _register_builders(server, workspace)
     _register_imports(server, workspace)
     _register_runs(server, workspace)
@@ -221,7 +223,109 @@ def _register_catalog(server: FastMCP, workspace: Workspace) -> None:
         return ok({"kind": kind, "names": workspace.names(kind)})
 
 
-def _register_builders(server: FastMCP, workspace: Workspace) -> None:
+QUESTION_TYPE_ALIASES = {
+    "open": "free_text",
+    "open_ended": "free_text",
+    "open_text": "free_text",
+    "text": "free_text",
+    "freetext": "free_text",
+    "string": "free_text",
+    "single_choice": "multiple_choice",
+    "single_select": "multiple_choice",
+    "choice": "multiple_choice",
+    "select": "multiple_choice",
+    "radio": "multiple_choice",
+    "mc": "multiple_choice",
+    "multi_select": "checkbox",
+    "multiselect": "checkbox",
+    "multiple_select": "checkbox",
+    "checkboxes": "checkbox",
+    "scale": "linear_scale",
+    "rating": "linear_scale",
+    "linear": "linear_scale",
+    "slider": "linear_scale",
+    "likert": "likert_five",
+    "numeric": "numerical",
+    "number": "numerical",
+    "integer": "numerical",
+    "float": "numerical",
+    "boolean": "yes_no",
+    "bool": "yes_no",
+    "yesno": "yes_no",
+    "ranking": "rank",
+}
+PER_QUESTION_RULES = ("skip_rules", "stop_rules")
+
+
+def _question_class(question_type: str) -> Any:
+    from edsl.questions.question_registry import get_question_class
+
+    return get_question_class(question_type)
+
+
+def _normalize_question(spec: dict, warnings: list[str]) -> tuple[dict, dict]:
+    """Map common guesses onto EDSL's constructor; return (spec, hoisted rules).
+
+    Type aliases such as 'single_choice' or 'open' become the EDSL name, a
+    linear_scale given {"min": 0, "max": 10, "labels": {...}} becomes
+    question_options and option_labels, a yes_no drops its options, and keys
+    the class does not accept are dropped with a warning instead of failing
+    the whole survey. Per-question skip_rules/stop_rules are hoisted.
+    """
+    import inspect
+
+    spec = dict(spec)
+    raw_type = str(spec.get("question_type", "")).strip().lower().replace("-", "_")
+    question_type = QUESTION_TYPE_ALIASES.get(raw_type, raw_type)
+    if question_type != raw_type:
+        warnings.append(
+            f"{spec.get('question_name')}: {raw_type!r} read as {question_type!r}."
+        )
+    spec["question_type"] = question_type
+    rules = {key: spec.pop(key) for key in PER_QUESTION_RULES if key in spec}
+    options = spec.get("question_options")
+    if question_type == "linear_scale" and isinstance(options, dict):
+        low, high = int(options.get("min", 1)), int(options.get("max", 5))
+        spec["question_options"] = list(range(low, high + 1))
+        labels = options.get("labels") or options.get("option_labels")
+        if isinstance(labels, dict):
+            spec["option_labels"] = {int(k): str(v) for k, v in labels.items()}
+    if question_type == "linear_scale" and isinstance(spec.get("option_labels"), dict):
+        spec["option_labels"] = {
+            int(k): str(v) for k, v in spec["option_labels"].items()
+        }
+    if question_type == "yes_no" and options is not None:
+        if [str(o).lower() for o in options] != ["yes", "no"]:
+            warnings.append(
+                f"{spec.get('question_name')}: yes_no takes no options; "
+                "use multiple_choice for other answer sets."
+            )
+        spec.pop("question_options", None)
+    try:
+        accepted = set(
+            inspect.signature(_question_class(question_type).__init__).parameters
+        )
+    except Exception:  # unknown type: let EDSL raise its own error  # noqa: BLE001
+        return spec, rules
+    accepted.add("question_type")
+    for key in [k for k in spec if k not in accepted]:
+        warnings.append(
+            f"{spec.get('question_name')}: dropped unsupported field {key!r}."
+        )
+        spec.pop(key)
+    return spec, rules
+
+
+def _identifier(key: str) -> str:
+    cleaned = re.sub(r"[^0-9A-Za-z_]+", "_", str(key).strip()).strip("_")
+    if not cleaned:
+        cleaned = "trait"
+    if cleaned[0].isdigit():
+        cleaned = "t_" + cleaned
+    return cleaned
+
+
+def _register_survey_builder(server: FastMCP, workspace: Workspace) -> None:
     @server.tool()
     @envelope
     def build_survey(
@@ -235,9 +339,11 @@ def _register_builders(server: FastMCP, workspace: Workspace) -> None:
     ) -> dict:
         """Create and save a survey.
 
-        Each question is a dict with question_type (see list_question_types),
-        question_name, question_text and the type's own fields such as
-        question_options. Use '{{ scenario.field }}' in text to fill from
+        Each question is a dict with question_type, question_name,
+        question_text and the type's own fields such as question_options.
+        Common types: free_text, multiple_choice, checkbox, yes_no,
+        numerical, linear_scale, likert_five, rank, list, dict, dropdown,
+        top_k, matrix; list_question_types has the full set with examples. Use '{{ scenario.field }}' in text to fill from
         scenarios and '{{ name.answer }}' to pipe an earlier answer.
         stop_rules and skip_rules are [{"question": name, "expression": "..."}].
         targeted_memory is [{"focal": name, "prior": name}] so the focal
@@ -253,6 +359,9 @@ def _register_builders(server: FastMCP, workspace: Workspace) -> None:
         if not questions:
             raise ToolError("VALIDATION_ERROR", "A survey needs at least one question.")
         built = []
+        warnings: list[str] = []
+        stop_rules = list(stop_rules or [])
+        skip_rules = list(skip_rules or [])
         for spec in questions:
             if not isinstance(spec, dict) or "question_type" not in spec:
                 raise ToolError(
@@ -260,6 +369,11 @@ def _register_builders(server: FastMCP, workspace: Workspace) -> None:
                     "Each question needs a question_type.",
                     "Call list_question_types for the types and their fields.",
                 )
+            spec, hoisted = _normalize_question(spec, warnings)
+            for rule in hoisted.get("skip_rules") or []:
+                skip_rules.append({"question": spec["question_name"], **rule})
+            for rule in hoisted.get("stop_rules") or []:
+                stop_rules.append({"question": spec["question_name"], **rule})
             question = Question(**spec)
             if loop_over:
                 from edsl import Scenario, ScenarioList
@@ -270,9 +384,9 @@ def _register_builders(server: FastMCP, workspace: Workspace) -> None:
             else:
                 built.append(question)
         survey = Survey(built)
-        for rule in stop_rules or []:
+        for rule in stop_rules:
             survey = survey.add_stop_rule(rule["question"], rule["expression"])
-        for rule in skip_rules or []:
+        for rule in skip_rules:
             survey = survey.add_skip_rule(rule["question"], rule["expression"])
         for memory in targeted_memory or []:
             survey = survey.add_targeted_memory(memory["focal"], memory["prior"])
@@ -286,9 +400,12 @@ def _register_builders(server: FastMCP, workspace: Workspace) -> None:
                     {"name": q.question_name, "type": q.question_type}
                     for q in survey.questions
                 ],
-            }
+            },
+            warnings,
         )
 
+
+def _register_builders(server: FastMCP, workspace: Workspace) -> None:
     @server.tool()
     @envelope
     def build_agents(
@@ -311,34 +428,41 @@ def _register_builders(server: FastMCP, workspace: Workspace) -> None:
         if not agents:
             raise ToolError("VALIDATION_ERROR", "Give at least one agent.")
         built = []
+        warnings: list[str] = []
+        renamed: dict[str, str] = {}
         for traits in agents:
             if not isinstance(traits, dict):
                 raise ToolError("VALIDATION_ERROR", "Each agent is a dict of traits.")
             traits = dict(traits)
             agent_name = traits.pop("name", None)
             own_instruction = traits.pop("instruction", None)
+            for key in list(traits):
+                clean = _identifier(key)
+                if clean != key:
+                    renamed[key] = clean
+                    traits[clean] = traits.pop(key)
             kwargs: dict[str, Any] = {"traits": traits}
             if agent_name is not None:
                 kwargs["name"] = str(agent_name)
             if own_instruction or instruction:
                 kwargs["instruction"] = str(own_instruction or instruction)
             if codebook:
-                kwargs["codebook"] = codebook
+                kwargs["codebook"] = {_identifier(k): v for k, v in codebook.items()}
             built.append(Agent(**kwargs))
+        if renamed:
+            warnings.append(
+                "Trait keys must be identifiers; renamed "
+                + ", ".join(f"{k!r} to {v!r}" for k, v in renamed.items())
+                + "."
+            )
         workspace.save("agents", name, AgentList(built))
         return ok(
             {
                 "agents": name,
                 "count": len(built),
-                "traits": sorted(
-                    {
-                        key
-                        for traits in agents
-                        for key in traits
-                        if key not in ("name", "instruction")
-                    }
-                ),
-            }
+                "traits": sorted({key for agent in built for key in agent.traits}),
+            },
+            warnings,
         )
 
     @server.tool()
