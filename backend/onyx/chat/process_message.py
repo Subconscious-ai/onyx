@@ -1353,6 +1353,7 @@ def _run_models(
     user: User,
     external_state_container: ChatStateContainer | None = None,
     stream_buffer: StreamBufferWriter | None = None,
+    interactive: bool = False,
 ) -> AnswerStream:
     """Stream packets from one or more LLM loops running in parallel worker threads.
 
@@ -1539,6 +1540,7 @@ def _run_models(
             model_idx=model_idx,
             merged_queue=merged_queue,
             drain_done=drain_done,
+            interactive=interactive,
         )
         sc = state_containers[model_idx]
         model_llm = setup.llms[model_idx]
@@ -1904,6 +1906,7 @@ def _stream_chat_turn(
     additional_context: str | None = None,
     slack_context: SlackContext | None = None,
     external_state_container: ChatStateContainer | None = None,
+    interactive: bool = False,
 ) -> AnswerStream:
     """Private implementation for single-model and multi-model chat turn streaming.
 
@@ -2044,6 +2047,7 @@ def _stream_chat_turn(
             user=user,
             external_state_container=external_state_container,
             stream_buffer=stream_buffer,
+            interactive=interactive,
         )
         run_started = True
         yield from run_stream
@@ -2148,8 +2152,13 @@ def handle_stream_message_objects(
     additional_context: str | None = None,
     slack_context: SlackContext | None = None,
     external_state_container: ChatStateContainer | None = None,
+    interactive: bool = False,
 ) -> AnswerStream:
-    """Single-model streaming entrypoint. For multi-model comparison, use ``handle_multi_model_stream``."""
+    """Single-model streaming entrypoint. For multi-model comparison, use ``handle_multi_model_stream``.
+
+    ``interactive`` is True only for the browser stream, where a person can answer
+    a tool server's request for approval. Other callers leave it False.
+    """
     yield from _stream_chat_turn(
         new_msg_req=new_msg_req,
         user=user,
@@ -2161,6 +2170,7 @@ def handle_stream_message_objects(
         additional_context=additional_context,
         slack_context=slack_context,
         external_state_container=external_state_container,
+        interactive=interactive,
     )
 
 
@@ -2185,6 +2195,7 @@ def handle_multi_model_stream(
     litellm_additional_headers: dict[str, str] | None = None,
     custom_tool_additional_headers: dict[str, str] | None = None,
     mcp_headers: dict[str, str] | None = None,
+    interactive: bool = False,
 ) -> AnswerStream:
     """Thin wrapper for side-by-side multi-model comparison (2–3 models).
 
@@ -2225,6 +2236,7 @@ def handle_multi_model_stream(
         litellm_additional_headers=litellm_additional_headers,
         custom_tool_additional_headers=custom_tool_additional_headers,
         mcp_headers=mcp_headers,
+        interactive=interactive,
     )
 
 

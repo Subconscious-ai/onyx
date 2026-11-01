@@ -35,6 +35,8 @@ export enum PacketType {
   CUSTOM_TOOL_START = "custom_tool_start",
   CUSTOM_TOOL_ARGS = "custom_tool_args",
   CUSTOM_TOOL_DELTA = "custom_tool_delta",
+  CUSTOM_TOOL_APPROVAL_REQUEST = "custom_tool_approval_request",
+  CUSTOM_TOOL_APPROVAL_RESULT = "custom_tool_approval_result",
 
   // File reader tool packets
   FILE_READER_START = "file_reader_start",
@@ -232,6 +234,27 @@ export interface CustomToolDelta extends BaseObj {
   error?: CustomToolErrorInfo | null;
 }
 
+// A tool server asked the signed-in user to approve one exact action. Only the
+// user's own request can answer it; the assistant never sees or answers it.
+export interface CustomToolApprovalRequest extends BaseObj {
+  type: "custom_tool_approval_request";
+  tool_name: string;
+  approval_id: string;
+  // The server's own words; show as plain text, never markdown or HTML.
+  message: string;
+  title?: string | null;
+  description?: string | null;
+  expires_in_seconds: number;
+}
+
+export type CustomToolApprovalOutcome = "approved" | "declined" | "expired";
+
+export interface CustomToolApprovalResult extends BaseObj {
+  type: "custom_tool_approval_result";
+  approval_id: string;
+  outcome: CustomToolApprovalOutcome;
+}
+
 // File Reader Packets
 export interface FileReaderStart extends BaseObj {
   type: "file_reader_start";
@@ -401,6 +424,8 @@ export type CustomToolObj =
   | CustomToolStart
   | CustomToolArgs
   | CustomToolDelta
+  | CustomToolApprovalRequest
+  | CustomToolApprovalResult
   | SectionEnd
   | PacketError;
 export type FileReaderToolObj =

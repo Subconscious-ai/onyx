@@ -9543,6 +9543,33 @@
           "text": "Esperando respuesta..."
         }
       },
+      "customToolApproval": {
+        "approveButton": {
+          "label": "Aprobar exactamente esta acción"
+        },
+        "approvedStatus": {
+          "text": "Aprobado. {toolName} se está ejecutando."
+        },
+        "card": {
+          "description": "Revisa la acción exacta que aparece abajo. No se ejecutará nada hasta que la apruebes.",
+          "title": "{toolName} necesita tu aprobación"
+        },
+        "declineButton": {
+          "label": "Rechazar"
+        },
+        "declinedStatus": {
+          "text": "Rechazado. No se ejecutó nada."
+        },
+        "expiredStatus": {
+          "text": "Sin respuesta a tiempo. No se ejecutó nada."
+        },
+        "messageBlock": {
+          "label": "Acción exacta"
+        },
+        "sendError": {
+          "text": "No se pudo enviar tu respuesta. Inténtalo de nuevo."
+        }
+      },
       "customToolAuth": {
         "card": {
           "description": "Conecta {toolName} para habilitar esta herramienta",
@@ -9615,6 +9642,50 @@
         },
         "validationError": {
           "title": "Error de validación"
+        }
+      },
+      "experimentRun": {
+        "failed": {
+          "text": "No terminó ({status}). Pregunta a Beca qué hacer ahora."
+        },
+        "finished": {
+          "text": "Terminado. Pídele los resultados a Beca."
+        },
+        "followUp": {
+          "audience": {
+            "label": "Probar otra audiencia",
+            "text": "Propón ejecutar el diseño del experimento {runId} con otra audiencia. Pregúntame cuál y muéstrame el borrador para revisarlo antes de ejecutar nada."
+          },
+          "explain": {
+            "label": "Explicar este resultado",
+            "text": "Explica el resultado del experimento {runId} en términos sencillos, con su principal riesgo y la siguiente decisión que respalda."
+          },
+          "replace": {
+            "label": "Reemplazar atributos débiles",
+            "text": "¿Qué atributos del experimento {runId} influyeron menos en la elección? Propón un estudio de seguimiento que los reemplace y muéstramelo para revisarlo antes de ejecutar nada."
+          },
+          "segments": {
+            "label": "Comparar segmentos",
+            "text": "Compara cómo respondieron los distintos segmentos en el experimento {runId} y di si la misma acción sirve para cada uno."
+          }
+        },
+        "openResults": {
+          "label": "Abrir resultados"
+        },
+        "queued": {
+          "text": "Esperando en la cola."
+        },
+        "running": {
+          "text": "En ejecución. Puede tardar varios minutos."
+        },
+        "starting": {
+          "text": "Iniciando."
+        },
+        "title": {
+          "text": "Experimento {runId}"
+        },
+        "unavailable": {
+          "text": "El estado no está disponible ahora. Se volverá a comprobar."
         }
       },
       "humanMessage": {

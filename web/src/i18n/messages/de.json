@@ -9543,6 +9543,33 @@
           "text": "Warten auf Antwort..."
         }
       },
+      "customToolApproval": {
+        "approveButton": {
+          "label": "Genau diese Aktion genehmigen"
+        },
+        "approvedStatus": {
+          "text": "Genehmigt. {toolName} wird ausgeführt."
+        },
+        "card": {
+          "description": "Prüfen Sie die genaue Aktion unten. Ohne Ihre Genehmigung wird nichts ausgeführt.",
+          "title": "{toolName} benötigt Ihre Genehmigung"
+        },
+        "declineButton": {
+          "label": "Ablehnen"
+        },
+        "declinedStatus": {
+          "text": "Abgelehnt. Es wurde nichts ausgeführt."
+        },
+        "expiredStatus": {
+          "text": "Keine Antwort innerhalb der Frist. Es wurde nichts ausgeführt."
+        },
+        "messageBlock": {
+          "label": "Genaue Aktion"
+        },
+        "sendError": {
+          "text": "Ihre Antwort konnte nicht gesendet werden. Versuchen Sie es erneut."
+        }
+      },
       "customToolAuth": {
         "card": {
           "description": "Verbinden Sie {toolName}, um dieses Werkzeug zu aktivieren",
@@ -9615,6 +9642,50 @@
         },
         "validationError": {
           "title": "Validierungsfehler"
+        }
+      },
+      "experimentRun": {
+        "failed": {
+          "text": "Nicht abgeschlossen ({status}). Fragen Sie Beca, wie es weitergeht."
+        },
+        "finished": {
+          "text": "Abgeschlossen. Fragen Sie Beca nach den Ergebnissen."
+        },
+        "followUp": {
+          "audience": {
+            "label": "Anderes Publikum testen",
+            "text": "Schlage vor, das Design von Experiment {runId} mit einem anderen Publikum durchzuführen. Frage mich, welches Publikum, und zeige den Entwurf zur Prüfung, bevor etwas läuft."
+          },
+          "explain": {
+            "label": "Ergebnis erklären",
+            "text": "Erkläre das Ergebnis von Experiment {runId} in einfachen Worten, mit dem wichtigsten Risiko und der nächsten Entscheidung, die es stützt."
+          },
+          "replace": {
+            "label": "Schwache Attribute ersetzen",
+            "text": "Welche Attribute in Experiment {runId} haben die Wahl am wenigsten beeinflusst? Schlage eine Folgestudie vor, die sie ersetzt, und zeige sie zur Prüfung, bevor etwas läuft."
+          },
+          "segments": {
+            "label": "Segmente vergleichen",
+            "text": "Vergleiche, wie verschiedene Segmente in Experiment {runId} reagiert haben, und sage, ob dieselbe Maßnahme zu jedem passt."
+          }
+        },
+        "openResults": {
+          "label": "Ergebnisse öffnen"
+        },
+        "queued": {
+          "text": "Wartet in der Warteschlange."
+        },
+        "running": {
+          "text": "Läuft. Das kann einige Minuten dauern."
+        },
+        "starting": {
+          "text": "Wird gestartet."
+        },
+        "title": {
+          "text": "Experiment {runId}"
+        },
+        "unavailable": {
+          "text": "Der Status ist gerade nicht verfügbar. Es wird erneut geprüft."
         }
       },
       "humanMessage": {

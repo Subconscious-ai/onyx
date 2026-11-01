@@ -9543,6 +9543,33 @@
           "text": "Aguardando resposta..."
         }
       },
+      "customToolApproval": {
+        "approveButton": {
+          "label": "Aprovar exatamente esta ação"
+        },
+        "approvedStatus": {
+          "text": "Aprovado. {toolName} está em execução."
+        },
+        "card": {
+          "description": "Revise a ação exata abaixo. Nada será executado até você aprovar.",
+          "title": "{toolName} precisa da sua aprovação"
+        },
+        "declineButton": {
+          "label": "Recusar"
+        },
+        "declinedStatus": {
+          "text": "Recusado. Nada foi executado."
+        },
+        "expiredStatus": {
+          "text": "Sem resposta a tempo. Nada foi executado."
+        },
+        "messageBlock": {
+          "label": "Ação exata"
+        },
+        "sendError": {
+          "text": "Não foi possível enviar sua resposta. Tente novamente."
+        }
+      },
       "customToolAuth": {
         "card": {
           "description": "Conecte {toolName} para habilitar esta ferramenta",
@@ -9615,6 +9642,50 @@
         },
         "validationError": {
           "title": "Erro de validação"
+        }
+      },
+      "experimentRun": {
+        "failed": {
+          "text": "Não foi concluído ({status}). Pergunte à Beca o que fazer em seguida."
+        },
+        "finished": {
+          "text": "Concluído. Peça os resultados à Beca."
+        },
+        "followUp": {
+          "audience": {
+            "label": "Testar outro público",
+            "text": "Proponha executar o desenho do experimento {runId} com outro público. Pergunte-me qual e mostre o rascunho para revisão antes de executar qualquer coisa."
+          },
+          "explain": {
+            "label": "Explicar este resultado",
+            "text": "Explique o resultado do experimento {runId} em termos simples, com o principal risco e a próxima decisão que ele apoia."
+          },
+          "replace": {
+            "label": "Substituir atributos fracos",
+            "text": "Quais atributos do experimento {runId} menos influenciaram a escolha? Proponha um estudo de acompanhamento que os substitua e mostre-o para revisão antes de executar qualquer coisa."
+          },
+          "segments": {
+            "label": "Comparar segmentos",
+            "text": "Compare como diferentes segmentos responderam no experimento {runId} e diga se a mesma ação serve para cada um."
+          }
+        },
+        "openResults": {
+          "label": "Abrir resultados"
+        },
+        "queued": {
+          "text": "Aguardando na fila."
+        },
+        "running": {
+          "text": "Em execução. Pode levar vários minutos."
+        },
+        "starting": {
+          "text": "Iniciando."
+        },
+        "title": {
+          "text": "Experimento {runId}"
+        },
+        "unavailable": {
+          "text": "O status não está disponível agora. Verificando novamente."
         }
       },
       "humanMessage": {

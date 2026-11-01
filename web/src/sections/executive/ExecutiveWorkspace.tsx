@@ -7,6 +7,7 @@ import SharedMarketMemory from "@/sections/executive/SharedMarketMemory";
 import InterviewProgress from "@/sections/executive/InterviewProgress";
 
 import { Wordmark } from "@/sections/brand/wordmark";
+import { AskAssistantProvider } from "@/app/app/message/messageComponents/AskAssistantContext";
 import { useTranslations } from "next-intl";
 
 import {
@@ -293,7 +294,25 @@ export default function ExecutiveWorkspace({
   const companyProfileState = useState(createCompanyProfileState);
   const briefTrigger = useRef<HTMLDivElement>(null);
   const briefReturnFocus = useRef<HTMLElement | null>(null);
-  if (!active) return children;
+  // AppPage passes a new onAsk on every render; keep the context value steady
+  // so the cards that read it do not re-render with each keystroke elsewhere.
+  const onAskRef = useRef(onAsk);
+  useEffect(() => {
+    onAskRef.current = onAsk;
+  }, [onAsk]);
+  const canAsk = onAsk !== undefined;
+  const assistant = useMemo(
+    () =>
+      canAsk
+        ? { ask: (message: string) => onAskRef.current?.(message), busy }
+        : null,
+    [canAsk, busy]
+  );
+  if (!active) {
+    return (
+      <AskAssistantProvider value={assistant}>{children}</AskAssistantProvider>
+    );
+  }
   const step =
     brief?.journey.find((item) => item.id === selectedStep) ??
     brief?.journey[0];
@@ -443,7 +462,9 @@ export default function ExecutiveWorkspace({
               <PreparationContext.Provider
                 value={{ profile: dossier?.profile, profileStatus, research }}
               >
-                {children}
+                <AskAssistantProvider value={assistant}>
+                  {children}
+                </AskAssistantProvider>
               </PreparationContext.Provider>
             </div>
           </div>
