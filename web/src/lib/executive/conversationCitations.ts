@@ -4,28 +4,59 @@ import { unified } from "unified";
 const parser = unified().use(remarkParse);
 type TextNode = {
   type: string;
+  value?: string;
   position?: { start: { offset?: number }; end: { offset?: number } };
   children?: TextNode[];
 };
+
+function visibleQuote(node: TextNode): string | undefined {
+  if (node.type === "text") return node.value;
+  if (!["root", "paragraph", "strong", "emphasis"].includes(node.type))
+    return undefined;
+  const parts = node.children?.map(visibleQuote) ?? [];
+  return parts.some((part) => part === undefined) ? undefined : parts.join("");
+}
 
 /** Cite only verbatim testimony, never inferred facts or assistant-written evidence. */
 export function citeConversationQuotes(markdown: string, source?: string) {
   const quotes = new Map<string, string>();
   if (!source || !/["“]/.test(markdown)) return { markdown, quotes };
   const insertions: { offset: number; link: string }[] = [];
-  const visit = (node: TextNode) => {
+  const excluded: { start: number; end: number }[] = [];
+  const tree = parser.parse(markdown);
+  const exclude = (node: TextNode) => {
     if (
-      ["link", "linkReference", "image", "code", "inlineCode"].includes(
+      ["link", "linkReference", "image", "code", "inlineCode", "html"].includes(
         node.type
       )
-    )
-      return;
+    ) {
+      const start = node.position?.start.offset;
+      const end = node.position?.end.offset;
+      if (start !== undefined && end !== undefined)
+        excluded.push({ start, end });
+    }
+    node.children?.forEach(exclude);
+  };
+  exclude(tree);
+  const visit = (node: TextNode) => {
     const start = node.position?.start.offset;
     const end = node.position?.end.offset;
-    if (node.type === "text" && start !== undefined && end !== undefined) {
+    if (
+      ["paragraph", "heading"].includes(node.type) &&
+      start !== undefined &&
+      end !== undefined
+    ) {
       const text = markdown.slice(start, end);
       for (const match of text.matchAll(/"([^"\n]+)"|“([^”\n]+)”/g)) {
-        const quote = match[1] ?? match[2];
+        const quoteStart = start + match.index;
+        const quoteEnd = quoteStart + match[0].length;
+        if (
+          excluded.some(
+            (range) => range.start < quoteEnd && range.end > quoteStart
+          )
+        )
+          continue;
+        const quote = visibleQuote(parser.parse(match[1] ?? match[2] ?? ""));
         if (!quote || quote.length < 12 || !source.includes(quote)) continue;
         const href = `#conversation-fact-${quotes.size}`;
         quotes.set(href, quote);
@@ -34,10 +65,11 @@ export function citeConversationQuotes(markdown: string, source?: string) {
           link: ` [Conversation](${href})`,
         });
       }
+      return;
     }
     node.children?.forEach(visit);
   };
-  visit(parser.parse(markdown));
+  visit(tree);
   for (const { offset, link } of insertions.reverse()) {
     markdown = markdown.slice(0, offset) + link + markdown.slice(offset);
   }

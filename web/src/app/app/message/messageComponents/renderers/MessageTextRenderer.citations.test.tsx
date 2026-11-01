@@ -102,6 +102,16 @@ it("does not invent citations for unsupported claims, code, or linked quotations
   );
 });
 
+it("cites visible quotations across inline emphasis", async () => {
+  summary('Capacity: "Each mechanic completes **8 repairs** per week."');
+  fireEvent.click(
+    screen.getByRole("button", { name: "factCitationConversation" })
+  );
+  expect(
+    (await screen.findByRole("dialog")).querySelector("blockquote")
+  ).toHaveTextContent(statement);
+});
+
 it("leaves regular assistant messages and incomplete streaming quotes unchanged", () => {
   const { unmount } = summary(`"${statement}"`, {
     ...state,

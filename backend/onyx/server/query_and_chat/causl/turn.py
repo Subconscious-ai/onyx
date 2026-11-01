@@ -46,7 +46,12 @@ def read_workspace_context(
         and chat.persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
     ):
         loaded = load_interview_context(db, user)
-        if loaded.configuration.persona_id != chat.persona_id:
+        if (
+            loaded.configuration.persona_id != chat.persona_id
+            or chat.user_id != user.id
+            or chat.project_id is not None
+            or chat.incognito_record_mode is not None
+        ):
             raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
         if not bind_interview:
             # Reading organization facts must not adopt an older conversation.
