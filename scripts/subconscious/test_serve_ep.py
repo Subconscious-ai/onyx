@@ -578,7 +578,7 @@ def test_answers_become_traits_of_a_new_audience(client: Client) -> None:
     enriched = data(
         client,
         "results_to_agents",
-        name="interview",
+        results="interview",
         agents="students2",
         answers=["career"],
     )
@@ -929,6 +929,10 @@ def test_canned_answers_per_question_and_column_prefix_tolerance(client):
         by="scenario.experience",
     )
     assert tally, tally
+    rows = data(
+        client, "results_select", name="mixed_run", columns=["agent.name", "score"]
+    )
+    assert set(rows["rows"][0]) == {"agent.agent_name", "answer.score"}
 
 
 def test_guessed_piping_and_rule_syntax_are_rewritten(client, tmp_path):

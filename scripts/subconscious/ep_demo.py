@@ -64,12 +64,14 @@ DEMOS: dict[str, list[str]] = {
     ],
     # docs/examples/labeling.py + qualitative.py
     "labeling": [
-        "Code these support requests with this codebook: Billing (a charge or "
-        "payment issue), Access (cannot enter a page), Feature request. Requests: "
-        "'I was charged twice', 'I cannot reset my password', 'Please add a dark "
-        "theme'. Use a checkbox question that allows zero to three codes, then a "
-        "free-text question that quotes the evidence and can see the codes. Run on "
-        "the test model with canned answer '[\"Billing\"]' and tally the codes.",
+        "Build and run a coding study on the test model now. Codebook: Billing "
+        "(a charge or payment issue), Access (cannot enter a page), Feature "
+        "request. Code these three requests, one scenario each: 'I was charged "
+        "twice', 'I cannot reset my password', 'Please add a dark theme'. "
+        "Question 1 is a checkbox of the three codes allowing zero to three "
+        "selections; question 2 is free text that quotes the evidence and has "
+        "targeted memory of question 1. Canned answer for the checkbox: "
+        '["Billing"]. Then tally the codes.',
     ],
     # docs/examples/pretesting.py + prompt_sensitivity.py + prompts.py
     "pretest": [
@@ -105,10 +107,12 @@ DEMOS: dict[str, list[str]] = {
     ],
     # notebooks analyze_evaluations + summarizing_transcripts
     "two_pass": [
-        "Course evaluations: 'Great pace, clear slides', 'Too fast but good "
-        "examples', 'Slides were hard to read'. First ask for up to three themes "
-        'per evaluation on the test model with canned answer \'["Pace", '
-        '"Slides"]\'. Then induce a codebook from the distinct themes, and code '
+        "Run a two-pass theme study on the test model now. The three course "
+        "evaluations are scenarios with a field 'evaluation': 'Great pace, "
+        "clear slides', 'Too fast but good examples', 'Slides were hard to "
+        "read'. Pass 1: a list question asking for up to three themes in "
+        '{{ scenario.evaluation }}, canned answer \'["Pace", "Slides"]\'. '
+        "Pass 2: build a codebook from the distinct themes returned, then code "
         "every evaluation with a checkbox of those themes plus 'None of these', "
         "canned answer '[\"Pace\"]'. Show the theme counts.",
     ],

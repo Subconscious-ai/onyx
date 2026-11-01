@@ -186,6 +186,9 @@ def _column(results: Any, column: str) -> str:
     """Accept 'clarity' or 'answer.clarity'; refuse a column that is not there."""
     if column in results.columns:
         return column
+    column = COLUMN_ALIASES.get(column, column)
+    if column in results.columns:
+        return column
     bare = column.split(".", 1)[-1]
     matches = [c for c in results.columns if c.split(".", 1)[-1] == bare]
     if len(matches) == 1:
@@ -271,6 +274,12 @@ QUESTION_TYPE_ALIASES = {
     "ranking": "rank",
 }
 PER_QUESTION_RULES = ("skip_rules", "stop_rules")
+COLUMN_ALIASES = {
+    "agent.name": "agent.agent_name",
+    "name": "agent.agent_name",
+    "agent.instruction": "agent.agent_instruction",
+    "model": "model.model",
+}
 CHART_ALIASES = {
     "partworth": "utilities",
     "partworths": "utilities",
@@ -689,7 +698,7 @@ def _register_runs(server: FastMCP, workspace: Workspace) -> None:
         agents: str | None,
         scenarios: str | None,
         model: str,
-        canned_response: str | dict[str, Any] | None,
+        canned_response: str | list | dict[str, Any] | None,
         service: str | None,
         warnings: list[str] | None = None,
     ) -> Any:
@@ -778,14 +787,15 @@ def _register_runs(server: FastMCP, workspace: Workspace) -> None:
         scenarios: str | None = None,
         model: str = DEFAULT_MODEL,
         service: str | None = None,
-        canned_response: str | dict[str, Any] | None = None,
+        canned_response: str | list | dict[str, Any] | None = None,
     ) -> dict:
         """Run the survey and save the results under `name`.
 
-        model 'test' is free and answers with canned_response: one string
-        for every question, or a dict keyed by question_name so each question
-        gets a valid answer (for example {"clarity": "Clear", "score": 7});
-        use it to check a design. Any other model name spends money:
+        model 'test' is free and answers with canned_response: one value
+        for every question (a string, or a list for list and checkbox
+        questions), or a dict keyed by question_name so each question gets a
+        valid answer (for example {"clarity": "Clear", "score": 7}); use it
+        to check a design. Any other model name spends money:
         call estimate_cost first and say so. Simulated respondents are not
         people; label their answers as simulated evidence. Answers are cached
         in the workspace, so repeating an identical run spends nothing new.
@@ -942,14 +952,16 @@ def _register_results(server: FastMCP, workspace: Workspace) -> None:
 
     @server.tool()
     @envelope
-    def results_to_agents(name: str, agents: str, answers: list[str]) -> dict:
-        """Save the respondents with chosen answers added as new traits.
+    def results_to_agents(results: str, answers: list[str], agents: str) -> dict:
+        """Save the respondents of saved `results` as a new agent list `agents`
+        with the named answers added as traits.
 
-        A first interview enriches the audience for the next survey.
+        A first interview enriches the audience for the next survey: the
+        follow-up can pipe '{{ agent.<answer> }}'.
         """
         from edsl import AgentList
 
-        results = workspace.load("results", name)
+        results = workspace.load("results", results)
         full = [_column(results, a) for a in answers]
         enriched = AgentList.from_results(
             results, question_names=[c.split(".", 1)[-1] for c in full]
@@ -1403,7 +1415,7 @@ def _cache_lock(path: Path) -> Any:
 
 
 def _model_for(
-    model: str, canned_response: str | dict[str, Any] | None, service: str | None
+    model: str, canned_response: str | list | dict[str, Any] | None, service: str | None
 ) -> Any:
     from edsl import Model
 
