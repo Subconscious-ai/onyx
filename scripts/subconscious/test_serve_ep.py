@@ -948,7 +948,7 @@ def test_guessed_piping_and_rule_syntax_are_rewritten(client, tmp_path):
                 "question_text": "You said {{ answer.used }}. What problem?",
             },
         ],
-        stop_rules=[{"question": "used", "expression": "{{ answer.used }} == 'No'"}],
+        stop_rules=[{"question": "used", "expression": "{{ answer.used }} == false"}],
     )
     assert out["status"] == "ok", out
     from edsl import Survey
@@ -957,7 +957,8 @@ def test_guessed_piping_and_rule_syntax_are_rewritten(client, tmp_path):
         json.loads((tmp_path / "ws" / "surveys" / "piped.json").read_text())
     )
     assert "{{ used.answer }}" in survey.questions[1].question_text
-    assert survey.rule_collection.non_default_rules
+    rule = survey.rule_collection.non_default_rules[0]
+    assert "'No'" in rule.expression and "false" not in rule.expression
 
 
 def test_a_scenario_survey_run_without_scenarios_warns_with_the_names(client):
@@ -1002,3 +1003,44 @@ def test_a_conjoint_finds_its_own_versions_and_can_be_redesigned(client):
     assert run["incomplete_interviews"] == 0
     analysis = data(client, "conjoint_analyze", results="cj_run", design="cj")
     assert analysis["n_observations"] == 2
+
+
+def test_linear_scale_guesses_are_normalised(client, tmp_path):
+    out, _ = call(
+        client,
+        "build_survey",
+        name="scales",
+        questions=[
+            {
+                "question_type": "linear_scale",
+                "question_name": "strings",
+                "question_text": "Rate it",
+                "question_options": ["0", "1", "2", "3"],
+                "scale_labels": {"0": "Low", "3": "High"},
+            },
+            {
+                "question_type": "linear_scale",
+                "question_name": "from_text",
+                "question_text": "On a scale of 0 to 10, how likely?",
+            },
+            {
+                "question_type": "linear_scale",
+                "question_name": "from_keys",
+                "question_text": "Rate it",
+                "min_value": 1,
+                "max_value": 5,
+                "option_labels": ["Poor", "Great"],
+            },
+        ],
+    )
+    assert out["status"] == "ok", out
+    from edsl import Survey
+
+    survey = Survey.from_dict(
+        json.loads((tmp_path / "ws" / "surveys" / "scales.json").read_text())
+    )
+    assert survey.questions[0].question_options == [0, 1, 2, 3]
+    assert survey.questions[0].option_labels == {0: "Low", 3: "High"}
+    assert survey.questions[1].question_options == list(range(11))
+    assert survey.questions[2].question_options == [1, 2, 3, 4, 5]
+    assert survey.questions[2].option_labels == {1: "Poor", 5: "Great"}

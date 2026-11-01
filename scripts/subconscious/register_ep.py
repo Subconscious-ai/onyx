@@ -65,7 +65,7 @@ def main() -> None:
     parser.add_argument(
         "--model-configuration",
         type=int,
-        help="Model configuration id; default: first Bedrock model",
+        help="Model configuration id; default: the first Anthropic model on Bedrock, else the first Bedrock model",
     )
     parser.add_argument(
         "--apply", action="store_true", help="Write; without it, print the plan only"
@@ -128,7 +128,16 @@ def main() -> None:
         if provider.get("provider") == "bedrock"
         for model in provider.get("model_configurations", [])
     ]
-    model_configuration = args.model_configuration or (bedrock[0] if bedrock else None)
+    anthropic = [
+        model["id"]
+        for provider in providers
+        if provider.get("provider") == "bedrock"
+        for model in provider.get("model_configurations", [])
+        if "anthropic" in str(model.get("name", "")).lower()
+    ]
+    model_configuration = args.model_configuration or (
+        anthropic[0] if anthropic else bedrock[0] if bedrock else None
+    )
     if model_configuration is None:
         raise SystemExit(
             "No Bedrock model configuration found; pass --model-configuration."

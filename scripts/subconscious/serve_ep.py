@@ -271,6 +271,22 @@ QUESTION_TYPE_ALIASES = {
     "ranking": "rank",
 }
 PER_QUESTION_RULES = ("skip_rules", "stop_rules")
+CHART_ALIASES = {
+    "partworth": "utilities",
+    "partworths": "utilities",
+    "part_worth": "utilities",
+    "part_worths": "utilities",
+    "utility": "utilities",
+    "price_curve": "price",
+    "price_sensitivity": "price",
+    "segment": "segments",
+    "positions": "position",
+    "order": "position",
+}
+SCALE_LABEL_KEYS = ("labels", "scale_labels", "option_labels", "anchors")
+SCALE_LOW_KEYS = ("min", "min_value", "scale_min", "low", "start")
+SCALE_HIGH_KEYS = ("max", "max_value", "scale_max", "high", "end")
+RANGE_IN_TEXT = re.compile(r"\b(-?\d+)\s*(?:to|-|–|through)\s*(-?\d+)\b")
 
 
 def _question_class(question_type: str) -> Any:
@@ -302,16 +318,8 @@ def _normalize_question(spec: dict, warnings: list[str]) -> tuple[dict, dict]:
         spec["question_text"] = _pipe_syntax(spec["question_text"])
     rules = {key: spec.pop(key) for key in PER_QUESTION_RULES if key in spec}
     options = spec.get("question_options")
-    if question_type == "linear_scale" and isinstance(options, dict):
-        low, high = int(options.get("min", 1)), int(options.get("max", 5))
-        spec["question_options"] = list(range(low, high + 1))
-        labels = options.get("labels") or options.get("option_labels")
-        if isinstance(labels, dict):
-            spec["option_labels"] = {int(k): str(v) for k, v in labels.items()}
-    if question_type == "linear_scale" and isinstance(spec.get("option_labels"), dict):
-        spec["option_labels"] = {
-            int(k): str(v) for k, v in spec["option_labels"].items()
-        }
+    if question_type == "linear_scale":
+        _normalize_scale(spec, options, warnings)
     if question_type == "yes_no" and options is not None:
         if [str(o).lower() for o in options] != ["yes", "no"]:
             warnings.append(
@@ -343,9 +351,85 @@ def _pipe_syntax(text: str) -> str:
     return ANSWER_PREFIX.sub(r"{{ \1.answer }}", text)
 
 
-def _rule_syntax(expression: str) -> str:
-    """Rules name the question directly: '{{ q.answer }} == 1' becomes 'q == 1'."""
-    return RULE_TEMPLATE.sub(r"\1", expression)
+def _rule_syntax(expression: str, question_type: str | None = None) -> str:
+    """Rules name the question directly: '{{ q.answer }} == 1' becomes 'q == 1'.
+
+    A yes_no answer is the string 'Yes' or 'No', so a bare true/false in its
+    rule becomes that string.
+    """
+    expression = RULE_TEMPLATE.sub(r"\1", expression)
+    if question_type == "yes_no":
+        expression = re.sub(r"\b[Tt]rue\b", "'Yes'", expression)
+        expression = re.sub(r"\b[Ff]alse\b", "'No'", expression)
+    return expression
+
+
+def _first(spec: dict, keys: tuple[str, ...]) -> Any:
+    for key in keys:
+        if key in spec:
+            return spec.pop(key)
+    return None
+
+
+def _normalize_scale(spec: dict, options: Any, warnings: list[str]) -> None:
+    """linear_scale wants ascending ints and int-keyed end labels.
+
+    Accepts options given as numeric strings, as {"min", "max", "labels"},
+    as min/max keys beside the question, or, failing those, a range such as
+    '0 to 10' read from the question text.
+    """
+    labels = None
+    if isinstance(options, dict):
+        labels = next((options[k] for k in SCALE_LABEL_KEYS if k in options), None)
+        low = next((options[k] for k in SCALE_LOW_KEYS if k in options), None)
+        high = next((options[k] for k in SCALE_HIGH_KEYS if k in options), None)
+        options = None
+        if low is not None and high is not None:
+            options = list(range(int(low), int(high) + 1))
+    if isinstance(options, list):
+        try:
+            options = [int(float(o)) for o in options]
+        except (TypeError, ValueError):
+            pass
+    if options is None:
+        low, high = _first(spec, SCALE_LOW_KEYS), _first(spec, SCALE_HIGH_KEYS)
+        if low is None or high is None:
+            found = RANGE_IN_TEXT.search(str(spec.get("question_text", "")))
+            if found:
+                low, high = found.group(1), found.group(2)
+        if low is not None and high is not None:
+            options = list(range(int(low), int(high) + 1))
+            warnings.append(
+                f"{spec.get('question_name')}: scale read as {options[0]} to {options[-1]}."
+            )
+    if options is not None:
+        spec["question_options"] = options
+    for key in SCALE_LABEL_KEYS:
+        if key in spec and key != "option_labels":
+            labels = labels or spec.pop(key)
+            spec.pop(key, None)
+    if labels is None:
+        labels = spec.get("option_labels")
+    if isinstance(labels, dict) and options:
+        clean = {}
+        for k, v in labels.items():
+            try:
+                clean[int(float(k))] = str(v)
+            except (TypeError, ValueError):
+                continue
+        ends = {options[0], options[-1]}
+        if clean and ends <= set(clean):
+            spec["option_labels"] = {k: clean[k] for k in sorted(ends)}
+        else:
+            warnings.append(
+                f"{spec.get('question_name')}: labels must name both ends of the scale; dropped."
+            )
+            spec.pop("option_labels", None)
+    elif isinstance(labels, list) and options and len(labels) >= 2:
+        spec["option_labels"] = {
+            options[0]: str(labels[0]),
+            options[-1]: str(labels[-1]),
+        }
 
 
 def _identifier(key: str) -> str:
@@ -392,6 +476,7 @@ def _register_survey_builder(server: FastMCP, workspace: Workspace) -> None:
             raise ToolError("VALIDATION_ERROR", "A survey needs at least one question.")
         built = []
         warnings: list[str] = []
+        types: dict[str, str] = {}
         stop_rules = list(stop_rules or [])
         skip_rules = list(skip_rules or [])
         for spec in questions:
@@ -402,6 +487,7 @@ def _register_survey_builder(server: FastMCP, workspace: Workspace) -> None:
                     "Call list_question_types for the types and their fields.",
                 )
             spec, hoisted = _normalize_question(spec, warnings)
+            types[spec["question_name"]] = spec["question_type"]
             for rule in hoisted.get("skip_rules") or []:
                 skip_rules.append({"question": spec["question_name"], **rule})
             for rule in hoisted.get("stop_rules") or []:
@@ -418,11 +504,13 @@ def _register_survey_builder(server: FastMCP, workspace: Workspace) -> None:
         survey = Survey(built)
         for rule in stop_rules:
             survey = survey.add_stop_rule(
-                rule["question"], _rule_syntax(rule["expression"])
+                rule["question"],
+                _rule_syntax(rule["expression"], types.get(rule["question"])),
             )
         for rule in skip_rules:
             survey = survey.add_skip_rule(
-                rule["question"], _rule_syntax(rule["expression"])
+                rule["question"],
+                _rule_syntax(rule["expression"], types.get(rule["question"])),
             )
         for memory in targeted_memory or []:
             survey = survey.add_targeted_memory(memory["focal"], memory["prior"])
@@ -617,7 +705,8 @@ def _register_runs(server: FastMCP, workspace: Workspace) -> None:
             elif warnings is not None:
                 warnings.append(
                     f"Survey {survey!r} fills '{{{{ scenario.* }}}}' fields but no "
-                    "scenarios were given, so those fields stayed blank. Saved "
+                    "scenarios were given, so those fields stayed blank and the "
+                    "answers are not evidence. Rerun with scenarios=. Saved "
                     f"scenarios: {', '.join(workspace.names('scenarios')) or 'none yet'}."
                 )
         if scenarios:
@@ -1057,9 +1146,16 @@ def _register_conjoint_plots(server: FastMCP, workspace: Workspace) -> None:
     @server.tool(output_schema=None)
     @envelope
     def plot_conjoint(results: str, design: str, chart: str = "importance") -> list:
-        """One conjoint chart as an image: importance, utilities, position, segments or price."""
+        """One conjoint chart as an image.
+
+        chart is one of: importance (attribute importance), utilities (the
+        part-worth of every level), position (how often each option letter
+        was chosen), segments (importance by agent trait) or price (the
+        price curve). Call once per chart.
+        """
         import matplotlib.pyplot as plt
 
+        chart = CHART_ALIASES.get(chart.strip().lower().replace("-", "_"), chart)
         style = _plot_style()
         spec, analysis = _analysis(results, design)
         blue, red = style.CATEGORICAL[0], style.CATEGORICAL[4]
