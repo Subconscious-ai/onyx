@@ -40,6 +40,16 @@ Paid models need provider keys in the wrapper's environment (`OPENAI_API_KEY`,
 `test` model runs. The persona prompt makes Beca call `estimate_cost` and ask
 before any paid run.
 
+## The per-turn tool budget
+
+Onyx stops a turn after `MAX_LLM_CYCLES` model calls (default 6, so five
+tool calls and then a forced answer). A study turn that builds, runs and
+charts needs more. Set `MAX_LLM_CYCLES=20` in the API server's environment
+(on agent-dev a drop-in for the `onyx-api` user unit) and restart it. The
+persona prompt and the wrapper's tolerant inputs keep the common demos
+inside the default budget, but conjoint analysis with three charts does not
+fit in five calls.
+
 ## Demos
 
 `scripts/subconscious/ep_demo.py` drives a chat through Onyx's API, one
