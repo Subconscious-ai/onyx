@@ -109,10 +109,12 @@ def main() -> None:
             ) from None
 
     me = api("/me")
-    if me.get("role") != "admin":
+    try:
+        api("/admin/mcp/servers")  # the admin check this fork's /me does not expose
+    except RuntimeError as error:
         raise SystemExit(
-            f"Signed in as {me.get('email')} with role {me.get('role')}; an admin is required."
-        )
+            f"Signed in as {me.get('email')}, but not as an admin: {error}"
+        ) from None
 
     providers = api("/llm/provider")
     providers = (
@@ -163,11 +165,11 @@ def main() -> None:
                 "name": args.server_name,
                 "description": "Expected Parrot (EDSL) studies: design, run and analyze surveys and experiments.",
                 "server_url": args.server_url,
-                "auth_type": "api_token",
-                "auth_performer": "admin",
+                "auth_type": "API_TOKEN",
+                "auth_performer": "ADMIN",
                 "api_token": token,
                 "api_token_changed": True,
-                "transport": "streamable-http",
+                "transport": "STREAMABLE_HTTP",
             },
         )
         server_id = created["server_id"]
