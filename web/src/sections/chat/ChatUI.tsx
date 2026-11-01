@@ -10,6 +10,7 @@ import { LlmDescriptor, LlmManager } from "@/lib/hooks";
 import AgentMessage from "@/app/app/message/messageComponents/AgentMessage";
 import MultiModelResponseView from "@/app/app/message/MultiModelResponseView";
 import { MultiModelResponse } from "@/app/app/message/interfaces";
+import { conversationSources } from "@/lib/executive/conversationCitations";
 import { getMultiModelResponses } from "@/app/app/message/multiModel";
 import { SelectedModel } from "@/sections/model-selector/MultiModelSelector";
 import { buildModelProviderLookup } from "@/lib/languageModels/options";
@@ -167,6 +168,8 @@ const ChatUI = React.memo(
       [messageTree, modelProviderLookup]
     );
 
+    const sources = useMemo(() => conversationSources(messages), [messages]);
+
     return (
       <>
         {/* No max-width on container — individual messages control their own width.
@@ -218,6 +221,7 @@ const ChatUI = React.memo(
                       responses={multiModelResponses}
                       chatState={{
                         agent: activeAgent,
+                        conversationSource: sources[i],
                         docs: emptyDocs,
                         citations: undefined,
                         setPresentingDocument,
@@ -266,6 +270,7 @@ const ChatUI = React.memo(
 
               const chatStateData = {
                 agent: activeAgent,
+                conversationSource: sources[i],
                 docs: message.documents ?? emptyDocs,
                 citations: message.citations,
                 setPresentingDocument,

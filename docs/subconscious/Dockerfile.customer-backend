@@ -1,0 +1,7 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+ARG SOURCE_REVISION
+LABEL io.subconscious.customer.source="${SOURCE_REVISION}"
+COPY backend/onyx /app/onyx
+COPY SOURCE_REVISION BASE_SOURCE_REVISION BASE_IMAGE SOURCE_FILES /app/customer-release/
+RUN python -m compileall -q /app/onyx && python -c "from onyx.server.query_and_chat.causl.api import router; from onyx.server.query_and_chat.burn2.api import prepare_brief; from onyx.chat.process_message import build_chat_turn; assert any(route.path == '/causl-memory' for route in router.routes)"

@@ -1464,3 +1464,32 @@ def test_saved_twenty_source_checks_current_persona_and_library_identity(
     }
     persona_access.assert_called_once_with(db, 17, user)
     assert response.headers["Cache-Control"] == "private, no-store"
+
+
+def test_shared_memory_read_does_not_adopt_an_existing_interview(
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fastapi import Response
+
+    from onyx.server.query_and_chat.causl import api
+
+    db, user, _ = connected
+    monkeypatch.setenv("BURN2_ENABLED", "true")
+    payload = envelope()
+    payload["context"].update(page="workspace", market=None)
+    http_response(monkeypatch, payload)
+    chat = ChatSession(
+        id=uuid4(),
+        user_id=user.id,
+        persona_id=11,
+        persona=Persona(id=11, name="Executive interview"),
+    )
+    monkeypatch.setattr(api, "get_chat_session_by_id", lambda *_args, **_kwargs: chat)
+    monkeypatch.setattr(turn, "read_causl_binding", lambda *_args: None)
+    bind = MagicMock(side_effect=AssertionError("GET must not bind an old interview"))
+    monkeypatch.setattr(turn, "bind_interview_chat", bind)
+    response = Response()
+    memory = api.read_memory(chat.id, response, user, db)
+    assert memory["library"] == payload["context"]["library"]
+    assert response.headers["cache-control"] == "private, no-store"
+    bind.assert_not_called()

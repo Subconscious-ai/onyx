@@ -82,6 +82,7 @@ function arePropsEqual(
     prev.chatState.agent?.id === next.chatState.agent?.id &&
     prev.chatState.docs === next.chatState.docs &&
     prev.chatState.citations === next.chatState.citations &&
+    prev.chatState.conversationSource === next.chatState.conversationSource &&
     prev.chatState.overriddenModel === next.chatState.overriddenModel &&
     prev.chatState.researchType === next.chatState.researchType &&
     prev.otherMessagesCanSwitchTo === next.otherMessagesCanSwitchTo &&
@@ -183,14 +184,20 @@ const AgentMessage = React.memo(function AgentMessage({
   const effectiveChatState = useMemo<FullChatState>(
     () => ({
       ...chatState,
+      conversationSource:
+        chatState.conversationSource ??
+        (parentMessage?.type === "user" ? parentMessage.message : undefined),
       citations: mergedCitations,
       docs: mergedDocs,
     }),
     [
       chatState.agent,
+      chatState.conversationSource,
       chatState.setPresentingDocument,
       chatState.overriddenModel,
       chatState.researchType,
+      parentMessage?.type,
+      parentMessage?.message,
       mergedCitations,
       mergedDocs,
     ]

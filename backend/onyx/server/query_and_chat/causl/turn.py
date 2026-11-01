@@ -34,6 +34,7 @@ def read_workspace_context(
     *,
     start_research: bool = False,
     require_current_colossus: bool = False,
+    bind_interview: bool = True,
 ) -> tuple[CauslChatBinding | None, CauslContextEnvelope | None]:
     binding = read_causl_binding(db, user.id, chat.id)
     if (
@@ -47,6 +48,9 @@ def read_workspace_context(
         loaded = load_interview_context(db, user)
         if loaded.configuration.persona_id != chat.persona_id:
             raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+        if not bind_interview:
+            # Reading organization facts must not adopt an older conversation.
+            return None, loaded.envelope
         binding = bind_interview_chat(
             db,
             user,
