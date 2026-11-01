@@ -26,6 +26,7 @@ import {
   modelHandoffMessages,
 } from "@/lib/executive/model-handoff";
 import type { ModelContext } from "@/lib/executive/model-context";
+import { ProductButton } from "@/sections/customer/pro/ProductButton";
 import { Button, Modal, Text } from "@opal/components";
 import { Interactive } from "@opal/core";
 import { Content } from "@opal/layouts";
@@ -291,7 +292,7 @@ export default function ExecutiveWorkspace({
   const [selectedStep, setSelectedStep] = useState<string | null>(null);
   const [briefOpen, setBriefOpen] = useState(false);
   const companyProfileState = useState(createCompanyProfileState);
-  const briefTrigger = useRef<HTMLDivElement>(null);
+  const briefTrigger = useRef<HTMLButtonElement>(null);
   const briefReturnFocus = useRef<HTMLElement | null>(null);
   if (!active) return children;
   const step =
@@ -395,10 +396,10 @@ export default function ExecutiveWorkspace({
             <Text font="main-ui-action">{t("becaName")}</Text>
           </div>
           <div className="flex items-center gap-1">
-            <Button
+            <ProductButton
               ref={briefTrigger}
-              prominence="secondary"
-              size="sm"
+              variant="secondary"
+              size="compact"
               onClick={() => openBrief(briefTrigger.current)}
               data-executive="executive-brief-trigger"
               aria-haspopup="dialog"
@@ -409,7 +410,7 @@ export default function ExecutiveWorkspace({
               }
             >
               {t("briefControl")}
-            </Button>
+            </ProductButton>
             <span
               id="executive-brief-status"
               role="status"
@@ -488,20 +489,23 @@ export default function ExecutiveWorkspace({
                     </Text>
                   </div>
                   {preparation.phase === "error" && (
-                    <Button onClick={preparation.retry} prominence="secondary">
+                    <ProductButton
+                      onClick={preparation.retry}
+                      variant="secondary"
+                    >
                       {t("retryDraft")}
-                    </Button>
+                    </ProductButton>
                   )}
                   {!modelConnected &&
                     chatId &&
                     process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE &&
                     (!readiness.ready || preparation.phase === "error") && (
-                      <Button
-                        prominence="secondary"
+                      <ProductButton
+                        variant="secondary"
                         onClick={() => modelHandoff.current?.recover()}
                       >
                         {t("modelSavedOpen")}
-                      </Button>
+                      </ProductButton>
                     )}
                 </div>
               )}
@@ -606,10 +610,10 @@ export default function ExecutiveWorkspace({
               >
                 {(["journey", "model", "evidence", "decisions"] as const).map(
                   (tab) => (
-                    <Button
+                    <ProductButton
                       key={tab}
-                      size="sm"
-                      prominence={view === tab ? "primary" : "tertiary"}
+                      size="compact"
+                      variant={view === tab ? "primary" : "ghost"}
                       aria-pressed={view === tab}
                       onClick={() => setView(tab)}
                     >
@@ -620,7 +624,7 @@ export default function ExecutiveWorkspace({
                           : tab === "evidence"
                             ? "Evidence"
                             : "Next moves"}
-                    </Button>
+                    </ProductButton>
                   )
                 )}
               </div>

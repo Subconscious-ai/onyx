@@ -1,0 +1,115 @@
+/* Kokonut UI Pro derived work. See SOURCES.md. */
+.kokonut-product-button {
+  position: relative;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-adopted);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-regular);
+  line-height: 1;
+  outline: 2px solid transparent;
+  outline-offset: 0;
+  transition:
+    translate var(--dur-fast) var(--ease-causal),
+    scale var(--dur-fast) var(--ease-causal),
+    outline-color var(--dur-fast) var(--ease-causal),
+    outline-offset var(--dur-fast) var(--ease-causal),
+    box-shadow var(--dur-fast) var(--ease-causal),
+    background-color var(--dur-fast) var(--ease-causal),
+    color var(--dur-fast) var(--ease-causal),
+    border-color var(--dur-fast) var(--ease-causal);
+}
+
+.kokonut-product-button:active {
+  translate: 0 0;
+  scale: 0.97;
+}
+
+.kokonut-product-button:focus-visible {
+  outline: 2px solid var(--color);
+  outline-offset: 2px;
+}
+
+.kokonut-product-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  translate: 0 0;
+  scale: 1;
+}
+
+.kokonut-product-button--primary {
+  border-color: var(--color);
+  background: var(--color);
+  color: var(--backgroundColor);
+}
+
+.kokonut-product-button--primary:hover {
+  background: color-mix(in srgb, var(--color) 88%, var(--backgroundColor));
+}
+
+.kokonut-product-button--secondary {
+  border-color: var(--hairline);
+  background: var(--backgroundColor);
+  color: var(--color);
+}
+
+.kokonut-product-button--secondary:hover,
+.kokonut-product-button--ghost:hover {
+  background: var(--bg-2);
+}
+
+.kokonut-product-button--outline {
+  border-width: 2px;
+  border-color: var(--color);
+  background: var(--backgroundColor);
+  color: var(--color);
+  outline: 1px solid var(--color);
+  outline-offset: 2px;
+}
+
+.kokonut-product-button--outline:hover {
+  translate: 2px 2px;
+  outline-color: transparent;
+}
+
+.kokonut-product-button--ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--color);
+}
+
+.kokonut-product-button--compact {
+  min-height: 44px;
+  padding-inline: var(--sp-3);
+  font-size: var(--fs-meta);
+}
+
+.kokonut-product-button--icon {
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+}
+
+.kokonut-product-button svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kokonut-product-button {
+    transition: none;
+  }
+
+  .kokonut-product-button:hover,
+  .kokonut-product-button:active {
+    translate: 0 0;
+    scale: 1;
+  }
+}

@@ -13290,6 +13290,17 @@
       }
     },
     "chatSearch": {
+      "pro": {
+        "all": "全部",
+        "actions": "操作",
+        "chats": "聊天",
+        "projects": "项目",
+        "searchIn": "搜索范围",
+        "close": "关闭搜索",
+        "loading": "加载中…",
+        "searching": "搜索中…",
+        "loadMore": "加载更多对话"
+      },
       "createNamedProject": {
         "label": "创建新项目“<name>{projectName}</name>”"
       },
