@@ -1,5 +1,6 @@
 import { ValidSources } from "@/lib/types";
 import React from "react";
+import { waitFor } from "@testing-library/react";
 import { render, screen, setupUser } from "@tests/setup/test-utils";
 import {
   WorkspaceCitation,
@@ -21,7 +22,7 @@ test("opens a citation preview by keyboard, preserves the full URL, and closes w
   render(<WorkspaceCitation source={source} label="1" />);
   await user.tab();
   await user.keyboard("{Enter}");
-  expect(screen.getByText(source.title)).toBeVisible();
+  await waitFor(() => expect(screen.getByText(source.title)).toBeVisible());
   expect(screen.getByText(source.description!)).toBeVisible();
   expect(screen.getByRole("link")).toHaveAttribute("href", source.sourceUrl);
   await user.keyboard("{Escape}");
