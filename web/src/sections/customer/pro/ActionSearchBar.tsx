@@ -4,7 +4,7 @@
  * Retains the clipped scope tabs, command rows, keycaps, and keyboard highlight.
  * Onyx supplies authorized results and navigation. No demo actions or receipts.
  */
-import { CornerDownLeft, Search } from "lucide-react";
+import { SvgKeystroke, SvgSearch } from "@opal/icons";
 import { useReducedMotion } from "motion/react";
 import {
   type KeyboardEvent,
@@ -243,7 +243,7 @@ function CommandRow({
           {item.meta}
         </span>
         {active && (
-          <CornerDownLeft aria-hidden="true" className="size-3 text-text-03" />
+          <SvgKeystroke aria-hidden="true" className="size-3 text-text-03" />
         )}
       </span>
     </div>
@@ -286,7 +286,15 @@ export default function ActionSearchBar({
   } satisfies Record<Scope, number>;
   for (const item of items) counts[item.kind] += 1;
   // Native search can match message bodies even when the title has no match.
-  const rows = items.filter((item) => scope === "all" || item.kind === scope);
+  const scoped = items.filter((item) => scope === "all" || item.kind === scope);
+  // Search results take precedence over creation actions for query + Enter.
+  const rows =
+    text.trim() && scope === "all"
+      ? [
+          ...scoped.filter((item) => item.kind !== "action"),
+          ...scoped.filter((item) => item.kind === "action"),
+        ]
+      : scoped;
   const highlighted = Math.min(activeIndex, rows.length - 1);
   const optionId = (index: number) => `${uid}-option-${index}`;
   useEffect(() => {
@@ -337,7 +345,10 @@ export default function ActionSearchBar({
   return (
     <div className="w-full p-1.5">
       <div className="flex h-12 items-center gap-2 rounded-lg px-3 focus-within:ring-2 focus-within:ring-theme-primary-05">
-        <Search aria-hidden="true" className="size-4 shrink-0 text-text-03" />
+        <SvgSearch
+          aria-hidden="true"
+          className="size-4 shrink-0 text-text-03"
+        />
         <label className="sr-only" htmlFor={`${uid}-input`}>
           {fieldLabel}
         </label>
@@ -351,6 +362,7 @@ export default function ActionSearchBar({
           aria-activedescendant={
             highlighted >= 0 ? optionId(highlighted) : undefined
           }
+          style={{ outline: "none" }}
           autoComplete="off"
           spellCheck={false}
           className="h-full min-w-0 flex-1 bg-transparent text-base text-text-01 outline-none placeholder:text-text-03"
@@ -424,7 +436,7 @@ export default function ActionSearchBar({
         </span>
         <span className="flex items-center gap-1">
           <span className={kbd}>
-            <CornerDownLeft className="size-3" />
+            <SvgKeystroke className="size-3" />
           </span>{" "}
           {t("footer.openAction.label")}
         </span>

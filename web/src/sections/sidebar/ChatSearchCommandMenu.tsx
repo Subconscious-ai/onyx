@@ -93,7 +93,9 @@ export default function ChatSearchCommandMenu({
 
   // Determine if we should enable optimistic search (when searching or viewing chats filter)
   const shouldUseOptimisticSearch =
-    searchValue.trim().length > 0 || activeFilter === "chats";
+    (isCustomerChat && open) ||
+    searchValue.trim().length > 0 ||
+    activeFilter === "chats";
 
   // Use optimistic search hook for chat sessions (includes fallback from useChatSessions + useProjects)
   const {

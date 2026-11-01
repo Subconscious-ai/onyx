@@ -42,9 +42,13 @@ test("native message-body matches remain available, keyboard selection opens the
   await user.type(input, "budget");
   expect(query).toHaveBeenLastCalledWith("budget");
   expect(screen.getByRole("option", { name: /Pricing study/ })).toBeVisible();
+  fireEvent.keyDown(input, { key: "Enter" });
+  expect(select).toHaveBeenCalledWith({
+    item: expect.objectContaining({ id: "chat-retained" }),
+  });
   await user.click(screen.getByRole("tab", { name: /Chats/ }));
   fireEvent.keyDown(input, { key: "Enter" });
-  expect(select).toHaveBeenCalledTimes(1);
+  expect(select).toHaveBeenCalledTimes(2);
   expect(select).toHaveBeenCalledWith({
     item: expect.objectContaining({ id: "chat-retained" }),
   });

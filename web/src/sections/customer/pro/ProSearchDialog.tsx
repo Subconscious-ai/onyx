@@ -2,7 +2,7 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { useTranslations } from "next-intl";
-import { X } from "lucide-react";
+import { SvgX } from "@opal/icons";
 import { useRef, type ReactNode } from "react";
 import ActionSearchBar, {
   type ActionSearchBarProps,
@@ -78,7 +78,7 @@ export default function ProSearchDialog({
                 size="icon"
                 aria-label={t("close")}
               >
-                <X size={16} />
+                <SvgX className="size-4" />
               </ProductButton>
             </Dialog.Close>
           </div>
