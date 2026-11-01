@@ -616,3 +616,16 @@ Private evidence is in `~/.local/share/causl-uat/finish-20261014/agentdev-six/`,
 `browser-oct17-final-*`; the compact assessment and account audit are in
 `~/.local/share/causl-uat/finish-20261017/`. Retain the failed receipts. Do not close
 #55 or merge #48/#675 from the unit tests, Vercel check, or three saved models.
+
+### Customer backend overlay releases
+
+The frontend and native backend have separate releases. A frontend deployment does
+not install `/chat/causl-memory` or the prepared-brief Library publisher. Build the
+native customer overlay from a clean commit with
+`scripts/subconscious/build_customer_backend.sh BASE_IMAGE BASE_SOURCE_REVISION IMAGE_TAG`.
+`BASE_SOURCE_REVISION` must identify the fork source already present in `BASE_IMAGE`.
+The optional fourth argument exports an empty build context directory for a remote
+Docker host. The context records the exact commit and copied files. Retain the
+current image and private Compose file for rollback; update only the API and
+background services. Do not run unrelated database migrations. Verify a real
+owned conversation, shared facts, and citation previews through the frontend proxy.

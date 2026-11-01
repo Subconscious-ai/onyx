@@ -97,7 +97,9 @@ def read_memory(
         raise OnyxError(OnyxErrorCode.NOT_FOUND) from None
     if chat.user_id != user.id:
         raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
-    binding, envelope = read_workspace_context(db_session, user, chat, None)
+    binding, envelope = read_workspace_context(
+        db_session, user, chat, None, bind_interview=False
+    )
     if envelope is None:
         raise OnyxError(
             OnyxErrorCode.NOT_FOUND, "Shared market memory is not connected."
