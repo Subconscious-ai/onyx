@@ -13290,6 +13290,17 @@
       }
     },
     "chatSearch": {
+      "pro": {
+        "all": "전체",
+        "actions": "작업",
+        "chats": "채팅",
+        "projects": "프로젝트",
+        "searchIn": "검색 범위",
+        "close": "검색 닫기",
+        "loading": "불러오는 중…",
+        "searching": "검색 중…",
+        "loadMore": "대화 더 불러오기"
+      },
       "createNamedProject": {
         "label": "새 프로젝트 \"<name>{projectName}</name>\" 생성"
       },

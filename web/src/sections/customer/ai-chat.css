@@ -29,15 +29,6 @@ html[data-customer-design="focus"] [data-ai-progress] [role="status"] {
   font-size: var(--fs-meta);
 }
 
-html[data-customer-design="focus"] [data-ai-citation] {
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-adopted) !important;
-  padding: 2px 6px;
-  vertical-align: baseline;
-  background: color-mix(in srgb, var(--color) 5%, var(--backgroundColor));
-  transition: background-color var(--dur-fast) var(--ease-causal);
-}
-
 html[data-customer-design="focus"]
   p:has([data-ai-citation]:is(:hover, :focus-visible)) {
   background: color-mix(in srgb, var(--color) 4%, var(--backgroundColor));
@@ -51,10 +42,4 @@ html[data-customer-design="focus"] [data-ai-source-preview] {
   background: var(--backgroundColor);
   color: var(--color);
   font-family: var(--font-body);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html[data-customer-design="focus"] [data-ai-citation] {
-    transition: none;
-  }
 }

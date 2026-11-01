@@ -85,6 +85,9 @@ export default async function Layout({ children }: LayoutProps) {
   return (
     <html
       lang={locale}
+      data-theme="kong"
+      data-mode="light"
+      data-scale="product"
       dir={dir}
       // The app-wide font variables are composed here instead of with
       // next/font's `variable` option: the CJK tail (--font-cjk-sans,
@@ -154,7 +157,7 @@ export default async function Layout({ children }: LayoutProps) {
               menus and roving focus need this alongside <html dir>. */}
           <DirectionProvider dir={dir}>
             <ThemeProvider
-              attribute="class"
+              attribute={["class", "data-mode"]}
               defaultTheme="system"
               enableSystem
               disableTransitionOnChange

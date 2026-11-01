@@ -13290,6 +13290,17 @@
       }
     },
     "chatSearch": {
+      "pro": {
+        "all": "All",
+        "actions": "Actions",
+        "chats": "Chats",
+        "projects": "Projects",
+        "searchIn": "Search in",
+        "close": "Close search",
+        "loading": "Loading…",
+        "searching": "Searching…",
+        "loadMore": "Load more conversations"
+      },
       "createNamedProject": {
         "label": "Create New Project \"<name>{projectName}</name>\""
       },
