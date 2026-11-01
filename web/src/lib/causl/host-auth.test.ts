@@ -43,11 +43,15 @@ test("a failed host session never falls back to an Onyx cookie", async () => {
 });
 
 function frame() {
+  let request = 0;
   const listeners = new Set<(event: MessageEvent) => void>();
   const parent = { postMessage: jest.fn() };
   const child = {
     parent,
-    crypto: { randomUUID: () => "request-uuid" },
+    crypto: {
+      randomUUID: () =>
+        ++request === 1 ? "request-uuid" : `request-uuid-${request}`,
+    },
     addEventListener: (
       _type: string,
       listener: (event: MessageEvent) => void
@@ -72,7 +76,7 @@ function frame() {
       data: {
         kind: "causl:auth",
         nonce: "frame-nonce",
-        id: "request-uuid",
+        id: parent.postMessage.mock.calls.at(-1)?.[0].id,
         token: "fresh-token",
         expiresAt: Date.now() / 1000 + 300,
         ...data,
@@ -83,6 +87,63 @@ function frame() {
   };
   return { provider, parent, listeners, reply };
 }
+
+test("a delayed host reply retries once before sending the authenticated workspace request", async () => {
+  jest.useFakeTimers();
+  const f = frame();
+  const underlying = jest.fn().mockResolvedValue(new Response("{}"));
+  const fetcher = installHostAuthentication({
+    origin: "https://chat.example",
+    fetch: underlying,
+    token: f.provider.token,
+  });
+  try {
+    const result = fetcher("/api/chat/causl-workspace").then(
+      (response) => response.status,
+      (error: Error) => error.message
+    );
+    await jest.advanceTimersByTimeAsync(15_000);
+    expect(underlying).not.toHaveBeenCalled();
+    f.reply({}, { id: "request-uuid", token: "late-first-token" });
+    await Promise.resolve();
+    expect(underlying).not.toHaveBeenCalled();
+    f.reply();
+    expect(await result).toBe(200);
+    expect(underlying).toHaveBeenCalledTimes(1);
+    const options = underlying.mock.calls[0][1];
+    expect(new Headers(options.headers).get("Authorization")).toBe(
+      "Bearer fresh-token"
+    );
+    expect(options.credentials).toBe("omit");
+  } finally {
+    f.provider.dispose();
+    jest.useRealTimers();
+  }
+});
+
+test("two unanswered handshakes stop without sending an unauthenticated request", async () => {
+  jest.useFakeTimers();
+  const f = frame();
+  const underlying = jest.fn();
+  const fetcher = installHostAuthentication({
+    origin: "https://chat.example",
+    fetch: underlying,
+    token: f.provider.token,
+  });
+  try {
+    const result = fetcher("/api/chat/causl-workspace").catch(
+      (error: Error) => error.message
+    );
+    await jest.advanceTimersByTimeAsync(30_000);
+    expect(await result).toBe("Host session unavailable");
+    expect(f.parent.postMessage).toHaveBeenCalledTimes(2);
+    expect(underlying).not.toHaveBeenCalled();
+    expect(f.listeners.size).toBe(0);
+  } finally {
+    f.provider.dispose();
+    jest.useRealTimers();
+  }
+});
 
 test("host handshake rejects unrelated origins, windows, nonces and request ids", async () => {
   const f = frame();

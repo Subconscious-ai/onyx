@@ -35,6 +35,8 @@ export function isHostAuthenticatedWorkspace(): boolean {
   );
 }
 
+class HostSessionTimeoutError extends Error {}
+
 export function createHostTokenProvider(options: {
   window: Window;
   parentOrigin: string;
@@ -46,10 +48,23 @@ export function createHostTokenProvider(options: {
   function token(): Promise<string> {
     if (disposed) return Promise.reject(new Error("Host session ended"));
     if (pending) return pending;
-    pending = new Promise<string>((resolve, reject) => {
+    // A delayed parent reply must not discard the open conversation.
+    pending = requestToken()
+      .catch((error: Error) => {
+        if (error instanceof HostSessionTimeoutError && !disposed)
+          return requestToken();
+        throw error;
+      })
+      .finally(() => {
+        pending = null;
+      });
+    return pending;
+  }
+  function requestToken(): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
       const id = options.window.crypto.randomUUID();
       const timeout = setTimeout(
-        () => finish(new Error("Host session unavailable")),
+        () => finish(new HostSessionTimeoutError("Host session unavailable")),
         15000
       );
       function finish(result: Error | string) {
@@ -87,10 +102,7 @@ export function createHostTokenProvider(options: {
         { kind: "causl:auth-request", nonce: options.nonce, id },
         options.parentOrigin
       );
-    }).finally(() => {
-      pending = null;
     });
-    return pending;
   }
   return {
     token,
