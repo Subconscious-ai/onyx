@@ -50,7 +50,7 @@ DEMOS: dict[str, list[str]] = {
         "are individual contributors or team leads. Ask how clear each message is "
         "(Clear, Unclear, Unsure) and a 0 to 10 clarity score. Build survey, agents "
         "and scenarios, show the estimated cost, then run on the test model with "
-        "canned answer 'Clear'.",
+        "canned answers 'Clear' for the clarity question and 8 for the score.",
         "Tally clarity by message condition and draw the distribution chart and "
         "the mean score by condition.",
     ],
@@ -73,19 +73,27 @@ DEMOS: dict[str, list[str]] = {
     ],
     # docs/examples/pretesting.py + prompt_sensitivity.py + prompts.py
     "pretest": [
-        "Pretest two survey items, 'Do you use this service regularly?' and 'On "
-        "how many of the past 7 days did you use this service?'. Ask a reviewer "
-        "to pick the main issue (Ambiguous timeframe, Double-barreled, Leading, "
-        "None identified) and suggest a revision. Use two reviewer agents that "
-        "differ only by instruction: one classifies literally, one infers intent. "
-        "Show me the exact prompts first, then run on the test model with canned "
-        "answer 'Ambiguous timeframe'.",
+        "Pretest two survey items as scenarios with a field 'item': 'Do you use "
+        "this service regularly?' and 'On how many of the past 7 days did you "
+        "use this service?'. One survey: a multiple-choice question that shows "
+        "{{ scenario.item }} and asks the reviewer to pick the main issue "
+        "(Ambiguous timeframe, Double-barreled, Leading, None identified), then "
+        "a free-text question asking for a revised wording. Two reviewer agents "
+        "that differ only by instruction: one classifies literally, one infers "
+        "intent. Show me the exact prompts, then run on the test model with "
+        "canned answer 'Ambiguous timeframe'.",
     ],
     # docs/examples/results.py + dataset.py + caching.py
     "results_cache": [
-        "Rerun the agents_scenarios study exactly as before on the test model and "
-        "tell me how many answers came from the cache. Then export condition, "
-        "role and clarity as CSV, filtered to the short condition.",
+        "Build a survey with one multiple-choice question, how clear is "
+        "{{ scenario.message }} (Clear, Unclear, Unsure), two scenarios with "
+        "fields condition and message ('short': 'Export your report.', 'long': "
+        "'Download your report as a CSV file.'), and two agents with role "
+        "'individual contributor' and 'team lead'. Run on the test model with "
+        "canned answer 'Clear'.",
+        "Run it again exactly the same and tell me how many answers came from "
+        "the cache. Then export condition, role and clarity as CSV, filtered to "
+        "the short condition.",
     ],
     # notebooks nps_survey + yoga_studio_name_survey
     "nps": [

@@ -59,6 +59,18 @@ def err(code: str, message: str, suggestion: str = "") -> dict:
     }
 
 
+HINTS = {
+    "JobsCompatibilityError": (
+        "A question must use a scenario field as '{{ scenario.<field> }}' in its "
+        "text, or run without scenarios. Agent traits belong in build_agents, not "
+        "scenarios."
+    ),
+    "SurveyRuleReferenceInRuleToUnknownQuestionError": (
+        "Rule expressions name a question directly: \"used_export == 'No'\"."
+    ),
+}
+
+
 def envelope(fn: Callable[..., Any]) -> Callable[..., Any]:
     """Turn exceptions into the error envelope so the model gets a next step."""
 
@@ -75,7 +87,10 @@ def envelope(fn: Callable[..., Any]) -> Callable[..., Any]:
             return err(
                 "RUNTIME_ERROR",
                 f"{type(error).__name__}: {first_line[:300]}",
-                "Check the tool's inputs against its description; list_question_types and list_objects show what exists.",
+                HINTS.get(
+                    type(error).__name__,
+                    "Check the tool's inputs against its description; list_question_types and list_objects show what exists.",
+                ),
             )
 
     return wrapped
@@ -171,7 +186,8 @@ def _column(results: Any, column: str) -> str:
     """Accept 'clarity' or 'answer.clarity'; refuse a column that is not there."""
     if column in results.columns:
         return column
-    matches = [c for c in results.columns if c.split(".", 1)[-1] == column]
+    bare = column.split(".", 1)[-1]
+    matches = [c for c in results.columns if c.split(".", 1)[-1] == bare]
     if len(matches) == 1:
         return matches[0]
     raise ToolError(
@@ -282,6 +298,8 @@ def _normalize_question(spec: dict, warnings: list[str]) -> tuple[dict, dict]:
             f"{spec.get('question_name')}: {raw_type!r} read as {question_type!r}."
         )
     spec["question_type"] = question_type
+    if isinstance(spec.get("question_text"), str):
+        spec["question_text"] = _pipe_syntax(spec["question_text"])
     rules = {key: spec.pop(key) for key in PER_QUESTION_RULES if key in spec}
     options = spec.get("question_options")
     if question_type == "linear_scale" and isinstance(options, dict):
@@ -314,6 +332,20 @@ def _normalize_question(spec: dict, warnings: list[str]) -> tuple[dict, dict]:
         )
         spec.pop(key)
     return spec, rules
+
+
+ANSWER_PREFIX = re.compile(r"\{\{\s*answer\.(\w+)\s*\}\}")
+RULE_TEMPLATE = re.compile(r"\{\{\s*(?:answer\.)?(\w+)(?:\.answer)?\s*\}\}")
+
+
+def _pipe_syntax(text: str) -> str:
+    """'{{ answer.q }}' is a common guess; EDSL pipes with '{{ q.answer }}'."""
+    return ANSWER_PREFIX.sub(r"{{ \1.answer }}", text)
+
+
+def _rule_syntax(expression: str) -> str:
+    """Rules name the question directly: '{{ q.answer }} == 1' becomes 'q == 1'."""
+    return RULE_TEMPLATE.sub(r"\1", expression)
 
 
 def _identifier(key: str) -> str:
@@ -385,9 +417,13 @@ def _register_survey_builder(server: FastMCP, workspace: Workspace) -> None:
                 built.append(question)
         survey = Survey(built)
         for rule in stop_rules:
-            survey = survey.add_stop_rule(rule["question"], rule["expression"])
+            survey = survey.add_stop_rule(
+                rule["question"], _rule_syntax(rule["expression"])
+            )
         for rule in skip_rules:
-            survey = survey.add_skip_rule(rule["question"], rule["expression"])
+            survey = survey.add_skip_rule(
+                rule["question"], _rule_syntax(rule["expression"])
+            )
         for memory in targeted_memory or []:
             survey = survey.add_targeted_memory(memory["focal"], memory["prior"])
         if full_memory:
@@ -565,10 +601,25 @@ def _register_runs(server: FastMCP, workspace: Workspace) -> None:
         agents: str | None,
         scenarios: str | None,
         model: str,
-        canned_response: str | None,
+        canned_response: str | dict[str, Any] | None,
         service: str | None,
+        warnings: list[str] | None = None,
     ) -> Any:
         job = workspace.load("surveys", survey)
+        if not scenarios and any(
+            "{{ scenario." in q.question_text.replace("{{scenario.", "{{ scenario.")
+            for q in job.questions
+        ):
+            if workspace.path("scenarios", f"{survey}_versions").is_file():
+                scenarios = f"{survey}_versions"
+                if warnings is not None:
+                    warnings.append(f"Ran on the design's own scenarios {scenarios!r}.")
+            elif warnings is not None:
+                warnings.append(
+                    f"Survey {survey!r} fills '{{{{ scenario.* }}}}' fields but no "
+                    "scenarios were given, so those fields stayed blank. Saved "
+                    f"scenarios: {', '.join(workspace.names('scenarios')) or 'none yet'}."
+                )
         if scenarios:
             job = job.by(workspace.load("scenarios", scenarios))
         if agents:
@@ -638,23 +689,28 @@ def _register_runs(server: FastMCP, workspace: Workspace) -> None:
         scenarios: str | None = None,
         model: str = DEFAULT_MODEL,
         service: str | None = None,
-        canned_response: str | None = None,
+        canned_response: str | dict[str, Any] | None = None,
     ) -> dict:
         """Run the survey and save the results under `name`.
 
-        model 'test' is free and answers with canned_response (or a fixed
-        string); use it to check a design. Any other model name spends money:
+        model 'test' is free and answers with canned_response: one string
+        for every question, or a dict keyed by question_name so each question
+        gets a valid answer (for example {"clarity": "Clear", "score": 7});
+        use it to check a design. Any other model name spends money:
         call estimate_cost first and say so. Simulated respondents are not
         people; label their answers as simulated evidence. Answers are cached
         in the workspace, so repeating an identical run spends nothing new.
         """
         from edsl import Cache
 
-        job = _job(survey, agents, scenarios, model, canned_response, service)
+        notes: list[str] = []
+        job = _job(survey, agents, scenarios, model, canned_response, service, notes)
         # The test model's answers depend on canned_response, which EDSL's cache
         # key does not see, so each canned answer gets its own cache file.
         suffix = (
-            f"-test-{_digest(canned_response or '')}" if model == DEFAULT_MODEL else ""
+            f"-test-{_digest(json.dumps(canned_response or '', sort_keys=True))}"
+            if model == DEFAULT_MODEL
+            else ""
         )
         cache_path = workspace.root / f"cache{suffix}.jsonl"
         # One lock per cache file: runs that share a file take turns so neither
@@ -685,7 +741,7 @@ def _register_runs(server: FastMCP, workspace: Workspace) -> None:
             ]
             if failed
             else []
-        )
+        ) + notes
         return ok(
             {
                 "results": name,
@@ -1134,12 +1190,6 @@ def _register_conjoint(server: FastMCP, workspace: Workspace) -> None:
         workspace.path(
             "scenarios", f"{name}_versions"
         )  # validates the derived name too
-        if workspace.path("surveys", name).is_file():
-            raise ToolError(
-                "CONFLICT",
-                f"A survey named {name!r} already exists.",
-                "Choose a new name; existing studies are kept so their results stay readable.",
-            )
         try:
             spec = ep_conjoint.generate_design(
                 attributes,
@@ -1256,7 +1306,9 @@ def _cache_lock(path: Path) -> Any:
         return _CACHE_LOCKS.setdefault(str(path), threading.Lock())
 
 
-def _model_for(model: str, canned_response: str | None, service: str | None) -> Any:
+def _model_for(
+    model: str, canned_response: str | dict[str, Any] | None, service: str | None
+) -> Any:
     from edsl import Model
 
     if model == DEFAULT_MODEL:

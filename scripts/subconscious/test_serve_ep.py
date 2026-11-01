@@ -289,7 +289,7 @@ def test_an_answer_the_question_rejects_is_reported_not_hidden(client: Client) -
 
     assert body["status"] == "ok"
     assert body["data"]["incomplete_interviews"] == 1
-    assert "rejected reply" in body["warnings"][0]
+    assert any("rejected reply" in w for w in body["warnings"])
     assert "validation error" in body["warnings"][0]  # the cause, in the error's words
     # A rejected reply is not an answer served from the cache.
     assert body["data"]["cache"]["hits"] == 0
@@ -769,14 +769,6 @@ def test_market_share_refuses_a_profile_outside_the_design(client: Client) -> No
     assert problem["code"] == "VALIDATION_ERROR"
     assert "Price=$99" in problem["message"] and "Data" in problem["message"]
 
-    taken = error(
-        client,
-        "conjoint_design",
-        name="plan",
-        attributes={"Price": ["$10", "$20"], "Data": ["5 GB", "20 GB"]},
-    )
-    assert taken["code"] == "CONFLICT"
-
 
 def test_a_runtime_error_is_one_bounded_line_with_a_next_step(client: Client) -> None:
     data(client, "build_survey", name="one", questions=MESSAGE_SURVEY[:1])
@@ -809,7 +801,7 @@ def test_every_failed_interview_is_counted_with_its_cause(
     assert body["status"] == "ok"
     assert body["data"]["incomplete_interviews"] == 3
     assert body["data"]["cache"]["hits"] == 0
-    assert "3 of 3 interviews raised an error" in body["warnings"][0]
+    assert any("3 of 3 interviews raised an error" in w for w in body["warnings"])
     # The cause named is the error's own words, not EDSL's container for it.
     assert "InterviewExceptionCollection" not in body["warnings"][0]
     assert "test error" in body["warnings"][0]
@@ -891,3 +883,122 @@ def test_not_found_lists_saved_names(client):
     err = error(client, "run_survey", name="r", survey="missing", model="test")
     assert err["code"] == "NOT_FOUND"
     assert "exists" in err["message"]
+
+
+def test_canned_answers_per_question_and_column_prefix_tolerance(client):
+    data(
+        client,
+        "build_survey",
+        name="mixed",
+        questions=[
+            {
+                "question_type": "multiple_choice",
+                "question_name": "clarity",
+                "question_text": "Clear?",
+                "question_options": ["Clear", "Unclear"],
+            },
+            {
+                "question_type": "numerical",
+                "question_name": "score",
+                "question_text": "Score 0 to 10",
+                "min_value": 0,
+                "max_value": 10,
+            },
+        ],
+    )
+    data(
+        client,
+        "build_agents",
+        name="two",
+        agents=[{"experience": "new"}, {"experience": "old"}],
+    )
+    run = data(
+        client,
+        "run_survey",
+        name="mixed_run",
+        survey="mixed",
+        agents="two",
+        canned_response={"clarity": "Clear", "score": 7},
+    )
+    assert run["incomplete_interviews"] == 0, run
+    tally = data(
+        client,
+        "results_tally",
+        name="mixed_run",
+        column="clarity",
+        by="scenario.experience",
+    )
+    assert tally, tally
+
+
+def test_guessed_piping_and_rule_syntax_are_rewritten(client, tmp_path):
+    out, _ = call(
+        client,
+        "build_survey",
+        name="piped",
+        questions=[
+            {
+                "question_type": "yes_no",
+                "question_name": "used",
+                "question_text": "Used it?",
+            },
+            {
+                "question_type": "free_text",
+                "question_name": "problem",
+                "question_text": "You said {{ answer.used }}. What problem?",
+            },
+        ],
+        stop_rules=[{"question": "used", "expression": "{{ answer.used }} == 'No'"}],
+    )
+    assert out["status"] == "ok", out
+    from edsl import Survey
+
+    survey = Survey.from_dict(
+        json.loads((tmp_path / "ws" / "surveys" / "piped.json").read_text())
+    )
+    assert "{{ used.answer }}" in survey.questions[1].question_text
+    assert survey.rule_collection.non_default_rules
+
+
+def test_a_scenario_survey_run_without_scenarios_warns_with_the_names(client):
+    data(
+        client,
+        "build_survey",
+        name="needs_scn",
+        questions=[
+            {
+                "question_type": "free_text",
+                "question_name": "q",
+                "question_text": "Thoughts on {{ scenario.item }}?",
+            }
+        ],
+    )
+    data(
+        client,
+        "build_scenarios",
+        name="items",
+        scenarios=[{"item": "a"}, {"item": "b"}],
+    )
+    body, _ = call(client, "run_survey", name="r", survey="needs_scn")
+    assert body["status"] == "ok"
+    assert "items" in body["warnings"][0] and "stayed blank" in body["warnings"][0]
+
+
+def test_a_conjoint_finds_its_own_versions_and_can_be_redesigned(client):
+    attributes = {"Price": ["$10", "$20"], "Data": ["5 GB", "20 GB"]}
+    for _ in range(2):
+        data(
+            client,
+            "conjoint_design",
+            name="cj",
+            attributes=attributes,
+            tasks_per_version=2,
+            profiles_per_task=2,
+            n_versions=1,
+        )
+    run = data(
+        client, "run_survey", name="cj_run", survey="cj", canned_response="Option A"
+    )
+    assert run["incomplete_interviews"] == 0
+    analysis = data(client, "conjoint_analyze", results="cj_run", design="cj")
+    assert analysis["n_observations"] == 2
