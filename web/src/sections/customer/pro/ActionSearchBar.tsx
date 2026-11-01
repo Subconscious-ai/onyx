@@ -116,7 +116,7 @@ function ScopeTabs({
       <span
         className={cn(
           "text-[11px] tabular-nums",
-          ink ? "text-text-inverted-03 " : "text-text-03 "
+          ink ? "text-text-inverted-05 " : "text-text-03 "
         )}
       >
         {counts[s.id]}
@@ -143,7 +143,7 @@ function ScopeTabs({
             aria-selected={scope === s.id}
             className={cn(
               tab,
-              "text-text-03 transition-colors duration-150 hover:bg-background-tint-02 hover:text-text-01   ",
+              "text-text-03 transition-colors duration-150 hover:bg-background-tint-02 hover:text-text-05   ",
               focusRing
             )}
             data-scope={s.id}
@@ -171,7 +171,7 @@ function ScopeTabs({
               <span
                 className={cn(
                   tab,
-                  "bg-background-neutral-inverted-01 text-text-inverted-01  "
+                  "bg-background-neutral-inverted-00 text-text-inverted-05  "
                 )}
                 key={s.id}
               >
@@ -207,8 +207,8 @@ function CommandRow({
         // No transition: the highlight follows arrow keys, which land at once.
         "flex min-h-11 cursor-default items-center gap-2.5 rounded-[8px] px-2.5 text-[13.5px] ring-1 aria-disabled:opacity-50",
         active
-          ? "bg-background-neutral-01 text-text-01 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-border-01    "
-          : "text-text-02 ring-transparent "
+          ? "bg-background-neutral-01 text-text-05 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-border-01    "
+          : "text-text-04 ring-transparent "
       )}
       id={id}
       onClick={onChoose}
@@ -232,7 +232,7 @@ function CommandRow({
         aria-hidden="true"
         className={cn(
           "flex size-4 shrink-0 items-center justify-center",
-          active ? "text-text-02 " : "text-text-03 "
+          active ? "text-text-04 " : "text-text-03 "
         )}
       >
         {item.icon}
@@ -365,7 +365,7 @@ export default function ActionSearchBar({
           style={{ outline: "none" }}
           autoComplete="off"
           spellCheck={false}
-          className="h-full min-w-0 flex-1 bg-transparent text-base text-text-01 outline-none placeholder:text-text-03"
+          className="h-full min-w-0 flex-1 bg-transparent text-base text-text-05 outline-none placeholder:text-text-03"
           placeholder={fieldLabel}
           value={text}
           onKeyDown={handleKeyDown}
