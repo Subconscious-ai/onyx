@@ -76,3 +76,5 @@ The adapter does not create new workspace authority or simulated workspaces.
 
 The supplied specialized inputs do not preserve the native composer contract.
 Native attachments, drafts, Send, Stop, model controls, Markdown, citations, and streaming remain active.
+
+Completed reasoning shows the full native Markdown after one Pro disclosure. The native full-text modal retains copy and download actions.

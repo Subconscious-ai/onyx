@@ -187,6 +187,7 @@ export const ReasoningRenderer: MessageRenderer<
           displayContent={displayContent}
           renderContent={renderMarkdown}
           isStreaming={!hasEnd}
+          truncate={!hasEnd}
         />
       </Reasoning>
     </div>
@@ -197,7 +198,6 @@ export const ReasoningRenderer: MessageRenderer<
       icon: SvgCircle,
       status: displayStatus,
       content: reasoningContent,
-      expandedText: reasoningContent,
       noPaddingRight: true,
     },
   ]);
