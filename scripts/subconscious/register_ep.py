@@ -209,7 +209,10 @@ def main() -> None:
         "datetime_aware": True,
         "replace_base_system_prompt": False,
         "starter_messages": STARTERS,
-        "is_public": False,
+        # Public: a private persona is invisible to every account but its owner,
+        # and the dev stack disables the default assistant, so the chat page
+        # shows "No Agent Available".
+        "is_public": True,
     }
     if mine:
         result = api(f"/persona/{mine[0]['id']}", body, "PATCH")
