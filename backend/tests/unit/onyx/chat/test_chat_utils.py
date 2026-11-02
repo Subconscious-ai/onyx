@@ -382,7 +382,7 @@ def test_models_aliases_replay_with_persisted_tool_names(collision: bool) -> Non
                 tool_definition={},
             )
         )
-    _disambiguate_mcp_tool_names(tools)
+    _disambiguate_mcp_tool_names(list(tools))
     names = {tool._mcp_tool_name: tool.name for tool in tools if tool.id == 42}
     assert names["apply_model_source"] == (
         "mcp_Library_apply_model_source" if collision else "apply_model_source"
