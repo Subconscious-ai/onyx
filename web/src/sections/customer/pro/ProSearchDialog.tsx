@@ -2,6 +2,7 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { useTranslations } from "next-intl";
+import { Text } from "@opal/components";
 import { SvgX } from "@opal/icons";
 import { useRef, type ReactNode } from "react";
 import ActionSearchBar, {
@@ -70,7 +71,9 @@ export default function ProSearchDialog({
         >
           <div className="flex items-center justify-between px-4 pt-2">
             <Dialog.Title className="text-sm text-text-03">
-              {props.label ?? searchText("searchInput.placeholder")}
+              <Text font="secondary-body" color="text-03">
+                {props.label ?? searchText("searchInput.placeholder")}
+              </Text>
             </Dialog.Title>
             <Dialog.Close asChild>
               <ProductButton

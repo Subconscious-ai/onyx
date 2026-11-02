@@ -16,27 +16,19 @@ import {
   useState,
 } from "react";
 import { useTranslations } from "next-intl";
+import type { RichStr } from "@opal/types";
+import { toPlainString } from "@opal/components/text/InlineMarkdown";
+import type { Scope, CommandItem, CommandRun } from "./types";
 import { cn } from "@opal/utils";
 
-export type Scope = "all" | "action" | "chat" | "project";
 type Source = "keyboard" | "pointer";
-export interface CommandItem {
-  id: string;
-  label: string;
-  icon?: ReactNode;
-  kind: Exclude<Scope, "all">;
-  meta?: string;
-}
-export interface CommandRun {
-  item: CommandItem;
-}
 export interface ActionSearchBarProps {
   items: CommandItem[];
   onQueryChange?: (query: string) => void;
   onScopeChange?: (scope: Scope) => void;
   onSelect?: (run: CommandRun) => void;
   isSearching?: boolean;
-  label?: string;
+  label?: string | RichStr;
   listFooter?: ReactNode;
 }
 const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
@@ -53,19 +45,21 @@ const kbd =
 const focusRing =
   "outline-none focus-visible:ring-2 focus-visible:ring-theme-primary-05 ";
 
+interface ScopeTabsProps {
+  scope: Scope;
+  counts: Record<Scope, number>;
+  animateNext: boolean;
+  onPick: (scope: Scope, source: Source) => void;
+  baseId: string;
+}
+
 function ScopeTabs({
   scope,
   counts,
   animateNext,
   onPick,
   baseId,
-}: {
-  scope: Scope;
-  counts: Record<Scope, number>;
-  animateNext: boolean;
-  onPick: (scope: Scope, source: Source) => void;
-  baseId: string;
-}) {
+}: ScopeTabsProps) {
   const t = useTranslations("sidebar.chatSearch.pro");
   const labels = {
     all: t("all"),
@@ -185,19 +179,15 @@ function ScopeTabs({
   );
 }
 
-function CommandRow({
-  item,
-  id,
-  active,
-  onChoose,
-  onHover,
-}: {
+interface CommandRowProps {
   item: CommandItem;
   id: string;
   active: boolean;
   onChoose: () => void;
   onHover: () => void;
-}) {
+}
+
+function CommandRow({ item, id, active, onChoose, onHover }: CommandRowProps) {
   return (
     // biome-ignore lint/a11y/useFocusableInteractive: combobox pattern, focus stays in the input (aria-activedescendant)
     // biome-ignore lint/a11y/useKeyWithClickEvents: keys are handled by the input
@@ -269,7 +259,7 @@ export default function ActionSearchBar({
   listFooter,
 }: ActionSearchBarProps) {
   const t = useTranslations("sidebar.chatSearch");
-  const fieldLabel = label ?? t("searchInput.placeholder");
+  const fieldLabel = toPlainString(label ?? t("searchInput.placeholder"));
   const uid = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);

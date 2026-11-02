@@ -11,6 +11,19 @@ interface ProductButtonStyleProps {
   size?: "default" | "compact" | "icon";
 }
 
+function productButtonClass(
+  variant: ProductButtonStyleProps["variant"],
+  size: ProductButtonStyleProps["size"],
+  className?: string
+) {
+  return cn(
+    "kokonut-product-button",
+    `kokonut-product-button--${variant}`,
+    `kokonut-product-button--${size}`,
+    className
+  );
+}
+
 type ProductButtonProps = ProductButtonStyleProps & ComponentProps<"button">;
 export function ProductButton({
   variant = "primary",
@@ -22,12 +35,7 @@ export function ProductButton({
   return (
     <button
       type={type}
-      className={cn(
-        "kokonut-product-button",
-        `kokonut-product-button--${variant}`,
-        `kokonut-product-button--${size}`,
-        className
-      )}
+      className={productButtonClass(variant, size, className)}
       {...props}
     />
   );
@@ -41,14 +49,6 @@ export function ProductLink({
   ...props
 }: ProductLinkProps) {
   return (
-    <Link
-      className={cn(
-        "kokonut-product-button",
-        `kokonut-product-button--${variant}`,
-        `kokonut-product-button--${size}`,
-        className
-      )}
-      {...props}
-    />
+    <Link className={productButtonClass(variant, size, className)} {...props} />
   );
 }

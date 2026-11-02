@@ -24,7 +24,7 @@ import {
   SvgKeystroke,
 } from "@opal/icons";
 import ProSearchDialog from "@/sections/customer/pro/ProSearchDialog";
-import type { CommandItem } from "@/sections/customer/pro/ActionSearchBar";
+import type { CommandItem } from "@/sections/customer/pro/types";
 import TextSeparator from "@/refresh-components/TextSeparator";
 
 /**
@@ -243,6 +243,19 @@ export default function ChatSearchCommandMenu({
     })),
   ];
 
+  const selectionHandlers = new Map<string, () => void>([
+    ["new-session", handleNewSession],
+    ["new-project", () => handleNewProject(searchValue.trim() || undefined)],
+    ...filteredChats.map((chat): [string, () => void] => [
+      `chat-${chat.id}`,
+      () => handleChatSelect(chat.id),
+    ]),
+    ...filteredProjects.map((project): [string, () => void] => [
+      `project-${project.id}`,
+      () => handleProjectSelect(project.id),
+    ]),
+  ]);
+
   return (
     <>
       {isCustomerChat ? (
@@ -266,15 +279,7 @@ export default function ChatSearchCommandMenu({
           hasMore={hasMore && activeFilter !== "projects"}
           isLoadingMore={isLoadingMore}
           onLoadMore={fetchMore}
-          onSelect={({ item }) => {
-            if (item.id === "new-session") handleNewSession();
-            else if (item.id === "new-project")
-              handleNewProject(searchValue.trim() || undefined);
-            else if (item.id.startsWith("chat-"))
-              handleChatSelect(item.id.slice(5));
-            else if (item.id.startsWith("project-"))
-              handleProjectSelect(Number(item.id.slice(8)));
-          }}
+          onSelect={({ item }) => selectionHandlers.get(item.id)?.()}
         />
       ) : (
         <>

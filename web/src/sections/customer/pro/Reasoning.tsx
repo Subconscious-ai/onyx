@@ -4,12 +4,13 @@
 import { useId, useState, type ReactNode } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { SvgChevronRight } from "@opal/icons";
+import type { RichStr } from "@opal/types";
 import { Text } from "@opal/components";
 import { ProductButton } from "@/sections/customer/pro/ProductButton";
 
 interface ReasoningProps {
   thinking: boolean;
-  label: string;
+  label: string | RichStr;
   children: ReactNode;
 }
 
