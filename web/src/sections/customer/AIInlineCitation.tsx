@@ -10,6 +10,8 @@
  */
 import { useEffect, useId, useRef, useState } from "react";
 import { MotionConfig, motion } from "motion/react";
+import { resolveStr } from "@opal/components/text/InlineMarkdown";
+import { ProductButton } from "@/sections/customer/pro/ProductButton";
 import { Popover, Text, Button } from "@opal/components";
 import { SvgArrowUpRight } from "@opal/icons";
 import type { SourceInfo } from "@/refresh-components/buttons/source-tag/SourceTagDetailsCard";
@@ -180,17 +182,17 @@ export default function AIInlineCitation({
               </a>
             )}
             {onOpen && (
-              <Button
-                prominence="tertiary"
-                rightIcon={SvgArrowUpRight}
+              <ProductButton
+                variant="secondary"
                 onClick={() => {
                   setOpen(false);
                   onOpen();
                 }}
-                width="full"
+                className="w-full"
               >
-                {openLabel ?? label}
-              </Button>
+                {resolveStr(openLabel ?? label)}
+                <SvgArrowUpRight className="size-4" />
+              </ProductButton>
             )}
           </motion.div>
         </Popover.Content>

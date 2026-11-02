@@ -16,6 +16,7 @@ import { useTranslations } from "next-intl";
 import { useSettings } from "@/lib/settings/hooks";
 import { MinimalAgent } from "@/lib/agents/types";
 import Text from "@/refresh-components/texts/Text";
+import ChatHistory from "@/sections/customer/pro/ChatHistory";
 import ChatButton from "@/sections/sidebar/ChatButton";
 import { AgentButton } from "@/lib/agents/components";
 import { DragEndEvent } from "@dnd-kit/core";
@@ -187,13 +188,12 @@ function RecentsSection({
           </Text>
         ) : (
           <>
-            {chatSessions.map((chatSession) => (
-              <ChatButton
-                key={chatSession.id}
-                chatSession={chatSession}
-                draggable
-              />
-            ))}
+            <ChatHistory
+              chats={chatSessions}
+              renderChat={(chatSession) => (
+                <ChatButton chatSession={chatSession} draggable />
+              )}
+            />
             {hasMore &&
               skeletonWidths.map((width, i) => (
                 <div

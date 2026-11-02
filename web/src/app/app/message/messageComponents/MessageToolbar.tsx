@@ -1,6 +1,6 @@
 "use client";
 
-import React, { RefObject, useState, useCallback, useMemo } from "react";
+import React, { RefObject, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Packet, StreamingCitation } from "@/app/app/services/streamingModels";
 import { FeedbackType, Message } from "@/app/app/interfaces";
@@ -21,16 +21,13 @@ import MessageSwitcher from "@/app/app/message/MessageSwitcher";
 import { useIncognitoOptional } from "@/providers/IncognitoProvider";
 import SourceTag from "@/refresh-components/buttons/source-tag/SourceTag";
 import { citationsToSourceInfoArray } from "@/refresh-components/buttons/source-tag/sourceTagUtils";
-import { CopyButton, OpenButton, SelectButton } from "@opal/components";
+import { CopyButton, OpenButton } from "@opal/components";
 import ModelSelector from "@/sections/model-selector/ModelSelector";
-import { SvgRefreshCw, SvgThumbsDown, SvgThumbsUp } from "@opal/icons";
+import { SvgRefreshCw } from "@opal/icons";
 import { LlmManager } from "@/lib/hooks";
 import { RegenerationFactory } from "@/app/app/message/messageComponents/AgentMessage";
 import useFeedbackController from "@/hooks/useFeedbackController";
-import { useCreateModal } from "@opal/components";
-import FeedbackModal, {
-  FeedbackModalProps,
-} from "@/sections/modals/FeedbackModal";
+import ResponseFeedback from "@/sections/customer/pro/ResponseFeedback";
 import TTSButton from "@/app/app/message/messageComponents/TTSButton";
 import { useVoiceMode } from "@/providers/VoiceModeProvider";
 import { useVoiceStatus } from "@/hooks/useVoiceStatus";
@@ -185,66 +182,7 @@ export default function MessageToolbar({
     (isTTSPlaying || isAwaitingAutoPlaybackStart) &&
     activeMessageNodeId === nodeId;
 
-  // Feedback modal state and handlers
   const { handleFeedbackChange } = useFeedbackController();
-  const modal = useCreateModal();
-  const [feedbackModalProps, setFeedbackModalProps] =
-    useState<FeedbackModalProps | null>(null);
-
-  // Helper to check if feedback button should be in transient state
-  const isFeedbackTransient = useCallback(
-    (feedbackType: "like" | "dislike") => {
-      const hasCurrentFeedback = currentFeedback === feedbackType;
-      if (!modal.isOpen) return hasCurrentFeedback;
-
-      const isModalForThisFeedback =
-        feedbackModalProps?.feedbackType === feedbackType;
-      const isModalForThisMessage = feedbackModalProps?.messageId === messageId;
-
-      return (
-        hasCurrentFeedback || (isModalForThisFeedback && isModalForThisMessage)
-      );
-    },
-    [currentFeedback, modal.isOpen, feedbackModalProps, messageId]
-  );
-
-  // Handler for feedback button clicks with toggle logic
-  const handleFeedbackClick = useCallback(
-    async (clickedFeedback: "like" | "dislike") => {
-      if (!messageId) {
-        console.error("Cannot provide feedback - message has no messageId");
-        return;
-      }
-
-      // Toggle logic
-      if (currentFeedback === clickedFeedback) {
-        // Clicking same button - remove feedback
-        await handleFeedbackChange(messageId, null);
-      }
-
-      // Clicking like (will automatically clear dislike if it was active).
-      // Open modal for positive feedback.
-      else if (clickedFeedback === "like") {
-        setFeedbackModalProps({
-          feedbackType: "like",
-          messageId,
-        });
-        modal.toggle(true);
-      }
-
-      // Clicking dislike (will automatically clear like if it was active).
-      // Always open modal for dislike.
-      else {
-        setFeedbackModalProps({
-          feedbackType: "dislike",
-          messageId,
-        });
-        modal.toggle(true);
-      }
-    },
-    [messageId, currentFeedback, handleFeedbackChange, modal]
-  );
-
   // Hide toolbar while TTS is playing for this message
   if (isTTSActiveForThisMessage) {
     return null;
@@ -252,16 +190,12 @@ export default function MessageToolbar({
 
   return (
     <>
-      <modal.Provider>
-        <FeedbackModal {...feedbackModalProps!} />
-      </modal.Provider>
-
       <div
         data-testid="AgentMessage/toolbar"
         className="flex justify-between items-center w-full transition-transform duration-300 ease-in-out transform opacity-100 ps-1"
       >
         <TooltipGroup>
-          <div className="flex items-center">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center">
             {includeMessageSwitcher && (
               <div className="-mx-1">
                 <MessageSwitcher
@@ -283,145 +217,131 @@ export default function MessageToolbar({
               </div>
             )}
 
-            <CopyButton
-              getCopyText={() =>
-                convertMarkdownTablesToTsv(
-                  removeThinkingTokens(getTextContent(rawPackets)) as string
-                )
+            <ResponseFeedback
+              key={messageId ?? nodeId}
+              rating={currentFeedback}
+              disabled={incognitoEnabled || !messageId}
+              onFeedback={(rating, note) =>
+                messageId
+                  ? handleFeedbackChange(messageId, rating, note)
+                  : Promise.resolve(false)
               }
-              getHtmlContent={() => finalAnswerRef.current?.innerHTML || ""}
-              data-testid="AgentMessage/copy-button"
-            />
-            {!incognitoEnabled && (
-              <>
-                <SelectButton
-                  icon={SvgThumbsUp}
-                  onClick={() => handleFeedbackClick("like")}
-                  variant="select-light"
-                  state={isFeedbackTransient("like") ? "selected" : "empty"}
-                  tooltip={
-                    currentFeedback === "like"
-                      ? t("toolbar.likeButton.removeTooltip")
-                      : t("toolbar.likeButton.tooltip")
+              copyAction={
+                <CopyButton
+                  getCopyText={() =>
+                    convertMarkdownTablesToTsv(
+                      removeThinkingTokens(getTextContent(rawPackets)) as string
+                    )
                   }
-                  data-testid="AgentMessage/like-button"
+                  getHtmlContent={() => finalAnswerRef.current?.innerHTML || ""}
+                  data-testid="AgentMessage/copy-button"
                 />
-                <SelectButton
-                  icon={SvgThumbsDown}
-                  onClick={() => handleFeedbackClick("dislike")}
-                  variant="select-light"
-                  state={isFeedbackTransient("dislike") ? "selected" : "empty"}
-                  tooltip={
-                    currentFeedback === "dislike"
-                      ? t("toolbar.dislikeButton.removeTooltip")
-                      : t("toolbar.dislikeButton.tooltip")
+              }
+            >
+              {ttsEnabled && (
+                <TTSButton
+                  text={
+                    removeThinkingTokens(getTextContent(rawPackets)) as string
                   }
-                  data-testid="AgentMessage/dislike-button"
                 />
-              </>
-            )}
-            {ttsEnabled && (
-              <TTSButton
-                text={
-                  removeThinkingTokens(getTextContent(rawPackets)) as string
-                }
-              />
-            )}
-
-            {/* Read-only model label for the shared view: no llmManager to
-                power the interactive selector, so surface which model answered. */}
-            {!llmManager && currentModelName && (
-              <OpenButton
-                disabled
-                icon={getModelIcon(
-                  currentModelProvider ?? "",
-                  currentModelName
-                )}
-              >
-                {currentModelName}
-              </OpenButton>
-            )}
-
-            {onRegenerate &&
-              messageId !== undefined &&
-              parentMessage &&
-              llmManager && (
-                <div data-testid="AgentMessage/regenerate">
-                  <ModelSelector
-                    providerOptions={llmManager.llmProviders}
-                    value={
-                      // The response's model may live under a different
-                      // provider than the global selection, so resolve it
-                      // across all providers, by raw or display name.
-                      ownModelName
-                        ? (llmManager.llmProviders
-                            ?.flatMap((p) => p.model_configurations)
-                            .find(
-                              (m) =>
-                                m.name === ownModelName ||
-                                m.effectiveDisplayName === ownModelName
-                            )?.id ?? null)
-                        : findModelConfigId(
-                            llmManager.llmProviders,
-                            llmManager.currentLlm.provider,
-                            currentModelName ?? llmManager.currentLlm.modelName
-                          )
-                    }
-                    renderTrigger={() => {
-                      const rawName =
-                        ownModelName ??
-                        currentModelName ??
-                        llmManager!.currentLlm.modelName;
-                      const mc = llmManager!.llmProviders
-                        ?.flatMap((p) => p.model_configurations)
-                        .find(
-                          (m) =>
-                            m.name === rawName ||
-                            m.effectiveDisplayName === rawName
-                        );
-                      const displayName = mc?.effectiveDisplayName ?? rawName;
-                      return (
-                        <OpenButton
-                          icon={SvgRefreshCw}
-                          tooltip={t("toolbar.regenerateButton.tooltip")}
-                          foldable={distinctModelsUsed <= 1}
-                        >
-                          {displayName}
-                        </OpenButton>
-                      );
-                    }}
-                    onChange={(opt) => {
-                      const regenerator = onRegenerate({
-                        messageId,
-                        parentMessage,
-                      });
-                      regenerator({
-                        name: opt.name,
-                        provider: opt.provider,
-                        modelName: opt.modelName,
-                      });
-                    }}
-                    temperatureManager={llmManager}
-                    reasoningManager={llmManager}
-                  />
-                </div>
               )}
 
-            {nodeId && (citations.length > 0 || documentMap.size > 0) && (
-              <SourcesTagWrapper
-                citations={citations}
-                documentMap={documentMap}
-                nodeId={nodeId}
-                selectedMessageForDocDisplay={selectedMessageForDocDisplay}
-                documentSidebarVisible={documentSidebarVisible}
-                updateCurrentDocumentSidebarVisible={
-                  updateCurrentDocumentSidebarVisible
-                }
-                updateCurrentSelectedNodeForDocDisplay={
-                  updateCurrentSelectedNodeForDocDisplay
-                }
-              />
-            )}
+              {/* Read-only model label for the shared view: no llmManager to
+                power the interactive selector, so surface which model answered. */}
+              {!llmManager && currentModelName && (
+                <OpenButton
+                  disabled
+                  icon={getModelIcon(
+                    currentModelProvider ?? "",
+                    currentModelName
+                  )}
+                >
+                  {currentModelName}
+                </OpenButton>
+              )}
+
+              {onRegenerate &&
+                messageId !== undefined &&
+                parentMessage &&
+                llmManager && (
+                  <div data-testid="AgentMessage/regenerate">
+                    <ModelSelector
+                      providerOptions={llmManager.llmProviders}
+                      value={
+                        // The response's model may live under a different
+                        // provider than the global selection, so resolve it
+                        // across all providers, by raw or display name.
+                        ownModelName
+                          ? (llmManager.llmProviders
+                              ?.flatMap((p) => p.model_configurations)
+                              .find(
+                                (m) =>
+                                  m.name === ownModelName ||
+                                  m.effectiveDisplayName === ownModelName
+                              )?.id ?? null)
+                          : findModelConfigId(
+                              llmManager.llmProviders,
+                              llmManager.currentLlm.provider,
+                              currentModelName ??
+                                llmManager.currentLlm.modelName
+                            )
+                      }
+                      renderTrigger={() => {
+                        const rawName =
+                          ownModelName ??
+                          currentModelName ??
+                          llmManager!.currentLlm.modelName;
+                        const mc = llmManager!.llmProviders
+                          ?.flatMap((p) => p.model_configurations)
+                          .find(
+                            (m) =>
+                              m.name === rawName ||
+                              m.effectiveDisplayName === rawName
+                          );
+                        const displayName = mc?.effectiveDisplayName ?? rawName;
+                        return (
+                          <OpenButton
+                            icon={SvgRefreshCw}
+                            tooltip={t("toolbar.regenerateButton.tooltip")}
+                            foldable={distinctModelsUsed <= 1}
+                          >
+                            {displayName}
+                          </OpenButton>
+                        );
+                      }}
+                      onChange={(opt) => {
+                        const regenerator = onRegenerate({
+                          messageId,
+                          parentMessage,
+                        });
+                        regenerator({
+                          name: opt.name,
+                          provider: opt.provider,
+                          modelName: opt.modelName,
+                        });
+                      }}
+                      temperatureManager={llmManager}
+                      reasoningManager={llmManager}
+                    />
+                  </div>
+                )}
+
+              {nodeId && (citations.length > 0 || documentMap.size > 0) && (
+                <SourcesTagWrapper
+                  citations={citations}
+                  documentMap={documentMap}
+                  nodeId={nodeId}
+                  selectedMessageForDocDisplay={selectedMessageForDocDisplay}
+                  documentSidebarVisible={documentSidebarVisible}
+                  updateCurrentDocumentSidebarVisible={
+                    updateCurrentDocumentSidebarVisible
+                  }
+                  updateCurrentSelectedNodeForDocDisplay={
+                    updateCurrentSelectedNodeForDocDisplay
+                  }
+                />
+              )}
+            </ResponseFeedback>
           </div>
         </TooltipGroup>
       </div>

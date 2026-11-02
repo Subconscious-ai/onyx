@@ -13290,6 +13290,17 @@
       }
     },
     "chatSearch": {
+      "pro": {
+        "all": "الكل",
+        "actions": "الإجراءات",
+        "chats": "المحادثات",
+        "projects": "المشاريع",
+        "searchIn": "البحث في",
+        "close": "إغلاق البحث",
+        "loading": "جارٍ التحميل…",
+        "searching": "جارٍ البحث…",
+        "loadMore": "تحميل المزيد من المحادثات"
+      },
       "createNamedProject": {
         "label": "إنشاء مشروع جديد \"<name>{projectName}</name>\""
       },
@@ -14021,5 +14032,13 @@
     "sources": "{count, plural, one {# مصدر} other {# مصادر}}",
     "preview": "معاينة المصدر: {title}",
     "openSource": "فتح المصدر"
+  },
+  "customerPro": {
+    "history": {
+      "today": "اليوم",
+      "yesterday": "أمس",
+      "week": "الأيام السبعة السابقة",
+      "earlier": "سابقًا"
+    }
   }
 }
