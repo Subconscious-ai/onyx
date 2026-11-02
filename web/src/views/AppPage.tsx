@@ -125,6 +125,7 @@ function Fade({ show, children, className }: FadeProps) {
 
 export interface ChatPageProps {
   firstMessage?: string;
+  twentyWorkspace?: { prepareSubmission: () => Promise<string> };
   causlWorkspace?: {
     draft?: import("@/lib/causl/types").CauslDraft;
     onDraftConsumed?: (id: string) => void;
@@ -136,6 +137,7 @@ export interface ChatPageProps {
 
 export default function AppPage({
   firstMessage,
+  twentyWorkspace,
   causlWorkspace,
 }: ChatPageProps) {
   // Performance tracking
@@ -155,6 +157,7 @@ export default function AppPage({
   //   }
   // });
 
+  const embeddedWorkspace = Boolean(causlWorkspace || twentyWorkspace);
   const t = useTranslations("chat.app");
   const workspaceLabels = useTranslations("causlWorkspace");
   const router = useRouter();
@@ -464,12 +467,14 @@ export default function AppPage({
   const [workspacePreparing, setWorkspacePreparing] = useState(false);
   const workspacePreparingRef = useRef(false);
   const interviewLibrary = useInterviewLibrary(
-    !causlWorkspace && isExecutiveAgent(activeAgent) ? activeAgent : undefined,
+    !embeddedWorkspace && isExecutiveAgent(activeAgent)
+      ? activeAgent
+      : undefined,
     currentChatSessionId
   );
   const onSubmit = useCallback(
     async (params: OnSubmitProps) => {
-      if (causlWorkspace) {
+      if (causlWorkspace || twentyWorkspace) {
         if (workspacePreparingRef.current) {
           params.onInputRejected?.();
           return;
@@ -477,8 +482,12 @@ export default function AppPage({
         workspacePreparingRef.current = true;
         setWorkspacePreparing(true);
         let causlSelection;
+        let twentyContextId;
         try {
-          causlSelection = await causlWorkspace.prepareSubmission();
+          if (twentyWorkspace)
+            twentyContextId = await twentyWorkspace.prepareSubmission();
+          else if (causlWorkspace)
+            causlSelection = await causlWorkspace.prepareSubmission();
         } catch (error) {
           params.onInputRejected?.();
           toast.error(
@@ -493,7 +502,11 @@ export default function AppPage({
           workspacePreparingRef.current = false;
           setWorkspacePreparing(false);
         }
-        return submitNative({ ...params, causlSelection }).catch(() => {
+        return submitNative({
+          ...params,
+          causlSelection,
+          twentyContextId,
+        }).catch(() => {
           params.onInputRejected?.();
           toast.error(workspaceLabels("contextChanged"));
         });
@@ -525,6 +538,7 @@ export default function AppPage({
       modelContext,
       submitNative,
       causlWorkspace,
+      twentyWorkspace,
       workspaceLabels,
       interviewLibrary.prepare,
     ]
@@ -619,7 +633,7 @@ export default function AppPage({
     t,
   ]);
 
-  if (resolvedUser === null && !causlWorkspace) {
+  if (resolvedUser === null && !embeddedWorkspace) {
     redirect("/auth/login");
   }
 
@@ -700,7 +714,8 @@ export default function AppPage({
       // If we're in an existing chat session, always use chat mode
       // (appMode only applies to new sessions)
       if (currentChatSessionId) {
-        if (!causlWorkspace && !isExecutiveAgent(activeAgent)) resetInputBar();
+        if (!embeddedWorkspace && !isExecutiveAgent(activeAgent))
+          resetInputBar();
         onSubmit({
           ...callbacks,
           message,
@@ -792,7 +807,7 @@ export default function AppPage({
   // Handle error case where no agents are available.
   // Only show this after agents have loaded to prevent flash during initial load.
   if (!activeAgent && !isLoadingAgents) {
-    return <NoAgentModal embeddedWorkspace={Boolean(causlWorkspace)} />;
+    return <NoAgentModal embeddedWorkspace={embeddedWorkspace} />;
   }
 
   const hasAgentStarterMessages =
@@ -889,7 +904,7 @@ export default function AppPage({
       <ExecutiveWorkspace
         email={user?.email}
         onModelContext={receiveModelContext}
-        active={!causlWorkspace && isExecutiveAgent(activeAgent)}
+        active={!embeddedWorkspace && isExecutiveAgent(activeAgent)}
         messages={messageHistory}
         chatId={currentChatSessionId}
         busy={currentChatState !== "input"}
@@ -992,15 +1007,15 @@ export default function AppPage({
                             }
                           />
                           <Button
-                            href={causlWorkspace ? undefined : "/app"}
+                            href={embeddedWorkspace ? undefined : "/app"}
                             onClick={
-                              causlWorkspace
+                              embeddedWorkspace
                                 ? () => window.location.reload()
                                 : undefined
                             }
                             prominence="secondary"
                           >
-                            {causlWorkspace
+                            {embeddedWorkspace
                               ? workspaceLabels("reopen")
                               : t("newChatButton.label")}
                           </Button>
@@ -1154,9 +1169,9 @@ export default function AppPage({
                         />
                         <AppInputBar
                           deferInputClear={
-                            !causlWorkspace && isExecutiveAgent(activeAgent)
+                            !embeddedWorkspace && isExecutiveAgent(activeAgent)
                           }
-                          embeddedWorkspace={Boolean(causlWorkspace)}
+                          embeddedWorkspace={embeddedWorkspace}
                           workspaceDraft={causlWorkspace?.draft}
                           onWorkspaceDraftConsumed={
                             causlWorkspace?.onDraftConsumed

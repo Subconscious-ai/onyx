@@ -175,6 +175,7 @@ export interface SendMessageParams {
   origin?: MessageOrigin;
   // Additional context injected into the LLM call but not stored/shown in chat.
   // Used e.g. by Chrome extension "Read this tab" feature.
+  twentyContextId?: string;
   additionalContext?: string;
   causlSelection?: import("@/lib/causl/types").CauslSelection;
 }
@@ -195,6 +196,7 @@ export async function* sendMessage({
   temperature,
   llmOverrides,
   origin,
+  twentyContextId,
   additionalContext,
   causlSelection,
 }: SendMessageParams): AsyncGenerator<PacketType, void, unknown> {
@@ -221,6 +223,7 @@ export async function* sendMessage({
     llm_overrides: llmOverrides ?? null,
     // Default to "unknown" for consistency with backend; callers should set explicitly
     origin: origin ?? "unknown",
+    twenty_context_id: twentyContextId,
     additional_context: additionalContext ?? null,
     causl_selection: causlSelection,
   };
@@ -564,6 +567,13 @@ export function buildChatUrl(
   }
 
   const finalSearchParamsString = finalSearchParams.join("&");
+
+  if (
+    existingSearchParams?.get("hostAuth") === "1" &&
+    existingSearchParams.get("pageKind") === "twenty"
+  ) {
+    return `/causl?${finalSearchParamsString}`;
+  }
 
   if (finalSearchParamsString) {
     return `/${search ? "search" : "app"}?${finalSearchParamsString}`;

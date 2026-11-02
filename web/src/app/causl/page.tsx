@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { requireAuth } from "@/lib/auth/svcSS";
 import { causlEmbedOrigins } from "@/lib/causl/config";
+import TwentyChat from "@/lib/causl/TwentyChat";
 import WorkspaceChat from "@/lib/causl/WorkspaceChat";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +24,8 @@ export default async function CauslPage({
       : null;
   if (!parentOrigin || !nonce) return <p>{t("notConfigured")}</p>;
   const hosted = query.hostAuth === "1";
+  if (hosted && query.pageKind === "twenty")
+    return <TwentyChat parentOrigin={parentOrigin} nonce={nonce} />;
   const result = hosted ? null : await requireAuth();
   const libraryId = Number(process.env.CAUSL_KB_MCP_SERVER_ID);
   return (

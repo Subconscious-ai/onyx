@@ -157,9 +157,9 @@ export default function ChatSearchCommandMenu({
 
   // Navigation handlers
   const handleNewSession = useCallback(() => {
-    router.push("/app");
+    appPosition.openNewSession();
     setOpen(false);
-  }, [router]);
+  }, [appPosition]);
 
   const handleChatSelect = useCallback(
     (chatId: string) => {

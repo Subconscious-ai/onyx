@@ -154,6 +154,7 @@ class SendMessageRequest(BaseModel):
     # Additional context injected into the LLM call but NOT stored in the DB
     # (not shown in chat history). Used e.g. by the Chrome extension to pass
     # the current tab URL when "Read this tab" is enabled.
+    twenty_context_id: UUID | None = None
     additional_context: str | None = None
     # Page hints only. The native caller's Library grant supplies context on every turn.
     causl_selection: CauslSelection | None = None
