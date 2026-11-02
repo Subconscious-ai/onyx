@@ -18,7 +18,11 @@ import {
 import { useTranslations } from "next-intl";
 import type { RichStr } from "@opal/types";
 import { toPlainString } from "@opal/components/text/InlineMarkdown";
-import type { Scope, CommandItem, CommandRun } from "@/sections/customer/pro/types";
+import type {
+  Scope,
+  CommandItem,
+  CommandRun,
+} from "@/sections/customer/pro/types";
 import { cn } from "@opal/utils";
 
 type Source = "keyboard" | "pointer";
