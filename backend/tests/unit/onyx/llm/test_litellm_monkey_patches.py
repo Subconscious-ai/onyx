@@ -313,6 +313,21 @@ def test_bridge_check_delegates_without_prefix() -> None:
     assert model == "gpt-4o"
 
 
+def test_bridge_check_accepts_api_base() -> None:
+    # litellm 1.100.4 passes api_base to responses_api_bridge_check on every
+    # completion call; a patch without it fails every LLM request.
+    import litellm.main as litellm_main
+
+    apply_monkey_patches()
+    model_info, model = litellm_main.responses_api_bridge_check(
+        model="gpt-4o",
+        custom_llm_provider="openai",
+        api_base="https://example.invalid/v1",
+    )
+    assert model_info.get("mode") != "responses"
+    assert model == "gpt-4o"
+
+
 def test_openai_should_fake_stream_streams_natively_on_registry_miss() -> None:
     # Force the registry miss so the except branch is unambiguously covered.
     from litellm.llms.openai.responses.transformation import OpenAIResponsesAPIConfig
