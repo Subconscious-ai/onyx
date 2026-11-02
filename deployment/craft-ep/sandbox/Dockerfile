@@ -15,6 +15,16 @@ RUN python3 -m venv /opt/runway-venv && /opt/runway-venv/bin/pip install --no-ca
 # its own venv under /opt/ep-tools because several pin edsl to different git revisions.
 COPY ep-tools.txt install-ep-tools.sh /tmp/ep-tools/
 RUN sh /tmp/ep-tools/install-ep-tools.sh /tmp/ep-tools/ep-tools.txt && cat /opt/ep-tools/install.log
+# uxtest requires Python < 3.13 (the sandbox has 3.13): give it uv's Python 3.12, plus
+# Playwright's Chromium in a shared path the sandbox user can read.
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
+RUN python3 -m venv /opt/uv-venv && /opt/uv-venv/bin/pip install -q --no-cache-dir uv \
+ && UV_PYTHON_INSTALL_DIR=/opt/uv-python /opt/uv-venv/bin/uv python install 3.12 \
+ && UV_PYTHON_INSTALL_DIR=/opt/uv-python /opt/uv-venv/bin/uv venv -q --clear -p 3.12 /opt/ep-tools/uxtest \
+ && /opt/uv-venv/bin/uv pip install -q --python /opt/ep-tools/uxtest/bin/python "git+https://github.com/expectedparrot/uxtest.git@fc7d086365024585be579dc0c2bd258e9c81bda2" \
+ && /opt/ep-tools/uxtest/bin/playwright install --with-deps chromium \
+ && ln -sf /opt/ep-tools/uxtest/bin/uxtest /usr/local/bin/uxtest \
+ && chmod -R a+rX /opt/uv-python /opt/ep-tools/uxtest /opt/ms-playwright
 # Global OpenCode plugin: names each new chart with its inline Markdown and flags
 # banned share wording, the same way Onyx's turn-budget plugin steers the agent.
 COPY --chown=sandbox:sandbox ep-charts.ts /home/sandbox/.config/opencode/plugin/ep-charts.ts
