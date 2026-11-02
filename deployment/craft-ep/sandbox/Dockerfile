@@ -11,6 +11,10 @@ RUN sed -i '2i mkdir -p /tmp/ep-skills \&\& cp -r /opt/ep-skills/plugins/edsl-re
 # Expected Parrot's runway (MIT): renders the respondent view of an EDSL human survey
 # locally. Own venv because it pins edsl to a git branch.
 RUN python3 -m venv /opt/runway-venv && /opt/runway-venv/bin/pip install --no-cache-dir "git+https://github.com/expectedparrot/runway.git@75f6810ac889aac4d37c0750c37340e40a8d2e4f" && chmod -R a+rX /opt/runway-venv && ln -s /opt/runway-venv/bin/runway /usr/local/bin/runway
+# Expected Parrot's application CLIs (expectedparrot/<repo>, pinned in ep-tools.txt), each in
+# its own venv under /opt/ep-tools because several pin edsl to different git revisions.
+COPY ep-tools.txt install-ep-tools.sh /tmp/ep-tools/
+RUN sh /tmp/ep-tools/install-ep-tools.sh /tmp/ep-tools/ep-tools.txt && cat /opt/ep-tools/install.log
 # Global OpenCode plugin: names each new chart with its inline Markdown and flags
 # banned share wording, the same way Onyx's turn-budget plugin steers the agent.
 COPY --chown=sandbox:sandbox ep-charts.ts /home/sandbox/.config/opencode/plugin/ep-charts.ts
