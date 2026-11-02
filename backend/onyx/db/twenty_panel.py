@@ -1,18 +1,21 @@
 """Personal record scopes reuse the native encrypted conversation association store."""
 
 import json
+from concurrent.futures import ThreadPoolExecutor
+from time import monotonic
 from uuid import UUID
 
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.engine import Connection
 from sqlalchemy.orm import Session
 
 from onyx.db.enums import ChatSessionSharedStatus
 from onyx.db.models import ChatSession, EncryptedKeyValueStore
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
+from onyx.server.query_and_chat.causl.models import TwentyContext
 from onyx.server.query_and_chat.causl.twenty import (
-    TwentyContext,
     authorize_twenty_context,
     require_twenty_session,
 )
@@ -101,14 +104,47 @@ def bind_twenty_context(
 def filter_twenty_chats(
     db: Session, user_id: UUID | None, chats: list[ChatSession]
 ) -> list[ChatSession]:
-    visible = []
-    for chat in chats:
+    bindings = {chat.id: read_twenty_binding(db, chat.id) for chat in chats}
+    if not any(bindings.values()):
+        return chats
+    candidates = [
+        (chat.id, bindings[chat.id])
+        for chat in chats
+        if bindings[chat.id] is not None
+        and user_id is not None
+        and chat.user_id == user_id
+        and chat.shared_status == ChatSessionSharedStatus.PRIVATE
+    ]
+    # Both callers are read-only history queries; release the connection before HTTP.
+    connection = db.get_bind()
+    db.close()
+    if isinstance(connection, Connection):
+        connection.close()
+    try:
+        session = require_twenty_session(user_id) if user_id is not None else None
+    except OnyxError:
+        session = None
+    if session is None:
+        return [chat for chat in chats if bindings[chat.id] is None]
+
+    deadline = monotonic() + 15
+
+    def authorized(candidate: tuple[UUID, TwentyContext | None]) -> UUID | None:
+        chat_id, binding = candidate
+        remaining = deadline - monotonic()
+        if binding is None or remaining <= 0:
+            return None
         try:
-            authorize_twenty_chat(db, user_id, chat)
+            authorize_twenty_context(session, binding.references(), timeout=remaining)
         except OnyxError:
-            continue
-        visible.append(chat)
-    return visible
+            return None
+        return chat_id
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        visible_ids = set(executor.map(authorized, candidates))
+    return [
+        chat for chat in chats if bindings[chat.id] is None or chat.id in visible_ids
+    ]
 
 
 def ensure_twenty_chat_can_be_shared(db: Session, chat: ChatSession) -> None:

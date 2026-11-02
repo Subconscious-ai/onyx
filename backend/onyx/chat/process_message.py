@@ -665,10 +665,10 @@ def build_chat_turn(
         )
 
     from onyx.db.twenty_panel import bind_twenty_context, read_twenty_binding
+    from onyx.prompts.twenty import twenty_prompt
     from onyx.server.query_and_chat.causl.twenty import (
         authorize_twenty_context,
         require_twenty_session,
-        twenty_prompt,
     )
 
     twenty_context = None
@@ -1015,6 +1015,12 @@ def build_chat_turn(
                 available_files.user_file_ids.append(uf.id)
 
     all_tools = get_tools(db_session)
+    if twenty_context is not None:
+        from onyx.server.query_and_chat.causl.twenty import twenty_read_only_tool_ids
+
+        new_msg_req.allowed_tool_ids = twenty_read_only_tool_ids(
+            all_tools, new_msg_req.allowed_tool_ids, new_msg_req.forced_tool_id
+        )
     tool_id_to_name_map = {tool.id: tool.name for tool in all_tools}
     models_tool_server_names = {
         tool.id: tool.mcp_server.name
@@ -1606,6 +1612,7 @@ def _run_models(
                 ),
                 allowed_tool_ids=setup.new_msg_req.allowed_tool_ids,
                 search_usage_forcing_setting=setup.search_params.search_usage,
+                allow_memory_tool=setup.new_msg_req.twenty_context_id is None,
                 allow_user_context=not setup.new_msg_req.shared_context_only
                 and (
                     setup.causl_binding is None

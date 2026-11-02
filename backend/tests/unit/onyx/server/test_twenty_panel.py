@@ -110,7 +110,7 @@ def test_history_reauthorizes_source_references(
 def test_successive_contexts_keep_their_records_and_source_links(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from onyx.server.query_and_chat.causl.twenty import twenty_prompt
+    from onyx.prompts.twenty import twenty_prompt
 
     monkeypatch.setenv("TWENTY_PANEL_ORIGIN", "https://twenty.example.com")
     session = HostSession(
@@ -200,3 +200,107 @@ def test_sharing_rechecks_binding_after_an_inflight_context_bind(
 
     assert chat.shared_status == ChatSessionSharedStatus.PRIVATE
     db.commit.assert_not_called()
+
+
+def test_twenty_tools_keep_attachment_reading_and_block_export_paths() -> None:
+    from onyx.db.models import Tool
+    from onyx.server.query_and_chat.causl.twenty import twenty_read_only_tool_ids
+    from onyx.tools.constants import FILE_READER_TOOL_ID, SEARCH_TOOL_ID
+
+    tools = [
+        Tool(id=1, in_code_tool_id=FILE_READER_TOOL_ID),
+        Tool(id=2, in_code_tool_id=SEARCH_TOOL_ID),
+        Tool(id=3, in_code_tool_id="PythonTool"),
+        Tool(id=4, in_code_tool_id="ImageGenerationTool"),
+        Tool(id=5, in_code_tool_id=None),
+        Tool(id=6, in_code_tool_id="MemoryTool"),
+    ]
+    assert twenty_read_only_tool_ids(tools, None, None) == [1, 2]
+    assert twenty_read_only_tool_ids(tools, [1, 3], None) == [1]
+    for tool_id in (3, 4, 5, 6):
+        with pytest.raises(OnyxError):
+            twenty_read_only_tool_ids(tools, None, tool_id)
+
+
+def test_history_checks_run_concurrently_after_releasing_database(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from threading import Barrier
+    from unittest.mock import MagicMock
+
+    from sqlalchemy.engine import Connection
+    from sqlalchemy.orm import Session
+
+    from onyx.db import twenty_panel
+    from onyx.db.enums import ChatSessionSharedStatus
+    from onyx.db.models import ChatSession
+    from onyx.error_handling.error_codes import OnyxErrorCode
+    from onyx.server.query_and_chat.causl.models import TwentyContext
+
+    user_id = uuid4()
+    chats = [
+        ChatSession(
+            id=uuid4(), user_id=user_id, shared_status=ChatSessionSharedStatus.PRIVATE
+        )
+        for _ in range(4)
+    ]
+    ordinary = ChatSession(id=uuid4(), user_id=user_id)
+    context = TwentyContext(
+        workspaceId=uuid4(),
+        workspaceMemberId=uuid4(),
+        userWorkspaceId=uuid4(),
+        sources=[],
+        subject="alice",
+        issuer="https://auth.example/",
+        orgId="org_1",
+        recordOrigin="https://twenty.example",
+    )
+    db = MagicMock(spec=Session)
+    connection = MagicMock(spec=Connection)
+    db.get_bind.return_value = connection
+    monkeypatch.setattr(
+        twenty_panel,
+        "read_twenty_binding",
+        lambda _db, chat_id: None if chat_id == ordinary.id else context,
+    )
+    monkeypatch.setattr(
+        twenty_panel, "require_twenty_session", lambda _user_id: object()
+    )
+    barrier = Barrier(4)
+
+    def deny(*_args: object, **_kwargs: object) -> None:
+        db.close.assert_called_once()
+        connection.close.assert_called_once()
+        barrier.wait(timeout=2)
+        raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+
+    monkeypatch.setattr(twenty_panel, "authorize_twenty_context", deny)
+    assert twenty_panel.filter_twenty_chats(db, user_id, chats + [ordinary]) == [
+        ordinary
+    ]
+
+
+def test_context_exchange_rejects_a_slow_stream(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from onyx.server.query_and_chat.causl import twenty
+
+    monkeypatch.setenv("TWENTY_PANEL_ORIGIN", "https://twenty.example.com")
+    times = iter((0, 0, 16))
+    monkeypatch.setattr(twenty, "monotonic", lambda: next(times))
+    session = HostSession(
+        identity=SessionIdentity(
+            native_user_id=uuid4(), issuer="https://auth.example.com/", subject="alice"
+        ),
+        organization_id="org_1",
+        access_token="memory-only",
+    )
+    with httpx.Client(
+        transport=httpx.MockTransport(
+            lambda _request: httpx.Response(200, content=b"{}")
+        )
+    ) as client:
+        with pytest.raises(OnyxError, match="Twenty record access is unavailable"):
+            authorize_twenty_context(
+                session, {"contextId": str(uuid4())}, client=client
+            )
