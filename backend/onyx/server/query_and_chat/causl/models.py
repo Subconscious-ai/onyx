@@ -128,3 +128,36 @@ class CauslWorkspaceResponse(BaseModel):
     scope_key: str = Field(alias="scopeKey")
     context_digest: str = Field(alias="contextDigest")
     actor: CauslActor | None = None
+
+
+class TwentySource(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    objectNameSingular: str = Field(min_length=1, max_length=100)
+    fieldNames: list[str] = Field(min_length=1, max_length=200)
+    recordIds: list[UUID] = Field(max_length=25)
+    records: list[dict[str, Any]] = Field(default_factory=list, max_length=25)
+    recordLimit: int = Field(ge=25, le=25)
+    view: dict[str, Any] | None = None
+
+
+class TwentyContext(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    workspaceId: UUID
+    workspaceMemberId: UUID
+    userWorkspaceId: UUID
+    sources: list[TwentySource] = Field(max_length=100)
+    subject: str
+    issuer: str
+    orgId: str
+    recordOrigin: str
+
+    def references(self) -> dict[str, Any]:
+        return {
+            "workspaceId": str(self.workspaceId),
+            "workspaceMemberId": str(self.workspaceMemberId),
+            "userWorkspaceId": str(self.userWorkspaceId),
+            "sources": [
+                {**source.model_dump(mode="json", exclude_none=True), "records": []}
+                for source in self.sources
+            ],
+        }

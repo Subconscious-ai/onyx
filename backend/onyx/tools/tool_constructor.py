@@ -160,6 +160,7 @@ def construct_tools(
     allowed_tool_ids: list[int] | None = None,
     search_usage_forcing_setting: SearchToolUsage = SearchToolUsage.AUTO,
     allow_user_context: bool = True,
+    allow_memory_tool: bool = True,
 ) -> dict[int, list[Tool]]:
     """Constructs tools based on persona configuration and available APIs.
 
@@ -182,6 +183,7 @@ def construct_tools(
             allowed_tool_ids=allowed_tool_ids,
             search_usage_forcing_setting=search_usage_forcing_setting,
             allow_user_context=allow_user_context,
+            allow_memory_tool=allow_memory_tool,
         )
 
 
@@ -197,6 +199,7 @@ def _construct_tools_impl(
     allowed_tool_ids: list[int] | None = None,
     search_usage_forcing_setting: SearchToolUsage = SearchToolUsage.AUTO,
     allow_user_context: bool = True,
+    allow_memory_tool: bool = True,
 ) -> dict[int, list[Tool]]:
     tool_dict: dict[int, list[Tool]] = {}
 
@@ -595,6 +598,7 @@ def _construct_tools_impl(
     # bypassing persona tool associations and allowed_tool_ids filtering
     if (
         allow_user_context
+        and allow_memory_tool
         and user.enable_memory_tool
         and not (custom_tool_config and custom_tool_config.causl_binding)
     ):

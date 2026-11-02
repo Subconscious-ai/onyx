@@ -104,6 +104,7 @@ export interface OnSubmitProps {
   modelOverride?: LlmDescriptor;
   regenerationRequest?: RegenerationRequest | null;
   // Additional context injected into the LLM call but not stored/shown in chat.
+  twentyContextId?: string;
   additionalContext?: string;
   causlSelection?: CauslSelection;
   onInputAccepted?: () => void;
@@ -393,6 +394,7 @@ export default function useChatController({
       isSeededChat,
       modelOverride,
       regenerationRequest,
+      twentyContextId,
       additionalContext,
       causlSelection,
       onInputAccepted,
@@ -1116,6 +1118,7 @@ export default function useChatController({
               : undefined,
           forcedToolId: effectiveForcedToolId,
           origin: messageOrigin,
+          twentyContextId,
           additionalContext,
           causlSelection,
           llmOverrides: isMultiModel

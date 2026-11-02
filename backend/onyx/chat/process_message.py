@@ -664,6 +664,32 @@ def build_chat_turn(
             eager_load_persona=True,
         )
 
+    from onyx.db.twenty_panel import bind_twenty_context, read_twenty_binding
+    from onyx.prompts.twenty import twenty_prompt
+    from onyx.server.query_and_chat.causl.twenty import (
+        authorize_twenty_context,
+        require_twenty_session,
+    )
+
+    twenty_context = None
+    if new_msg_req.twenty_context_id is not None:
+        if (
+            user is None
+            or new_msg_req.shared_context_only
+            or new_msg_req.causl_selection is not None
+        ):
+            raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+        twenty_context = authorize_twenty_context(
+            require_twenty_session(user.id),
+            {"contextId": str(new_msg_req.twenty_context_id)},
+        )
+        bind_twenty_context(db_session, chat_session, user.id, twenty_context)
+        additional_context = twenty_prompt(twenty_context)
+    elif read_twenty_binding(db_session, chat_session.id) is not None:
+        raise OnyxError(
+            OnyxErrorCode.UNAUTHORIZED, "Refresh the current record context in Twenty."
+        )
+
     persona = chat_session.persona
     message_text = new_msg_req.message
     saved_fact_request = (
@@ -682,7 +708,7 @@ def build_chat_turn(
     )
     causl_binding, workspace_context = (
         (None, None)
-        if new_msg_req.shared_context_only
+        if new_msg_req.shared_context_only or twenty_context is not None
         else workspace_turn(
             db_session,
             user,
@@ -691,8 +717,10 @@ def build_chat_turn(
             saved_fact_request=saved_fact_request,
         )
     )
-    interview_mode = not new_msg_req.shared_context_only and (
-        causl_binding is None or causl_binding.mode == "interview"
+    interview_mode = (
+        twenty_context is None
+        and not new_msg_req.shared_context_only
+        and (causl_binding is None or causl_binding.mode == "interview")
     )
     saved_fact_request = (
         saved_fact_request and causl_binding is not None and interview_mode
@@ -987,6 +1015,12 @@ def build_chat_turn(
                 available_files.user_file_ids.append(uf.id)
 
     all_tools = get_tools(db_session)
+    if twenty_context is not None:
+        from onyx.server.query_and_chat.causl.twenty import twenty_read_only_tool_ids
+
+        new_msg_req.allowed_tool_ids = twenty_read_only_tool_ids(
+            all_tools, new_msg_req.allowed_tool_ids, new_msg_req.forced_tool_id
+        )
     tool_id_to_name_map = {tool.id: tool.name for tool in all_tools}
     models_tool_server_names = {
         tool.id: tool.mcp_server.name
@@ -1578,6 +1612,7 @@ def _run_models(
                 ),
                 allowed_tool_ids=setup.new_msg_req.allowed_tool_ids,
                 search_usage_forcing_setting=setup.search_params.search_usage,
+                allow_memory_tool=setup.new_msg_req.twenty_context_id is None,
                 allow_user_context=not setup.new_msg_req.shared_context_only
                 and (
                     setup.causl_binding is None

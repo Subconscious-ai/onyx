@@ -1,4 +1,5 @@
 from functools import partial
+from typing import Any
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
@@ -457,6 +458,12 @@ def test_hosted_claude_rejects_paid_keys_and_gateway_routes(
     "override", ["model_kwargs", "policy_model_kwargs", "custom_config"]
 )
 def test_hosted_claude_rejects_credential_and_route_overrides(override: str) -> None:
+    overrides: dict[str, Any] = {
+        override: {
+            "api_key": "sk-ant-api-test-paid",
+            "api_base": "https://gateway.example",
+        }
+    }
     identity = SessionIdentity(
         native_user_id=uuid4(), issuer="https://auth.example/", subject="staff"
     )
@@ -471,11 +478,6 @@ def test_hosted_claude_rejects_credential_and_route_overrides(override: str) -> 
                 api_key="sk-ant-oat-test-subscription",
                 max_input_tokens=4096,
                 deployment_name=None,
-                **{
-                    override: {
-                        "api_key": "sk-ant-api-test-paid",
-                        "api_base": "https://gateway.example",
-                    }
-                },
+                **overrides,
             )
         client.assert_not_called()
