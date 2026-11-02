@@ -305,14 +305,14 @@ export default function ActionSearchBar({
   }, [scope, onScopeChange]);
   useLayoutEffect(() => {
     const list = listRef.current;
-    const row = document.getElementById(optionId(highlighted));
+    const row = document.getElementById(`${uid}-option-${highlighted}`);
     if (!list || !row) return;
     const top = row.offsetTop;
     const bottom = top + row.offsetHeight;
     if (top < list.scrollTop) list.scrollTop = top;
     else if (bottom > list.scrollTop + list.clientHeight)
       list.scrollTop = bottom - list.clientHeight;
-  });
+  }, [highlighted, scope, text, uid]);
   const pickScope = (next: Scope, source: Source) => {
     setAnimateScope(source === "pointer" && !reduce);
     setScope(next);
