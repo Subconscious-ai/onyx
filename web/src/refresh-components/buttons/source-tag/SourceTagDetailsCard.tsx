@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
+import KnowledgeSourceRow from "@/sections/customer/pro/KnowledgeSourceRow";
 import Text from "@/refresh-components/texts/Text";
 import { Button, Text as OpalText } from "@opal/components";
 import {
@@ -116,42 +117,39 @@ const SourceTagDetailsCardInner = ({
 
       <div className="p-1 flex flex-col gap-1">
         {/* Header with icon and title */}
-        <div className="flex items-start gap-1 p-0.5 min-h-7 w-full text-start hover:bg-background-tint-01 rounded-08 transition-colors">
-          <div className="flex items-center justify-center p-0.5 shrink-0 w-5 h-5">
-            {isQuestion ? (
-              <SvgQuestionMarkSmall size={16} className="text-text-03" />
-            ) : currentSource.icon ? (
-              <currentSource.icon size={16} />
-            ) : isWebSource && currentSource.sourceUrl ? (
-              <WebResultIcon url={currentSource.sourceUrl} size={16} />
-            ) : (
-              <SourceIcon
-                sourceType={
-                  currentSource.sourceType === "web"
-                    ? ValidSources.Web
-                    : currentSource.sourceType
-                }
-                iconSize={16}
-              />
-            )}
-          </div>
-          <div className="flex-1 min-w-0 px-0.5">
-            <Text
-              mainUiAction
-              text04
-              className="truncate w-full block leading-5"
-            >
-              {currentSource.title}
-            </Text>
-            {currentSource.sourceUrl && (
-              <div className="truncate">
-                <OpalText font="secondary-body" color="text-02">
-                  {currentSource.sourceUrl}
-                </OpalText>
-              </div>
-            )}
-          </div>
-        </div>
+        <KnowledgeSourceRow
+          icon={
+            <>
+              {isQuestion ? (
+                <SvgQuestionMarkSmall size={16} className="text-text-03" />
+              ) : currentSource.icon ? (
+                <currentSource.icon size={16} />
+              ) : isWebSource && currentSource.sourceUrl ? (
+                <WebResultIcon url={currentSource.sourceUrl} size={16} />
+              ) : (
+                <SourceIcon
+                  sourceType={
+                    currentSource.sourceType === "web"
+                      ? ValidSources.Web
+                      : currentSource.sourceType
+                  }
+                  iconSize={16}
+                />
+              )}
+            </>
+          }
+        >
+          <Text mainUiAction text04 className="truncate w-full block leading-5">
+            {currentSource.title}
+          </Text>
+          {currentSource.sourceUrl && (
+            <div className="truncate">
+              <OpalText font="secondary-body" color="text-02">
+                {currentSource.sourceUrl}
+              </OpalText>
+            </div>
+          )}
+        </KnowledgeSourceRow>
 
         {/* Metadata row */}
         {(currentSource.metadata?.author ||

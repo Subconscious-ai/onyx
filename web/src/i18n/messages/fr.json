@@ -13290,6 +13290,17 @@
       }
     },
     "chatSearch": {
+      "pro": {
+        "all": "Tout",
+        "actions": "Actions",
+        "chats": "Discussions",
+        "projects": "Projets",
+        "searchIn": "Rechercher dans",
+        "close": "Fermer la recherche",
+        "loading": "Chargement…",
+        "searching": "Recherche…",
+        "loadMore": "Charger plus de conversations"
+      },
       "createNamedProject": {
         "label": "Créer le nouveau projet \"<name>{projectName}</name>\""
       },
@@ -14021,5 +14032,13 @@
     "sources": "{count, plural, one {# source} other {# sources}}",
     "preview": "Aperçu de la source : {title}",
     "openSource": "Ouvrir la source"
+  },
+  "customerPro": {
+    "history": {
+      "today": "Aujourd’hui",
+      "yesterday": "Hier",
+      "week": "7 derniers jours",
+      "earlier": "Plus anciens"
+    }
   }
 }

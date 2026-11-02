@@ -13290,6 +13290,17 @@
       }
     },
     "chatSearch": {
+      "pro": {
+        "all": "すべて",
+        "actions": "操作",
+        "chats": "チャット",
+        "projects": "プロジェクト",
+        "searchIn": "検索対象",
+        "close": "検索を閉じる",
+        "loading": "読み込み中…",
+        "searching": "検索中…",
+        "loadMore": "会話をさらに読み込む"
+      },
       "createNamedProject": {
         "label": "新しいプロジェクト「<name>{projectName}</name>」を作成"
       },
@@ -14021,5 +14032,13 @@
     "sources": "{count, plural, one {# 件のソース} other {# 件のソース}}",
     "preview": "ソースのプレビュー: {title}",
     "openSource": "ソースを開く"
+  },
+  "customerPro": {
+    "history": {
+      "today": "今日",
+      "yesterday": "昨日",
+      "week": "過去7日間",
+      "earlier": "それ以前"
+    }
   }
 }

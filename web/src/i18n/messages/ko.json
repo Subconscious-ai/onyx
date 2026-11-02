@@ -13290,6 +13290,17 @@
       }
     },
     "chatSearch": {
+      "pro": {
+        "all": "전체",
+        "actions": "작업",
+        "chats": "채팅",
+        "projects": "프로젝트",
+        "searchIn": "검색 범위",
+        "close": "검색 닫기",
+        "loading": "불러오는 중…",
+        "searching": "검색 중…",
+        "loadMore": "대화 더 불러오기"
+      },
       "createNamedProject": {
         "label": "새 프로젝트 \"<name>{projectName}</name>\" 생성"
       },
@@ -14021,5 +14032,13 @@
     "sources": "{count, plural, one {소스 #개} other {소스 #개}}",
     "preview": "소스 미리보기: {title}",
     "openSource": "소스 열기"
+  },
+  "customerPro": {
+    "history": {
+      "today": "오늘",
+      "yesterday": "어제",
+      "week": "지난 7일",
+      "earlier": "이전"
+    }
   }
 }

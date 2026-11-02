@@ -73,12 +73,13 @@ html[data-customer-design="focus"]
   margin-inline: 2px;
   padding: 2px 8px 2px 2px;
   border-radius: 999px !important;
-  color: var(--text-04);
-  background: var(--background-neutral-02);
+  color: var(--color);
+  border: 1px solid var(--hairline);
+  background: var(--bg-active);
   cursor: pointer;
   transition:
-    color 150ms,
-    background-color 150ms;
+    color var(--dur-fast) var(--ease-causal),
+    background-color var(--dur-fast) var(--ease-causal);
 }
 [data-kokonut="ai-inline-citation"] span {
   overflow: hidden;
