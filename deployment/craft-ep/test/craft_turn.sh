@@ -16,26 +16,46 @@ if [ "$SID" = new ]; then
   done
   [ -n "$SID" ] || { echo "could not create a session"; exit 1; }
   for i in $(seq 1 60); do curl -s -b "$J" $B/build/sessions/$SID/sandbox-status | grep -q running && break; sleep 3; done
+  ATTACHMENTS="[]"
+  if [ -n "${ATTACH:-}" ]; then
+    ATTACHMENTS=$(for f in $(echo "$ATTACH" | tr "," " "); do curl -s -b "$J" -F "file=@$f" $B/build/sessions/$SID/upload; echo; done | python3 -c "
+import sys,json,mimetypes
+out=[]
+for line in sys.stdin:
+    line=line.strip()
+    if not line: continue
+    d=json.loads(line); out.append({'name':d['filename'],'path':d['path'],'mime_type':mimetypes.guess_type(d['filename'])[0] or 'application/octet-stream'})
+print(json.dumps(out))")
+    echo "attachments $ATTACHMENTS"
+  fi
+  export ATTACHMENTS
 fi
 echo "session $SID"
-before=$(curl -s -b "$J" $B/build/sessions/$SID/messages | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('messages',d)))")
+before=""
+for attempt in 1 2 3 4 5; do
+  before=$(curl -s -b "$J" $B/build/sessions/$SID/messages | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d['messages']))" 2>/dev/null || true)
+  [ -n "$before" ] && break
+  sleep 5
+done
+[ -n "$before" ] || { echo "could not read messages"; exit 1; }
 python3 -c "
 import json,sys,os
 body={'content': sys.argv[1]}
+if os.environ.get('ATTACHMENTS') and os.environ['ATTACHMENTS']!='[]': body['attachments']=json.loads(os.environ['ATTACHMENTS'])
 if os.environ.get('CRAFT_MODEL'): body.update(provider='bedrock', provider_id=1, model=os.environ['CRAFT_MODEL'])
 print(json.dumps(body))" "$MSG" \
   | curl -s -b "$J" -H "Content-Type: application/json" -d @- $B/build/sessions/$SID/send-message > /dev/null
 for i in $(seq 1 300); do
   done_flag=$(curl -s -b "$J" $B/build/sessions/$SID/messages | python3 -c "
 import sys,json
-m=json.load(sys.stdin); m=m.get('messages',m)[$before:]
+m=(json.load(sys.stdin) or {}).get('messages') or []; m=m[$before:]
 print(any((x.get('message_metadata') or {}).get('type') in ('context_usage','error') for x in m))")
   [ "$done_flag" = True ] && break
   sleep 5
 done
 curl -s -b "$J" $B/build/sessions/$SID/messages | python3 -c "
 import sys,json
-m=json.load(sys.stdin); m=m.get('messages',m)[$before:]
+m=(json.load(sys.stdin) or {}).get('messages') or []; m=m[$before:]
 for x in m:
     md=x.get('message_metadata') or {}
     t=md.get('type')

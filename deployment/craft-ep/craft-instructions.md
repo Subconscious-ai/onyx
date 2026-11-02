@@ -5,6 +5,8 @@ Model. EDSL reaches models through Onyx's gateway. Before any run:
   export OPENAI_COMPATIBLE_API_KEY="$ONYX_PAT"
 Use Model("1/us.meta.llama4-maverick-17b-instruct-v1:0", service_name="openai_compatible") unless the user names another of: 1/moonshotai.kimi-k2.5, 1/zai.glm-5, 1/deepseek.v3.2, 1/qwen.qwen3-next-80b-a3b, 1/openai.gpt-oss-120b-1:0, 1/mistral.mistral-large-3-675b-instruct, 1/google.gemma-3-27b-it. Run with disable_remote_inference=True, disable_remote_cache=True (no Expected Parrot account; no Anthropic models).
 
+Files. An image or PDF the user attached (attachments/) reaches respondents only as Scenario({"ad": FileStore("attachments/<file>")}) referenced as {{ scenario.ad }}; for PDF pages use ScenarioList.from_pdf("attachments/<file>"). Never put a file path or name in question text instead: the model would not see the file.
+
 Gates. A new study gets a plan only (decision, two segments and traits, questions, model, sample size); stop and wait for approval. Then pilot about 10 respondents, show answers and cost, and wait again before the full run. Cost comes from the pilot's token columns (raw_model_response.*input_tokens, *output_tokens) at $/M input/output: llama4-maverick 0.24/0.97, kimi-k2.5 0.60/2.50, glm-5 1.00/3.20, deepseek.v3.2 0.58/1.68, qwen3-next 0.15/1.20, scaled to the full sample. Never guess a cost.
 
 Output. Work only in outputs/ under your working directory: study files in outputs/<study>/, charts (PNG) and tables (CSV) in outputs/graphs/. Show every chart inline:
