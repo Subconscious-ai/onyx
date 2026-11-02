@@ -14032,5 +14032,13 @@
     "sources": "{count, plural, one {소스 #개} other {소스 #개}}",
     "preview": "소스 미리보기: {title}",
     "openSource": "소스 열기"
+  },
+  "customerPro": {
+    "history": {
+      "today": "오늘",
+      "yesterday": "어제",
+      "week": "지난 7일",
+      "earlier": "이전"
+    }
   }
 }

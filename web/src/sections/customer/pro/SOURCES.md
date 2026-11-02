@@ -23,9 +23,42 @@ The inspected archive has 663 entries. The archive stays outside the repository.
 ## Retained native behavior
 
 The archive lacks Response Feedback, Chat History, Reasoning, Knowledge Sources, and Streaming Text.
-Current vendor registry requests returned HTTP 403 during implementation.
-The established `beca` credential route had no `KOKO_PRO_TOKEN` in the inspected configurations.
-These components remain pending source access. Native implementations remain active.
+Initial unauthenticated registry requests returned HTTP 403.
+On 2026-11-02, the established Doppler `beca/dev` route supplied `KOKO_PRO_TOKEN`.
+Authenticated registry requests returned HTTP 200 for all five components.
+The token and unmodified downloads remain outside Git.
+
+Registry: `https://kokonutui.pro/api/r/{name}`, authenticated with `X-API-Key`.
+Registry response SHA-256 values:
+
+| Component         | SHA-256                                                            |
+| ----------------- | ------------------------------------------------------------------ |
+| response-feedback | `0b4c1ffdbc4e4c0ca7174c42af1dc8b067706afb87ea7463629552f064704571` |
+| chat-history      | `a21c0c8c6ae0943bdfdd7777bb4f5bd345b34a4546f3dd46655f2b85e7facddf` |
+| reasoning         | `714057005c391100d6bc713a4a877cb1a233440d3a4444cc7fd22ad29bd534bf` |
+| knowledge-sources | `9c3c65fb51032f26a725f83737d937f92ab796a7534413ba00c15003db28ec97` |
+| streaming-text    | `338835279f1155970562501490e4d284cd0fcec7990c9f17a57ceac374109ae6` |
+
+`ResponseFeedback.tsx` retains the inline reason field, moving thumb, spring layout, and focus return.
+Native `useFeedbackController` owns persistence and rollback. Failed writes retain the editable reason.
+Native copy preserves HTML and TSV. Native model selection, retry, and voice remain available.
+Incognito responses still suppress persisted feedback.
+
+`ChatHistory.tsx` retains date groups and animated rows around native `ChatButton` instances.
+Native sessions, IDs, titles, pagination, drag operations, rename, and deletion safeguards remain authoritative.
+Simulated title generation and local demo sessions are removed.
+
+`Reasoning.tsx` retains the fading live window and completed disclosure around native reasoning Markdown.
+Native packets and completion timing remain authoritative. Historical timing is not fabricated.
+
+`KnowledgeSourceRow.tsx` retains the document tile, source row hierarchy, and entry transition in source previews.
+Native authorized source records, metadata, descriptions, and source navigation remain authoritative.
+Unsupported chunk counts, synthetic retrieval rankings, indexing simulation, and OCR controls are omitted.
+
+Streaming Text remains native after inspection. The supplied parser supports only bold, inline code, and paragraph breaks.
+The native renderer also supports tables, fenced code, citations, and packet-driven cancellation.
+Simulated word bursts, replay, and local pause would diverge from the actual stream.
+The optional word blur is omitted to preserve native Markdown and reduced-motion behavior.
 
 The supplied Feedback Dialog collects a recommendation score from 0 to 10.
 Native answer feedback uses positive and negative ratings with persisted comments and rollback.

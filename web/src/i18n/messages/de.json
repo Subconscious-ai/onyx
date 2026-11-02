@@ -14032,5 +14032,13 @@
     "sources": "{count, plural, one {# Quelle} other {# Quellen}}",
     "preview": "Quellenvorschau: {title}",
     "openSource": "Quelle öffnen"
+  },
+  "customerPro": {
+    "history": {
+      "today": "Heute",
+      "yesterday": "Gestern",
+      "week": "Letzte 7 Tage",
+      "earlier": "Älter"
+    }
   }
 }

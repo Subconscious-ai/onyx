@@ -14032,5 +14032,13 @@
     "sources": "{count, plural, one {# 个来源} other {# 个来源}}",
     "preview": "来源预览：{title}",
     "openSource": "打开来源"
+  },
+  "customerPro": {
+    "history": {
+      "today": "今天",
+      "yesterday": "昨天",
+      "week": "过去7天",
+      "earlier": "更早"
+    }
   }
 }

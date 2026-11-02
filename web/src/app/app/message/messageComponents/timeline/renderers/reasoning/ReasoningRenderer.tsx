@@ -22,6 +22,7 @@ import {
   mutedTextMarkdownComponents,
   collapsedMarkdownComponents,
 } from "@/app/app/message/messageComponents/timeline/renderers/sharedMarkdownComponents";
+import Reasoning from "@/sections/customer/pro/Reasoning";
 import { SvgCircle } from "@opal/icons";
 
 const THINKING_MIN_DURATION_MS = 500; // 0.5 second minimum for "Thinking" state
@@ -179,13 +180,15 @@ export const ReasoningRenderer: MessageRenderer<
 
   const reasoningContent = (
     <div className="ps-(--timeline-common-text-padding)">
-      <ExpandableTextDisplay
-        title={t("reasoning.fullText.title")}
-        content={content}
-        displayContent={displayContent}
-        renderContent={renderMarkdown}
-        isStreaming={!hasEnd}
-      />
+      <Reasoning thinking={!hasEnd} label={t("reasoning.fullText.title")}>
+        <ExpandableTextDisplay
+          title={t("reasoning.fullText.title")}
+          content={content}
+          displayContent={displayContent}
+          renderContent={renderMarkdown}
+          isStreaming={!hasEnd}
+        />
+      </Reasoning>
     </div>
   );
 

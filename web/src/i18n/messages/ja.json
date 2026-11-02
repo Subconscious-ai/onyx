@@ -14032,5 +14032,13 @@
     "sources": "{count, plural, one {# 件のソース} other {# 件のソース}}",
     "preview": "ソースのプレビュー: {title}",
     "openSource": "ソースを開く"
+  },
+  "customerPro": {
+    "history": {
+      "today": "今日",
+      "yesterday": "昨日",
+      "week": "過去7日間",
+      "earlier": "それ以前"
+    }
   }
 }
