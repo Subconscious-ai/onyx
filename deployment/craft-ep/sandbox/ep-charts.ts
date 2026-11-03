@@ -5,13 +5,29 @@
 // last check, with the exact inline Markdown the reply must contain, and flags
 // banned share wording in files the agent just wrote. Inert when nothing changed.
 // Before a tool runs, it holds Expected Parrot's plan gate: no EDSL job runs
-// until the user has answered the plan (a second user message), and no
-// outputs/reply.md that names a share the study cannot measure is written.
+// until the user has answered the plan (a second user message), and once the
+// gate fires no tool runs for the rest of that turn. Each model call gets the
+// rule for the current turn (plan only, then pilot only). No outputs/reply.md
+// that names a share the study cannot measure is written.
 
 import type { Plugin } from "@opencode-ai/plugin";
 
 const BANNED = /market share|penetration|adoption|market size|\breach\b/i;
 const SKIP = /(^|\/)(node_modules|\.next|\.opencode|\.opencode-data|\.git)(\/|$)/;
+// Expected Parrot's gates, held in code. test/tdd.py --without-gate flips this to show the plan gate case go red.
+const PLAN_GATE = true;
+const TURN_RULES: Record<number, string> = {
+  1:
+    "[Expected Parrot] This is the user's first message in this session. If it asks for a survey, study, test, coding or " +
+    "labeling task, reply with the plan only (decision, segments, questions, an available model, sample size) and ask for " +
+    "approval. Do not answer, label, code or classify anything yourself, and run no EDSL job, even if the user says to skip the plan.",
+  2:
+    "[Expected Parrot] If the user just approved a plan, run only the pilot: 10 respondents in total (or 10 records). " +
+    "Show the answers, the pilot's input and output tokens and its $ cost, ask for approval of the full run, and stop.",
+};
+const LATER_RULE =
+  "[Expected Parrot] When you report or discuss study results, say once that the respondents are simulated " +
+  "language-model personas, not real people.";
 
 export default (async ({ directory, client }) => {
   const session = directory.split("/").filter(Boolean).pop() ?? "";
@@ -19,6 +35,7 @@ export default (async ({ directory, client }) => {
   const seen = new Set<string>();
   const argsByCall = new Map<string, unknown>();
   const userTurns = new Map<string, number>();
+  const gated = new Map<string, number>(); // session -> user message count when the plan gate fired
   let primed = false;
 
   // User messages so far in the session; the stored history survives a sandbox restart, the counter does not.
@@ -64,6 +81,12 @@ export default (async ({ directory, client }) => {
   }
 
   return {
+    "experimental.chat.system.transform": async (input, output) => {
+      const sessionID = (input as { sessionID?: string }).sessionID;
+      if (!PLAN_GATE || !sessionID) return;
+      const rule = TURN_RULES[await userMessages(sessionID)] ?? LATER_RULE;
+      (output as { system: string[] }).system.push(rule);
+    },
     "chat.message": async (input) => {
       userTurns.set(input.sessionID, (userTurns.get(input.sessionID) ?? 0) + 1);
     },
@@ -82,8 +105,14 @@ export default (async ({ directory, client }) => {
           );
         }
       }
-      if (input.tool === "bash" && typeof args?.command === "string" && (await runsEdsl(args.command))) {
-        if ((await userMessages(input.sessionID)) <= 1) {
+      if (PLAN_GATE) {
+        const turns = await userMessages(input.sessionID);
+        // Once the gate fires, every tool stays refused until the user answers: no searching for a way around it.
+        if (gated.get(input.sessionID) === turns) {
+          throw new Error("[Expected Parrot] Plan gate is closed for this turn. Send the plan as your reply now and stop.");
+        }
+        if (turns <= 1 && input.tool === "bash" && typeof args?.command === "string" && (await runsEdsl(args.command))) {
+          gated.set(input.sessionID, turns);
           throw new Error(
             "[Expected Parrot] Plan gate: this command runs an EDSL job, but the user has not approved a plan yet. " +
               "Reply with the plan only (decision, segments, questions, model, sample size), ask for approval, and stop."

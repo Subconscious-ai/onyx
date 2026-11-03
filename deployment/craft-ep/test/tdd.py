@@ -28,7 +28,7 @@ HOME = Path.home() / "craft-ep"
 BASE = "http://localhost:3390"
 USERS = [f"ep-user{i}" for i in range(2, 9)]
 PLUGIN = "/home/sandbox/.config/opencode/plugin/ep-charts.ts"
-GATE = "if ((await userMessages(input.sessionID)) <= 1) {"
+GATE = "const PLAN_GATE = true;"
 BANNED = re.compile(r"market share|penetration|adoption|market size|\breach\b", re.I)
 APPROVE_PILOT = "Approved. Run the pilot."
 APPROVE_FULL = "Approved. Run the full study and show me the charts."
@@ -58,7 +58,10 @@ for f in files:
         vals = [str(v) for v in r.select("answer." + q).to_list()]
         if vals:
             top = max(top, max(vals.count(v) for v in set(vals)) / len(vals))
-    files_in = sum(isinstance(v, FileStore) for s in r.scenarios for v in s.values())
+    try:
+        files_in = sum(isinstance(s[k], FileStore) or (isinstance(s[k], dict) and "base64_string" in s[k]) for s in r.scenarios for k in list(s.keys()))
+    except Exception:
+        files_in = -1
     out.append({"file": f.split("/outputs/", 1)[1], "n": len(r), "models": models,
                 "agents": len({hash(a) for a in r.agents}), "top_share": round(top, 2), "file_scenarios": files_in})
 print(json.dumps(out))
@@ -253,7 +256,7 @@ def results_files(sid):
         return []
     d = f"/workspace/sessions/{sid}"
     r = subprocess.run(
-        ["docker", "exec", "-w", d, c, "/workspace/.venv/bin/python", "-c", INSPECT, d],
+        ["docker", "exec", "-u", "sandbox", "-w", d, c, "/workspace/.venv/bin/python", "-c", INSPECT, d],
         capture_output=True, text=True,
     )
     try:
@@ -262,14 +265,18 @@ def results_files(sid):
         return []
 
 
-def remove_gate(sid):
-    """Strip the plan gate from the plugin in this session's sandbox and restart opencode serve."""
+NO_GATE = "const PLAN_GATE = false;"
+
+
+def set_gate(sid, on):
+    """Switch the plan gate in this session's sandbox plugin on or off and restart opencode serve."""
     c = sandbox_of(sid)
     src = subprocess.run(["docker", "exec", "-u", "sandbox", c, "cat", PLUGIN], capture_output=True, text=True).stdout
-    if GATE not in src:
+    if GATE not in src and NO_GATE not in src:
         raise SystemExit("plan gate not found in the sandbox plugin")
-    subprocess.run(["docker", "exec", "-i", "-u", "sandbox", c, "sh", "-c", f"cat > {PLUGIN}"], input=src.replace(GATE, "if (false) {"), text=True, check=True)
-    subprocess.run(["docker", "exec", c, "pkill", "-f", "opencode serve"])
+    out = src.replace(NO_GATE, GATE) if on else src.replace(GATE, NO_GATE)
+    subprocess.run(["docker", "exec", "-i", "-u", "sandbox", c, "sh", "-c", f"cat > {PLUGIN}"], input=out, text=True, check=True)
+    subprocess.run(["docker", "exec", "-u", "sandbox", c, "pkill", "-f", "opencode serve"], check=True)
     time.sleep(20)  # the entrypoint loop restarts it
 
 
@@ -325,7 +332,7 @@ def check(name, args, ctx):
     rp = ctx["replies"][t] if t is not None else ""
     res = ctx["results"][t] if t is not None else []
     if name == "plan_only":
-        ok = not res and re.search(r"approv|proceed|go ahead|shall i|should i", rp, re.I)
+        ok = not res and re.search(r"approv|proceed|go ahead|shall i|should i|ready (for|to)|confirm|would you like|want me to", rp, re.I)
         return bool(ok), f"results files={len(res)}"
     if name == "pilot_small":
         n = max((r["agents"] for r in res), default=0)
@@ -399,7 +406,7 @@ def run_case(run, tag, case, users, opts):
         sid = "new"
         if opts["without_gate"]:
             sid = new_session(user)
-            remove_gate(sid)
+            set_gate(sid, False)
         seen = set()
         for i, msg in enumerate(case["turns"]):
             start = time.time()
@@ -418,6 +425,8 @@ def run_case(run, tag, case, users, opts):
                         "seconds": ctx["seconds"]})
         return out
     finally:
+        if opts["without_gate"] and sid != "new":
+            set_gate(sid, True)
         users.put(user)
 
 

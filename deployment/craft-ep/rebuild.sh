@@ -29,8 +29,8 @@ set_env() { if grep -q "^$1=" "$COMPOSE/.env"; then sed -i "s|^$1=.*|$1=$2|" "$C
 set_env ONYX_BACKEND_IMAGE "craft-ep/onyx-backend:$TAG"
 set_env ONYX_WEB_SERVER_IMAGE "craft-ep/onyx-web-server:$TAG"
 set_env SANDBOX_CONTAINER_IMAGE "$SANDBOX"
-# MiniMax M2.5 can think for over a minute before its first token; the 60 s default cuts it off.
-set_env LLM_SOCKET_READ_TIMEOUT 180
+# MiniMax M2.5 can go quiet for minutes while it writes a long tool call; the 60 s default cuts it off.
+set_env LLM_SOCKET_READ_TIMEOUT 600
 set_env OPENCODE_PROMPT_INACTIVITY_TIMEOUT_SECONDS 1800
 # docker-compose.craft.yml adds the sandbox egress proxy and the api_server settings that point at it.
 (cd "$COMPOSE" && docker compose -f docker-compose.yml -f docker-compose.craft.yml up -d)
