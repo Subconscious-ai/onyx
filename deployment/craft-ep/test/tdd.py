@@ -39,14 +39,19 @@ INSPECT = r"""
 import glob, json, sys
 from edsl import Results, FileStore
 out = []
-files = glob.glob(sys.argv[1] + "/outputs/**/*.json.gz", recursive=True)
-files += glob.glob(sys.argv[1] + "/outputs/**/*.json", recursive=True)
+# Anywhere in the session folder (some skills scaffold a dated study folder), saved by results.save()
+# or written as Results' own dict in plain JSON.
+files = glob.glob(sys.argv[1] + "/**/*.json.gz", recursive=True) + glob.glob(sys.argv[1] + "/**/*.json", recursive=True)
 for f in files:
+    r = None
     try:
         r = Results.load(f[:-8] if f.endswith(".json.gz") else f)
-        if not isinstance(r, Results):
-            continue
     except Exception:
+        try:
+            r = Results.from_dict(json.load(open(f)))
+        except Exception:
+            pass
+    if not isinstance(r, Results):
         continue
     try:
         models = sorted(set(r.select("model.model").to_list()))
@@ -54,7 +59,8 @@ for f in files:
         models = []
     # Smallest share the most common answer takes within a question: 1.0 means every question got one answer.
     top = 1.0
-    for q in r.survey.question_names:
+    # Free-text answers always differ, so they say nothing about whether respondents vary.
+    for q in [x.question_name for x in r.survey.questions if x.question_type != "free_text"]:
         vals = [str(v) for v in r.select("answer." + q).to_list()]
         if vals:
             top = min(top, max(vals.count(v) for v in set(vals)) / len(vals))
@@ -62,7 +68,7 @@ for f in files:
         files_in = sum(isinstance(s[k], FileStore) or (isinstance(s[k], dict) and "base64_string" in s[k]) for s in r.scenarios for k in list(s.keys()))
     except Exception:
         files_in = -1
-    out.append({"file": f.split("/outputs/", 1)[1], "n": len(r), "models": models,
+    out.append({"file": f[len(sys.argv[1]) + 1:], "n": len(r), "models": models,
                 "agents": len({hash(a) for a in r.agents}), "top_share": round(top, 2), "file_scenarios": files_in})
 print(json.dumps(out))
 """
