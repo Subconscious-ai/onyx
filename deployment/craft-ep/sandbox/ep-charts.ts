@@ -4,18 +4,44 @@
 // notice to its output. Here the notice names every PNG chart created since the
 // last check, with the exact inline Markdown the reply must contain, and flags
 // banned share wording in files the agent just wrote. Inert when nothing changed.
+// Before a tool runs, it holds Expected Parrot's plan gate: no EDSL job runs
+// until the user has answered the plan (a second user message).
 
 import type { Plugin } from "@opencode-ai/plugin";
 
 const BANNED = /market share|penetration|adoption|market size|\breach\b/i;
 const SKIP = /(^|\/)(node_modules|\.next|\.opencode|\.opencode-data|\.git)(\/|$)/;
 
-export default (async ({ directory }) => {
+export default (async ({ directory, client }) => {
   const session = directory.split("/").filter(Boolean).pop() ?? "";
   const glob = new Bun.Glob("**/*.png");
   const seen = new Set<string>();
   const argsByCall = new Map<string, unknown>();
+  const userTurns = new Map<string, number>();
   let primed = false;
+
+  // User messages so far in the session; the stored history survives a sandbox restart, the counter does not.
+  async function userMessages(sessionID: string): Promise<number> {
+    try {
+      const res = (await client.session.messages({ path: { id: sessionID } })) as { data?: { info?: { role?: string } }[] };
+      if (Array.isArray(res.data)) return res.data.filter((m) => m.info?.role === "user").length;
+    } catch {}
+    return userTurns.get(sessionID) ?? 2;
+  }
+
+  // True when a shell command starts an EDSL job: `.run(` inline, or in a Python script it executes.
+  async function runsEdsl(command: string): Promise<boolean> {
+    if (/\.run\(/.test(command)) return true;
+    const cd = command.match(/(?:^|&&|;)\s*cd\s+([^\s&;]+)/);
+    const base = cd ? (cd[1].startsWith("/") ? cd[1] : `${directory}/${cd[1]}`) : directory;
+    for (const m of command.matchAll(/python3?\s+(?:-u\s+)?([^\s&;|]+\.py)/g)) {
+      const path = m[1].startsWith("/") ? m[1] : `${base}/${m[1]}`;
+      try {
+        if (/\.run\(/.test(await Bun.file(path).text())) return true;
+      } catch {}
+    }
+    return false;
+  }
 
   async function pngs(): Promise<string[]> {
     const found: string[] = [];
@@ -36,9 +62,21 @@ export default (async ({ directory }) => {
   }
 
   return {
+    "chat.message": async (input) => {
+      userTurns.set(input.sessionID, (userTurns.get(input.sessionID) ?? 0) + 1);
+    },
     "tool.execute.before": async (input, output) => {
       await prime();
-      argsByCall.set(input.callID, (output as { args?: unknown }).args);
+      const args = (output as { args?: { command?: string } }).args;
+      argsByCall.set(input.callID, args);
+      if (input.tool === "bash" && typeof args?.command === "string" && (await runsEdsl(args.command))) {
+        if ((await userMessages(input.sessionID)) <= 1) {
+          throw new Error(
+            "[Expected Parrot] Plan gate: this command runs an EDSL job, but the user has not approved a plan yet. " +
+              "Reply with the plan only (decision, segments, questions, model, sample size), ask for approval, and stop."
+          );
+        }
+      }
     },
     "tool.execute.after": async (input, output) => {
       if (!output) return;
