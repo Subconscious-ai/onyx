@@ -30,9 +30,10 @@ export default (async ({ directory, client }) => {
     return userTurns.get(sessionID) ?? 2;
   }
 
-  // True when a shell command starts an EDSL job: `.run(` inline, or in a Python script it executes.
+  // True when a shell command starts an EDSL job: `.run(` inline or in a Python script it executes,
+  // or Expected Parrot's CLI (`ep run`, `ep run-manifest`).
   async function runsEdsl(command: string): Promise<boolean> {
-    if (/\.run\(/.test(command)) return true;
+    if (/\.run\(/.test(command) || /(^|[\s;&|(\/])ep\s+run(-manifest)?\b/.test(command)) return true;
     const cd = command.match(/(?:^|&&|;)\s*cd\s+([^\s&;]+)/);
     const base = cd ? (cd[1].startsWith("/") ? cd[1] : `${directory}/${cd[1]}`) : directory;
     for (const m of command.matchAll(/python3?\s+(?:-u\s+)?([^\s&;|]+\.py)/g)) {

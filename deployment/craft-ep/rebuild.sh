@@ -32,7 +32,10 @@ set_env SANDBOX_CONTAINER_IMAGE "$SANDBOX"
 # MiniMax M2.5 can think for over a minute before its first token; the 60 s default cuts it off.
 set_env LLM_SOCKET_READ_TIMEOUT 180
 set_env OPENCODE_PROMPT_INACTIVITY_TIMEOUT_SECONDS 1800
-(cd "$COMPOSE" && docker compose up -d)
+# docker-compose.craft.yml adds the sandbox egress proxy and the api_server settings that point at it.
+(cd "$COMPOSE" && docker compose -f docker-compose.yml -f docker-compose.craft.yml up -d)
+# nginx resolves api_server once at start; a re-created api_server leaves it returning 502.
+docker restart "$(cd "$COMPOSE" && docker compose ps -q nginx)" >/dev/null
 
 # Sandboxes on an older image are re-created by Craft on the user's next session.
 for c in $(docker ps -a --format '{{.Names}} {{.Image}}' | awk -v img="$SANDBOX" '$1 ~ /^sandbox-/ && $2 != img {print $1}'); do
@@ -45,7 +48,7 @@ JAR=$(mktemp)
 curl -sf -c "$JAR" -o /dev/null --data-urlencode "username=$CRAFT_ADMIN_EMAIL" --data-urlencode "password=$CRAFT_ADMIN_PASSWORD" "$B/auth/login"
 PROVIDER=$(curl -sf -b "$JAR" "$B/admin/llm/provider" | python3 -c "import sys,json; d=json.load(sys.stdin); d=d.get('providers',d) if isinstance(d,dict) else d; print(next((p['id'] for p in d if p['provider']=='bedrock'),''))")
 [ -n "$PROVIDER" ] || { echo "no Bedrock provider: run test/copy_bedrock.py once (README)"; exit 1; }
-curl -sf -b "$JAR" -H "Content-Type: application/json" -d "{\"provider_id\":$PROVIDER,\"model_name\":\"$AGENT_MODEL\"}" "$B/admin/llm/default-craft"
+curl -sf -o /dev/null -b "$JAR" -H "Content-Type: application/json" -d "{\"provider_id\":$PROVIDER,\"model_name\":\"$AGENT_MODEL\"}" "$B/admin/llm/default-craft"
 python3 -c "import json,sys; print(json.dumps({'craft_instructions': open(sys.argv[1]).read()}))" "$HERE/craft-instructions.md" \
   | curl -sf -b "$JAR" -X PATCH -H "Content-Type: application/json" -d @- -o /dev/null "$B/admin/settings"
 rm -f "$JAR"

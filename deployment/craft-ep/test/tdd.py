@@ -6,7 +6,7 @@ agent ran, the reply text, and whether every inline chart loads. Prints one
 PASS/FAIL line per check and a JSON summary to tdd-<run>.json.
 
 Usage (on the Craft host):
-  python3 tdd.py <run tag> [--jobs N] [--model ID] [--without-gate] [case | core | market | demos | tools ...]
+  python3 tdd.py <run tag> [--jobs N] [--users 2,3] [--model ID] [--without-gate] [case | core | market | demos | tools ...]
 
 No case names means core plus market. "demos" are the prompts in ep_demos.tsv
 (Expected Parrot's demos and EDSL docs examples), "tools" the prompts in
@@ -265,10 +265,10 @@ def results_files(sid):
 def remove_gate(sid):
     """Strip the plan gate from the plugin in this session's sandbox and restart opencode serve."""
     c = sandbox_of(sid)
-    src = subprocess.run(["docker", "exec", c, "cat", PLUGIN], capture_output=True, text=True).stdout
+    src = subprocess.run(["docker", "exec", "-u", "sandbox", c, "cat", PLUGIN], capture_output=True, text=True).stdout
     if GATE not in src:
         raise SystemExit("plan gate not found in the sandbox plugin")
-    subprocess.run(["docker", "exec", "-i", c, "sh", "-c", f"cat > {PLUGIN}"], input=src.replace(GATE, "if (false) {"), text=True, check=True)
+    subprocess.run(["docker", "exec", "-i", "-u", "sandbox", c, "sh", "-c", f"cat > {PLUGIN}"], input=src.replace(GATE, "if (false) {"), text=True, check=True)
     subprocess.run(["docker", "exec", c, "pkill", "-f", "opencode serve"])
     time.sleep(20)  # the entrypoint loop restarts it
 
@@ -286,6 +286,21 @@ def new_session(user):
             break
         time.sleep(3)
     return sid
+
+
+def login(user):
+    """Refresh the user's cookie jar from ep-userN.env when the stored login no longer works."""
+    jar = str(HOME / f"{user}.cookies")
+    me = subprocess.run(["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "-b", jar, f"{BASE}/api/me"], capture_output=True, text=True).stdout
+    if me == "200":
+        return
+    env = dict(l.strip().split("=", 1) for l in (HOME / f"{user}.env").read_text().splitlines() if "=" in l)
+    subprocess.run(
+        ["curl", "-s", "-o", "/dev/null", "-c", jar,
+         "--data-urlencode", f"username={env.get('U_EMAIL') or env['CRAFT_USER_EMAIL']}",
+         "--data-urlencode", f"password={env.get('U_PASSWORD') or env['CRAFT_USER_PASSWORD']}", f"{BASE}/api/auth/login"],
+        check=True,
+    )
 
 
 def http_ok(user, url):
@@ -408,7 +423,7 @@ def run_case(run, tag, case, users, opts):
 
 if __name__ == "__main__":
     argv = sys.argv[1:]
-    opts = {"model": None, "without_gate": False, "jobs": 4}
+    opts = {"model": None, "without_gate": False, "jobs": 4, "users": USERS}
     run = argv.pop(0)
     names = []
     while argv:
@@ -417,6 +432,8 @@ if __name__ == "__main__":
             opts["model"] = argv.pop(0)
         elif a == "--jobs":
             opts["jobs"] = int(argv.pop(0))
+        elif a == "--users":
+            opts["users"] = [f"ep-user{n}" for n in argv.pop(0).split(",")]
         elif a == "--without-gate":
             opts["without_gate"] = True
         else:
@@ -427,7 +444,8 @@ if __name__ == "__main__":
     for n in names or ["core", "market"]:
         picked.update(groups[n] if n in groups else {n: every[n]})
     users = queue.Queue()
-    for u in USERS[: opts["jobs"]]:
+    for u in opts["users"][: opts["jobs"]]:
+        login(u)
         users.put(u)
     with ThreadPoolExecutor(opts["jobs"]) as pool:
         rows = [r for rs in pool.map(lambda kv: run_case(run, kv[0], kv[1], users, opts), picked.items()) for r in rs]
