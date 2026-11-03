@@ -12,7 +12,18 @@ import urllib.request
 from onyx.db.engine.sql_engine import SqlEngine, get_session_with_current_tenant
 from onyx.db.llm import fetch_existing_llm_providers
 
-HAIKU = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+# Open-weight models only: Anthropic models on Bedrock are blocked for this account.
+MODELS = [
+    "minimax.minimax-m2.5",
+    "zai.glm-5",
+    "moonshotai.kimi-k2.5",
+    "deepseek.v3.2",
+    "qwen.qwen3-next-80b-a3b",
+    "openai.gpt-oss-120b-1:0",
+    "us.meta.llama4-maverick-17b-instruct-v1:0",
+    "mistral.mistral-large-3-675b-instruct",
+    "google.gemma-3-27b-it",
+]
 
 
 def plain(value):
@@ -50,7 +61,7 @@ body = {
     "is_public": True,
     "custom_config": config,
     "custom_config_changed": True,
-    "model_configurations": [{"name": HAIKU, "is_visible": True}],
+    "model_configurations": [{"name": m, "is_visible": True} for m in MODELS],
 }
 request = urllib.request.Request(
     "http://localhost:3390/api/admin/llm/provider?is_creation=true",

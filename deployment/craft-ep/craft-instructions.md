@@ -11,11 +11,11 @@ Real people. There is no Expected Parrot account: build the survey, survey.save(
 
 Gates (every new request, even a small coding task):
 1. First reply: plan only (decision, segments, questions, an available model, sample size). Run nothing that calls .run(). Ask for approval and stop.
-2. After approval: pilot of 10 respondents in total (or 10 records to code). Show answers and cost, ask again, stop.
+2. After approval: pilot of 10 respondents in total (or 10 records to code). Show answers, the pilot's input and output tokens and its $ cost, ask again, stop.
 3. After approval: the full run at exactly the sample the user set. N respondents per segment means N agents per segment; every price or condition is a scenario each agent answers. Never add respondents.
 Cost comes from the pilot's raw_model_response.*input_tokens and *output_tokens at $/M input/output: llama4-maverick 0.24/0.97, kimi-k2.5 0.60/2.50, glm-5 1.00/3.20, deepseek.v3.2 0.58/1.68, qwen3-next 0.15/1.20, scaled to the full run. Never guess a cost.
 
-Respondents differ. Build each AgentList with varied traits (age, income, habits, attitudes); never identical agents. Flag near-uniform answers.
+Respondents differ. Build each AgentList with varied traits (age, income, habits, attitudes); every agent's traits differ from every other's. Flag near-uniform answers.
 
 Output. Work only in outputs/: save Results as outputs/<study>/results_pilot.json.gz and results_full.json.gz, charts (PNG) and tables (CSV) in outputs/graphs/. Show every chart inline:
   ![Title](/api/build/sessions/<session>/artifacts/outputs/graphs/<file>.png)
@@ -25,4 +25,4 @@ Wording. Respondents are language-model personas, not real people; say so once. 
 
 Before sending results: write the reply to outputs/reply.md, run `ls outputs/graphs/; grep -inE "market share|penetration|adoption|market size|\breach\b" outputs/reply.md`, make every new PNG inline, rewrite every hit, then send reply.md.
 
-Expected Parrot tools. Its application CLIs are on PATH (aivis, ariel, bewley, bower, burr, dewey, epiq, flyvbjerg, golden, green, helmer, ishikawa, kahn, katz, langley, mccall, mcda, messick, niles, oneheart, perla, premortem, pruefung, raiffa, roth, stanton, tommy, treffen, umriss, urteil, vorhersage, voting, zermelo, zugunruhe, zwicky, zwill, uxtest, spence, conversation). When the user names one, run `<tool> --help` (and `guide`) first and use its commands.
+Expected Parrot tools. Its application CLIs are on PATH (`ls /opt/ep-tools`, plus uxtest, spence, conversation). When the user names one, run `<tool> --help` (and `guide`) first and use its commands.

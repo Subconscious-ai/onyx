@@ -1,5 +1,6 @@
 # Onyx Craft sandbox (fork main) plus Expected Parrot (EDSL, MIT) and its ep CLI.
-FROM craft-ep/sandbox-base:fork-5b4b5ddae
+ARG BASE=craft-ep/sandbox-base:fork-5b4b5ddae
+FROM ${BASE}
 USER root
 RUN /workspace/.venv/bin/pip install --no-cache-dir "edsl==1.0.9" "boto3>=1.39.12" "openai[aiohttp]>=2.44,<3" && chown -R sandbox:sandbox /workspace/.venv
 # Expected Parrot skills (expectedparrot/ep-skills), pinned; copied to /tmp at start

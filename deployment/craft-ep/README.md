@@ -20,7 +20,9 @@ Running on agent-dev as Compose project `craft-fork`
 | EDSL 1.0.9, `ep` CLI, study skills | Expected Parrot, installed or fetched at image build |
 | `sandbox/Dockerfile` | ours: fork sandbox image plus EDSL, `openai[aiohttp]`, pinned skills, concurrency cap |
 | `sandbox/ep-charts.ts` | ours: global OpenCode plugin, same mechanism as Onyx's `turn-budget.ts` |
-| `craft-instructions.md` | ours: the Craft organization instructions (admin setting) |
+| `craft-instructions.md` | ours: the Craft organization instructions (admin setting, under Onyx's 4,000-character limit) |
+| `rebuild.sh` | ours: builds every image from this checkout, updates `.env`, restarts the stack, applies the admin settings |
+| `web/src/app/craft/constants/exampleBuildPrompts.ts` | fork change: a "Market research" group of starter prompts, first on Craft's welcome page |
 
 ## Stack settings (`deployment/docker_compose/.env`)
 
@@ -31,16 +33,17 @@ Start from `env.template`, then set (no secrets listed here):
 - `ONYX_BACKEND_IMAGE` and `ONYX_WEB_SERVER_IMAGE` built from this fork (`backend/Dockerfile`, `web/Dockerfile`); `ONYX_MODEL_SERVER_IMAGE=onyxdotapp/onyx-model-server:v5.0.3`; `CODE_INTERPRETER_IMAGE_TAG=0.4.9`.
 - `LICENSE_ENFORCEMENT_ENABLED=false` and `ENABLE_PAID_ENTERPRISE_EDITION_FEATURES=true`: Craft needs the Business tier; `backend/ee/LICENSE` permits development and testing without a subscription. Production needs an Onyx subscription.
 - `OPENCODE_PROMPT_INACTIVITY_TIMEOUT_SECONDS=1800`: the 200 s default ends a turn while a full EDSL run is still quiet.
+- `LLM_SOCKET_READ_TIMEOUT=180`: MiniMax M2.5 can think for over a minute before its first token; the 60 s default returns "The selected model did not respond in time."
 - The fork's Compose file names `minio/minio:RELEASE.2025-07-23T15-54-02Z-cpuv1`, which Docker Hub no longer serves; tag Onyx's mirror (`onyxdotapp/minio` at that release) under that name.
 
-Before `docker compose up`: `docker network create onyx_craft_sandbox`, `docker volume create sandbox_proxy_ca`, and build the sandbox image from `sandbox/` on top of the fork's `backend/onyx/server/features/build/sandbox/image` (tagged `craft-ep/sandbox-base:<fork tag>`). Docker needs buildx for the fork images.
+`rebuild.sh` does the rest: it builds the backend, web, sandbox base and Expected Parrot sandbox images tagged `fork-<commit>`, creates the sandbox network and proxy volume, tags the MinIO mirror, writes the image tags and timeouts into `.env`, runs `docker compose up -d`, removes sandboxes on an older image (Craft re-creates them), and applies the default Craft model and `craft-instructions.md`. The steps by hand: before `docker compose up`, `docker network create onyx_craft_sandbox`, `docker volume create sandbox_proxy_ca`, and build the sandbox image from `sandbox/` on top of the fork's `backend/onyx/server/features/build/sandbox/image` (tagged `craft-ep/sandbox-base:<fork tag>`). Docker needs buildx for the fork images.
 
 The fork needs [fix(llm): pass api_base through the patched LiteLLM bridge check (#132)](https://github.com/Subconscious-ai/onyx/pull/132); without it every streamed model call fails.
 
 ## After the stack is up (admin API)
 
-1. Bedrock provider with the open-weight models (Anthropic models on Bedrock are blocked for this account): `moonshotai.kimi-k2.5`, `zai.glm-5`, `deepseek.v3.2`, `qwen.qwen3-next-80b-a3b`, `openai.gpt-oss-120b-1:0`, `us.meta.llama4-maverick-17b-instruct-v1:0`, `mistral.mistral-large-3-675b-instruct`, `google.gemma-3-27b-it`. `test/copy_bedrock.py` copies the dev chat stack's Bedrock key without printing it.
-2. `POST /api/admin/llm/default` and `/default-craft` with `zai.glm-5`. In a side-by-side run GLM-5 followed the skills and gates; Kimi K2.5 and DeepSeek v3.2 replaced the study with web research.
+1. Bedrock provider with the open-weight models (Anthropic models on Bedrock are blocked for this account): `minimax.minimax-m2.5`, `moonshotai.kimi-k2.5`, `zai.glm-5`, `deepseek.v3.2`, `qwen.qwen3-next-80b-a3b`, `openai.gpt-oss-120b-1:0`, `us.meta.llama4-maverick-17b-instruct-v1:0`, `mistral.mistral-large-3-675b-instruct`, `google.gemma-3-27b-it`. `test/copy_bedrock.py` copies the dev chat stack's Bedrock key without printing it.
+2. `POST /api/admin/llm/default` and `/default-craft` with `minimax.minimax-m2.5` (`rebuild.sh` sets the Craft default). GLM-5 also passes but costs about six times as much: about $1.50 of agent tokens per full study against about $0.25. Kimi K2.5 and DeepSeek v3.2 replaced the study with web research; Qwen3-Next refused to run EDSL.
 3. `PATCH /api/admin/settings` with `{"craft_instructions": <craft-instructions.md>}`.
 
 Respondents run inside the sandbox through Onyx's own gateway: EDSL's `openai_compatible` service with base URL `$ONYX_SERVER_URL$ONYX_API_PREFIX/gateway/v1` and key `$ONYX_PAT`, model `1/<model id>`. No model key enters the sandbox.
@@ -48,9 +51,21 @@ Respondents run inside the sandbox through Onyx's own gateway: EDSL's `openai_co
 ## Why each piece of glue exists
 
 - **Skills for every user without switching them on.** Onyx enables custom skills per user, and Craft's OpenCode rules let the agent read only the session folder, enabled skills and `/tmp`. The image fetches the pinned skills to `/opt/ep-skills`, and the sandbox entrypoint copies them into the fresh `/tmp/ep-skills` at start. (Craft starts sandboxes with `/workspace/entrypoint.sh`, not the image `ENTRYPOINT`.)
-- **Charts inline and no "market share".** Instructions alone held in about 15 of 18 runs. `ep-charts.ts` appends to each tool result the exact inline Markdown for every new PNG, warns when a chart lands outside `outputs/graphs/`, and flags market share, penetration, adoption, market size or reach in what the agent just wrote.
+- **Rules the plugin enforces, not just the instructions.** Instructions alone held in about 15 of 18 runs. `ep-charts.ts` (1) refuses any shell command that starts an EDSL job (`.run(` inline or in the Python file it runs) before the user's second message, so the first reply is a plan; (2) refuses a write of `outputs/reply.md` that says market share, penetration, adoption, market size or reach; (3) appends to each tool result the exact inline Markdown for every new PNG and warns when a chart lands outside `outputs/graphs/`; (4) flags the banned terms in anything else the agent writes.
 - **`EDSL_MAX_CONCURRENT_TASKS=8`.** EDSL's default of 50 exhausted the API's Redis connection pool ("Too many connections").
 
 ## Test
 
-`test/` drives Craft through its own API as test users: `flow.sh <tag> <question> <cookie jar>` runs ask, "Approved. Run the pilot.", then approval of the full run; `run_demos.sh` runs the prompts in `ep_demos.tsv`; `audit_flow.sh` reports errors, inline images and whether each loads, banned terms and cost; `craft_screenshot.py` renders a session in headless Chromium.
+`test/tdd.py` drives Craft through its own API as the test users `ep-user2`..`ep-user8` (cookie jars in `~/craft-ep/`, copied with `test/craft_turn.sh`, `ep_demos.tsv`, `ep_tool_prompts.tsv` and `stimuli/`), then checks what ran: EDSL Results files in the session's sandbox, the commands the agent ran, the reply, and whether each inline chart loads.
+
+```bash
+python3 tdd.py <run> [--jobs 4] [--model ID] [--without-gate] [core | market | demos | tools | <case> ...]
+```
+
+- `core`: the plan gate on a small coding task and on a user who demands an immediate run (`gate_immediate_run`), a priced pricing study through pilot and full run with a market-share follow-up, and an unavailable respondent model.
+- `market`: three scripted investigations: willingness to pay (Van Westendorp plus a price ladder), an ad concept test with an attached image, and a conjoint with two segments.
+- `demos`: each Expected Parrot demo and EDSL docs example in `ep_demos.tsv`; `tools`: each application CLI in `ep_tool_prompts.tsv` (pass means the tool's own command ran and its result is in the reply).
+- `first_chart_time` reports the seconds from approving the full run to the reply with the first inline chart.
+- `--without-gate` strips the plan gate from the plugin in the test user's sandbox and restarts `opencode serve`: `gate_immediate_run` goes red without the gate and green with it.
+
+`flow.sh`, `audit_flow.sh`, `run_demos.sh` and `craft_screenshot.py` are the earlier hand tools; `craft_screenshot.py` renders a session in headless Chromium.

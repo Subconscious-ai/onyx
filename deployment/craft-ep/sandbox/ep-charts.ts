@@ -5,7 +5,8 @@
 // last check, with the exact inline Markdown the reply must contain, and flags
 // banned share wording in files the agent just wrote. Inert when nothing changed.
 // Before a tool runs, it holds Expected Parrot's plan gate: no EDSL job runs
-// until the user has answered the plan (a second user message).
+// until the user has answered the plan (a second user message), and no
+// outputs/reply.md that names a share the study cannot measure is written.
 
 import type { Plugin } from "@opencode-ai/plugin";
 
@@ -67,8 +68,19 @@ export default (async ({ directory, client }) => {
     },
     "tool.execute.before": async (input, output) => {
       await prime();
-      const args = (output as { args?: { command?: string } }).args;
+      const args = (output as { args?: { command?: string; filePath?: string; content?: string; newString?: string } }).args;
       argsByCall.set(input.callID, args);
+      // The reply the user reads may not name a share the study cannot measure.
+      if ((input.tool === "write" || input.tool === "edit") && /(^|\/)reply\.md$/.test(args?.filePath ?? "")) {
+        const hit = `${args?.content ?? ""}\n${args?.newString ?? ""}`.match(BANNED);
+        if (hit) {
+          throw new Error(
+            `[Expected Parrot] reply.md says "${hit[0]}". Simulated respondents measure none of market share, penetration, ` +
+              'adoption, market size or reach. Rewrite it as a share of simulated respondents (for example "% of simulated ' +
+              'respondents who would buy") and, if the user asked for one of these, explain in other words why the study cannot give it.'
+          );
+        }
+      }
       if (input.tool === "bash" && typeof args?.command === "string" && (await runsEdsl(args.command))) {
         if ((await userMessages(input.sessionID)) <= 1) {
           throw new Error(
