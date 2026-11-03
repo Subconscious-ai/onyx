@@ -43,7 +43,7 @@ The fork needs [fix(llm): pass api_base through the patched LiteLLM bridge check
 ## After the stack is up (admin API)
 
 1. Bedrock provider with the open-weight models (Anthropic models on Bedrock are blocked for this account): `minimax.minimax-m2.5`, `moonshotai.kimi-k2.5`, `zai.glm-5`, `deepseek.v3.2`, `qwen.qwen3-next-80b-a3b`, `openai.gpt-oss-120b-1:0`, `us.meta.llama4-maverick-17b-instruct-v1:0`, `mistral.mistral-large-3-675b-instruct`, `google.gemma-3-27b-it`. `test/copy_bedrock.py` copies the dev chat stack's Bedrock key without printing it.
-2. `POST /api/admin/llm/default` and `/default-craft` with `minimax.minimax-m2.5` (`rebuild.sh` sets the Craft default). GLM-5 also passes but costs about six times as much: about $1.50 of agent tokens per full study against about $0.25. Kimi K2.5 and DeepSeek v3.2 replaced the study with web research; Qwen3-Next refused to run EDSL.
+2. `POST /api/admin/llm/default` and `/default-craft` with `minimax.minimax-m2.5` (`rebuild.sh` sets the Craft default). GLM-5 also passes but costs about twice as much: about $1.50 of agent tokens per full study against $0.70 to $1.00 for MiniMax (measured from `user_usage`). Kimi K2.5 and DeepSeek v3.2 replaced the study with web research; Qwen3-Next refused to run EDSL.
 3. `PATCH /api/admin/settings` with `{"craft_instructions": <craft-instructions.md>}`.
 
 Respondents run inside the sandbox through Onyx's own gateway: EDSL's `openai_compatible` service with base URL `$ONYX_SERVER_URL$ONYX_API_PREFIX/gateway/v1` and key `$ONYX_PAT`, model `1/<model id>`. No model key enters the sandbox.

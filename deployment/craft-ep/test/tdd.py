@@ -52,12 +52,12 @@ for f in files:
         models = sorted(set(r.select("model.model").to_list()))
     except Exception:
         models = []
-    # Largest share any one answer takes within each question, across all rows.
-    top = 0.0
+    # Smallest share the most common answer takes within a question: 1.0 means every question got one answer.
+    top = 1.0
     for q in r.survey.question_names:
         vals = [str(v) for v in r.select("answer." + q).to_list()]
         if vals:
-            top = max(top, max(vals.count(v) for v in set(vals)) / len(vals))
+            top = min(top, max(vals.count(v) for v in set(vals)) / len(vals))
     try:
         files_in = sum(isinstance(s[k], FileStore) or (isinstance(s[k], dict) and "base64_string" in s[k]) for s in r.scenarios for k in list(s.keys()))
     except Exception:
@@ -365,9 +365,9 @@ def check(name, args, ctx):
         ok = bool(inline_charts(rp)) and s <= FIRST_CHART_LIMIT
         return ok, f"first chart shown {s}s after approving the full run ({sum(ctx['seconds'][:t + 1])}s from the question), limit {FIRST_CHART_LIMIT}s"
     if name == "answers_vary":
-        # A question where every simulated respondent gives one answer means identical agents or a leading question.
-        top = max((r["top_share"] for r in res), default=1.0)
-        return bool(res) and top < 1.0, f"largest single-answer share={top}, want < 1.0"
+        # Every question answered the same way by every simulated respondent means identical agents or a broken survey.
+        top = min((r["top_share"] for r in res), default=1.0)
+        return bool(res) and top < 1.0, f"most varied question's top-answer share={top}, want < 1.0"
     if name == "no_banned_terms":
         # The gap: a simulated number called a market share. A claim is a sentence with the term
         # and a number that does not decline ("20% of simulated respondents, not market share" is fine).

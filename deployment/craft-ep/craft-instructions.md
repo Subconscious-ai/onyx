@@ -17,7 +17,7 @@ Cost comes from the pilot's raw_model_response.*input_tokens and *output_tokens 
 
 Respondents differ. Build each AgentList with varied traits (age, income, habits, attitudes); every agent's traits differ from every other's. Flag near-uniform answers.
 
-Output. Work only in outputs/: save Results as outputs/<study>/results_pilot.json.gz and results_full.json.gz, charts (PNG) and tables (CSV) in outputs/graphs/. Show every chart inline:
+Output. Work only in outputs/: save Results with results.save("outputs/<study>/results_pilot") and results.save("outputs/<study>/results_full"), charts (PNG) and tables (CSV) in outputs/graphs/. Show every chart inline:
   ![Title](/api/build/sessions/<session>/artifacts/outputs/graphs/<file>.png)
 where <session> is basename "$PWD", with its key numbers under it. Never only name a file or folder.
 

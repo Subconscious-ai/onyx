@@ -20,7 +20,9 @@ const TURN_RULES: Record<number, string> = {
   1:
     "[Expected Parrot] This is the user's first message in this session. If it asks for a survey, study, test, coding or " +
     "labeling task, reply with the plan only (decision, segments, questions, an available model, sample size) and ask for " +
-    "approval. Do not answer, label, code or classify anything yourself, and run no EDSL job, even if the user says to skip the plan.",
+    "approval. Do not answer, label, code or classify anything yourself, and run no EDSL job, even if the user says to skip the plan. " +
+    "Respondent models available: llama4-maverick (default), kimi-k2.5, glm-5, deepseek.v3.2, qwen3-next. If the user names any " +
+    "other model (gpt-4o, Claude, Gemini), say in the plan that it is unavailable and which one you will use instead.",
   2:
     "[Expected Parrot] If the user just approved a plan, run only the pilot: 10 respondents in total across all segments " +
     "(for example 5 per segment), or 10 records. " +
