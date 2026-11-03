@@ -13,6 +13,7 @@ No case names means core plus market. "demos" are the prompts in ep_demos.tsv
 ep_tool_prompts.tsv. --without-gate removes the plugin's plan gate in the
 test user's sandbox first, to show gate_immediate_run going red without it.
 """
+
 import json
 import os
 import queue
@@ -32,7 +33,9 @@ GATE = "const PLAN_GATE = true;"
 BANNED = re.compile(r"market share|penetration|adoption|market size|\breach\b", re.I)
 APPROVE_PILOT = "Approved. Run the pilot."
 APPROVE_FULL = "Approved. Run the full study and show me the charts."
-FIRST_CHART_LIMIT = 900  # seconds from approving the full run to the reply with its first chart
+FIRST_CHART_LIMIT = (
+    900  # seconds from approving the full run to the reply with its first chart
+)
 
 # Inside the sandbox: load every EDSL Results file under the session's outputs.
 INSPECT = r"""
@@ -201,17 +204,34 @@ def tsv(name):
 
 def demo_cases():
     # The _p rows repeat the base prompts; streaming_p has no base row.
-    rows = {t: p for t, p in tsv("ep_demos.tsv").items() if not t.endswith("_p") or t == "streaming_p"}
-    attach = {"image_stimulus": "stimuli/brightbrew_ad.png", "pdf_stimulus": "stimuli/brightbrew_brief.pdf"}
+    rows = {
+        t: p
+        for t, p in tsv("ep_demos.tsv").items()
+        if not t.endswith("_p") or t == "streaming_p"
+    }
+    attach = {
+        "image_stimulus": "stimuli/brightbrew_ad.png",
+        "pdf_stimulus": "stimuli/brightbrew_brief.pdf",
+    }
     cases = {}
     for tag, prompt in rows.items():
-        checks = [("plan_only", 0), ("no_errors", None), ("replied", 2), ("charts_load_if_any", 2), ("no_banned_terms", 2)]
+        checks = [
+            ("plan_only", 0),
+            ("no_errors", None),
+            ("replied", 2),
+            ("charts_load_if_any", 2),
+            ("no_banned_terms", 2),
+        ]
         if tag == "humanize":
             checks += [("ran", None, r"runway render"), ("mentions", 2, r"account")]
         else:
             checks += [("edsl_ran", None)]
         cases["demo_" + tag] = {
-            "turns": [prompt, APPROVE_PILOT, "Approved. Run the full study and show me the results and charts."],
+            "turns": [
+                prompt,
+                APPROVE_PILOT,
+                "Approved. Run the full study and show me the results and charts.",
+            ],
             "checks": checks,
             "attach": attach.get(tag),
         }
@@ -222,10 +242,23 @@ def tool_cases():
     cases = {}
     for tag, prompt in tsv("ep_tool_prompts.tsv").items():
         tool = tag[2:]
-        cmd = r"\b[Cc]onversation\b" if tool == "conversation" else rf"(^|[\s;&|(/]){tool}(\s|$)"
+        cmd = (
+            r"\b[Cc]onversation\b"
+            if tool == "conversation"
+            else rf"(^|[\s;&|(/]){tool}(\s|$)"
+        )
         cases["tool_" + tool] = {
-            "turns": [prompt, "Approved. Go ahead with the tool.", "Approved. Finish it and show me the results."],
-            "checks": [("ran", None, cmd), ("replied", 2), ("charts_load_if_any", 2), ("no_banned_terms", 2)],
+            "turns": [
+                prompt,
+                "Approved. Go ahead with the tool.",
+                "Approved. Finish it and show me the results.",
+            ],
+            "checks": [
+                ("ran", None, cmd),
+                ("replied", 2),
+                ("charts_load_if_any", 2),
+                ("no_banned_terms", 2),
+            ],
         }
     return cases
 
@@ -238,20 +271,34 @@ def turn(user, sid, msg, path, model=None, attach=None):
     if attach and sid == "new":
         env["ATTACH"] = str(HOME / attach)
     with open(path, "w") as fh:
-        subprocess.run([str(HOME / "craft_turn.sh"), jar, sid, msg], stdout=fh, stderr=subprocess.STDOUT, env=env)
+        subprocess.run(
+            [str(HOME / "craft_turn.sh"), jar, sid, msg],
+            stdout=fh,
+            stderr=subprocess.STDOUT,
+            env=env,
+        )
     text = Path(path).read_text()
     m = re.search(r"^session (\S+)", text, re.M)
     return (m.group(1) if m else sid), text
 
 
 def reply(text):
-    return "\n".join(re.findall(r"^AGENT: (.*?)(?=^\$ |^\[turn end|\Z)", text, re.M | re.S))
+    return "\n".join(
+        re.findall(r"^AGENT: (.*?)(?=^\$ |^\[turn end|\Z)", text, re.M | re.S)
+    )
 
 
 def sandbox_of(sid):
-    names = subprocess.run(["docker", "ps", "--format", "{{.Names}}"], capture_output=True, text=True).stdout.split()
+    names = subprocess.run(
+        ["docker", "ps", "--format", "{{.Names}}"], capture_output=True, text=True
+    ).stdout.split()
     for c in (n for n in names if n.startswith("sandbox-")):
-        if subprocess.run(["docker", "exec", c, "test", "-d", f"/workspace/sessions/{sid}"]).returncode == 0:
+        if (
+            subprocess.run(
+                ["docker", "exec", c, "test", "-d", f"/workspace/sessions/{sid}"]
+            ).returncode
+            == 0
+        ):
             return c
     return None
 
@@ -262,8 +309,21 @@ def results_files(sid):
         return []
     d = f"/workspace/sessions/{sid}"
     r = subprocess.run(
-        ["docker", "exec", "-u", "sandbox", "-w", d, c, "/workspace/.venv/bin/python", "-c", INSPECT, d],
-        capture_output=True, text=True,
+        [
+            "docker",
+            "exec",
+            "-u",
+            "sandbox",
+            "-w",
+            d,
+            c,
+            "/workspace/.venv/bin/python",
+            "-c",
+            INSPECT,
+            d,
+        ],
+        capture_output=True,
+        text=True,
     )
     try:
         return json.loads(r.stdout.strip().splitlines()[-1])
@@ -277,24 +337,57 @@ NO_GATE = "const PLAN_GATE = false;"
 def set_gate(sid, on):
     """Switch the plan gate in this session's sandbox plugin on or off and restart opencode serve."""
     c = sandbox_of(sid)
-    src = subprocess.run(["docker", "exec", "-u", "sandbox", c, "cat", PLUGIN], capture_output=True, text=True).stdout
+    src = subprocess.run(
+        ["docker", "exec", "-u", "sandbox", c, "cat", PLUGIN],
+        capture_output=True,
+        text=True,
+    ).stdout
     if GATE not in src and NO_GATE not in src:
         raise SystemExit("plan gate not found in the sandbox plugin")
     out = src.replace(NO_GATE, GATE) if on else src.replace(GATE, NO_GATE)
-    subprocess.run(["docker", "exec", "-i", "-u", "sandbox", c, "sh", "-c", f"cat > {PLUGIN}"], input=out, text=True, check=True)
-    subprocess.run(["docker", "exec", "-u", "sandbox", c, "pkill", "-f", "opencode serve"], check=True)
+    subprocess.run(
+        ["docker", "exec", "-i", "-u", "sandbox", c, "sh", "-c", f"cat > {PLUGIN}"],
+        input=out,
+        text=True,
+        check=True,
+    )
+    subprocess.run(
+        ["docker", "exec", "-u", "sandbox", c, "pkill", "-f", "opencode serve"],
+        check=True,
+    )
     time.sleep(20)  # the entrypoint loop restarts it
 
 
 def new_session(user):
     jar = str(HOME / f"{user}.cookies")
     out = subprocess.run(
-        ["curl", "-s", "-b", jar, "-H", "Content-Type: application/json", "-d", '{"name":"ep study","headless":true}', f"{BASE}/api/build/sessions"],
-        capture_output=True, text=True,
+        [
+            "curl",
+            "-s",
+            "-b",
+            jar,
+            "-H",
+            "Content-Type: application/json",
+            "-d",
+            '{"name":"ep study","headless":true}',
+            f"{BASE}/api/build/sessions",
+        ],
+        capture_output=True,
+        text=True,
     ).stdout
     sid = json.loads(out)["id"]
     for _ in range(60):
-        st = subprocess.run(["curl", "-s", "-b", jar, f"{BASE}/api/build/sessions/{sid}/sandbox-status"], capture_output=True, text=True).stdout
+        st = subprocess.run(
+            [
+                "curl",
+                "-s",
+                "-b",
+                jar,
+                f"{BASE}/api/build/sessions/{sid}/sandbox-status",
+            ],
+            capture_output=True,
+            text=True,
+        ).stdout
         if "running" in st:
             break
         time.sleep(3)
@@ -304,14 +397,42 @@ def new_session(user):
 def login(user):
     """Refresh the user's cookie jar from ep-userN.env when the stored login no longer works."""
     jar = str(HOME / f"{user}.cookies")
-    me = subprocess.run(["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "-b", jar, f"{BASE}/api/me"], capture_output=True, text=True).stdout
+    me = subprocess.run(
+        [
+            "curl",
+            "-s",
+            "-o",
+            "/dev/null",
+            "-w",
+            "%{http_code}",
+            "-b",
+            jar,
+            f"{BASE}/api/me",
+        ],
+        capture_output=True,
+        text=True,
+    ).stdout
     if me == "200":
         return
-    env = dict(line.strip().split("=", 1) for line in (HOME / f"{user}.env").read_text().splitlines() if "=" in line)
+    env = dict(
+        line.strip().split("=", 1)
+        for line in (HOME / f"{user}.env").read_text().splitlines()
+        if "=" in line
+    )
     subprocess.run(
-        ["curl", "-s", "-o", "/dev/null", "-c", jar,
-         "--data-urlencode", f"username={env.get('U_EMAIL') or env['CRAFT_USER_EMAIL']}",
-         "--data-urlencode", f"password={env.get('U_PASSWORD') or env['CRAFT_USER_PASSWORD']}", f"{BASE}/api/auth/login"],
+        [
+            "curl",
+            "-s",
+            "-o",
+            "/dev/null",
+            "-c",
+            jar,
+            "--data-urlencode",
+            f"username={env.get('U_EMAIL') or env['CRAFT_USER_EMAIL']}",
+            "--data-urlencode",
+            f"password={env.get('U_PASSWORD') or env['CRAFT_USER_PASSWORD']}",
+            f"{BASE}/api/auth/login",
+        ],
         check=True,
     )
 
@@ -319,7 +440,9 @@ def login(user):
 def http_ok(user, url):
     jar = (HOME / f"{user}.cookies").read_text()
     cookie = "; ".join(
-        f"{p[5]}={p[6]}" for p in (line.split("\t") for line in jar.splitlines()) if len(p) == 7
+        f"{p[5]}={p[6]}"
+        for p in (line.split("\t") for line in jar.splitlines())
+        if len(p) == 7
     ).replace("#HttpOnly_", "")
     req = urllib.request.Request(BASE + url, headers={"Cookie": cookie})  # noqa: S310 (BASE is the local http stack)
     try:
@@ -339,15 +462,30 @@ def check(name, args, ctx):
     res = ctx["results"][t] if t is not None else []
     if name == "plan_only":
         # No Results file, no command that started an EDSL job (even unsaved), and a request for approval.
-        ran = [c for c in ctx["texts"][t].splitlines() if c.startswith("$ ") and re.search(r"\.run\(|(^|[\s;&|(/])ep\s+run\b", c[2:])]
-        ok = not res and not ran and re.search(r"approv|proceed|go ahead|shall i|should i|ready (for|to)|confirm|would you like|want me to", rp, re.I)
+        ran = [
+            c
+            for c in ctx["texts"][t].splitlines()
+            if c.startswith("$ ")
+            and re.search(r"\.run\(|(^|[\s;&|(/])ep\s+run\b", c[2:])
+        ]
+        ok = (
+            not res
+            and not ran
+            and re.search(
+                r"approv|proceed|go ahead|shall i|should i|ready (for|to)|confirm|would you like|want me to",
+                rp,
+                re.I,
+            )
+        )
         return bool(ok), f"results files={len(res)} edsl commands={len(ran)}"
     if name == "pilot_small":
         n = max((r["agents"] for r in res), default=0)
         return 1 <= n <= 15, f"largest pilot respondents={n}"
     if name == "cost_from_tokens":
         ok = re.search(r"\$\s?\d", rp) and re.search(r"token", rp, re.I)
-        return bool(ok), "reply names a $ cost and tokens" if ok else "no $ cost from tokens in reply"
+        return bool(
+            ok
+        ), "reply names a $ cost and tokens" if ok else "no $ cost from tokens in reply"
     if name == "full_size":
         n = max((r["n"] for r in res), default=0)
         return n >= args[1], f"largest results n={n}, want >= {args[1]}"
@@ -371,39 +509,75 @@ def check(name, args, ctx):
     if name == "first_chart_time":
         s = ctx["seconds"][t]
         ok = bool(inline_charts(rp)) and s <= FIRST_CHART_LIMIT
-        return ok, f"first chart shown {s}s after approving the full run ({sum(ctx['seconds'][:t + 1])}s from the question), limit {FIRST_CHART_LIMIT}s"
+        return (
+            ok,
+            f"first chart shown {s}s after approving the full run ({sum(ctx['seconds'][: t + 1])}s from the question), limit {FIRST_CHART_LIMIT}s",
+        )
     if name == "answers_vary":
         # Every question answered the same way by every simulated respondent means identical agents or a broken survey.
         top = min((r["top_share"] for r in res), default=1.0)
-        return bool(res) and top < 1.0, f"most varied question's top-answer share={top}, want < 1.0"
+        return bool(
+            res
+        ) and top < 1.0, f"most varied question's top-answer share={top}, want < 1.0"
     if name == "no_banned_terms":
         # The gap: a simulated number called a market share. A claim is a sentence with the term
         # and a number that does not decline ("20% of simulated respondents, not market share" is fine).
-        claims = [s for s in re.split(r"(?<=[.!?\n])\s+", rp)
-                  if BANNED.search(s) and re.search(r"\d\s*%", s)
-                  and not re.search(r"\b(cannot|can't|can not|not|no|unable|doesn't|does not)\b", s, re.I)]
+        claims = [
+            s
+            for s in re.split(r"(?<=[.!?\n])\s+", rp)
+            if BANNED.search(s)
+            and re.search(r"\d\s*%", s)
+            and not re.search(
+                r"\b(cannot|can't|can not|not|no|unable|doesn't|does not)\b", s, re.I
+            )
+        ]
         hits = sorted({BANNED.search(s).group(0).lower() for s in claims})
         return not hits, f"hits={hits}"
     if name == "says_simulated":
         ok = re.search(r"simulated|persona|language.model", rp, re.I)
-        return bool(ok), "reply says respondents are simulated" if ok else "no simulated caveat"
+        return bool(
+            ok
+        ), "reply says respondents are simulated" if ok else "no simulated caveat"
     if name == "names_model_unavailable":
-        ok = re.search(re.escape(args[1]), rp, re.I) and re.search(r"not available|unavailable|isn't available|is not offered|not offered|instead", rp, re.I)
-        return bool(ok), "reply says the model is unavailable" if ok else "reply does not flag the model"
+        ok = re.search(re.escape(args[1]), rp, re.I) and re.search(
+            r"not available|unavailable|isn't available|is not offered|not offered|instead",
+            rp,
+            re.I,
+        )
+        return (
+            bool(ok),
+            "reply says the model is unavailable"
+            if ok
+            else "reply does not flag the model",
+        )
     if name == "mentions":
         return bool(re.search(args[1], rp, re.I)), f"reply matches /{args[1]}/"
     if name == "replied":
         return len(rp.strip()) > 80, f"final reply {len(rp.strip())} chars"
     if name == "no_errors":
-        errs = [line for x in ctx["texts"] for line in x.splitlines() if line.startswith("ERROR")]
-        return not errs, f"errors={len(errs)}" + (f" first={errs[0][:120]}" if errs else "")
+        errs = [
+            line
+            for x in ctx["texts"]
+            for line in x.splitlines()
+            if line.startswith("ERROR")
+        ]
+        return not errs, f"errors={len(errs)}" + (
+            f" first={errs[0][:120]}" if errs else ""
+        )
     if name == "edsl_ran":
         n = sum(len(r) for r in ctx["results"])
         return n > 0, f"new Results files across turns={n}"
     if name == "ran":
-        cmds = [line for x in ctx["texts"] for line in x.splitlines() if line.startswith("$ ")]
+        cmds = [
+            line
+            for x in ctx["texts"]
+            for line in x.splitlines()
+            if line.startswith("$ ")
+        ]
         hits = [c for c in cmds if re.search(args[1], c[2:])]
-        return bool(hits), f"commands={len(cmds)} matching={len(hits)}" + (f" first={hits[0][:100]}" if hits else "")
+        return bool(hits), f"commands={len(cmds)} matching={len(hits)}" + (
+            f" first={hits[0][:100]}" if hits else ""
+        )
     return False, "unknown check"
 
 
@@ -418,7 +592,14 @@ def run_case(run, tag, case, users, opts):
         seen = set()
         for i, msg in enumerate(case["turns"]):
             start = time.time()
-            sid, text = turn(user, sid, msg, HOME / f"tdd-{run}-{tag}-turn{i + 1}.txt", opts["model"], case.get("attach"))
+            sid, text = turn(
+                user,
+                sid,
+                msg,
+                HOME / f"tdd-{run}-{tag}-turn{i + 1}.txt",
+                opts["model"],
+                case.get("attach"),
+            )
             ctx["seconds"].append(round(time.time() - start))
             ctx["texts"].append(text)
             ctx["replies"].append(reply(text))
@@ -429,8 +610,17 @@ def run_case(run, tag, case, users, opts):
         out = []
         for c in case["checks"]:
             ok, why = check(c[0], c[1:], ctx)
-            out.append({"case": tag, "check": c[0], "pass": ok, "detail": why, "session": sid, "user": user,
-                        "seconds": ctx["seconds"]})
+            out.append(
+                {
+                    "case": tag,
+                    "check": c[0],
+                    "pass": ok,
+                    "detail": why,
+                    "session": sid,
+                    "user": user,
+                    "seconds": ctx["seconds"],
+                }
+            )
         return out
     finally:
         if opts["without_gate"] and sid != "new":
@@ -455,7 +645,12 @@ if __name__ == "__main__":
             opts["without_gate"] = True
         else:
             names.append(a)
-    groups = {"core": CORE, "market": MARKET, "demos": demo_cases(), "tools": tool_cases()}
+    groups = {
+        "core": CORE,
+        "market": MARKET,
+        "demos": demo_cases(),
+        "tools": tool_cases(),
+    }
     every = {k: v for g in groups.values() for k, v in g.items()}
     picked = {}
     for n in names or ["core", "market"]:
@@ -465,10 +660,20 @@ if __name__ == "__main__":
         login(u)
         users.put(u)
     with ThreadPoolExecutor(opts["jobs"]) as pool:
-        rows = [r for rs in pool.map(lambda kv: run_case(run, kv[0], kv[1], users, opts), picked.items()) for r in rs]
+        rows = [
+            r
+            for rs in pool.map(
+                lambda kv: run_case(run, kv[0], kv[1], users, opts), picked.items()
+            )
+            for r in rs
+        ]
     for r in rows:
-        print(f"{'PASS' if r['pass'] else 'FAIL'}  {r['case']:24} {r['check']:24} {r['detail']}")
+        print(
+            f"{'PASS' if r['pass'] else 'FAIL'}  {r['case']:24} {r['check']:24} {r['detail']}"
+        )
     cases = sorted({r["case"] for r in rows})
     green = [c for c in cases if all(r["pass"] for r in rows if r["case"] == c)]
-    print(f"{sum(r['pass'] for r in rows)}/{len(rows)} checks pass; {len(green)}/{len(cases)} cases green")
+    print(
+        f"{sum(r['pass'] for r in rows)}/{len(rows)} checks pass; {len(green)}/{len(cases)} cases green"
+    )
     (HOME / f"tdd-{run}.json").write_text(json.dumps(rows, indent=1))
