@@ -1,5 +1,6 @@
 """Sign in to the local Craft stack as a test user and screenshot one artifact URL."""
 import sys
+
 from playwright.sync_api import sync_playwright
 
 env = dict(line.strip().split("=", 1) for line in open(sys.argv[1]) if "=" in line)

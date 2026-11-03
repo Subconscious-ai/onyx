@@ -307,7 +307,7 @@ def login(user):
     me = subprocess.run(["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "-b", jar, f"{BASE}/api/me"], capture_output=True, text=True).stdout
     if me == "200":
         return
-    env = dict(l.strip().split("=", 1) for l in (HOME / f"{user}.env").read_text().splitlines() if "=" in l)
+    env = dict(line.strip().split("=", 1) for line in (HOME / f"{user}.env").read_text().splitlines() if "=" in line)
     subprocess.run(
         ["curl", "-s", "-o", "/dev/null", "-c", jar,
          "--data-urlencode", f"username={env.get('U_EMAIL') or env['CRAFT_USER_EMAIL']}",
@@ -319,11 +319,11 @@ def login(user):
 def http_ok(user, url):
     jar = (HOME / f"{user}.cookies").read_text()
     cookie = "; ".join(
-        f"{p[5]}={p[6]}" for p in (l.split("\t") for l in jar.splitlines()) if len(p) == 7
+        f"{p[5]}={p[6]}" for p in (line.split("\t") for line in jar.splitlines()) if len(p) == 7
     ).replace("#HttpOnly_", "")
-    req = urllib.request.Request(BASE + url, headers={"Cookie": cookie})
+    req = urllib.request.Request(BASE + url, headers={"Cookie": cookie})  # noqa: S310 (BASE is the local http stack)
     try:
-        with urllib.request.urlopen(req, timeout=30) as r:
+        with urllib.request.urlopen(req, timeout=30) as r:  # noqa: S310
             return r.status == 200
     except Exception:
         return False
@@ -338,8 +338,10 @@ def check(name, args, ctx):
     rp = ctx["replies"][t] if t is not None else ""
     res = ctx["results"][t] if t is not None else []
     if name == "plan_only":
-        ok = not res and re.search(r"approv|proceed|go ahead|shall i|should i|ready (for|to)|confirm|would you like|want me to", rp, re.I)
-        return bool(ok), f"results files={len(res)}"
+        # No Results file, no command that started an EDSL job (even unsaved), and a request for approval.
+        ran = [c for c in ctx["texts"][t].splitlines() if c.startswith("$ ") and re.search(r"\.run\(|(^|[\s;&|(/])ep\s+run\b", c[2:])]
+        ok = not res and not ran and re.search(r"approv|proceed|go ahead|shall i|should i|ready (for|to)|confirm|would you like|want me to", rp, re.I)
+        return bool(ok), f"results files={len(res)} edsl commands={len(ran)}"
     if name == "pilot_small":
         n = max((r["agents"] for r in res), default=0)
         return 1 <= n <= 15, f"largest pilot respondents={n}"
@@ -393,14 +395,14 @@ def check(name, args, ctx):
     if name == "replied":
         return len(rp.strip()) > 80, f"final reply {len(rp.strip())} chars"
     if name == "no_errors":
-        errs = [l for x in ctx["texts"] for l in x.splitlines() if l.startswith("ERROR")]
+        errs = [line for x in ctx["texts"] for line in x.splitlines() if line.startswith("ERROR")]
         return not errs, f"errors={len(errs)}" + (f" first={errs[0][:120]}" if errs else "")
     if name == "edsl_ran":
         n = sum(len(r) for r in ctx["results"])
         return n > 0, f"new Results files across turns={n}"
     if name == "ran":
-        cmds = [l for x in ctx["texts"] for l in x.splitlines() if l.startswith("$ ")]
-        hits = [l for l in cmds if re.search(args[1], l[2:])]
+        cmds = [line for x in ctx["texts"] for line in x.splitlines() if line.startswith("$ ")]
+        hits = [c for c in cmds if re.search(args[1], c[2:])]
         return bool(hits), f"commands={len(cmds)} matching={len(hits)}" + (f" first={hits[0][:100]}" if hits else "")
     return False, "unknown check"
 

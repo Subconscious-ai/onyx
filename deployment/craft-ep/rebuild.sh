@@ -37,12 +37,14 @@ set_env OPENCODE_PROMPT_INACTIVITY_TIMEOUT_SECONDS 1800
 # nginx resolves api_server once at start; a re-created api_server leaves it returning 502.
 docker restart "$(cd "$COMPOSE" && docker compose ps -q nginx)" >/dev/null
 
-# Sandboxes on an older image are re-created by Craft on the user's next session.
+# Sandboxes on an older image are re-created by Craft on the user's next session. This removes every
+# sandbox-* container on the host not on the new image, live sessions included: run it on a quiet stack.
 for c in $(docker ps -a --format '{{.Names}} {{.Image}}' | awk -v img="$SANDBOX" '$1 ~ /^sandbox-/ && $2 != img {print $1}'); do
   docker rm -f "$c" >/dev/null && echo "removed old sandbox $c"
 done
 
 for i in $(seq 1 60); do curl -sf "$B/health" >/dev/null && break; sleep 5; done
+curl -sf "$B/health" >/dev/null || { echo "API not healthy after 5 minutes"; exit 1; }
 set -a; . ~/craft-ep/admin.env; set +a
 JAR=$(mktemp)
 curl -sf -c "$JAR" -o /dev/null --data-urlencode "username=$CRAFT_ADMIN_EMAIL" --data-urlencode "password=$CRAFT_ADMIN_PASSWORD" "$B/auth/login"

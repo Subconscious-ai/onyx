@@ -4,6 +4,7 @@ Usage: python craft_screenshot.py <user env file> <session id> <out.png>
 Reads U_EMAIL/U_PASSWORD (or CRAFT_USER_*) from the env file; prints no secret.
 """
 import sys
+
 from playwright.sync_api import sync_playwright
 
 env = dict(line.strip().split("=", 1) for line in open(sys.argv[1]) if "=" in line)
