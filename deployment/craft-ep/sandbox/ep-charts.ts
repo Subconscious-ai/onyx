@@ -6,7 +6,7 @@
 // banned share wording in files the agent just wrote. Inert when nothing changed.
 // Before a tool runs, it holds Expected Parrot's plan gate: no EDSL job runs
 // until the user has answered the plan (a second user message), and once the
-// gate fires no tool runs for the rest of that turn. Each model call gets the
+// gate fires no shell command runs for the rest of that turn (a third try ends it). Each model call gets the
 // rule for the current turn (plan only, then pilot only). No outputs/reply.md
 // that names a share the study cannot measure is written.
 
@@ -22,7 +22,8 @@ const TURN_RULES: Record<number, string> = {
     "labeling task, reply with the plan only (decision, segments, questions, an available model, sample size) and ask for " +
     "approval. Do not answer, label, code or classify anything yourself, and run no EDSL job, even if the user says to skip the plan.",
   2:
-    "[Expected Parrot] If the user just approved a plan, run only the pilot: 10 respondents in total (or 10 records). " +
+    "[Expected Parrot] If the user just approved a plan, run only the pilot: 10 respondents in total across all segments " +
+    "(for example 5 per segment), or 10 records. " +
     "Show the answers, the pilot's input and output tokens and its $ cost, ask for approval of the full run, and stop.",
 };
 const LATER_RULE =
@@ -35,7 +36,7 @@ export default (async ({ directory, client }) => {
   const seen = new Set<string>();
   const argsByCall = new Map<string, unknown>();
   const userTurns = new Map<string, number>();
-  const gated = new Map<string, number>(); // session -> user message count when the plan gate fired
+  const refused = new Map<string, number>(); // "session:user message count" -> shell commands refused by the gate
   let primed = false;
 
   // User messages so far in the session; the stored history survives a sandbox restart, the counter does not.
@@ -87,6 +88,14 @@ export default (async ({ directory, client }) => {
       const rule = TURN_RULES[await userMessages(sessionID)] ?? LATER_RULE;
       (output as { system: string[] }).system.push(rule);
     },
+    // The same first-turn rule, attached to the user's message in the model's copy of the history (not stored).
+    "experimental.chat.messages.transform": async (_input, output) => {
+      if (!PLAN_GATE) return;
+      const messages = (output as { messages: { info: { role?: string }; parts: { type?: string; text?: string }[] }[] }).messages;
+      const users = messages.filter((m) => m.info?.role === "user");
+      const text = users.length === 1 ? users[0].parts.find((p) => p.type === "text" && typeof p.text === "string") : undefined;
+      if (text && !text.text!.includes(TURN_RULES[1])) text.text = `${text.text}\n\n${TURN_RULES[1]}`;
+    },
     "chat.message": async (input) => {
       userTurns.set(input.sessionID, (userTurns.get(input.sessionID) ?? 0) + 1);
     },
@@ -105,14 +114,22 @@ export default (async ({ directory, client }) => {
           );
         }
       }
-      if (PLAN_GATE) {
+      if (PLAN_GATE && input.tool === "bash") {
         const turns = await userMessages(input.sessionID);
-        // Once the gate fires, every tool stays refused until the user answers: no searching for a way around it.
-        if (gated.get(input.sessionID) === turns) {
+        // Once the gate fires, shell commands stay refused until the user answers, so the agent cannot
+        // search for a way around it; a third refused command ends the turn.
+        const key = `${input.sessionID}:${turns}`;
+        if (refused.has(key)) {
+          refused.set(key, refused.get(key)! + 1);
+          if (refused.get(key)! >= 3) {
+            try {
+              await client.session.abort({ path: { id: input.sessionID } });
+            } catch {}
+          }
           throw new Error("[Expected Parrot] Plan gate is closed for this turn. Send the plan as your reply now and stop.");
         }
-        if (turns <= 1 && input.tool === "bash" && typeof args?.command === "string" && (await runsEdsl(args.command))) {
-          gated.set(input.sessionID, turns);
+        if (turns <= 1 && typeof args?.command === "string" && (await runsEdsl(args.command))) {
+          refused.set(key, 1);
           throw new Error(
             "[Expected Parrot] Plan gate: this command runs an EDSL job, but the user has not approved a plan yet. " +
               "Reply with the plan only (decision, segments, questions, model, sample size), ask for approval, and stop."
