@@ -64,8 +64,9 @@ Results on agent-dev, with MiniMax M2.5 as the Craft agent:
 | `d4977e435` | `z-demos` | 19/25 cases |
 | `d4977e435` | `z-tools` | 31/39 cases |
 | `e60548559` | `y1`, `y2` core + market | 42/43, 42/43 |
+| `8dba9f98b` | `x1` concept_image and gate_small_task only | 10/10 |
 
-- Acceptance was not fully reached: no three clean runs in a row on one commit. The 14 demo and tool cases that failed were not rerun on `e60548559`, so its fixes for them are unproven, and `y3` was stopped by choice.
+- Acceptance was not fully reached: no three clean runs in a row on one commit. The 14 demo and tool cases that failed were not rerun on a later commit, so the fixes for them are unproven, and `y3` was stopped by choice. The final plugin ran only `x1`.
 - Still failing on `e60548559`: a full-run reply with no simulated caveat (`y1` concept_image), and a first chart 1,097 s after approval against the 900 s limit (`y2` conjoint_segments).
 - Agent models: MiniMax follows a rule attached to the user message far better than the same rule in the system prompt, so the plugin attaches each turn's rule to the newest user message. Core + market runs were 34-41 of 43 before that change and 38-43 after it. Qwen3-Next as the agent refuses to run EDSL, and GLM-5 costs about twice as much per study.
 - Rules worth holding in code, because the agent broke them in tests: `ep run` skipping the plan gate, and an ad image passed as a file path so respondents never saw it.
