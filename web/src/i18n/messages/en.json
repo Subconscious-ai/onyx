@@ -9543,6 +9543,33 @@
           "text": "Waiting for response..."
         }
       },
+      "customToolApproval": {
+        "approveButton": {
+          "label": "Approve this exact action"
+        },
+        "approvedStatus": {
+          "text": "Approved. {toolName} is running."
+        },
+        "card": {
+          "description": "Review the exact action below. Nothing runs until you approve it.",
+          "title": "{toolName} needs your approval"
+        },
+        "declineButton": {
+          "label": "Decline"
+        },
+        "declinedStatus": {
+          "text": "Declined. Nothing was run."
+        },
+        "expiredStatus": {
+          "text": "No answer in time. Nothing was run."
+        },
+        "messageBlock": {
+          "label": "Exact action"
+        },
+        "sendError": {
+          "text": "Your answer could not be sent. Try again."
+        }
+      },
       "customToolAuth": {
         "card": {
           "description": "Connect to {toolName} to enable this tool",
@@ -9615,6 +9642,50 @@
         },
         "validationError": {
           "title": "Validation Error"
+        }
+      },
+      "experimentRun": {
+        "failed": {
+          "text": "Did not finish ({status}). Ask Beca what to do next."
+        },
+        "finished": {
+          "text": "Finished. Ask Beca for the results."
+        },
+        "followUp": {
+          "audience": {
+            "label": "Try another audience",
+            "text": "Propose running the design of experiment {runId} on a different audience. Ask me which audience, then show the draft for review before anything runs."
+          },
+          "explain": {
+            "label": "Explain this result",
+            "text": "Explain the result of experiment {runId} in plain terms, with its main risk and the next decision it supports."
+          },
+          "replace": {
+            "label": "Replace weak attributes",
+            "text": "Which attributes in experiment {runId} moved choice least? Propose a follow-up study that replaces them, and show it for review before anything runs."
+          },
+          "segments": {
+            "label": "Compare segments",
+            "text": "Compare how different segments responded in experiment {runId} and say whether the same action fits each."
+          }
+        },
+        "openResults": {
+          "label": "Open results"
+        },
+        "queued": {
+          "text": "Waiting in the queue."
+        },
+        "running": {
+          "text": "Running. This can take several minutes."
+        },
+        "starting": {
+          "text": "Starting."
+        },
+        "title": {
+          "text": "Experiment {runId}"
+        },
+        "unavailable": {
+          "text": "The status is unavailable right now. Checking again."
         }
       },
       "humanMessage": {

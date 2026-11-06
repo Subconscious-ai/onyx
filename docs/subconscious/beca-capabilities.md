@@ -42,6 +42,14 @@ Rehoboam includes `check_causality`, attribute/level and outcome generation, dra
 
 Experiment execution requires an explicit instruction for the identified draft. The Actions menu never submits or launches automatically. The interview prompt enforces the conversational boundary; Rehoboam now owns a durable specification-hash and idempotency approval boundary through MCP elicitation. Native client elicitation support and a paid launch are not exercised by this change.
 
+### Approving a launch and following a run in chat (#106)
+
+When Rehoboam's `start_experiment` asks for approval, the message shows a card, outside the collapsible tool timeline, with the server's own wording as plain text and Approve and Decline buttons. The timeline hides parallel calls behind tabs, so a card inside it could go unseen and expire. Only the signed-in user's click answers it, through `POST /mcp/elicitation/{id}`; the model never sees the question. Onyx supports one request shape, a single required string field with one fixed value. Any other shape is declined, not guessed at. An unanswered card expires after 180 seconds and nothing runs. Approval needs a signed-in user and a live chat stream to show the card in. Without both, as in the Search API, the MCP server path and a research sub-agent, Onyx does not advertise elicitation and the server reports approval unavailable. Stopping generation ends the wait and nothing runs.
+
+After a launch, the answer keeps a run card. It is drawn from the saved launch result, so it survives a reload, and it asks `GET /mcp/experiment-run/{run_id}?chat_session_id=` every 30 seconds until the run ends. That route answers only for a run id that a `start_experiment` call in the caller's own chat session returned, then reads Rehoboam's `get_experiment_status` through the same server connection. A finished run offers follow-up questions to the assistant and, where `NEXT_PUBLIC_HOLODECK_URL` is set at build time, a link to `/insights/<run id>`. The MCP server exposes no failure reason or retry, so a failed run says only that it did not finish.
+
+Neither card has been exercised against Rehoboam's `api.dev` server with a real paid run. The proof so far is unit tests, including one that runs a real FastMCP server over streamable HTTP.
+
 The native description for `check_causality` now explicitly identifies question suitability. `is_causal=false` requests question reframing; classification is not an estimated effect or evidence of no conversion lift. Generated attribute levels remain proposals. Preserve this description when refreshing the MCP registration, or fix the upstream description before refresh.
 
 ## Analyst and MBB integration

@@ -21,6 +21,8 @@ export function isToolPacket(
     PacketType.CUSTOM_TOOL_START,
     PacketType.CUSTOM_TOOL_ARGS,
     PacketType.CUSTOM_TOOL_DELTA,
+    PacketType.CUSTOM_TOOL_APPROVAL_REQUEST,
+    PacketType.CUSTOM_TOOL_APPROVAL_RESULT,
     PacketType.FILE_READER_START,
     PacketType.FILE_READER_RESULT,
     PacketType.REASONING_START,

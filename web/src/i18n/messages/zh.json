@@ -9543,6 +9543,33 @@
           "text": "正在等待响应..."
         }
       },
+      "customToolApproval": {
+        "approveButton": {
+          "label": "按此内容批准"
+        },
+        "approvedStatus": {
+          "text": "已批准，{toolName} 正在运行。"
+        },
+        "card": {
+          "description": "请查看下方的具体操作。在您批准之前不会执行任何内容。",
+          "title": "{toolName} 需要您的批准"
+        },
+        "declineButton": {
+          "label": "拒绝"
+        },
+        "declinedStatus": {
+          "text": "已拒绝，未执行任何操作。"
+        },
+        "expiredStatus": {
+          "text": "未在时限内回复，未执行任何操作。"
+        },
+        "messageBlock": {
+          "label": "具体操作"
+        },
+        "sendError": {
+          "text": "无法发送您的回复，请重试。"
+        }
+      },
       "customToolAuth": {
         "card": {
           "description": "连接到 {toolName} 以启用此工具",
@@ -9615,6 +9642,50 @@
         },
         "validationError": {
           "title": "验证错误"
+        }
+      },
+      "experimentRun": {
+        "failed": {
+          "text": "未能完成（{status}）。请向 Beca 询问下一步。"
+        },
+        "finished": {
+          "text": "已完成。请向 Beca 询问结果。"
+        },
+        "followUp": {
+          "audience": {
+            "label": "换一个受众试试",
+            "text": "建议把实验 {runId} 的设计用于另一类受众。请先问我是哪类受众，并在运行任何内容之前把草案给我审阅。"
+          },
+          "explain": {
+            "label": "解释这个结果",
+            "text": "请用通俗的话解释实验 {runId} 的结果，包括主要风险和它支持的下一个决策。"
+          },
+          "replace": {
+            "label": "替换作用弱的属性",
+            "text": "实验 {runId} 中哪些属性对选择的影响最小？请提出替换它们的后续研究，并在运行任何内容之前把方案给我审阅。"
+          },
+          "segments": {
+            "label": "比较细分群体",
+            "text": "比较不同细分群体在实验 {runId} 中的反应，并说明同一措施是否适合每个群体。"
+          }
+        },
+        "openResults": {
+          "label": "打开结果"
+        },
+        "queued": {
+          "text": "正在队列中等待。"
+        },
+        "running": {
+          "text": "运行中，可能需要几分钟。"
+        },
+        "starting": {
+          "text": "正在启动。"
+        },
+        "title": {
+          "text": "实验 {runId}"
+        },
+        "unavailable": {
+          "text": "目前无法获取状态，将重新检查。"
         }
       },
       "humanMessage": {

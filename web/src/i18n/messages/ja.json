@@ -9543,6 +9543,33 @@
           "text": "レスポンスを待っています..."
         }
       },
+      "customToolApproval": {
+        "approveButton": {
+          "label": "この内容のとおりに承認する"
+        },
+        "approvedStatus": {
+          "text": "承認しました。{toolName} を実行中です。"
+        },
+        "card": {
+          "description": "以下の実行内容を確認してください。承認するまで何も実行されません。",
+          "title": "{toolName} の承認が必要です"
+        },
+        "declineButton": {
+          "label": "拒否する"
+        },
+        "declinedStatus": {
+          "text": "拒否しました。何も実行されていません。"
+        },
+        "expiredStatus": {
+          "text": "時間内に回答がありませんでした。何も実行されていません。"
+        },
+        "messageBlock": {
+          "label": "実行内容"
+        },
+        "sendError": {
+          "text": "回答を送信できませんでした。もう一度お試しください。"
+        }
+      },
       "customToolAuth": {
         "card": {
           "description": "このツールを使用するには {toolName} に接続してください",
@@ -9615,6 +9642,50 @@
         },
         "validationError": {
           "title": "検証エラー"
+        }
+      },
+      "experimentRun": {
+        "failed": {
+          "text": "完了しませんでした（{status}）。次の対応は Beca に尋ねてください。"
+        },
+        "finished": {
+          "text": "完了しました。結果は Beca に尋ねてください。"
+        },
+        "followUp": {
+          "audience": {
+            "label": "別の対象者で試す",
+            "text": "実験 {runId} と同じ設計を別の対象者で実行することを提案してください。どの対象者か私に尋ね、何かを実行する前に確認用の案を見せてください。"
+          },
+          "explain": {
+            "label": "結果を説明する",
+            "text": "実験 {runId} の結果を、主なリスクとそれが裏付ける次の判断も含め、平易な言葉で説明してください。"
+          },
+          "replace": {
+            "label": "弱い属性を置き換える",
+            "text": "実験 {runId} で選択への影響が最も小さかった属性はどれですか。それらを置き換えるフォローアップ調査を提案し、何かを実行する前に確認用の案を見せてください。"
+          },
+          "segments": {
+            "label": "セグメントを比較する",
+            "text": "実験 {runId} でセグメントごとの反応がどう違ったかを比較し、同じ施策がそれぞれに合うかを教えてください。"
+          }
+        },
+        "openResults": {
+          "label": "結果を開く"
+        },
+        "queued": {
+          "text": "キューで待機中です。"
+        },
+        "running": {
+          "text": "実行中です。数分かかることがあります。"
+        },
+        "starting": {
+          "text": "開始しています。"
+        },
+        "title": {
+          "text": "実験 {runId}"
+        },
+        "unavailable": {
+          "text": "現在ステータスを取得できません。再確認します。"
         }
       },
       "humanMessage": {
