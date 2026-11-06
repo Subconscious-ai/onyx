@@ -8,7 +8,7 @@ priced pilot, waits again, then runs the full study on simulated respondents and
 shows the charts inline.
 
 Running on agent-dev as Compose project `craft-fork`
-(`~/craft-ep/fork/deployment/docker_compose`), web on
+(`~/craft-ep/build-wt/deployment/docker_compose`), web on
 `http://agent-dev.taila3aadb.ts.net:3390`. Tracked on
 [map #119](https://github.com/Subconscious-ai/onyx/issues/119).
 
