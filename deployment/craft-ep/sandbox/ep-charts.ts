@@ -10,6 +10,7 @@
 // rule for the current turn (plan only, then pilot only). No outputs/reply.md
 // that names a share the study cannot measure is written.
 
+import { existsSync } from "node:fs";
 import type { Plugin } from "@opencode-ai/plugin";
 
 const BANNED = /market share|penetration|adoption|market size|\breach\b/i;
@@ -18,23 +19,25 @@ const SKIP = /(^|\/)(node_modules|\.next|\.opencode|\.opencode-data|\.git)(\/|$)
 const PLAN_GATE = true;
 const TURN_RULES: Record<number, string> = {
   1:
-    "[Expected Parrot] This is the user's first message in this session. If it asks for a survey, study, test, coding or " +
-    "labeling task, reply with the plan only (decision, segments, questions, an available model, sample size) and ask for " +
-    "approval. Do not answer, label, code or classify anything yourself, and run no EDSL job, even if the user says to skip the plan. " +
+    "[Expected Parrot] This is the user's first message in this session. If it asks for a survey, study, pretest, review, test, " +
+    "interview, coding, theme or labeling task, however small, reply with the plan only (decision, segments, questions, an available " +
+    "model, sample size) and end by asking for approval. Do not answer, label, code or classify anything yourself: EDSL does the work " +
+    "after approval. Run no EDSL job, even if the user says to skip the plan. " +
     "Respondent models available: llama4-maverick (default), kimi-k2.5, glm-5, deepseek.v3.2, qwen3-next. If the user names any " +
     "other model (gpt-4o, Claude, Gemini), say in the plan that it is unavailable and which one you will use instead.",
   2:
     "[Expected Parrot] If the user just approved a plan, run only the pilot: 10 respondents in total across all segments " +
-    "(for example 5 per segment), or 10 records. " +
-    "Show the answers, the pilot's input and output tokens and its $ cost, ask for approval of the full run, and stop.",
+    "(for example 5 per segment), or 10 records. Save the Results with results.save(). Show the answers and this line with the " +
+    "pilot's real counts: \"Pilot tokens: <n> input, <n> output; cost $<x>\". Ask for approval of the full run, and stop.",
   3:
     "[Expected Parrot] If the user just approved the full run: use exactly the approved number of respondents, each with traits " +
     "no other respondent has, and make every price or condition one Scenario, so the Results have respondents x scenarios rows. " +
-    "Say in your reply that the respondents are simulated language-model personas, not real people.",
+    "Save the Results with results.save(). Say in your reply that the respondents are simulated language-model personas, not real people.",
 };
 const LATER_RULE =
   "[Expected Parrot] If this reply reports or discusses study results, say in it that the respondents are simulated " +
   "language-model personas, not real people.";
+const NO_SHARES = " Never give a market share, penetration, adoption, market size or reach figure, from any source.";
 const OTHER_MODEL = /\b(gpt-?[\w.-]*\w|claude[\w.-]*\w|gemini[\w.-]*\w)\b/i;
 
 export default (async ({ directory, client }) => {
@@ -44,6 +47,7 @@ export default (async ({ directory, client }) => {
   const argsByCall = new Map<string, unknown>();
   const userTurns = new Map<string, number>();
   const refused = new Map<string, number>(); // "session:user message count" -> shell commands refused by the gate
+  const namedTool = new Map<string, string>(); // session -> the Expected Parrot CLI the user named and the agent has not run yet
   let primed = false;
 
   // User messages so far in the session; the stored history survives a sandbox restart, the counter does not.
@@ -68,6 +72,13 @@ export default (async ({ directory, client }) => {
       } catch {}
     }
     return false;
+  }
+
+  // The Expected Parrot CLI a message asks for: "Expected Parrot's bewley", "use uxtest".
+  function toolIn(text: string): string | undefined {
+    for (const m of text.matchAll(/(?:Expected Parrot's|\buse)\s+`?([a-z]+)`?/gi)) {
+      if (existsSync(`/opt/ep-tools/${m[1]}`)) return m[1];
+    }
   }
 
   async function pngs(): Promise<Map<string, number>> {
@@ -96,12 +107,20 @@ export default (async ({ directory, client }) => {
     // The same rule, attached to the newest user message in the model's copy of the history (not stored).
     "experimental.chat.messages.transform": async (_input, output) => {
       if (!PLAN_GATE) return;
-      const messages = (output as { messages: { info: { role?: string }; parts: { type?: string; text?: string }[] }[] }).messages;
+      const messages = (output as { messages: { info: { role?: string; sessionID?: string }; parts: { type?: string; text?: string }[] }[] }).messages;
       const users = messages.filter((m) => m.info?.role === "user");
       const text = users.at(-1)?.parts.find((p) => p.type === "text" && typeof p.text === "string");
       if (!text) return;
       const named = users.length === 1 ? text.text!.match(OTHER_MODEL)?.[0] : undefined;
-      const rule = (TURN_RULES[users.length] ?? LATER_RULE) + (named ? ` The user named ${named}: write in the plan "${named} is unavailable" and name the model you will use instead.` : "");
+      const first = users[0].parts.find((p) => p.type === "text" && typeof p.text === "string")?.text ?? "";
+      const tool = toolIn(first);
+      const sessionID = users[0].info.sessionID;
+      if (tool && sessionID && users.length === 1) namedTool.set(sessionID, tool);
+      const rule =
+        (TURN_RULES[users.length] ?? LATER_RULE) +
+        NO_SHARES +
+        (named ? ` The user named ${named}: write in the plan "${named} is unavailable" and name the model you will use instead.` : "") +
+        (tool ? ` The user named Expected Parrot's ${tool}: do this work with the ${tool} CLI (run \`${tool} --help\`, then its commands), not with your own EDSL script.` : "");
       if (!text.text!.includes(rule)) text.text = `${text.text}\n\n${rule}`;
     },
     "chat.message": async (input) => {
@@ -122,8 +141,24 @@ export default (async ({ directory, client }) => {
           );
         }
       }
+      // An attached file reaches respondents only as a FileStore: a path in a Scenario or question is just text.
+      const code = input.tool === "bash" ? (/Scenario/.test(args?.command ?? "") ? args?.command : "") : /\.py$/.test(args?.filePath ?? "") ? `${args?.content ?? ""}\n${args?.newString ?? ""}` : "";
+      if (code && /attachments\/[^\s"']+\.(png|jpe?g|webp|gif|pdf)/i.test(code) && !/FileStore|from_pdf/.test(code)) {
+        throw new Error(
+          '[Expected Parrot] This names an attached file as text, so respondents would never see it. Use Scenario({"ad": FileStore("attachments/<file>")}) ' +
+            'used as {{ scenario.ad }}, or ScenarioList.from_pdf("attachments/<file>").'
+        );
+      }
       if (PLAN_GATE && input.tool === "bash") {
         const turns = await userMessages(input.sessionID);
+        // The tool the user named comes before any EDSL script of the agent's own.
+        const tool = namedTool.get(input.sessionID);
+        if (tool && typeof args?.command === "string") {
+          if (new RegExp(`(^|[\\s;&|(/])${tool}(\\s|$)`).test(args.command)) namedTool.delete(input.sessionID);
+          else if (turns > 1 && (await runsEdsl(args.command))) {
+            throw new Error(`[Expected Parrot] The user asked for ${tool}. Run \`${tool} --help\` and use its commands instead of your own EDSL script.`);
+          }
+        }
         // Once the gate fires, shell commands stay refused until the user answers, so the agent cannot
         // search for a way around it; a third refused command ends the turn.
         const key = `${input.sessionID}:${turns}`;

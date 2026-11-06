@@ -43,8 +43,8 @@ import glob, json, sys
 from edsl import Results, FileStore
 out = []
 # Anywhere in the session folder (some skills scaffold a dated study folder), saved by results.save()
-# or written as Results' own dict in plain JSON.
-files = glob.glob(sys.argv[1] + "/**/*.json.gz", recursive=True) + glob.glob(sys.argv[1] + "/**/*.json", recursive=True)
+# (EDSL's .json.gz or .ep) or written as Results' own dict in plain JSON.
+files = [f for ext in ("json.gz", "json", "ep") for f in glob.glob(sys.argv[1] + "/**/*." + ext, recursive=True)]
 for f in files:
     r = None
     try:
