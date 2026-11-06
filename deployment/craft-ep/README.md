@@ -54,6 +54,25 @@ Respondents run inside the sandbox through Onyx's own gateway: EDSL's `openai_co
 - **Rules the plugin enforces, not just the instructions.** Instructions alone held in about 15 of 18 runs. `ep-charts.ts` (1) refuses any shell command that starts an EDSL job (`.run(` inline or in the Python file it runs, or `ep run` / `ep run-manifest`) before the user's second message, and once it fires refuses every shell command for the rest of that turn (the third refused command ends the turn), so the first reply is a plan; it also adds the current turn's rule to each model call (turn 1 plan only, turn 2 pilot only with tokens and cost, later turns say the respondents are simulated); (2) refuses a write of `outputs/reply.md` that says market share, penetration, adoption, market size or reach; (3) appends to each tool result the exact inline Markdown for every new PNG and warns when a chart lands outside `outputs/graphs/`; (4) flags the banned terms in anything else the agent writes.
 - **`EDSL_MAX_CONCURRENT_TASKS=8`.** EDSL's default of 50 exhausted the API's Redis connection pool ("Too many connections").
 
+## What we learned (November 2026)
+
+Results on agent-dev, with MiniMax M2.5 as the Craft agent:
+
+| Commit | Run | Result |
+| --- | --- | --- |
+| `d4977e435` | `z1`, `z2`, `z3` core + market | 43/43, 38/43, 43/43 |
+| `d4977e435` | `z-demos` | 19/25 cases |
+| `d4977e435` | `z-tools` | 31/39 cases |
+| `e60548559` | `y1`, `y2` core + market | 42/43, 42/43 |
+
+- Acceptance was not fully reached: no three clean runs in a row on one commit. The 14 demo and tool cases that failed were not rerun on `e60548559`, so its fixes for them are unproven, and `y3` was stopped by choice.
+- Still failing on `e60548559`: a follow-up reply with no simulated caveat (`y1` concept_image), and a first chart 1,097 s after approval against the 900 s limit (`y2` conjoint_segments).
+- Agent models: MiniMax follows a rule attached to the user message far better than the same rule in the system prompt, so the plugin attaches each turn's rule to the newest user message. That moved the core + market runs from 34-41 of 43 to 42-43. Qwen3-Next as the agent refuses to run EDSL, and GLM-5 costs about twice as much per study.
+- Rules worth holding in code, because the agent broke them in tests: `ep run` skipping the plan gate, an ad image passed as a file path so respondents never saw it, a named tool replaced by the agent's own EDSL script, and small coding tasks answered by the agent itself. The agent can still answer a small task in plain text with no tool call: no plugin hook refuses a text reply.
+- Test lessons: a check with `>=` passes oversized studies, so sample checks are exact. The inspector must read every Results format the agent writes (`.json.gz`, plain JSON under a `.gz` name, `.ep`). Use a new run tag each time: `tdd.py` overwrites the files of a tag used before.
+- Stack: restarting Redis logs test users out; re-creating `api_server` needs an nginx restart. `rebuild.sh` handles the second, and `tdd.py` the first.
+- Cost: a core + market run is about $2.50-$3 and the demo + tool sweep about $34. `select sum(cost_cents)/100 from user_usage` is the running total.
+
 ## Test
 
 `test/tdd.py` drives Craft through its own API as the test users `ep-user2`..`ep-user8` (cookie jars in `~/craft-ep/`, copied with `test/craft_turn.sh`, `ep_demos.tsv`, `ep_tool_prompts.tsv` and `stimuli/`), then checks what ran: EDSL Results files in the session's sandbox, the commands the agent ran, the reply, and whether each inline chart loads.
