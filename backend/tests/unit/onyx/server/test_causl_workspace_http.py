@@ -293,3 +293,29 @@ def test_http_open_and_stream_keep_two_native_callers_separate(
         "auth0|bob",
         "auth0|alice",
     ]
+
+
+def test_open_workspace_rejects_body_without_actor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Callers must send the KB actor; a selection alone cannot bind a chat."""
+    load = MagicMock()
+    monkeypatch.setattr(api, "load_causl_context", load)
+
+    def no_dependency() -> None:
+        return None
+
+    app = FastAPI()
+    app.include_router(api.router, prefix="/chat")
+    for route in app.routes:
+        if isinstance(route, APIRoute) and route.path == "/chat/causl-workspace":
+            for dependency in route.dependant.dependencies:
+                if dependency.call is not None:
+                    app.dependency_overrides[dependency.call] = no_dependency
+    with TestClient(app) as client:
+        response = client.post(
+            "/chat/causl-workspace", json={"selection": {"page": "models"}}
+        )
+    assert response.status_code == 422
+    assert [error["loc"] for error in response.json()["detail"]] == [["body", "actor"]]
+    load.assert_not_called()
