@@ -488,10 +488,10 @@ def check(name, args, ctx):
         ), "reply names a $ cost and tokens" if ok else "no $ cost from tokens in reply"
     if name == "full_size":
         n = max((r["n"] for r in res), default=0)
-        return n >= args[1], f"largest results n={n}, want >= {args[1]}"
+        return n == args[1], f"largest results n={n}, want exactly {args[1]}"
     if name == "distinct_agents":
         n = max((r["agents"] for r in res), default=0)
-        return n >= args[1], f"distinct respondents={n}, want >= {args[1]}"
+        return n == args[1], f"distinct respondents={n}, want exactly {args[1]}"
     if name == "model_used":
         models = sorted({m for r in res for m in r["models"]})
         return any(args[1] in m for m in models), f"models={models}"

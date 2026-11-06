@@ -21,7 +21,7 @@ Output. Work only in outputs/: save Results with results.save("outputs/<study>/r
   ![Title](/api/build/sessions/<session>/artifacts/outputs/graphs/<file>.png)
 where <session> is basename "$PWD", with its key numbers under it. Never only name a file or folder.
 
-Wording. Respondents are language-model personas, not real people; say so once. Report only numbers the results contain, as shares of simulated respondents ("49% of simulated respondents would buy"). Never report a market share, penetration, adoption, market size or reach, in prose, titles, labels, file names or headers; if asked for one, explain in other words why the study cannot give it.
+Wording. Respondents are language-model personas, not real people; say so in every reply that reports results. Report only numbers the results contain, as shares of simulated respondents ("49% of simulated respondents would buy"). Never report a market share, penetration, adoption, market size or reach, in prose, titles, labels, file names or headers; if asked for one, explain in other words why the study cannot give it.
 
 Before sending results: write the reply to outputs/reply.md, run `ls outputs/graphs/; grep -inE "market share|penetration|adoption|market size|\breach\b" outputs/reply.md`, make every new PNG inline, rewrite every hit, then send reply.md.
 

@@ -27,15 +27,20 @@ const TURN_RULES: Record<number, string> = {
     "[Expected Parrot] If the user just approved a plan, run only the pilot: 10 respondents in total across all segments " +
     "(for example 5 per segment), or 10 records. " +
     "Show the answers, the pilot's input and output tokens and its $ cost, ask for approval of the full run, and stop.",
+  3:
+    "[Expected Parrot] If the user just approved the full run: use exactly the approved number of respondents, each with traits " +
+    "no other respondent has, and make every price or condition one Scenario, so the Results have respondents x scenarios rows. " +
+    "Say in your reply that the respondents are simulated language-model personas, not real people.",
 };
 const LATER_RULE =
-  "[Expected Parrot] When you report or discuss study results, say once that the respondents are simulated " +
+  "[Expected Parrot] If this reply reports or discusses study results, say in it that the respondents are simulated " +
   "language-model personas, not real people.";
+const OTHER_MODEL = /\b(gpt-?[\w.-]*\w|claude[\w.-]*\w|gemini[\w.-]*\w)\b/i;
 
 export default (async ({ directory, client }) => {
   const session = directory.split("/").filter(Boolean).pop() ?? "";
   const glob = new Bun.Glob("**/*.png");
-  const seen = new Set<string>();
+  const seen = new Map<string, number>(); // chart path -> modified time, so a rewritten chart counts as new
   const argsByCall = new Map<string, unknown>();
   const userTurns = new Map<string, number>();
   const refused = new Map<string, number>(); // "session:user message count" -> shell commands refused by the gate
@@ -65,22 +70,20 @@ export default (async ({ directory, client }) => {
     return false;
   }
 
-  async function pngs(): Promise<string[]> {
-    const found: string[] = [];
+  async function pngs(): Promise<Map<string, number>> {
+    const found = new Map<string, number>();
     try {
       for await (const rel of glob.scan({ cwd: directory, onlyFiles: true })) {
-        if (!SKIP.test(rel)) found.push(rel);
+        if (!SKIP.test(rel)) found.set(rel, Bun.file(`${directory}/${rel}`).lastModified);
       }
-    } catch {
-      return [];
-    }
+    } catch {}
     return found;
   }
 
   async function prime(): Promise<void> {
     if (primed) return;
     primed = true;
-    for (const rel of await pngs()) seen.add(rel);
+    for (const [rel, mtime] of await pngs()) seen.set(rel, mtime);
   }
 
   return {
@@ -90,13 +93,16 @@ export default (async ({ directory, client }) => {
       const rule = TURN_RULES[await userMessages(sessionID)] ?? LATER_RULE;
       (output as { system: string[] }).system.push(rule);
     },
-    // The same first-turn rule, attached to the user's message in the model's copy of the history (not stored).
+    // The same rule, attached to the newest user message in the model's copy of the history (not stored).
     "experimental.chat.messages.transform": async (_input, output) => {
       if (!PLAN_GATE) return;
       const messages = (output as { messages: { info: { role?: string }; parts: { type?: string; text?: string }[] }[] }).messages;
       const users = messages.filter((m) => m.info?.role === "user");
-      const text = users.length === 1 ? users[0].parts.find((p) => p.type === "text" && typeof p.text === "string") : undefined;
-      if (text && !text.text!.includes(TURN_RULES[1])) text.text = `${text.text}\n\n${TURN_RULES[1]}`;
+      const text = users.at(-1)?.parts.find((p) => p.type === "text" && typeof p.text === "string");
+      if (!text) return;
+      const named = users.length === 1 ? text.text!.match(OTHER_MODEL)?.[0] : undefined;
+      const rule = (TURN_RULES[users.length] ?? LATER_RULE) + (named ? ` The user named ${named}: write in the plan "${named} is unavailable" and name the model you will use instead.` : "");
+      if (!text.text!.includes(rule)) text.text = `${text.text}\n\n${rule}`;
     },
     "chat.message": async (input) => {
       userTurns.set(input.sessionID, (userTurns.get(input.sessionID) ?? 0) + 1);
@@ -143,8 +149,9 @@ export default (async ({ directory, client }) => {
       if (!output) return;
       const notes: string[] = [];
 
-      const fresh = (await pngs()).filter((rel) => !seen.has(rel));
-      for (const rel of fresh) seen.add(rel);
+      const current = await pngs();
+      const fresh = [...current.keys()].filter((rel) => seen.get(rel) !== current.get(rel));
+      for (const rel of fresh) seen.set(rel, current.get(rel)!);
       const inGraphs = fresh.filter((rel) => rel.startsWith("outputs/graphs/"));
       const elsewhere = fresh.filter((rel) => !rel.startsWith("outputs/graphs/"));
       if (inGraphs.length) {
