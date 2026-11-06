@@ -480,7 +480,7 @@ def check(name, args, ctx):
         return bool(ok), f"results files={len(res)} edsl commands={len(ran)}"
     if name == "pilot_small":
         n = max((r["agents"] for r in res), default=0)
-        return 1 <= n <= 15, f"largest pilot respondents={n}"
+        return n == 10, f"largest pilot respondents={n}, want exactly 10"
     if name == "cost_from_tokens":
         ok = re.search(r"\$\s?\d", rp) and re.search(r"token", rp, re.I)
         return bool(

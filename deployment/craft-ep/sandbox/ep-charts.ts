@@ -8,9 +8,8 @@
 // until the user has answered the plan (a second user message), and once the
 // gate fires no shell command runs for the rest of that turn (a third try ends it). Each model call gets the
 // rule for the current turn (plan only, then pilot only). No outputs/reply.md
-// that names a share the study cannot measure is written.
+// that names a share the study cannot measure is written, and no study names an attached file as plain text.
 
-import { existsSync } from "node:fs";
 import type { Plugin } from "@opencode-ai/plugin";
 
 const BANNED = /market share|penetration|adoption|market size|\breach\b/i;
@@ -38,6 +37,8 @@ const LATER_RULE =
   "[Expected Parrot] If this reply reports or discusses study results, say in it that the respondents are simulated " +
   "language-model personas, not real people.";
 const NO_SHARES = " Never give a market share, penetration, adoption, market size or reach figure, from any source.";
+// An attached file's path; group 1 is set when it sits directly inside FileStore( or from_pdf(.
+const ATTACHED = /(FileStore\(\s*|from_pdf\(\s*)?(?:f?["'][^"'\s]*)?attachments\/[^\s"']+\.(?:png|jpe?g|webp|gif|pdf)/gi;
 const OTHER_MODEL = /\b(gpt-?[\w.-]*\w|claude[\w.-]*\w|gemini[\w.-]*\w)\b/i;
 
 export default (async ({ directory, client }) => {
@@ -47,7 +48,6 @@ export default (async ({ directory, client }) => {
   const argsByCall = new Map<string, unknown>();
   const userTurns = new Map<string, number>();
   const refused = new Map<string, number>(); // "session:user message count" -> shell commands refused by the gate
-  const namedTool = new Map<string, string>(); // session -> the Expected Parrot CLI the user named and the agent has not run yet
   let primed = false;
 
   // User messages so far in the session; the stored history survives a sandbox restart, the counter does not.
@@ -72,13 +72,6 @@ export default (async ({ directory, client }) => {
       } catch {}
     }
     return false;
-  }
-
-  // The Expected Parrot CLI a message asks for: "Expected Parrot's bewley", "use uxtest".
-  function toolIn(text: string): string | undefined {
-    for (const m of text.matchAll(/(?:Expected Parrot's|\buse)\s+`?([a-z]+)`?/gi)) {
-      if (existsSync(`/opt/ep-tools/${m[1]}`)) return m[1];
-    }
   }
 
   async function pngs(): Promise<Map<string, number>> {
@@ -107,20 +100,15 @@ export default (async ({ directory, client }) => {
     // The same rule, attached to the newest user message in the model's copy of the history (not stored).
     "experimental.chat.messages.transform": async (_input, output) => {
       if (!PLAN_GATE) return;
-      const messages = (output as { messages: { info: { role?: string; sessionID?: string }; parts: { type?: string; text?: string }[] }[] }).messages;
+      const messages = (output as { messages: { info: { role?: string }; parts: { type?: string; text?: string }[] }[] }).messages;
       const users = messages.filter((m) => m.info?.role === "user");
       const text = users.at(-1)?.parts.find((p) => p.type === "text" && typeof p.text === "string");
       if (!text) return;
       const named = users.length === 1 ? text.text!.match(OTHER_MODEL)?.[0] : undefined;
-      const first = users[0].parts.find((p) => p.type === "text" && typeof p.text === "string")?.text ?? "";
-      const tool = toolIn(first);
-      const sessionID = users[0].info.sessionID;
-      if (tool && sessionID && users.length === 1) namedTool.set(sessionID, tool);
       const rule =
         (TURN_RULES[users.length] ?? LATER_RULE) +
         NO_SHARES +
-        (named ? ` The user named ${named}: write in the plan "${named} is unavailable" and name the model you will use instead.` : "") +
-        (tool ? ` The user named Expected Parrot's ${tool}: do this work with the ${tool} CLI (run \`${tool} --help\`, then its commands), not with your own EDSL script.` : "");
+        (named ? ` The user named ${named}: write in the plan "${named} is unavailable" and name the model you will use instead.` : "");
       if (!text.text!.includes(rule)) text.text = `${text.text}\n\n${rule}`;
     },
     "chat.message": async (input) => {
@@ -142,8 +130,8 @@ export default (async ({ directory, client }) => {
         }
       }
       // An attached file reaches respondents only as a FileStore: a path in a Scenario or question is just text.
-      const code = input.tool === "bash" ? (/Scenario/.test(args?.command ?? "") ? args?.command : "") : /\.py$/.test(args?.filePath ?? "") ? `${args?.content ?? ""}\n${args?.newString ?? ""}` : "";
-      if (code && /attachments\/[^\s"']+\.(png|jpe?g|webp|gif|pdf)/i.test(code) && !/FileStore|from_pdf/.test(code)) {
+      const code = input.tool === "bash" ? (args?.command ?? "") : /\.py$/.test(args?.filePath ?? "") ? `${args?.content ?? ""}\n${args?.newString ?? ""}` : "";
+      if (/Scenario|question_text/.test(code) && [...code.matchAll(ATTACHED)].some((m) => !m[1])) {
         throw new Error(
           '[Expected Parrot] This names an attached file as text, so respondents would never see it. Use Scenario({"ad": FileStore("attachments/<file>")}) ' +
             'used as {{ scenario.ad }}, or ScenarioList.from_pdf("attachments/<file>").'
@@ -151,14 +139,6 @@ export default (async ({ directory, client }) => {
       }
       if (PLAN_GATE && input.tool === "bash") {
         const turns = await userMessages(input.sessionID);
-        // The tool the user named comes before any EDSL script of the agent's own.
-        const tool = namedTool.get(input.sessionID);
-        if (tool && typeof args?.command === "string") {
-          if (new RegExp(`(^|[\\s;&|(/])${tool}(\\s|$)`).test(args.command)) namedTool.delete(input.sessionID);
-          else if (turns > 1 && (await runsEdsl(args.command))) {
-            throw new Error(`[Expected Parrot] The user asked for ${tool}. Run \`${tool} --help\` and use its commands instead of your own EDSL script.`);
-          }
-        }
         // Once the gate fires, shell commands stay refused until the user answers, so the agent cannot
         // search for a way around it; a third refused command ends the turn.
         const key = `${input.sessionID}:${turns}`;
