@@ -84,7 +84,7 @@ python3 tdd.py <run> [--jobs 4] [--model ID] [--without-gate] [core | market | d
 
 - `core`: the plan gate on a small coding task and on a user who demands an immediate run (`gate_immediate_run`), a priced pricing study through pilot and full run with a market-share follow-up, and an unavailable respondent model.
 - `market`: three scripted investigations: willingness to pay (Van Westendorp plus a price ladder), an ad concept test with an attached image, and a conjoint with two segments.
-- `demos`: each Expected Parrot demo and EDSL docs example in `ep_demos.tsv`; `tools`: each application CLI in `ep_tool_prompts.tsv` (pass means the tool's own command ran and its result is in the reply).
+- `demos`: each Expected Parrot demo and EDSL docs example in `ep_demos.tsv`; `tools`: each application CLI in `ep_tool_prompts.tsv` (pass means a command naming the tool ran, `--help` included, and the final reply has more than 80 characters, so it does not prove the tool did the work).
 - `first_chart_time` reports the seconds from approving the full run to the reply with the first inline chart.
 - `--without-gate` sets `PLAN_GATE = false` in the plugin in the test user's sandbox (the gate and the per-turn rules) and restarts `opencode serve`, then restores it: `gate_immediate_run` goes red without it and green with it. Attachments are not sent in this mode.
 - Known gaps, from review: the gate does not see an EDSL job started from a script run some other way (`bash run.sh`, `python - < x.py`), and a reply written to `reply.md` through the shell skips the banned-term check.
