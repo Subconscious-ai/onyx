@@ -31,7 +31,7 @@ Start from `env.template`, then set (no secrets listed here):
 - `COMPOSE_PROJECT_NAME=craft-fork`, `HOST_PORT=3390`, `HOST_PORT_80=3391`, `WEB_DOMAIN=http://agent-dev.taila3aadb.ts.net:3390`, `AUTH_TYPE=basic`, `USER_AUTH_SECRET` generated (`openssl rand -hex 32`).
 - `ENABLE_CRAFT=true`, `SANDBOX_BACKEND=docker`, `SANDBOX_CONTAINER_IMAGE=craft-ep/sandbox:<fork tag>-edsl1.0.9`.
 - `ONYX_BACKEND_IMAGE` and `ONYX_WEB_SERVER_IMAGE` built from this fork (`backend/Dockerfile`, `web/Dockerfile`); `ONYX_MODEL_SERVER_IMAGE=onyxdotapp/onyx-model-server:v5.0.3`; `CODE_INTERPRETER_IMAGE_TAG=0.4.9`.
-- `LICENSE_ENFORCEMENT_ENABLED=false` and `ENABLE_PAID_ENTERPRISE_EDITION_FEATURES=true`: Craft needs the Business tier; `backend/ee/LICENSE` permits development and testing without a subscription. Production needs an Onyx subscription.
+- `LICENSE_ENFORCEMENT_ENABLED=false` and `ENABLE_PAID_ENTERPRISE_EDITION_FEATURES=false`: the stack loads no Enterprise code. Craft's model gateway (`/gateway/v1`) is then the MIT router in `backend/onyx/server/gateway/api.py`, so production needs no Onyx subscription.
 - `OPENCODE_PROMPT_INACTIVITY_TIMEOUT_SECONDS=1800`: the 200 s default ends a turn while a full EDSL run is still quiet.
 - `LLM_SOCKET_READ_TIMEOUT=600`: MiniMax M2.5 can go quiet for minutes while it writes a long tool call; the 60 s default (and 180 s) returned "The selected model did not respond in time."
 - The fork's Compose file names `minio/minio:RELEASE.2025-07-23T15-54-02Z-cpuv1`, which Docker Hub no longer serves; tag Onyx's mirror (`onyxdotapp/minio` at that release) under that name.
