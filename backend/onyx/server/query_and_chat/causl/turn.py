@@ -9,6 +9,7 @@ from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
 from onyx.prompts.causl_workspace import (
     COLOSSUS_PAGE_INSTRUCTIONS,
+    MODELS_PAGE_INSTRUCTIONS,
     SAVED_FACT_RETRIEVAL_INSTRUCTIONS,
     WORKSPACE_INSTRUCTIONS,
 )
@@ -33,6 +34,7 @@ def read_workspace_context(
     *,
     start_research: bool = False,
     require_current_colossus: bool = False,
+    bind_interview: bool = True,
 ) -> tuple[CauslChatBinding | None, CauslContextEnvelope | None]:
     binding = read_causl_binding(db, user.id, chat.id)
     if (
@@ -44,8 +46,16 @@ def read_workspace_context(
         and chat.persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
     ):
         loaded = load_interview_context(db, user)
-        if loaded.configuration.persona_id != chat.persona_id:
+        if (
+            loaded.configuration.persona_id != chat.persona_id
+            or chat.user_id != user.id
+            or chat.project_id is not None
+            or chat.incognito_record_mode is not None
+        ):
             raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+        if not bind_interview:
+            # Reading organization facts must not adopt an older conversation.
+            return None, loaded.envelope
         binding = bind_interview_chat(
             db,
             user,
@@ -96,7 +106,9 @@ def read_workspace_context(
         or loaded.configuration.persona_id != chat.persona_id
     ):
         raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
-    return binding, loaded.envelope
+    return binding.model_copy(
+        update={"model_page": current.model_page}
+    ), loaded.envelope
 
 
 def workspace_turn(
@@ -169,4 +181,6 @@ def workspace_turn(
         + model_phase
         + json.dumps(prompt_context, ensure_ascii=False)
     )
+    if current.page == "models" and current.model_page:
+        prompt += MODELS_PAGE_INSTRUCTIONS + current.model_page
     return binding, prompt

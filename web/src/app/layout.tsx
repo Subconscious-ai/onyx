@@ -26,6 +26,8 @@ import { getLocale, getMessages } from "next-intl/server";
 import { DirectionProvider } from "@radix-ui/react-direction";
 import { cookies } from "next/headers";
 import { htmlDirForLocale, type HtmlDir } from "@/i18n/config";
+import HostAuthShell from "@/lib/causl/HostAuthShell";
+import { causlEmbedOrigins } from "@/lib/causl/config";
 
 // No generic at the end of either fallback list: the generic comes last in
 // the composed --font-* variables on <html> below, after the per-locale CJK
@@ -83,6 +85,9 @@ export default async function Layout({ children }: LayoutProps) {
   return (
     <html
       lang={locale}
+      data-theme="kong"
+      data-mode="light"
+      data-scale="product"
       dir={dir}
       // The app-wide font variables are composed here instead of with
       // next/font's `variable` option: the CJK tail (--font-cjk-sans,
@@ -152,7 +157,7 @@ export default async function Layout({ children }: LayoutProps) {
               menus and roving focus need this alongside <html dir>. */}
           <DirectionProvider dir={dir}>
             <ThemeProvider
-              attribute="class"
+              attribute={["class", "data-mode"]}
               defaultTheme="system"
               enableSystem
               disableTransitionOnChange
@@ -161,24 +166,28 @@ export default async function Layout({ children }: LayoutProps) {
                 <TooltipProvider>
                   <PHProvider>
                     <SWRConfigProvider>
-                      <AppHealthBanner />
-                      <BannerQueue />
-                      <AuthenticationShell>
-                        <AppProvider>
-                          <PostHogRuntimeInitializer />
-                          <CustomAnalyticsScript />
-                          <PostHogPageTracker />
-                          <div id={MODAL_ROOT_ID} className="h-screen w-screen">
-                            <ProductGatingWrapper>
-                              {children}
-                            </ProductGatingWrapper>
-                          </div>
-                          <WebVitals />
-                          {process.env.NEXT_PUBLIC_ENABLE_STATS === "true" && (
-                            <StatsOverlayLoader />
-                          )}
-                        </AppProvider>
-                      </AuthenticationShell>
+                      <HostAuthShell allowedOrigins={causlEmbedOrigins()}>
+                        <AppHealthBanner />
+                        <BannerQueue />
+                        <AuthenticationShell>
+                          <AppProvider>
+                            <PostHogRuntimeInitializer />
+                            <CustomAnalyticsScript />
+                            <PostHogPageTracker />
+                            <div
+                              id={MODAL_ROOT_ID}
+                              className="h-screen w-screen"
+                            >
+                              <ProductGatingWrapper>
+                                {children}
+                              </ProductGatingWrapper>
+                            </div>
+                            <WebVitals />
+                            {process.env.NEXT_PUBLIC_ENABLE_STATS ===
+                              "true" && <StatsOverlayLoader />}
+                          </AppProvider>
+                        </AuthenticationShell>
+                      </HostAuthShell>
                     </SWRConfigProvider>
                   </PHProvider>
                 </TooltipProvider>

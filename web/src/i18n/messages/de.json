@@ -13,6 +13,7 @@
     "connecting": "Verbindung wird hergestellt…",
     "unavailable": "Der Kontext ist nicht verfügbar. Ihre gespeicherte Unterhaltung bleibt erhalten.",
     "opening": "Ihre Unterhaltung wird geöffnet…",
+    "modelContextUnavailable": "Die Erfassung der Models-Seite ist fehlgeschlagen oder hat die Größenbegrenzung überschritten. Öffnen Sie ein vollständiges Modell und versuchen Sie es erneut. Lokale Entwürfe bleiben unverändert.",
     "contextChanged": "Der Arbeitsbereich wurde vor dem Senden geändert. Prüfen Sie den aktuellen Kontext und senden Sie die Nachricht erneut."
   },
   "accountPopover": {
@@ -9310,7 +9311,8 @@
         },
         "stopButton": {
           "ariaLabel": "Generierung stoppen",
-          "tooltip": "Stopp · Esc"
+          "tooltip": "Stopp · Esc",
+          "label": "Stoppen"
         }
       },
       "buildFileCard": {
@@ -13288,6 +13290,17 @@
       }
     },
     "chatSearch": {
+      "pro": {
+        "all": "Alle",
+        "actions": "Aktionen",
+        "chats": "Chats",
+        "projects": "Projekte",
+        "searchIn": "Suchen in",
+        "close": "Suche schließen",
+        "loading": "Laden…",
+        "searching": "Suche…",
+        "loadMore": "Weitere Gespräche laden"
+      },
       "createNamedProject": {
         "label": "Neues Projekt \"<name>{projectName}</name>\" erstellen"
       },
@@ -13855,6 +13868,8 @@
   },
   "executive": {
     "marketMemoryEvidence": "Quelle: {quote}",
+    "factCitationConversation": "Unterhaltung",
+    "factCitationUnavailable": "Quelle nicht verfügbar",
     "savedMarketFacts": "Gespeicherte Marktfakten",
     "marketMemoryUnavailable": "Der gemeinsame Marktspeicher ist nicht verfügbar.",
     "marketMemoryLoading": "Gespeicherte Marktfakten werden gelesen…",
@@ -14017,5 +14032,13 @@
     "sources": "{count, plural, one {# Quelle} other {# Quellen}}",
     "preview": "Quellenvorschau: {title}",
     "openSource": "Quelle öffnen"
+  },
+  "customerPro": {
+    "history": {
+      "today": "Heute",
+      "yesterday": "Gestern",
+      "week": "Letzte 7 Tage",
+      "earlier": "Älter"
+    }
   }
 }

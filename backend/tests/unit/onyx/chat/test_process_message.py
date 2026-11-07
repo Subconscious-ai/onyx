@@ -215,3 +215,38 @@ def test_native_message_storage_keeps_executive_words_when_a_hook_adds_a_claim(
         else "Our product supports SSO."
     )
     assert save.call_args.kwargs["message"] == expected
+
+
+@pytest.mark.parametrize(
+    "private_source",
+    [
+        {"allowed_tool_ids": [1]},
+        {"chat_session_id": str(uuid4())},
+        {"forced_tool_id": 1},
+        {"deep_research": True},
+        {"internal_search_filters": {}},
+        {"chat_session_info": {"project_id": 1}},
+    ],
+)
+def test_shared_context_chat_rejects_private_sources(private_source: dict) -> None:
+    with pytest.raises(ValueError, match="cannot include private sources"):
+        SendMessageRequest(
+            message="Summarize this record", shared_context_only=True, **private_source
+        )
+
+
+def test_shared_context_chat_disables_native_tools_without_changing_ordinary_chat() -> (
+    None
+):
+    request = SendMessageRequest(
+        message="Summarize this record",
+        shared_context_only=True,
+        chat_session_info={"persona_id": 1},
+    )
+    assert request.allowed_tool_ids == []
+    assert (
+        SendMessageRequest(
+            message="Ordinary chat", chat_session_info={"persona_id": 1}
+        ).allowed_tool_ids
+        is None
+    )

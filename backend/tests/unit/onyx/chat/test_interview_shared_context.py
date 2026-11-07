@@ -23,7 +23,7 @@ from onyx.server.query_and_chat.causl.models import (
 from onyx.server.query_and_chat.models import SendMessageRequest
 
 
-@pytest.mark.parametrize("mode", ["interview", "workspace"])
+@pytest.mark.parametrize("mode", ["interview", "workspace", "shared"])
 @pytest.mark.parametrize(
     "message",
     [
@@ -37,7 +37,7 @@ from onyx.server.query_and_chat.models import SendMessageRequest
 )
 def test_bound_turn_uses_current_shared_context_without_losing_interview_preparation(
     monkeypatch: pytest.MonkeyPatch,
-    mode: Literal["interview", "workspace"],
+    mode: Literal["interview", "workspace", "shared"],
     message: str,
 ) -> None:
     user = User(id=uuid4(), email="alice@example.com", use_memories=False)
@@ -53,7 +53,7 @@ def test_bound_turn_uses_current_shared_context_without_losing_interview_prepara
         chat_id=chat.id,
         selection=CauslSelection(page="workspace", market_id="market_b"),
         library_server_id=22,
-        mode=mode,
+        mode="workspace" if mode == "shared" else mode,
     )
     profile = {
         "status": "ready",
@@ -73,6 +73,9 @@ def test_bound_turn_uses_current_shared_context_without_losing_interview_prepara
     monkeypatch.setenv("BURN2_ENABLED", "true")
     monkeypatch.setattr(process_message, "get_current_tenant_id", lambda: "public")
     monkeypatch.setattr(process_message, "get_chat_session_by_id", lambda **_kw: chat)
+    monkeypatch.setattr(
+        process_message, "create_chat_session_from_request", lambda **_kw: chat
+    )
     workspace_turn = MagicMock()
     monkeypatch.setattr(process_message, "workspace_turn", workspace_turn)
     llm = MagicMock()
@@ -124,19 +127,35 @@ def test_bound_turn_uses_current_shared_context_without_losing_interview_prepara
         "Accepted conversion baseline: 5.5%",
         "Accepted conversion baseline: 6%",
     ):
-        workspace_turn.return_value = (binding, current_fact)
-        request = SendMessageRequest(chat_session_id=chat.id, message=message)
+        workspace_turn.return_value = (
+            (None, "Private Library context")
+            if mode == "shared"
+            else (binding, current_fact)
+        )
+        request = (
+            SendMessageRequest(
+                chat_session_info={"persona_id": persona.id},
+                message=message,
+                additional_context=current_fact,
+                shared_context_only=True,
+            )
+            if mode == "shared"
+            else SendMessageRequest(chat_session_id=chat.id, message=message)
+        )
         turn = process_message.build_chat_turn(
             request, user, MagicMock(), llm_overrides=None
         )
-        next(turn)  # Native response-message IDs precede setup.
-        with pytest.raises(StopIteration) as completed:
-            next(turn)
-        setup: ChatTurnSetup = completed.value.value
+        while True:
+            try:
+                next(turn)
+            except StopIteration as completed:
+                setup: ChatTurnSetup = completed.value
+                break
         context = convert.call_args.kwargs["additional_context"]
         assert current_fact in context
-        assert setup.causl_binding == binding
-        assert setup.causl_original_message == request.message
+        assert setup.causl_binding == (None if mode == "shared" else binding)
+        if mode != "shared":
+            assert setup.causl_original_message == request.message
         if mode == "interview":
             assert setup.trusted_turn_instructions
             if message.startswith(("Show", "What", "Using")):
@@ -160,7 +179,7 @@ def test_bound_turn_uses_current_shared_context_without_losing_interview_prepara
             assert context == current_fact
             assert setup.saved_fact_request is False
             assert setup.trusted_turn_instructions is None
-    assert workspace_turn.call_count == 2
+    assert workspace_turn.call_count == (0 if mode == "shared" else 2)
     if mode == "interview":
         assert read_profile.call_count == read_research.call_count == 2
     else:

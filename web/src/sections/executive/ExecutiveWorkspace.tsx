@@ -2,6 +2,7 @@
 import CompanyProfile, {
   createCompanyProfileState,
 } from "@/sections/executive/CompanyProfile";
+import FactCitation from "@/sections/executive/FactCitation";
 import SharedMarketMemory from "@/sections/executive/SharedMarketMemory";
 import InterviewProgress from "@/sections/executive/InterviewProgress";
 
@@ -25,6 +26,7 @@ import {
   modelHandoffMessages,
 } from "@/lib/executive/model-handoff";
 import type { ModelContext } from "@/lib/executive/model-context";
+import { ProductButton } from "@/sections/customer/pro/ProductButton";
 import { Button, Modal, Text } from "@opal/components";
 import { Interactive } from "@opal/core";
 import { Content } from "@opal/layouts";
@@ -92,36 +94,29 @@ const statusLabel = {
 };
 
 function Evidence({ note }: { note: BriefNote }) {
-  const t = useTranslations("executive");
+  return note.status === "executive" || note.status === "research" ? (
+    <FactCitation quote={note.quote} url={note.url} />
+  ) : (
+    <Text
+      font="secondary-action"
+      data-executive={`executive-status executive-status-${note.status}`}
+    >
+      {statusLabel[note.status]}
+    </Text>
+  );
+}
+
+interface BriefFactProps {
+  note: BriefNote;
+  prefix?: string;
+}
+
+function BriefFact({ note, prefix = "" }: BriefFactProps) {
   return (
-    <div className="executive-evidence">
-      <Text
-        font="secondary-action"
-        data-executive={`executive-status executive-status-${note.status}`}
-      >
-        {statusLabel[note.status]}
-      </Text>
-      {note.quote && (
-        <details>
-          <summary>{t("sourceDisclosure")}</summary>
-          <Text
-            as="p"
-            font="secondary-body"
-            data-executive="executive-quote"
-          >{`“${note.quote}”`}</Text>
-        </details>
-      )}
-      {note.url && (
-        <Button
-          href={note.url}
-          prominence="tertiary"
-          size="sm"
-          rightIcon={SvgArrowUpRight}
-        >
-          {t("originalSource")}
-        </Button>
-      )}
-    </div>
+    <p className="executive-fact-line">
+      <Text font="main-ui-body">{`${prefix}${note.text}`}</Text>{" "}
+      <Evidence note={note} />
+    </p>
   );
 }
 
@@ -297,7 +292,7 @@ export default function ExecutiveWorkspace({
   const [selectedStep, setSelectedStep] = useState<string | null>(null);
   const [briefOpen, setBriefOpen] = useState(false);
   const companyProfileState = useState(createCompanyProfileState);
-  const briefTrigger = useRef<HTMLDivElement>(null);
+  const briefTrigger = useRef<HTMLButtonElement>(null);
   const briefReturnFocus = useRef<HTMLElement | null>(null);
   if (!active) return children;
   const step =
@@ -401,10 +396,10 @@ export default function ExecutiveWorkspace({
             <Text font="main-ui-action">{t("becaName")}</Text>
           </div>
           <div className="flex items-center gap-1">
-            <Button
+            <ProductButton
               ref={briefTrigger}
-              prominence="secondary"
-              size="sm"
+              variant="secondary"
+              size="compact"
               onClick={() => openBrief(briefTrigger.current)}
               data-executive="executive-brief-trigger"
               aria-haspopup="dialog"
@@ -415,7 +410,7 @@ export default function ExecutiveWorkspace({
               }
             >
               {t("briefControl")}
-            </Button>
+            </ProductButton>
             <span
               id="executive-brief-status"
               role="status"
@@ -494,20 +489,23 @@ export default function ExecutiveWorkspace({
                     </Text>
                   </div>
                   {preparation.phase === "error" && (
-                    <Button onClick={preparation.retry} prominence="secondary">
+                    <ProductButton
+                      onClick={preparation.retry}
+                      variant="secondary"
+                    >
                       {t("retryDraft")}
-                    </Button>
+                    </ProductButton>
                   )}
                   {!modelConnected &&
                     chatId &&
                     process.env.NEXT_PUBLIC_BURN_MODEL_WORKSPACE &&
                     (!readiness.ready || preparation.phase === "error") && (
-                      <Button
-                        prominence="secondary"
+                      <ProductButton
+                        variant="secondary"
                         onClick={() => modelHandoff.current?.recover()}
                       >
                         {t("modelSavedOpen")}
-                      </Button>
+                      </ProductButton>
                     )}
                 </div>
               )}
@@ -566,9 +564,7 @@ export default function ExecutiveWorkspace({
                   </div>
                 )}
                 {brief?.objective.status === "executive" && (
-                  <Text as="p" font="secondary-body">
-                    {brief.objective.text}
-                  </Text>
+                  <BriefFact note={brief.objective} />
                 )}
               </details>
               <div className="executive-brief-top">
@@ -597,15 +593,16 @@ export default function ExecutiveWorkspace({
                 >
                   {t("01TheObjective")}
                 </Text>
-                <Text
-                  as="p"
-                  font="main-content-emphasis"
+                <p
+                  className="executive-fact-line"
                   data-executive="executive-objective-text"
                 >
-                  {brief?.objective.text ?? "Objective not established"}
-                </Text>
+                  <Text font="main-content-emphasis">
+                    {brief?.objective.text ?? "Objective not established"}
+                  </Text>{" "}
+                  {brief && <Evidence note={brief.objective} />}
+                </p>
                 <Text font="secondary-body">{brief?.horizon ?? ""}</Text>
-                {brief && <Evidence note={brief.objective} />}
               </div>
               <div
                 className="executive-view-switch"
@@ -613,10 +610,10 @@ export default function ExecutiveWorkspace({
               >
                 {(["journey", "model", "evidence", "decisions"] as const).map(
                   (tab) => (
-                    <Button
+                    <ProductButton
                       key={tab}
-                      size="sm"
-                      prominence={view === tab ? "primary" : "tertiary"}
+                      size="compact"
+                      variant={view === tab ? "primary" : "ghost"}
                       aria-pressed={view === tab}
                       onClick={() => setView(tab)}
                     >
@@ -627,7 +624,7 @@ export default function ExecutiveWorkspace({
                           : tab === "evidence"
                             ? "Evidence"
                             : "Next moves"}
-                    </Button>
+                    </ProductButton>
                   )
                 )}
               </div>
@@ -647,7 +644,7 @@ export default function ExecutiveWorkspace({
                       <>
                         <ol className="executive-journey">
                           {brief.journey.map((item, index) => (
-                            <li key={item.id}>
+                            <li key={item.id} className="executive-cited-stage">
                               <Interactive.Stateless
                                 prominence="tertiary"
                                 data-executive={`executive-stage ${step?.id === item.id ? "executive-stage-selected" : ""}`}
@@ -686,12 +683,12 @@ export default function ExecutiveWorkspace({
                                   )}
                                 </Interactive.Container>
                               </Interactive.Stateless>
+                              <Evidence note={item} />
                             </li>
                           ))}
                         </ol>
                         {step && (
                           <div className="executive-step-detail">
-                            <Evidence note={step} />
                             {onAsk && (
                               <Button
                                 size="sm"
@@ -739,20 +736,9 @@ export default function ExecutiveWorkspace({
                           as="p"
                           font="secondary-body"
                         >{`${kr.direction} · ${kr.unit}`}</Text>
-                        <Text
-                          as="p"
-                          font="main-ui-body"
-                        >{`Baseline: ${kr.baseline.text}`}</Text>
-                        <Evidence note={kr.baseline} />
-                        <Text
-                          as="p"
-                          font="main-ui-body"
-                        >{`Target: ${kr.target.text}`}</Text>
-                        <Evidence note={kr.target} />
-                        <Text
-                          as="p"
-                          font="secondary-body"
-                        >{`Deadline: ${kr.deadline.text}`}</Text>
+                        <BriefFact note={kr.baseline} prefix="Baseline: " />
+                        <BriefFact note={kr.target} prefix="Target: " />
+                        <BriefFact note={kr.deadline} prefix="Deadline: " />
                       </div>
                     ))}
                     {brief?.model && (
@@ -775,10 +761,7 @@ export default function ExecutiveWorkspace({
                               as="p"
                               font="main-ui-action"
                             >{`${input.name} (${input.unit})`}</Text>
-                            <Text as="p" font="secondary-body">
-                              {input.value.text}
-                            </Text>
-                            <Evidence note={input.value} />
+                            <BriefFact note={input.value} />
                           </div>
                         ))}
                         {brief.model.gaps.map((gap) => (
@@ -832,10 +815,7 @@ export default function ExecutiveWorkspace({
                     {brief &&
                       [brief.objective, ...brief.journey].map((note, index) => (
                         <div key={index} className="executive-evidence-row">
-                          <Text as="p" font="main-ui-body">
-                            {note.text}
-                          </Text>
-                          <Evidence note={note} />
+                          <BriefFact note={note} />
                         </div>
                       ))}
                     {!!brief?.conflicts.length && (
@@ -844,18 +824,12 @@ export default function ExecutiveWorkspace({
                           {t("aTensionToResolve")}
                         </Text>
                         {brief.conflicts.map((conflict, index) => (
-                          <div key={index}>
-                            <Text as="p" font="main-ui-body">
-                              {conflict.text}
-                            </Text>
+                          <p key={index} className="executive-fact-line">
+                            <Text font="main-ui-body">{conflict.text}</Text>{" "}
                             {conflict.quotes.map((quote) => (
-                              <Text
-                                key={quote}
-                                as="p"
-                                font="secondary-body"
-                              >{`“${quote}”`}</Text>
+                              <FactCitation key={quote} quote={quote} />
                             ))}
-                          </div>
+                          </p>
                         ))}
                       </div>
                     )}
@@ -884,7 +858,15 @@ export default function ExecutiveWorkspace({
                           <Text as="p" font="secondary-body">
                             {item.rationale}
                           </Text>
-                          <Text font="secondary-body">{`Journey: ${brief.journey.find((stage) => stage.id === item.journeyId)?.text}`}</Text>
+                          {brief.journey
+                            .filter((stage) => stage.id === item.journeyId)
+                            .map((stage) => (
+                              <BriefFact
+                                key={stage.id}
+                                note={stage}
+                                prefix="Journey: "
+                              />
+                            ))}
                           {onAsk && (
                             <Button
                               prominence="tertiary"

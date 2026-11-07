@@ -8,6 +8,7 @@ import { getLatestMessageChain } from "@/app/app/services/messageTree";
 import HumanMessage from "@/app/app/message/HumanMessage";
 import AgentMessage from "@/app/app/message/messageComponents/AgentMessage";
 import MultiModelResponseView from "@/app/app/message/MultiModelResponseView";
+import { conversationSources } from "@/lib/executive/conversationCitations";
 import { getMultiModelResponses } from "@/app/app/message/multiModel";
 import { useLLMProviders } from "@/lib/languageModels/hooks";
 import { buildModelProviderLookup } from "@/lib/languageModels/options";
@@ -69,6 +70,7 @@ export default function SharedChatDisplay({
     chatSession.packets
   );
   const messages = getLatestMessageChain(messageTree);
+  const sources = conversationSources(messages);
 
   const firstMessage = messages[0];
 
@@ -147,6 +149,7 @@ export default function SharedChatDisplay({
                             responses={multiModelResponses}
                             chatState={{
                               agent: persona,
+                              conversationSource: sources[i],
                               docs: [],
                               citations: undefined,
                               setPresentingDocument,
@@ -186,6 +189,7 @@ export default function SharedChatDisplay({
                         rawPackets={message.packets}
                         chatState={{
                           agent: persona,
+                          conversationSource: sources[i],
                           docs: message.documents,
                           citations: message.citations,
                           setPresentingDocument: setPresentingDocument,

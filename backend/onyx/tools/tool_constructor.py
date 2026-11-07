@@ -160,6 +160,7 @@ def construct_tools(
     allowed_tool_ids: list[int] | None = None,
     search_usage_forcing_setting: SearchToolUsage = SearchToolUsage.AUTO,
     allow_user_context: bool = True,
+    allow_memory_tool: bool = True,
 ) -> dict[int, list[Tool]]:
     """Constructs tools based on persona configuration and available APIs.
 
@@ -182,6 +183,7 @@ def construct_tools(
             allowed_tool_ids=allowed_tool_ids,
             search_usage_forcing_setting=search_usage_forcing_setting,
             allow_user_context=allow_user_context,
+            allow_memory_tool=allow_memory_tool,
         )
 
 
@@ -197,6 +199,7 @@ def _construct_tools_impl(
     allowed_tool_ids: list[int] | None = None,
     search_usage_forcing_setting: SearchToolUsage = SearchToolUsage.AUTO,
     allow_user_context: bool = True,
+    allow_memory_tool: bool = True,
 ) -> dict[int, list[Tool]]:
     tool_dict: dict[int, list[Tool]] = {}
 
@@ -478,9 +481,11 @@ def _construct_tools_impl(
         # Handle MCP tools
         elif db_tool_model.mcp_server_id:
             if db_tool_model.mcp_server_id in mcp_tool_cache:
-                tool_dict[db_tool_model.id] = [
-                    mcp_tool_cache[db_tool_model.mcp_server_id][db_tool_model.id]
-                ]
+                tool_dict[db_tool_model.id] = list(
+                    mcp_tool_cache[db_tool_model.mcp_server_id][
+                        db_tool_model.id
+                    ].with_model_page_tools()
+                )
                 continue
 
             mcp_server = get_mcp_server_by_id(db_tool_model.mcp_server_id, db_session)
@@ -537,6 +542,9 @@ def _construct_tools_impl(
                     additional_headers=additional_mcp_headers,
                     resolved_credentials=mcp_credentials,
                     bound_statement=statement,
+                    bound_model_page=binding.model_page
+                    if binding and binding.library_server_id == mcp_server.id
+                    else None,
                     bound_market_id=(
                         binding.market_id
                         if binding and binding.library_server_id == mcp_server.id
@@ -562,7 +570,7 @@ def _construct_tools_impl(
                 mcp_tool_cache[db_tool_model.mcp_server_id][saved_tool.id] = mcp_tool
 
                 if saved_tool.id == db_tool_model.id:
-                    tool_dict[saved_tool.id] = [cast(Tool, mcp_tool)]
+                    tool_dict[saved_tool.id] = list(mcp_tool.with_model_page_tools())
             if db_tool_model.id not in tool_dict:
                 logger.warning(
                     "Tool '%s' not found in MCP server '%s'",
@@ -590,6 +598,7 @@ def _construct_tools_impl(
     # bypassing persona tool associations and allowed_tool_ids filtering
     if (
         allow_user_context
+        and allow_memory_tool
         and user.enable_memory_tool
         and not (custom_tool_config and custom_tool_config.causl_binding)
     ):

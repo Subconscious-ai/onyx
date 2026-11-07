@@ -18,6 +18,7 @@ import hljs from "highlight.js/lib/core";
 import json from "highlight.js/lib/languages/json";
 import FadingEdgeContainer from "@/refresh-components/FadingEdgeContainer";
 import { IoBlockLabel } from "@/app/app/message/messageComponents/IoBlockLabel";
+import AuthenticatedFileLink from "@/lib/causl/AuthenticatedFileLink";
 
 // Lazy registration for hljs JSON language
 function ensureHljsRegistered() {
@@ -213,7 +214,7 @@ export const CustomToolRenderer: MessageRenderer<CustomToolPacket, {}> = ({
                 <Text text03 secondaryBody className="whitespace-nowrap">
                   {t("customTool.fileItem.label", { index: idx + 1 })}
                 </Text>
-                <a
+                <AuthenticatedFileLink
                   href={buildImgUrl(fid)}
                   target="_blank"
                   rel="noreferrer"
@@ -221,15 +222,15 @@ export const CustomToolRenderer: MessageRenderer<CustomToolPacket, {}> = ({
                 >
                   <SvgExternalLink className="w-3 h-3" />{" "}
                   {t("customTool.openFileLink.label")}
-                </a>
-                <a
+                </AuthenticatedFileLink>
+                <AuthenticatedFileLink
                   href={buildImgUrl(fid)}
                   download
                   className="inline-flex items-center gap-1 text-xs text-action-selection-01 hover:underline whitespace-nowrap"
                 >
                   <SvgDownload className="w-3 h-3" />{" "}
                   {t("customTool.downloadFileLink.label")}
-                </a>
+                </AuthenticatedFileLink>
               </div>
             ))}
           </div>

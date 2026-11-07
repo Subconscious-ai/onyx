@@ -25,6 +25,8 @@ export type TimelineLayout = "timeline" | "content";
 
 export interface FullChatState {
   agent: MinimalAgent;
+  /** User testimony preceding this reply on the visible conversation branch. */
+  conversationSource?: string;
   // Document-related context for citations
   docs?: OnyxDocument[] | null;
   userFiles?: ProjectFile[];

@@ -1515,6 +1515,18 @@ configMap:
   # Optional causl-kb workspace: existing persona and per-user OAuth Library server IDs.
   # CAUSL_KB_ASSISTANT_PERSONA_ID: ""
   # CAUSL_KB_MCP_SERVER_ID: ""
+  # Optional shared KB login. Backend values require Auth0 JWT verification and the paired KB rollout.
+  # CAUSL_KB_HOST_AUTH_ENABLED: "false"
+  # Enabled native OIDC provider used for exact subject binding.
+  # CAUSL_KB_AUTH0_PROVIDER_NAME: "auth0"
+  # Exact HTTPS KB origin, without a path. The Library URL must use this origin and /api/mcp/library.
+  # CAUSL_KB_HOST_ORIGIN: ""
+  # Paid Bedrock QA requires this exact native user, organization, and future Unix expiry. Defaults deny.
+  # CAUSL_KB_QA_BEDROCK_USER_ID: ""
+  # CAUSL_KB_QA_BEDROCK_ORG_ID: ""
+  # CAUSL_KB_QA_BEDROCK_UNTIL: "0"
+  # Canonical Models tool endpoint. MODEL_AGENT_TOOL_TOKEN belongs in extraEnvFromSecret.
+  # MODEL_AGENT_TOOL_URL: ""
   # Exact comma-separated KB origins for the frontend /causl route only.
   # CAUSL_KB_EMBED_ORIGINS: ""
   # Burn executive interview is opt-in; select an existing native Bedrock model ID.

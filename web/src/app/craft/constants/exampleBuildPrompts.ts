@@ -4,6 +4,7 @@ import {
   SvgBullhorn,
   SvgCode,
   SvgLightbulbSimple,
+  SvgPieChart,
 } from "@opal/icons";
 
 export interface BuildPrompt {
@@ -22,6 +23,38 @@ export interface UseCaseDomain {
 }
 
 export const useCaseDomains: UseCaseDomain[] = [
+  {
+    id: "market-research",
+    label: "Market research",
+    icon: SvgPieChart,
+    prompts: [
+      {
+        id: "market-pricing",
+        summary:
+          "Find what simulated buyers would pay, with a priced pilot first",
+        fullText:
+          "Run a pricing study with Expected Parrot: would simulated US coffee drinkers buy a 12 oz canned cold brew at $2.49, $2.99 or $3.49? Two segments, students and office workers, 20 respondents each.",
+      },
+      {
+        id: "market-concept",
+        summary: "Test an ad or concept image on two simulated segments",
+        fullText:
+          "I attached our new ad. Test it with Expected Parrot on 20 simulated shoppers, 10 under 30 and 10 over 50: how appealing it is (1 to 5), the main message they take away, and whether they would try the product. Chart appeal by group.",
+      },
+      {
+        id: "market-conjoint",
+        summary: "Run a conjoint to see which features drive choice by segment",
+        fullText:
+          "Run a choice-based conjoint with Expected Parrot for a meal-kit subscription. Attributes: price per meal ($8, $10, $12), meals per week (3, 5), delivery (weekly, every two weeks). Two segments, single adults and parents of young children, 15 respondents each. Show attribute importance by segment.",
+      },
+      {
+        id: "market-message",
+        summary: "Compare two messages for clarity and appeal",
+        fullText:
+          "Compare two onboarding messages with Expected Parrot, 'Set up your account in three steps.' and 'Create your profile, connect your bank, and start saving.', on simulated new and experienced users. Ask how clear and how motivating each one is and chart the results.",
+      },
+    ],
+  },
   {
     id: "engineering",
     label: "Engineering",

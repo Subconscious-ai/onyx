@@ -521,6 +521,20 @@ test.each(["accepted", "cancelled"] as const)(
   }
 );
 
+test("can stop native generation while a follow-up draft is ready to queue", async () => {
+  const submit = jest.fn();
+  const initial = props(submit);
+  render(<AppInputBar {...initial} embeddedWorkspace={false} />);
+  const input = screen.getByRole("textbox");
+  await waitFor(() => expect(input).toHaveTextContent("Independent draft D"));
+  const user = setupUser();
+  await user.click(screen.getByRole("button", { name: "Stop generating" }));
+  expect(initial.stopGenerating).toHaveBeenCalledTimes(1);
+  expect(input).toHaveTextContent("Independent draft D");
+  expect(submit).not.toHaveBeenCalled();
+  expect(screen.getByRole("button", { name: "Queue message" })).toBeEnabled();
+});
+
 test.each(["click", "Escape"])(
   "workspace Stop via %s retains the draft and never queues a message",
   async (action) => {
@@ -531,11 +545,11 @@ test.each(["click", "Escape"])(
       ...useChatSessionStore.getState().sessions.get("workspace-chat")!
         .queuedMessages,
     ];
-    const { container } = render(<AppInputBar {...inputProps} />);
-    const input = container.querySelector('[contenteditable="true"]')!;
+    render(<AppInputBar {...inputProps} />);
+    const input = screen.getByRole("textbox");
     await waitFor(() => expect(input).toHaveTextContent("Independent draft D"));
     if (action === "click") {
-      const stop = container.querySelector("#onyx-chat-input-send-button")!;
+      const stop = screen.getByRole("button", { name: "Stop generating" });
       expect(stop).toHaveTextContent("Stop");
       await user.click(stop);
     } else {
@@ -544,6 +558,7 @@ test.each(["click", "Escape"])(
     }
     expect(inputProps.stopGenerating).toHaveBeenCalledTimes(1);
     expect(submit).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
     expect(input).toHaveTextContent("Independent draft D");
     expect(
       useChatSessionStore.getState().sessions.get("workspace-chat")!

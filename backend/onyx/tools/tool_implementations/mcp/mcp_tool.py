@@ -1,3 +1,4 @@
+import copy
 import json
 import time
 from typing import Any
@@ -20,6 +21,11 @@ from onyx.server.features.mcp.oauth import (
 )
 from onyx.server.metrics.mcp_client import record_mcp_client_tool_outcome
 from onyx.server.metrics.mcp_common import MCPToolCallStatus
+from onyx.server.query_and_chat.causl.model_page import (
+    model_page_tool_result,
+    model_page_tool_schema,
+    model_page_tools,
+)
 from onyx.server.query_and_chat.causl.models import CauslActor
 from onyx.server.query_and_chat.causl.statement import (
     FACT_PREPARATION_TOOL,
@@ -94,6 +100,7 @@ class MCPTool(Tool[None]):
         bound_issuer: str | None = None,
         bound_statement: CauslStatement | None = None,
         bound_market_id: str | None = None,
+        bound_model_page: str | None = None,
     ) -> None:
         super().__init__(emitter=emitter)
 
@@ -109,6 +116,7 @@ class MCPTool(Tool[None]):
         self._bound_issuer = bound_issuer
         self._bound_statement = bound_statement
         self._bound_market_id = bound_market_id
+        self._bound_model_page = bound_model_page
 
         self._mcp_tool_name = tool_name
         self._name = tool_name  # NOTE: this may change in _disambiguate_mcp_tool_names
@@ -136,6 +144,31 @@ class MCPTool(Tool[None]):
     def use_disambiguated_name(self) -> None:
         self._name = self._llm_name
 
+    def _uses_model_page(self) -> bool:
+        return (
+            self._bound_actor is not None
+            and bool(self._bound_model_page)
+            and self._mcp_tool_name in model_page_tools()
+        )
+
+    def with_model_page_tools(self) -> list["MCPTool"]:
+        """Expand only the actor-bound Models slot; retain Library authorization."""
+        if self._mcp_tool_name != "inspect_model" or not self._uses_model_page():
+            return [self]
+        tools = [self]
+        for name, entry in model_page_tools().items():
+            # prepare_model_change retains its existing persona permission and slot.
+            if name in {"inspect_model", "prepare_model_change"}:
+                continue
+            tool = copy.copy(self)
+            tool._mcp_tool_name = name
+            tool._name = name
+            tool._llm_name = sanitize_tool_name(f"mcp_{self.mcp_server.name}_{name}")
+            tool._display_name = name
+            tool._description = entry["description"]
+            tools.append(tool)
+        return tools
+
     def tool_definition(self) -> dict:
         """Return the tool definition from the MCP server"""
         # Convert MCP tool definition to OpenAI function calling format
@@ -162,6 +195,8 @@ class MCPTool(Tool[None]):
                     key for key in schema.get("required", []) if key != "market"
                 ],
             }
+        if self._uses_model_page():
+            schema = model_page_tool_schema(self._mcp_tool_name)
         return {
             "type": "function",
             "function": {
@@ -190,6 +225,25 @@ class MCPTool(Tool[None]):
         _server = self.mcp_server.name
         outcome = MCPToolCallStatus.ERROR
         try:
+            if self._uses_model_page() and self._bound_model_page is not None:
+                result = model_page_tool_result(
+                    self._mcp_tool_name, self._bound_model_page, llm_kwargs
+                )
+                self.emitter.emit(
+                    Packet(
+                        placement=placement,
+                        obj=CustomToolDelta(
+                            tool_name=self._name, response_type="json", data=result
+                        ),
+                    )
+                )
+                outcome = MCPToolCallStatus.SUCCESS
+                return ToolResponse(
+                    rich_response=CustomToolCallSummary(
+                        tool_name=self._name, response_type="json", tool_result=result
+                    ),
+                    llm_facing_response=json.dumps(result),
+                )
             if self._bound_actor is not None and self._mcp_tool_name in {
                 "inspect_model",
                 "prepare_model_change",

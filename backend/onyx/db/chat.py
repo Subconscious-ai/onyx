@@ -79,6 +79,9 @@ def get_chat_session_by_id(
     if not include_deleted and chat_session.deleted:
         raise ValueError("Chat session has been deleted")
 
+    from onyx.db.twenty_panel import authorize_twenty_chat
+
+    authorize_twenty_chat(db_session, user_id, chat_session)
     return chat_session
 
 
@@ -193,7 +196,9 @@ def get_chat_sessions_by_user(
         if limit:
             chat_sessions = chat_sessions[:limit]
 
-    return chat_sessions
+    from onyx.db.twenty_panel import filter_twenty_chats
+
+    return filter_twenty_chats(db_session, user_id, chat_sessions)
 
 
 def delete_orphaned_search_docs(db_session: Session) -> None:
@@ -335,6 +340,11 @@ def update_chat_session(
 
     if chat_session.deleted:
         raise ValueError("Trying to rename a deleted chat session")
+
+    if sharing_status == ChatSessionSharedStatus.PUBLIC:
+        from onyx.db.twenty_panel import ensure_twenty_chat_can_be_shared
+
+        ensure_twenty_chat_can_be_shared(db_session, chat_session)
 
     # A title is conversation-derived, so a content-free session never stores
     # one. Enforced here rather than at each caller: auto-naming, manual

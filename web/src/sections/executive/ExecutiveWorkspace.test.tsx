@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import ExecutiveWorkspace, {
   ExecutiveModelAction,
   ExecutiveWelcome,
@@ -17,6 +23,7 @@ jest.mock("@/lib/executive/hooks", () => ({
 }));
 jest.mock("next-intl", () => ({ useTranslations: () => (key: string) => key }));
 jest.mock("@opal/components", () => ({
+  ...jest.requireActual("@opal/components"),
   Text: ({
     as: Tag = "span",
     children,
@@ -351,6 +358,63 @@ describe("conversation-first brief access", () => {
       expect(composer).toHaveValue("Retain this draft");
     }
   );
+  it("uses inline chat citations for the same brief fact in objective and evidence views", async () => {
+    const quote = "Our goal is 100 dollars in revenue by 2027.";
+    const note = {
+      text: "Reach 100 dollars in revenue",
+      status: "executive",
+      quote,
+    };
+    const brief = {
+      version: 1,
+      company: "Example",
+      objective: note,
+      horizon: "2027",
+      journey: [],
+      interventions: [],
+      conflicts: [],
+    };
+    render(
+      <ExecutiveWorkspace
+        active
+        messages={[
+          { type: "user", message: quote },
+          {
+            type: "assistant",
+            message: `<interview-brief>${JSON.stringify(brief)}</interview-brief>`,
+          },
+        ]}
+      >
+        <textarea aria-label="Message" />
+      </ExecutiveWorkspace>
+    );
+    fireEvent.click(screen.getByRole("button", { name: "briefControl" }));
+    const briefView = within(screen.getByRole("dialog"));
+    const objective = within(
+      document.querySelector(".executive-objective")!
+    ).getByText(note.text);
+    fireEvent.click(
+      within(objective.parentElement!).getByRole("button", {
+        name: "factCitationConversation",
+      })
+    );
+    await waitFor(() => expect(screen.getByText(quote)).toBeVisible());
+    fireEvent.keyDown(screen.getByText(quote), { key: "Escape" });
+    await waitFor(() =>
+      expect(screen.queryByText(quote)).not.toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Evidence" }));
+    const facts = briefView.getAllByText(note.text, {
+      selector: ".executive-fact-line > span",
+    });
+    expect(facts).toHaveLength(3);
+    fireEvent.click(
+      within(facts[2]!.parentElement!).getByRole("button", {
+        name: "factCitationConversation",
+      })
+    );
+    await waitFor(() => expect(screen.getByText(quote)).toBeVisible());
+  });
   it("keeps extraction failure and retry reachable without a permanent chat footer", async () => {
     (useAutomaticBrief as jest.Mock).mockReturnValue({ phase: "error", retry });
     render(

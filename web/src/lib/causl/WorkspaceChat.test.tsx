@@ -1,7 +1,7 @@
 import React from "react";
 import { act, render, screen, waitFor } from "@tests/setup/test-utils";
 import WorkspaceChat from "./WorkspaceChat";
-import { openCauslWorkspace } from "./bridge";
+import { CauslWorkspaceError, openCauslWorkspace } from "./bridge";
 import type { CauslDraft } from "./types";
 
 const mockWorkspace = {
@@ -11,6 +11,7 @@ const mockWorkspace = {
   contextDigest: "c".repeat(64),
 };
 let mockPrepare: (() => Promise<unknown>) | undefined;
+let mockHostAuth = false;
 let mockConsume: ((id: string) => void) | undefined;
 jest.mock("./bridge", () => ({
   ...jest.requireActual("./bridge"),
@@ -19,7 +20,9 @@ jest.mock("./bridge", () => ({
 jest.mock("next/navigation", () => ({
   useRouter: () => mockRouter,
   useSearchParams: () =>
-    new URLSearchParams(`chatId=${mockWorkspace.chatId}&agentId=11`),
+    new URLSearchParams(
+      `chatId=${mockWorkspace.chatId}&agentId=11${mockHostAuth ? "&hostAuth=1" : ""}`
+    ),
 }));
 const mockRouter = { replace: jest.fn() };
 function mockWrapper({ children }: { children: React.ReactNode }) {
@@ -50,12 +53,21 @@ jest.mock("@/views/AppPage", () => ({
       onDraftConsumed: (id: string) => void;
     };
   }) => {
+    const { useWorkspaceAiUx } = jest.requireActual(
+      "@/lib/causl/WorkspaceAiUx"
+    );
+    const workspaceAi = useWorkspaceAiUx();
     mockConsume = causlWorkspace.onDraftConsumed;
     mockPrepare = causlWorkspace.prepareSubmission;
     return (
-      <div data-testid="pending-draft">
-        {causlWorkspace.draft?.text ?? "No pending question"}
-      </div>
+      <>
+        <div data-testid="pending-draft">
+          {causlWorkspace.draft?.text ?? "No pending question"}
+        </div>
+        <span>
+          {workspaceAi ? "Workspace AI controls" : "Standard controls"}
+        </span>
+      </>
     );
   },
 }));
@@ -78,6 +90,7 @@ let parentDescriptor: PropertyDescriptor | undefined;
 let post: jest.SpyInstance;
 
 beforeEach(() => {
+  mockHostAuth = false;
   jest.mocked(openCauslWorkspace).mockResolvedValue(mockWorkspace);
   mockConsume = undefined;
   parentFrame = document.createElement("iframe");
@@ -445,4 +458,88 @@ test("transient and unchanged identity checks preserve pending Colossus turns an
   } finally {
     nativeFetch.mockRestore();
   }
+});
+
+test.each(["signin", "access"] as const)(
+  "host authentication never offers a second login after a %s failure",
+  async (reason) => {
+    mockHostAuth = true;
+    jest
+      .mocked(openCauslWorkspace)
+      .mockRejectedValue(new CauslWorkspaceError(reason));
+    render(
+      <WorkspaceChat
+        parentOrigin="https://kb.example"
+        nonce="frame-nonce"
+        authenticated
+        libraryServerId={22}
+      />
+    );
+    receive(context);
+    await screen.findByText(
+      "The workspace context is unavailable. Your saved conversation is retained."
+    );
+    expect(screen.queryByText("Sign in to Onyx")).not.toBeInTheDocument();
+    expect(screen.queryByText("Connect Library")).not.toBeInTheDocument();
+    expect(screen.getByText("Reopen conversation")).toBeInTheDocument();
+  }
+);
+
+test.each(["models:proposal", "models:view"])(
+  "standalone native Onyx forwards %s to the authenticated Models host",
+  async (kind) => {
+    jest
+      .mocked(openCauslWorkspace)
+      .mockResolvedValue({ ...mockWorkspace, actor: context.actor });
+    render(
+      <WorkspaceChat
+        parentOrigin="https://kb.example"
+        nonce="frame-nonce"
+        authenticated
+        libraryServerId={null}
+      />
+    );
+    receive({ kind: "models:open", nonce: "frame-nonce" });
+    await screen.findByText("No pending question");
+    post.mockClear();
+    const data = {
+      kind,
+      version: 1,
+      captureId: "capture",
+      workspaceScope: "local:one",
+      baseRevision: "revision-1",
+      arguments: { metricId: "profit" },
+    };
+    act(() =>
+      window.dispatchEvent(
+        new CustomEvent("models:tool-result", { detail: data })
+      )
+    );
+    expect(post).toHaveBeenCalledWith(
+      { ...data, nonce: "frame-nonce" },
+      "https://kb.example"
+    );
+  }
+);
+
+test("standalone Models enables the shared composer, citation, and progress presentation", async () => {
+  jest.mocked(openCauslWorkspace).mockResolvedValue({
+    ...mockWorkspace,
+    actor: context.actor,
+  });
+  render(
+    <WorkspaceChat
+      parentOrigin="https://kb.example"
+      nonce="frame-nonce"
+      authenticated
+      libraryServerId={null}
+    />
+  );
+  receive({ kind: "models:open", nonce: "frame-nonce" });
+  expect(await screen.findByText("Workspace AI controls")).toBeVisible();
+});
+
+test("ordinary KB keeps the existing chat presentation", async () => {
+  await open();
+  expect(screen.getByText("Standard controls")).toBeVisible();
 });

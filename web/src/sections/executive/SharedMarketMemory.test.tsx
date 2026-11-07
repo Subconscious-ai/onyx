@@ -1,19 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { SWRConfig } from "swr";
 import SharedMarketMemory from "./SharedMarketMemory";
 
 jest.mock("next-intl", () => ({
   useTranslations: () => (key: string, values?: { quote: string }) =>
     values?.quote ? `Source: ${values.quote}` : key,
-}));
-jest.mock("@opal/components", () => ({
-  Text: ({
-    as: Tag = "span",
-    children,
-  }: {
-    as?: React.ElementType;
-    children?: React.ReactNode;
-  }) => <Tag>{children}</Tag>,
 }));
 
 it("shows a fresh Postgres fact and replaces its old view after a saved correction", async () => {
@@ -25,7 +16,7 @@ it("shows a fresh Postgres fact and replaces its old view after a saved correcti
           id: "product_1",
           type: "offering",
           properties: { name: "Annual plan", definition },
-          evidence: [{ reviewedStatement: "We sell directly." }],
+          evidence: [{ reviewedStatement: `${definition}.` }],
         },
       ],
       omitted: 0,
@@ -54,5 +45,11 @@ it("shows a fresh Postgres fact and replaces its old view after a saved correcti
     await screen.findByText("Sold through channel partners")
   ).toBeInTheDocument();
   expect(screen.queryByText("Sold directly")).not.toBeInTheDocument();
-  expect(screen.getByText("Source: We sell directly.")).toBeInTheDocument();
+  fireEvent.click(screen.getByText("savedMarketFacts"));
+  fireEvent.click(
+    screen.getByRole("button", { name: "factCitationConversation" })
+  );
+  expect(await screen.findByRole("dialog")).toHaveTextContent(
+    "Sold through channel partners."
+  );
 });

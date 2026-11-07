@@ -1,0 +1,30 @@
+name: Models chat tools
+
+on:
+  pull_request:
+    paths:
+      - 'backend/onyx/server/query_and_chat/causl/**'
+      - 'backend/onyx/tools/**'
+      - 'backend/tests/unit/onyx/server/test_models_page.py'
+      - 'backend/tests/unit/onyx/server/query_and_chat/test_model_tools.py'
+      - '.github/workflows/models-chat-tools.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    # The public fork uses the existing hosted-runner exception.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    container: python:3.12-slim
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+        with:
+          persist-credentials: false
+      - run: python -m pip install --disable-pip-version-check pytest httpx jsonschema==4.25.1 pydantic
+      - name: Verify financial tools, schema boundaries, drafts and captured proposals
+        env:
+          PYTHONPATH: backend
+        run: python -m pytest --noconftest -q backend/tests/unit/onyx/server/test_models_page.py backend/tests/unit/onyx/server/query_and_chat/test_model_tools.py

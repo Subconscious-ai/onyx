@@ -10,7 +10,13 @@ import {
   Popover,
   PopoverMenu,
 } from "@opal/components";
-import { SvgActions, SvgKey, SvgSliders, SvgSimpleLoader } from "@opal/icons";
+import {
+  SvgActions,
+  SvgKey,
+  SvgSliders,
+  SvgSimpleLoader,
+  SvgChevronDown,
+} from "@opal/icons";
 
 import { ADMIN_ROUTES } from "@/lib/admin-routes";
 import { MinimalAgent } from "@/lib/agents/types";
@@ -517,6 +523,7 @@ export default function ToolsPopover({
               icon={SvgSliders}
               interaction={open ? "hover" : "rest"}
               prominence="tertiary"
+              rightIcon={label ? SvgChevronDown : undefined}
               tooltip={t("toolsPopover.manageActions.tooltip")}
               aria-label={t("toolsPopover.manageActions.tooltip")}
             >

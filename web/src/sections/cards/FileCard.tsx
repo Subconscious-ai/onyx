@@ -10,6 +10,7 @@ import { SvgFileText, SvgX, SvgSimpleLoader } from "@opal/icons";
 import { Interactive, Hoverable } from "@opal/core";
 import { AttachmentItemLayout } from "@/layouts/general-layouts";
 import { Spacer } from "@opal/components";
+import { useAuthenticatedFileUrl } from "@/lib/causl/hooks";
 
 interface RemovableProps {
   onRemove?: () => void;
@@ -178,12 +179,13 @@ export function FileCard({
     return isImageFile(file.name);
   }, [file.name]);
 
-  const imageUrl = useMemo(() => {
+  const rawImageUrl = useMemo(() => {
     if (isImage && file.file_id) {
       return `/api/chat/file/${file.file_id}`;
     }
     return null;
   }, [isImage, file.file_id]);
+  const imageUrl = useAuthenticatedFileUrl(rawImageUrl) ?? null;
 
   const isActuallyProcessing =
     String(file.status) === UserFileStatus.UPLOADING ||

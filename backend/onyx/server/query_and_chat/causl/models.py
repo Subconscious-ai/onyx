@@ -36,6 +36,8 @@ class CauslActor(BaseModel):
 
 
 class CauslIdentityResponse(BaseModel):
+    native_user_id: UUID | None = None
+    shared_context_supported: bool = True
     actor: CauslActor
     issuer: str = Field(min_length=1, max_length=2048)
 
@@ -58,6 +60,10 @@ class CauslSelection(BaseModel):
         alias="runId", default=None, min_length=1, max_length=500
     )
     studio_id: UUID | None = Field(alias="studioId", default=None)
+    # Request-only browser data. Never store editor drafts in a chat binding.
+    model_page: str | None = Field(
+        alias="modelPage", default=None, max_length=64_000, exclude=True
+    )
 
     @model_validator(mode="after")
     def page_contract(self) -> Self:
@@ -89,7 +95,7 @@ class CauslSelection(BaseModel):
 
 class CauslWorkspaceRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
-    actor: CauslActor
+    actor: CauslActor | None = None
     selection: CauslSelection
     chat_id: UUID | None = Field(alias="chatId", default=None)
 
@@ -111,6 +117,7 @@ class CauslChatBinding(BaseModel):
     selection: CauslSelection
     library_server_id: int
     mode: Literal["workspace", "interview", "colossus"] = "workspace"
+    model_page: str | None = Field(default=None, exclude=True)
     brief_digest: str | None = None
 
 
@@ -120,3 +127,37 @@ class CauslWorkspaceResponse(BaseModel):
     agent_id: int = Field(alias="agentId")
     scope_key: str = Field(alias="scopeKey")
     context_digest: str = Field(alias="contextDigest")
+    actor: CauslActor | None = None
+
+
+class TwentySource(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    objectNameSingular: str = Field(min_length=1, max_length=100)
+    fieldNames: list[str] = Field(min_length=1, max_length=200)
+    recordIds: list[UUID] = Field(max_length=25)
+    records: list[dict[str, Any]] = Field(default_factory=list, max_length=25)
+    recordLimit: int = Field(ge=25, le=25)
+    view: dict[str, Any] | None = None
+
+
+class TwentyContext(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    workspaceId: UUID
+    workspaceMemberId: UUID
+    userWorkspaceId: UUID
+    sources: list[TwentySource] = Field(max_length=100)
+    subject: str
+    issuer: str
+    orgId: str
+    recordOrigin: str
+
+    def references(self) -> dict[str, Any]:
+        return {
+            "workspaceId": str(self.workspaceId),
+            "workspaceMemberId": str(self.workspaceMemberId),
+            "userWorkspaceId": str(self.userWorkspaceId),
+            "sources": [
+                {**source.model_dump(mode="json", exclude_none=True), "records": []}
+                for source in self.sources
+            ],
+        }

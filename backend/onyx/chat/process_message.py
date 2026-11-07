@@ -664,6 +664,32 @@ def build_chat_turn(
             eager_load_persona=True,
         )
 
+    from onyx.db.twenty_panel import bind_twenty_context, read_twenty_binding
+    from onyx.prompts.twenty import twenty_prompt
+    from onyx.server.query_and_chat.causl.twenty import (
+        authorize_twenty_context,
+        require_twenty_session,
+    )
+
+    twenty_context = None
+    if new_msg_req.twenty_context_id is not None:
+        if (
+            user is None
+            or new_msg_req.shared_context_only
+            or new_msg_req.causl_selection is not None
+        ):
+            raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+        twenty_context = authorize_twenty_context(
+            require_twenty_session(user.id),
+            {"contextId": str(new_msg_req.twenty_context_id)},
+        )
+        bind_twenty_context(db_session, chat_session, user.id, twenty_context)
+        additional_context = twenty_prompt(twenty_context)
+    elif read_twenty_binding(db_session, chat_session.id) is not None:
+        raise OnyxError(
+            OnyxErrorCode.UNAUTHORIZED, "Refresh the current record context in Twenty."
+        )
+
     persona = chat_session.persona
     message_text = new_msg_req.message
     saved_fact_request = (
@@ -680,14 +706,22 @@ def build_chat_turn(
             )
         )
     )
-    causl_binding, workspace_context = workspace_turn(
-        db_session,
-        user,
-        chat_session,
-        new_msg_req.causl_selection,
-        saved_fact_request=saved_fact_request,
+    causl_binding, workspace_context = (
+        (None, None)
+        if new_msg_req.shared_context_only or twenty_context is not None
+        else workspace_turn(
+            db_session,
+            user,
+            chat_session,
+            new_msg_req.causl_selection,
+            saved_fact_request=saved_fact_request,
+        )
     )
-    interview_mode = causl_binding is None or causl_binding.mode == "interview"
+    interview_mode = (
+        twenty_context is None
+        and not new_msg_req.shared_context_only
+        and (causl_binding is None or causl_binding.mode == "interview")
+    )
     saved_fact_request = (
         saved_fact_request and causl_binding is not None and interview_mode
     )
@@ -901,7 +935,7 @@ def build_chat_turn(
 
     user_memory_context = (
         UserMemoryContext(user_info=UserInfo())
-        if causl_binding is not None
+        if causl_binding is not None or new_msg_req.shared_context_only
         else get_memories(user, db_session)
     )
 
@@ -946,7 +980,9 @@ def build_chat_turn(
     # Only the default persona inside a project uses the project's files.
     context_user_files = (
         []
-        if causl_binding is not None and not interview_mode
+        if new_msg_req.shared_context_only
+        or causl_binding is not None
+        and not interview_mode
         else resolve_context_user_files(
             persona=persona,
             project_id=chat_session.project_id,
@@ -979,7 +1015,18 @@ def build_chat_turn(
                 available_files.user_file_ids.append(uf.id)
 
     all_tools = get_tools(db_session)
+    if twenty_context is not None:
+        from onyx.server.query_and_chat.causl.twenty import twenty_read_only_tool_ids
+
+        new_msg_req.allowed_tool_ids = twenty_read_only_tool_ids(
+            all_tools, new_msg_req.allowed_tool_ids, new_msg_req.forced_tool_id
+        )
     tool_id_to_name_map = {tool.id: tool.name for tool in all_tools}
+    models_tool_server_names = {
+        tool.id: tool.mcp_server.name
+        for tool in all_tools
+        if tool.name == "inspect_model" and tool.mcp_server is not None
+    }
 
     search_tool_id = next(
         (tool.id for tool in all_tools if tool.in_code_tool_id == SEARCH_TOOL_ID), None
@@ -1160,6 +1207,7 @@ def build_chat_turn(
         additional_context=additional_context or new_msg_req.additional_context,
         token_counter=token_counter,
         tool_id_to_name_map=tool_id_to_name_map,
+        models_tool_server_names=models_tool_server_names,
     )
     simple_chat_history = chat_history_result.simple_messages
     # Incognito rows are content-free, so earlier turns come from the store and
@@ -1508,6 +1556,7 @@ def _run_models(
 
         if (
             os.environ.get("BURN2_ENABLED") == "true"
+            and not setup.new_msg_req.shared_context_only
             and (setup.causl_binding is None or setup.causl_binding.mode == "interview")
             and setup.persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
             and setup.incognito_record_mode is None
@@ -1563,7 +1612,9 @@ def _run_models(
                 ),
                 allowed_tool_ids=setup.new_msg_req.allowed_tool_ids,
                 search_usage_forcing_setting=setup.search_params.search_usage,
-                allow_user_context=(
+                allow_memory_tool=setup.new_msg_req.twenty_context_id is None,
+                allow_user_context=not setup.new_msg_req.shared_context_only
+                and (
                     setup.causl_binding is None
                     or setup.causl_binding.mode == "interview"
                 ),
@@ -1588,6 +1639,7 @@ def _run_models(
                     )
             forced_tool_id = initial_profile_tool(
                 enabled=os.environ.get("BURN2_ENABLED") == "true"
+                and not setup.new_msg_req.shared_context_only
                 and (
                     setup.causl_binding is None
                     or setup.causl_binding.mode == "interview"
@@ -1643,7 +1695,8 @@ def _run_models(
                     reasoning_effort=setup.reasoning_effort,
                     include_citations=setup.new_msg_req.include_citations,
                     all_injected_file_metadata=setup.all_injected_file_metadata,
-                    inject_memories_in_prompt=user.use_memories,
+                    inject_memories_in_prompt=user.use_memories
+                    and not setup.new_msg_req.shared_context_only,
                     workspace_instructions=WORKSPACE_INSTRUCTIONS
                     if setup.causl_binding is not None
                     and setup.causl_binding.mode in ("workspace", "colossus")

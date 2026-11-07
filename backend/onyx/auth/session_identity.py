@@ -32,6 +32,15 @@ _session_identity: ContextVar[SessionIdentity | None] = ContextVar(
 
 
 @contextmanager
+def request_session_identity(identity: SessionIdentity) -> Iterator[None]:
+    token = _session_identity.set(identity)
+    try:
+        yield
+    finally:
+        _session_identity.reset(token)
+
+
+@contextmanager
 def oidc_login_identity(identity: OIDCIdentity | None) -> Iterator[None]:
     token = _login_identity.set(identity)
     try:

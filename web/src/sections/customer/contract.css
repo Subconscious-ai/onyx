@@ -1,7 +1,7 @@
-/* Customer and executive-preview scoped copy. Source: https://github.com/Subconscious-ai/design-system
+/* Product and executive-preview scoped copy. Source: https://github.com/Subconscious-ai/design-system
    Commit: 70d8addfeea83cf3e7f4b32f5a9b9a34298c1b39
    Files: contract.css; derived.css product register and reduced-motion tokens.
-   Adapter: root selectors target the active customer route or standalone preview;
+   Adapter: root selectors target the active product route or standalone preview;
    values remain canonical. Preview presence also reaches body portals. */
 @import "./fonts.css";
 
