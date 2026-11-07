@@ -31,7 +31,7 @@ Exceeding either limit returns 404 for both brief operations. See [snapshot limi
 Profile preparation can also schedule configured company research. A no-body POST can make provider calls.
 Brief preparation can call the configured Bedrock model and enforces existing usage limits.
 An active answer, concurrent preparation, or changed transcript returns 409; retry against the current saved conversation.
-A non-Bedrock persona also returns 409 with `An AWS model is required`; correct the model configuration before retrying.
+A selected non-Bedrock model returns 409 with `An AWS model is required`; correct the model configuration before retrying.
 An invalid or unavailable preparation-model override returns 503.
 Extraction or validation failure returns 502 and preserves the saved conversation.
 A failed Library delivery does not prove that the local brief suffix was never saved.
