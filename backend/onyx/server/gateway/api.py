@@ -9,13 +9,16 @@ loaded; an EE deployment serves its own gateway at the same prefix.
 
 import contextvars
 import json
-from collections.abc import Generator, Iterator
+from collections.abc import Callable, Coroutine, Generator, Iterator
 from typing import Any
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.routing import APIRoute
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
+from starlette.responses import Response
 
 from onyx.auth.permissions import has_global_permission, require_permission
 from onyx.db.engine.sql_engine import get_session
@@ -28,7 +31,7 @@ from onyx.db.llm import (
 )
 from onyx.db.models import User
 from onyx.error_handling.error_codes import OnyxErrorCode
-from onyx.error_handling.exceptions import OnyxError
+from onyx.error_handling.exceptions import OnyxError, log_onyx_error
 from onyx.llm.factory import llm_from_provider
 from onyx.llm.interfaces import LLM
 from onyx.llm.model_response import ChatCompletionDeltaToolCall, ModelResponseStream
@@ -71,7 +74,69 @@ from onyx.utils.variable_functionality import global_version
 
 logger = setup_logger()
 
-router = APIRouter(prefix=GATEWAY_PATH_PREFIX)
+
+def _openai_error_response(exc: OnyxError) -> JSONResponse:
+    """OpenAI clients read ``{"error": {"message", "type", "code"}}``; the
+    AI SDK shows only the HTTP status text for any other body. Onyx's
+    ``error_code``/``detail`` are kept alongside."""
+    log_onyx_error(exc)
+    code = exc.error_code.code
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": {
+                "message": exc.detail,
+                "type": (
+                    "server_error"
+                    if exc.status_code >= 500
+                    else "invalid_request_error"
+                ),
+                "code": code,
+            },
+            "error_code": code,
+            "detail": exc.detail,
+        },
+        headers=exc.headers,
+    )
+
+
+class _OpenAIErrorRoute(APIRoute):
+    """Gives every error on a gateway route, including auth dependencies and
+    request validation, the OpenAI error body."""
+
+    def get_route_handler(
+        self,
+    ) -> Callable[[Request], Coroutine[Any, Any, Response]]:
+        handler = super().get_route_handler()
+
+        async def route_handler(request: Request) -> Response:
+            try:
+                return await handler(request)
+            except OnyxError as e:
+                return _openai_error_response(e)
+            except RequestValidationError as e:
+                detail = f"{e}".replace("\n", " ")
+                return _openai_error_response(
+                    OnyxError(
+                        OnyxErrorCode.VALIDATION_ERROR,
+                        detail,
+                        status_code_override=422,
+                    )
+                )
+            except HTTPException as e:
+                return _openai_error_response(
+                    OnyxError(
+                        OnyxErrorCode.for_status(e.status_code),
+                        str(e.detail),
+                        status_code_override=e.status_code,
+                        headers=dict(e.headers) if e.headers else None,
+                    )
+                )
+
+        return route_handler
+
+
+router = APIRouter(prefix=GATEWAY_PATH_PREFIX, route_class=_OpenAIErrorRoute)
 
 require_gateway_user = require_permission(Permission.USE_LLM_GATEWAY)
 
@@ -97,7 +162,11 @@ def parse_gateway_model_id(model: str) -> tuple[int, str]:
     """Split ``<provider_id>/<model_name>`` on the first slash; model names
     may contain slashes."""
     provider_id, separator, model_name = model.partition("/")
-    if not separator or not model_name or not provider_id.isdigit():
+    if (
+        not separator
+        or not model_name
+        or not (provider_id.isascii() and provider_id.isdigit())
+    ):
         raise OnyxError(
             OnyxErrorCode.INVALID_INPUT,
             f"Model id {model!r} must have the form '<provider_id>/<model_name>'.",

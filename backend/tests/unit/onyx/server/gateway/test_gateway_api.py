@@ -16,6 +16,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import Response
 
 from onyx.db.enums import Permission
+from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError, register_onyx_exception_handlers
 from onyx.llm.interfaces import LLM, LLMConfig, LLMUserIdentity
 from onyx.llm.model_response import (
@@ -569,3 +570,68 @@ def test_models_endpoint_lists_accessible_catalog(
         "object": "list",
         "data": [{"id": "7/gpt-test", "object": "model", "owned_by": "openai"}],
     }
+
+
+# --- error body shape -------------------------------------------------------
+
+
+def _assert_openai_error(response: Any, status: int, code: str) -> dict[str, Any]:
+    """OpenAI clients (``@ai-sdk/openai-compatible``) read ``error.message``;
+    Onyx's own ``error_code``/``detail`` stay for consistency."""
+    assert response.status_code == status
+    body = response.json()
+    error = body["error"]
+    assert isinstance(error["message"], str) and error["message"]
+    assert error["code"] == code
+    assert error["type"] in {"invalid_request_error", "server_error"}
+    assert body["error_code"] == code
+    assert body["detail"] == error["message"]
+    return error
+
+
+def test_route_errors_use_openai_error_shape(wire: SimpleNamespace) -> None:
+    error = _assert_openai_error(
+        _post(wire, _body(model="gpt-test")), 400, "INVALID_INPUT"
+    )
+    assert "<provider_id>/<model_name>" in error["message"]
+    assert error["type"] == "invalid_request_error"
+    _assert_openai_error(_post(wire, _body(model="99/gpt-test")), 404, "NOT_FOUND")
+    _assert_openai_error(
+        _post(wire, _body(), scopes=None), 403, "INSUFFICIENT_PERMISSIONS"
+    )
+
+
+def test_upstream_error_uses_openai_error_shape(wire: SimpleNamespace) -> None:
+    wire.llm = _FakeLLM(response=None)
+    error = _assert_openai_error(_post(wire, _body()), 502, "LLM_PROVIDER_ERROR")
+    assert error["type"] == "server_error"
+    wire.llm = _FakeLLM(chunks=[], fail_after_chunks=True)
+    _assert_openai_error(_post(wire, _body(stream=True)), 502, "LLM_PROVIDER_ERROR")
+
+
+def test_dependency_auth_error_uses_openai_error_shape(wire: SimpleNamespace) -> None:
+    def _deny() -> None:
+        raise OnyxError(OnyxErrorCode.INSUFFICIENT_PERMISSIONS, "no gateway scope")
+
+    wire.client.app.dependency_overrides[api.require_gateway_user] = _deny
+    error = _assert_openai_error(_post(wire, _body()), 403, "INSUFFICIENT_PERMISSIONS")
+    assert error["message"] == "no gateway scope"
+    _assert_openai_error(
+        wire.client.get("/gateway/v1/models"), 403, "INSUFFICIENT_PERMISSIONS"
+    )
+
+
+def test_request_validation_error_uses_openai_error_shape(
+    wire: SimpleNamespace,
+) -> None:
+    _assert_openai_error(
+        wire.client.post(_PATH, json={"model": "7/gpt-test"}),
+        422,
+        "VALIDATION_ERROR",
+    )
+
+
+def test_non_ascii_digit_provider_id_is_400(wire: SimpleNamespace) -> None:
+    with pytest.raises(OnyxError):
+        api.parse_gateway_model_id("²/gpt-test")
+    _assert_openai_error(_post(wire, _body(model="²/gpt-test")), 400, "INVALID_INPUT")
