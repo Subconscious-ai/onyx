@@ -53,6 +53,7 @@ jobs:
 
       - name: Configure AWS credentials
         id: aws
+        if: github.repository == 'onyx-dot-app/onyx' # the S3 allowlist exists only upstream; the fork reads .github/audit-ignores.json
         continue-on-error: true # the audit still runs (with no suppressions) if creds are unavailable
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # ratchet:aws-actions/configure-aws-credentials@v6.2.3
         with:
