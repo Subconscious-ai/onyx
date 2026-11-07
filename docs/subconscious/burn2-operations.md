@@ -17,6 +17,8 @@ The [Burn router](../../backend/onyx/server/query_and_chat/burn2/api.py) impleme
 Call the operations through the frontend's `/api/chat` path with the existing native session.
 Each operation requires `WRITE_CHAT`. Burn operations return 404 unless `BURN2_ENABLED=true`.
 Brief operations also require an owned, saved executive conversation and access to the configured persona.
+The transcript permits at most 80 entries and 120,000 message characters in total.
+Exceeding either limit returns 404 for both brief operations. See [snapshot limits](../../backend/onyx/db/burn2_brief.py).
 
 | Operation | Input | Result or limit |
 | --- | --- | --- |
@@ -29,7 +31,9 @@ Brief operations also require an owned, saved executive conversation and access 
 Profile preparation can also schedule configured company research. A no-body POST can make provider calls.
 Brief preparation can call the configured Bedrock model and enforces existing usage limits.
 An active answer, concurrent preparation, or changed transcript returns 409; retry against the current saved conversation.
-Invalid preparation configuration returns 503. Extraction or validation failure returns 502 and preserves the saved conversation.
+A non-Bedrock persona also returns 409 with `An AWS model is required`; correct the model configuration before retrying.
+An invalid or unavailable preparation-model override returns 503.
+Extraction or validation failure returns 502 and preserves the saved conversation.
 A failed Library delivery does not prove that the local brief suffix was never saved.
 Read saved status again; a Library-bound interview requires the delivered transcript digest to match.
 Neither `saved: true` nor a research receipt proves accepted facts or a saved causl-kb model.
