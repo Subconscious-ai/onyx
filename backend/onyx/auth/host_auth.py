@@ -185,6 +185,13 @@ def require_host_subscription_provider(
         and not has_provider_overrides
     ):
         return True
+    # Owner-approved metered app chat (2026-11-08): Bedrock bills the AWS account per
+    # token, so it is opt-in per deployment and never enables any other provider.
+    if (
+        provider == "bedrock"
+        and os.environ.get("CAUSL_KB_APP_BEDROCK_ENABLED", "").lower() == "true"
+    ):
+        return False
     # Explicit local QA approval expires and never applies to other identities.
     try:
         qa_until = int(os.environ.get("CAUSL_KB_QA_BEDROCK_UNTIL", "0"))
