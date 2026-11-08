@@ -32,7 +32,10 @@ from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
 from onyx.hooks.executor import HookSkipped
 from onyx.prompts.causl_workspace import WORKSPACE_INSTRUCTIONS
-from onyx.server.features.mcp.credentials import ResolvedMCPCredentials
+from onyx.server.features.mcp.credentials import (
+    ResolvedMCPCredentials,
+    resolve_mcp_credentials,
+)
 from onyx.server.query_and_chat.causl import context, turn
 from onyx.server.query_and_chat.causl.models import (
     CauslActor,
@@ -1260,11 +1263,13 @@ def test_colossus_refuses_foreign_actor_before_service_read(
 
 
 def test_host_colossus_market_uses_authorized_library_and_keeps_native_view(
-    connected, monkeypatch
-):
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
     from onyx.auth.host_auth import HostSession, host_request
 
     db, user, _ = connected
+    monkeypatch.setenv("CAUSL_KB_HOST_ORIGIN", "https://kb.example")
+    monkeypatch.setattr(context, "resolve_mcp_credentials", resolve_mcp_credentials)
     payload = envelope()
     payload["context"]["page"] = "workspace"
     requests = http_response(monkeypatch, payload)
@@ -1277,6 +1282,7 @@ def test_host_colossus_market_uses_authorized_library_and_keeps_native_view(
             db, user, ACTOR, colossus_selection(market_id="market_b")
         )
     assert dict(requests[0].url.params) == {"page": "workspace", "market": "market_b"}
+    assert requests[0].headers["authorization"] == "Bearer test-only-token"
     assert requests[0].headers["x-causl-expected-organization"] == ACTOR.org_id
     assert loaded.envelope.context["market"] == {"id": "market_b"}
     assert loaded.envelope.context["library"] == payload["context"]["library"]
@@ -1284,8 +1290,8 @@ def test_host_colossus_market_uses_authorized_library_and_keeps_native_view(
 
 
 def test_host_market_context_rejects_other_org_for_explicit_and_inferred_actor(
-    connected, monkeypatch
-):
+    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+) -> None:
     from onyx.auth.host_auth import HostSession, host_request
 
     db, user, _ = connected
@@ -1298,11 +1304,13 @@ def test_host_market_context_rejects_other_org_for_explicit_and_inferred_actor(
             context.require_session_identity(user.id), ACTOR.org_id, "test-only-token"
         )
     ):
-        with pytest.raises(OnyxError):
+        with pytest.raises(OnyxError) as explicit:
             context.load_causl_context(db, user, foreign_actor, SELECTION)
+        assert explicit.value.error_code is OnyxErrorCode.UNAUTHORIZED
         assert requests == []
-        with pytest.raises(OnyxError):
+        with pytest.raises(OnyxError) as inferred:
             context.load_causl_context(db, user, None, SELECTION)
+        assert inferred.value.error_code is OnyxErrorCode.UNAUTHORIZED
         assert requests[0].headers["x-causl-expected-organization"] == ACTOR.org_id
 
 

@@ -77,8 +77,8 @@ class CauslSelection(BaseModel):
         return self
 
     def query(self) -> dict[str, str]:
-        # The existing per-user Library grant verifies identity and organization.
-        # Browser geography hints never become KB retrieval or tenant selectors.
+        # The Library checks the requested market against the signed-in user's
+        # organization. Map snapshot data stays separate from the Library query.
         query = {"page": "workspace" if self.page == "colossus" else self.page}
         if self.market_id:
             query["market"] = self.market_id
