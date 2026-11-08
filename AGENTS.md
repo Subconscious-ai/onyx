@@ -97,7 +97,7 @@ Follow ASD-STE100 Simplified Technical English for technical text:
 - Watch a PR: `gh pr checks --watch --fail-fast`. Read a failure: `gh run view --job <id> --log-failed`.
 - If no run starts within 2 minutes, run the local gate and say so in the PR.
 - Never skip a test to make CI pass.
-- PR runs cancel superseded pushes. Default-branch runs never cancel.
+- PR runs cancel superseded pushes.
 
 ## Testing
 
