@@ -293,8 +293,7 @@ def _same_pinned_url(server_url: str, pinned: str) -> bool:
         (pin.scheme == "https" or private_http)
         and bool(pin.hostname)
         and not (pin.query or pin.fragment or pin.username or pin.password)
-        and (url.scheme, url.netloc, url.path.rstrip("/"))
-        == (pin.scheme, pin.netloc, pin.path.rstrip("/"))
+        and (url.scheme, url.netloc, url.path) == (pin.scheme, pin.netloc, pin.path)
         and not (url.query or url.fragment or url.username or url.password)
     )
 

@@ -1,6 +1,6 @@
 from collections import Counter
 from collections.abc import Sequence
-from typing import Any, cast
+from typing import cast
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -61,7 +61,9 @@ from onyx.utils.logger import setup_logger
 logger = setup_logger()
 
 
-def _hidden_in_causl_workspace(binding: Any, db_tool_model: Any) -> bool:
+def _hidden_in_causl_workspace(
+    binding: CauslChatBinding | None, db_tool_model: ToolDBModel
+) -> bool:
     """In a causl workspace chat, MCP tools are limited to the bound Library server
     plus first-party servers pinned by `CAUSL_KB_HOST_MCP_SERVERS` (they verify the
     shared Auth0 token themselves, e.g. the EDSL study server)."""

@@ -272,7 +272,11 @@ def test_pinned_mcp_server_gets_host_token_only_at_its_exact_url(
     with host_auth.host_request(session):
         credentials = resolve_mcp_credentials(ep, s.user, s.db)
         assert credentials.build_headers() == {"Authorization": "Bearer host-secret"}
-        assert host_auth.library_host_token(s.user.id, 31, "http://ep-mcp:8000/mcp/")
+        # Token forwarding and the SSRF exemption use the same exact-path match.
+        assert (
+            host_auth.library_host_token(s.user.id, 31, "http://ep-mcp:8000/mcp/")
+            is None
+        )
         # A URL that does not match its pin withholds the token for that server
         # only; the Library server in the same chat still gets it.
         for url in (
