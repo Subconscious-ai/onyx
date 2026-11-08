@@ -68,9 +68,7 @@ class CauslSelection(BaseModel):
     @model_validator(mode="after")
     def page_contract(self) -> Self:
         if self.page == "colossus":
-            if self.snapshot is None or any(
-                (self.market_id, self.record, self.run_id, self.studio_id)
-            ):
+            if self.snapshot is None or any((self.record, self.run_id, self.studio_id)):
                 raise ValueError(
                     "Colossus requires a snapshot without KB record selectors"
                 )

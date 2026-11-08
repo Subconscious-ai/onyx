@@ -17,6 +17,10 @@ function reference(value: unknown, maximum = 500): value is string {
   );
 }
 
+export function isCauslMarketId(value: unknown): value is string {
+  return reference(value);
+}
+
 export function parseCauslMessage(value: unknown): CauslContextMessage | null {
   if (
     !object(value) ||
@@ -47,16 +51,13 @@ export function parseCauslMessage(value: unknown): CauslContextMessage | null {
   if (
     selection.page === "colossus"
       ? !snapshot ||
-        [
-          selection.marketId,
-          selection.record,
-          selection.runId,
-          selection.studioId,
-        ].some((value) => value !== undefined)
+        [selection.record, selection.runId, selection.studioId].some(
+          (value) => value !== undefined
+        )
       : selection.snapshot !== undefined
   )
     return null;
-  if (selection.marketId !== undefined && !reference(selection.marketId))
+  if (selection.marketId !== undefined && !isCauslMarketId(selection.marketId))
     return null;
   if (selection.runId !== undefined && !reference(selection.runId)) return null;
   if (
@@ -106,7 +107,9 @@ export class CauslWorkspaceError extends Error {
 }
 
 export async function openCauslWorkspace(
-  message: CauslContextMessage | { selection: { page: "models" } },
+  message:
+    | CauslContextMessage
+    | { selection: { page: "models"; marketId?: string } },
   signal: AbortSignal
 ): Promise<CauslWorkspace> {
   const response = await fetch("/api/chat/causl-workspace", {

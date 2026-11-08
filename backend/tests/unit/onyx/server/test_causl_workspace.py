@@ -1198,10 +1198,13 @@ def test_standalone_bootstrap_rejects_foreign_native_identity(
         context.load_causl_context(db, user, None, SELECTION)
 
 
-def colossus_selection(revision: int = 1) -> CauslSelection:
+def colossus_selection(
+    revision: int = 1, *, market_id: str | None = None
+) -> CauslSelection:
     return CauslSelection.model_validate(
         {
             "page": "colossus",
+            "marketId": market_id,
             "snapshot": {
                 "version": 1,
                 "revision": revision,
@@ -1256,6 +1259,53 @@ def test_colossus_refuses_foreign_actor_before_service_read(
     read.assert_not_called()
 
 
+def test_host_colossus_market_uses_authorized_library_and_keeps_native_view(
+    connected, monkeypatch
+):
+    from onyx.auth.host_auth import HostSession, host_request
+
+    db, user, _ = connected
+    payload = envelope()
+    payload["context"]["page"] = "workspace"
+    requests = http_response(monkeypatch, payload)
+    with host_request(
+        HostSession(
+            context.require_session_identity(user.id), ACTOR.org_id, "test-only-token"
+        )
+    ):
+        loaded = context.load_causl_context(
+            db, user, ACTOR, colossus_selection(market_id="market_b")
+        )
+    assert dict(requests[0].url.params) == {"page": "workspace", "market": "market_b"}
+    assert requests[0].headers["x-causl-expected-organization"] == ACTOR.org_id
+    assert loaded.envelope.context["market"] == {"id": "market_b"}
+    assert loaded.envelope.context["library"] == payload["context"]["library"]
+    assert loaded.envelope.context["view_hints"]["selected_place"] == {"id": "USA"}
+
+
+def test_host_market_context_rejects_other_org_for_explicit_and_inferred_actor(
+    connected, monkeypatch
+):
+    from onyx.auth.host_auth import HostSession, host_request
+
+    db, user, _ = connected
+    foreign_actor = ACTOR.model_copy(update={"org_id": "foreign"})
+    payload = envelope()
+    payload["actor"] = foreign_actor.model_dump(by_alias=True)
+    requests = http_response(monkeypatch, payload)
+    with host_request(
+        HostSession(
+            context.require_session_identity(user.id), ACTOR.org_id, "test-only-token"
+        )
+    ):
+        with pytest.raises(OnyxError):
+            context.load_causl_context(db, user, foreign_actor, SELECTION)
+        assert requests == []
+        with pytest.raises(OnyxError):
+            context.load_causl_context(db, user, None, SELECTION)
+        assert requests[0].headers["x-causl-expected-organization"] == ACTOR.org_id
+
+
 def test_colossus_refuses_mismatched_verified_organization(
     connected: tuple[Session, User, MCPServer],
     monkeypatch: pytest.MonkeyPatch,
@@ -1298,8 +1348,11 @@ def test_colossus_conversations_cannot_reuse_kb_scope_or_switch_page_kind(
     read.assert_not_called()
 
 
+@pytest.mark.parametrize("market_id", [None, "market_b"])
 def test_colossus_memory_uses_verified_library_and_turns_require_current_selection(
-    connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
+    connected: tuple[Session, User, MCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+    market_id: str | None,
 ) -> None:
     from fastapi import Response
 
@@ -1307,16 +1360,18 @@ def test_colossus_memory_uses_verified_library_and_turns_require_current_selecti
 
     db, user, _ = connected
     payload = envelope()
-    payload["context"].update(page="workspace", market=None)
-    http_response(monkeypatch, payload)
+    payload["context"].update(
+        page="workspace", market={"id": market_id} if market_id else None
+    )
+    requests = http_response(monkeypatch, payload)
     chat = ChatSession(id=uuid4(), user_id=user.id, persona_id=11)
     binding = CauslChatBinding(
         user_id=user.id,
         issuer="https://auth.example/",
         actor=ACTOR,
-        market_id=None,
+        market_id=market_id,
         chat_id=chat.id,
-        selection=colossus_selection(),
+        selection=colossus_selection(market_id=market_id),
         library_server_id=22,
         mode="colossus",
     )
@@ -1326,6 +1381,8 @@ def test_colossus_memory_uses_verified_library_and_turns_require_current_selecti
     memory = api.read_memory(chat.id, response, user, db)
     assert memory["library"] == payload["context"]["library"]
     assert response.headers["cache-control"] == "private, no-store"
+    if market_id:
+        assert [request.url.params["market"] for request in requests] == [market_id]
     read = MagicMock()
     monkeypatch.setattr(turn, "load_causl_context", read)
     with pytest.raises(OnyxError) as missing_context:

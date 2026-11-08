@@ -135,6 +135,12 @@ def workspace_turn(
     if current.page == "colossus":
         return binding, (
             COLOSSUS_PAGE_INSTRUCTIONS
+            + (
+                "The selected market and Library records were authorized separately. "
+                "Use market_search when the request needs additional accepted Library facts.\n"
+                if current.market_id is not None
+                else ""
+            )
             + json.dumps(
                 envelope.model_dump(mode="json", by_alias=True), ensure_ascii=False
             )
