@@ -228,6 +228,17 @@ def is_pinned_host_mcp_server(server_id: int) -> bool:
     return _pinned_host_mcp_url(server_id) is not None
 
 
+def is_pinned_host_mcp_url(url: str) -> bool:
+    """True only for a request to the exact URL of a `CAUSL_KB_HOST_MCP_SERVERS`
+    pin (HTTPS, or HTTP to a single-label Compose service). The MCP SSRF guard
+    lets these private first-party servers through; every other URL is checked."""
+    for entry in os.environ.get("CAUSL_KB_HOST_MCP_SERVERS", "").split(","):
+        _, sep, pinned = entry.strip().partition("=")
+        if sep and pinned.strip() and _same_pinned_url(url, pinned.strip()):
+            return True
+    return False
+
+
 _SERVICE_LABEL = re.compile(r"[a-z][a-z0-9-]*")
 
 

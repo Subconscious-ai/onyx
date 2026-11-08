@@ -360,3 +360,23 @@ def test_app_bedrock_flag_allows_only_bedrock(monkeypatch: pytest.MonkeyPatch) -
         for other in ("openai", "databricks"):
             with pytest.raises(OnyxError):
                 host_auth.require_host_subscription_provider(other)
+
+
+def test_pinned_host_mcp_url_matches_only_the_exact_pin(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("CAUSL_KB_HOST_MCP_SERVERS", raising=False)
+    assert not host_auth.is_pinned_host_mcp_url("http://ep-mcp:8000/mcp")
+    monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", "9=http://ep-mcp:8000/mcp")
+    assert host_auth.is_pinned_host_mcp_url("http://ep-mcp:8000/mcp")
+    assert host_auth.is_pinned_host_mcp_url("http://ep-mcp:8000/mcp/")
+    for other in (
+        "http://ep-mcp:8000/other",
+        "http://ep-mcp:9000/mcp",
+        "http://ep-mcp:8000/mcp?x=1",
+        "http://169.254.169.254/latest",
+        "http://cache:6379/mcp",
+    ):
+        assert not host_auth.is_pinned_host_mcp_url(other)
+    monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", "9=http://10.0.0.5:8000/mcp")
+    assert not host_auth.is_pinned_host_mcp_url("http://10.0.0.5:8000/mcp")
