@@ -539,6 +539,73 @@ test("standalone Models enables the shared composer, citation, and progress pres
   expect(await screen.findByText("Workspace AI controls")).toBeVisible();
 });
 
+test("standalone Models opens, acknowledges, and submits the authorized market", async () => {
+  jest.mocked(openCauslWorkspace).mockResolvedValue({
+    ...mockWorkspace,
+    actor: context.actor,
+  });
+  render(
+    <WorkspaceChat
+      parentOrigin="https://kb.example"
+      nonce="frame-nonce"
+      authenticated
+      libraryServerId={null}
+    />
+  );
+  receive({ kind: "models:open", nonce: "frame-nonce", marketId: "market_b" });
+  await screen.findByText("Workspace AI controls");
+  expect(openCauslWorkspace).toHaveBeenNthCalledWith(
+    1,
+    { selection: context.selection },
+    expect.any(AbortSignal)
+  );
+  expect(post).toHaveBeenCalledWith(
+    expect.objectContaining({
+      kind: "causl:authorized",
+      actor: context.actor,
+      selection: context.selection,
+    }),
+    "https://kb.example"
+  );
+  const prepared = mockPrepare!();
+  await waitFor(() =>
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "models:capture" }),
+      "https://kb.example"
+    )
+  );
+  const [capture] = post.mock.calls.find(
+    ([data]) => data.kind === "models:capture"
+  )!;
+  receive({
+    kind: "models:snapshot",
+    nonce: "frame-nonce",
+    requestId: capture.requestId,
+    snapshot: "{}",
+  });
+  await expect(prepared).resolves.toEqual({
+    ...context.selection,
+    modelPage: "{}",
+  });
+});
+
+test("standalone Models rejects a malformed market hint without opening a chat", () => {
+  render(
+    <WorkspaceChat
+      parentOrigin="https://kb.example"
+      nonce="frame-nonce"
+      authenticated
+      libraryServerId={null}
+    />
+  );
+  receive({ kind: "models:open", nonce: "frame-nonce", marketId: "" });
+  expect(openCauslWorkspace).not.toHaveBeenCalled();
+  expect(post).toHaveBeenCalledWith(
+    { kind: "causl:unavailable", nonce: "frame-nonce" },
+    "https://kb.example"
+  );
+});
+
 test("ordinary KB keeps the existing chat presentation", async () => {
   await open();
   expect(screen.getByText("Standard controls")).toBeVisible();

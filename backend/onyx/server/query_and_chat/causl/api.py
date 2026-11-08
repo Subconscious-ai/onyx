@@ -104,7 +104,7 @@ def read_memory(
         raise OnyxError(
             OnyxErrorCode.NOT_FOUND, "Shared market memory is not connected."
         )
-    if binding is not None and binding.mode == "colossus":
+    if binding is not None and binding.mode == "colossus" and binding.market_id is None:
         loaded = load_causl_context(
             db_session, user, binding.actor, CauslSelection(page="workspace")
         )

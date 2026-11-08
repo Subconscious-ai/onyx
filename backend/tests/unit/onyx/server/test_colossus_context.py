@@ -67,7 +67,6 @@ def test_colossus_requires_snapshot_and_does_not_accept_kb_record_authority() ->
     for value in [
         {"page": "colossus"},
         {"page": "workspace", "snapshot": snapshot()},
-        {"page": "colossus", "snapshot": snapshot(), "marketId": "foreign"},
         {
             "page": "colossus",
             "snapshot": snapshot(),
@@ -76,3 +75,10 @@ def test_colossus_requires_snapshot_and_does_not_accept_kb_record_authority() ->
     ]:
         with pytest.raises(ValidationError):
             CauslSelection.model_validate(value)
+
+
+def test_colossus_market_is_a_library_selector() -> None:
+    selection = CauslSelection.model_validate(
+        {"page": "colossus", "snapshot": snapshot(), "marketId": "selected"}
+    )
+    assert selection.query() == {"page": "workspace", "market": "selected"}

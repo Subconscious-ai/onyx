@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { Button, Text } from "@opal/components";
 import {
   createCauslBridge,
+  isCauslMarketId,
   openCauslWorkspace,
   CauslWorkspaceError,
 } from "@/lib/causl/bridge";
@@ -114,11 +115,21 @@ export default function WorkspaceChat({
           event.data.nonce === nonce &&
           !standalone.current
         ) {
+          const marketId: unknown = event.data.marketId;
+          if (marketId !== undefined && !isCauslMarketId(marketId)) {
+            setError("unavailable");
+            window.parent.postMessage(
+              { kind: "causl:unavailable", nonce },
+              parentOrigin
+            );
+            return;
+          }
+          const selection = {
+            page: "models" as const,
+            ...(marketId !== undefined ? { marketId } : {}),
+          };
           standalone.current = true;
-          void openCauslWorkspace(
-            { selection: { page: "models" } },
-            bootstrap.signal
-          )
+          void openCauslWorkspace({ selection }, bootstrap.signal)
             .then((ready) => {
               if (bootstrap.signal.aborted) return;
               if (!ready.actor) throw new CauslWorkspaceError("unavailable");
@@ -127,7 +138,7 @@ export default function WorkspaceChat({
                 nonce,
                 revision: ++revision.current,
                 actor: ready.actor,
-                selection: { page: "models" },
+                selection,
               });
             })
             .catch((error: unknown) => {
