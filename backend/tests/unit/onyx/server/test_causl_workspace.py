@@ -554,6 +554,7 @@ def test_next_turn_receives_new_fact_with_source_and_material_conditions(
     connected: tuple[Session, User, MCPServer], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     db, user, _server = connected
+    monkeypatch.setattr(db, "get", lambda *_args: None)
     chat = ChatSession(
         id=uuid4(),
         user_id=user.id,

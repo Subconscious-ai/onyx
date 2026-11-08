@@ -22,6 +22,13 @@ from onyx.server.query_and_chat.causl.models import (
 from onyx.server.query_and_chat.models import SendMessageRequest
 
 
+def _db_without_twenty_binding() -> MagicMock:
+    """A session mock with no Twenty binding row, as for a chat not opened from Twenty."""
+    db = MagicMock()
+    db.get.return_value = None
+    return db
+
+
 def test_remove_answer_citations_strips_http_markdown_citation() -> None:
     answer = "The answer is Paris [[1]](https://example.com/doc)."
 
@@ -195,7 +202,7 @@ def test_native_message_storage_keeps_executive_words_when_a_hook_adds_a_claim(
         with pytest.raises(OnyxError) as error:
             next(
                 process_message.build_chat_turn(
-                    request, user, MagicMock(), llm_overrides=None
+                    request, user, _db_without_twenty_binding(), llm_overrides=None
                 )
             )
         assert error.value.error_code is OnyxErrorCode.QUERY_REJECTED
@@ -205,7 +212,7 @@ def test_native_message_storage_keeps_executive_words_when_a_hook_adds_a_claim(
     with pytest.raises(RuntimeError, match="stop after message capture"):
         next(
             process_message.build_chat_turn(
-                request, user, MagicMock(), llm_overrides=None
+                request, user, _db_without_twenty_binding(), llm_overrides=None
             )
         )
     hook.assert_called_once()
