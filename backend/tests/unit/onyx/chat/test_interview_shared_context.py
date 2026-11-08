@@ -23,6 +23,13 @@ from onyx.server.query_and_chat.causl.models import (
 from onyx.server.query_and_chat.models import SendMessageRequest
 
 
+def _db_without_twenty_binding() -> MagicMock:
+    """A session mock with no Twenty binding row, as for a chat not opened from Twenty."""
+    db = MagicMock()
+    db.get.return_value = None
+    return db
+
+
 @pytest.mark.parametrize("mode", ["interview", "workspace", "shared"])
 @pytest.mark.parametrize(
     "message",
@@ -143,7 +150,7 @@ def test_bound_turn_uses_current_shared_context_without_losing_interview_prepara
             else SendMessageRequest(chat_session_id=chat.id, message=message)
         )
         turn = process_message.build_chat_turn(
-            request, user, MagicMock(), llm_overrides=None
+            request, user, _db_without_twenty_binding(), llm_overrides=None
         )
         while True:
             try:
