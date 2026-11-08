@@ -270,6 +270,7 @@ def _make_setup(n_models: int = 1) -> MagicMock:
     # Fields consumed by SearchToolConfig / CustomToolConfig / FileReaderToolConfig
     # constructors inside _run_model — must be typed correctly for Pydantic.
     setup.new_msg_req.deep_research = False
+    setup.new_msg_req.shared_context_only = False
     setup.new_msg_req.internal_search_filters = None
     setup.new_msg_req.allowed_tool_ids = None
     setup.new_msg_req.include_citations = True
