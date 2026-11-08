@@ -385,6 +385,12 @@ def test_pinned_host_mcp_url_matches_only_the_exact_pin(
         "https://[fd00::1]/mcp",
         "http://localhost:8000/mcp",
         "http://metadata/computeMetadata",
+        "https://localhost./mcp",
+        "https://metadata.google.internal./mcp",
+        "https://127.1/mcp",
+        "https://2130706433/mcp",
+        "https://0x7f.1/mcp",
+        "https://10.0.0.5/mcp",
     ):
         monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", f"9={unsafe}")
         assert not host_auth.is_pinned_host_mcp_url(unsafe)

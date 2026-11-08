@@ -3,6 +3,7 @@
 import ipaddress
 import os
 import re
+import socket
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -234,13 +235,20 @@ def _safe_pin(pinned: str) -> bool:
     refused, so a pin can never reopen what the SSRF guard blocks."""
     pin = urlsplit(pinned)
     host = pin.hostname
-    if not host or host in _UNSAFE_PIN_HOSTS:
+    if not host or host.endswith(".") or host in _UNSAFE_PIN_HOSTS:
         return False
     try:
         ipaddress.ip_address(host)
         return False
     except ValueError:
         pass
+    try:
+        socket.inet_aton(host)  # numeric IPv4 shorthands such as 127.1 or 2130706433
+        return False
+    except OSError:
+        pass
+    if not re.search(r"[a-z]", host.rsplit(".", 1)[-1]):
+        return False
     if pin.query or pin.fragment or pin.username or pin.password:
         return False
     return pin.scheme == "https" or (
