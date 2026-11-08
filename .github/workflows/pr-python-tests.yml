@@ -1,6 +1,6 @@
 name: Python Unit Tests
 concurrency:
-  group: Python-Unit-Tests-${{ github.workflow }}-${{ github.head_ref || github.event.workflow_run.head_branch || github.run_id }}
+  group: Python-Unit-Tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 on:
