@@ -47,7 +47,7 @@ if not token:
 cookies = []
 for line in open(sys.argv[1]):
     if line.startswith("#HttpOnly_"):
-        line = line[len("#HttpOnly_"):]
+        line = line[len("#HttpOnly_") :]
     elif line.startswith("#") or not line.strip():
         continue
     fields = line.rstrip("\n").split("\t")
