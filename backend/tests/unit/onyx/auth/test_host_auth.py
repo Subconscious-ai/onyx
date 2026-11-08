@@ -247,6 +247,62 @@ def test_library_forwarding_is_bound_to_user_server_and_exact_origin(
         require_session_identity(s.user.id)
 
 
+def test_pinned_mcp_server_gets_host_token_only_at_its_exact_url(
+    setup_host: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An env-pinned first-party server (ep-mcp) receives the shared Auth0 token
+    as Bearer; a different stored URL, another server or another user does not."""
+    s = setup_host
+    monkeypatch.setenv(
+        "CAUSL_KB_HOST_MCP_SERVERS",
+        "31=http://ep-mcp:8000/mcp, 32=http://ep.public.example/mcp,"
+        " 34=http://[2001:db8::1]/mcp, 35=http://2130706433/mcp",
+    )
+    session = host_auth.HostSession(
+        identity=SessionIdentity(
+            native_user_id=s.user.id, issuer=s.payload["iss"], subject=s.payload["sub"]
+        ),
+        organization_id="org_a",
+        access_token="host-secret",
+    )
+    ep = MCPServer(
+        id=31, server_url="http://ep-mcp:8000/mcp", auth_type=MCPAuthenticationType.NONE
+    )
+    assert host_auth.library_host_token(s.user.id, 31, ep.server_url) is None
+    with host_auth.host_request(session):
+        credentials = resolve_mcp_credentials(ep, s.user, s.db)
+        assert credentials.build_headers() == {"Authorization": "Bearer host-secret"}
+        assert host_auth.library_host_token(s.user.id, 31, "http://ep-mcp:8000/mcp/")
+        # A URL that does not match its pin withholds the token for that server
+        # only; the Library server in the same chat still gets it.
+        for url in (
+            "http://evil:8000/mcp",
+            "https://ep-mcp:8000/mcp",
+            "http://ep-mcp:8000/other",
+            "http://ep-mcp:8000/mcp?x=1",
+        ):
+            assert host_auth.library_host_token(s.user.id, 31, url) is None
+        library = MCPServer(
+            id=22,
+            server_url="https://kb.example/api/mcp/library",
+            auth_type=MCPAuthenticationType.OAUTH,
+        )
+        assert resolve_mcp_credentials(library, s.user, s.db).build_headers() == {
+            "Authorization": "Bearer host-secret"
+        }
+        # Plain HTTP only to a single DNS label: never a dotted name, an IP
+        # literal or a digit-only host.
+        for server_id, url in (
+            (32, "http://ep.public.example/mcp"),
+            (34, "http://[2001:db8::1]/mcp"),
+            (35, "http://2130706433/mcp"),
+        ):
+            assert host_auth.library_host_token(s.user.id, server_id, url) is None
+        assert host_auth.library_host_token(s.user.id, 33, ep.server_url) is None
+        with pytest.raises(OnyxError):
+            host_auth.library_host_token(uuid4(), 31, ep.server_url)
+
+
 def test_bedrock_qa_grant_is_user_org_and_time_bound(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
