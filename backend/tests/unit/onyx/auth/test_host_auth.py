@@ -255,7 +255,8 @@ def test_pinned_mcp_server_gets_host_token_only_at_its_exact_url(
     s = setup_host
     monkeypatch.setenv(
         "CAUSL_KB_HOST_MCP_SERVERS",
-        "31=http://ep-mcp:8000/mcp, 32=http://ep.public.example/mcp",
+        "31=http://ep-mcp:8000/mcp, 32=http://ep.public.example/mcp,"
+        " 34=http://[2001:db8::1]/mcp, 35=http://2130706433/mcp",
     )
     session = host_auth.HostSession(
         identity=SessionIdentity(
@@ -272,17 +273,31 @@ def test_pinned_mcp_server_gets_host_token_only_at_its_exact_url(
         credentials = resolve_mcp_credentials(ep, s.user, s.db)
         assert credentials.build_headers() == {"Authorization": "Bearer host-secret"}
         assert host_auth.library_host_token(s.user.id, 31, "http://ep-mcp:8000/mcp/")
+        # A URL that does not match its pin withholds the token for that server
+        # only; the Library server in the same chat still gets it.
         for url in (
             "http://evil:8000/mcp",
             "https://ep-mcp:8000/mcp",
             "http://ep-mcp:8000/other",
             "http://ep-mcp:8000/mcp?x=1",
         ):
-            with pytest.raises(OnyxError):
-                host_auth.library_host_token(s.user.id, 31, url)
-        # Plain HTTP to a dotted (routable) name is never trusted.
-        with pytest.raises(OnyxError):
-            host_auth.library_host_token(s.user.id, 32, "http://ep.public.example/mcp")
+            assert host_auth.library_host_token(s.user.id, 31, url) is None
+        library = MCPServer(
+            id=22,
+            server_url="https://kb.example/api/mcp/library",
+            auth_type=MCPAuthenticationType.OAUTH,
+        )
+        assert resolve_mcp_credentials(library, s.user, s.db).build_headers() == {
+            "Authorization": "Bearer host-secret"
+        }
+        # Plain HTTP only to a single DNS label: never a dotted name, an IP
+        # literal or a digit-only host.
+        for server_id, url in (
+            (32, "http://ep.public.example/mcp"),
+            (34, "http://[2001:db8::1]/mcp"),
+            (35, "http://2130706433/mcp"),
+        ):
+            assert host_auth.library_host_token(s.user.id, server_id, url) is None
         assert host_auth.library_host_token(s.user.id, 33, ep.server_url) is None
         with pytest.raises(OnyxError):
             host_auth.library_host_token(uuid4(), 31, ep.server_url)

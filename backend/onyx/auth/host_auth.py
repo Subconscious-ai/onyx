@@ -1,6 +1,7 @@
 """Request-bound KB access tokens reuse native OIDC users and admission rules."""
 
 import os
+import re
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -23,10 +24,13 @@ from onyx.db.models import User
 from onyx.error_handling.error_codes import OnyxErrorCode
 from onyx.error_handling.exceptions import OnyxError
 from onyx.server.security.store import get_security_settings
+from onyx.utils.logger import setup_logger
 from shared_configs.configs import MULTI_TENANT
 
 if TYPE_CHECKING:
     from onyx.auth.users import UserManager
+
+logger = setup_logger()
 
 
 @dataclass(frozen=True)
@@ -213,12 +217,15 @@ def _pinned_host_mcp_url(server_id: int) -> str | None:
     return None
 
 
+_SERVICE_LABEL = re.compile(r"[a-z][a-z0-9-]*")
+
+
 def _same_pinned_url(server_url: str, pinned: str) -> bool:
     url, pin = urlsplit(server_url), urlsplit(pinned)
-    # HTTPS, or plain HTTP only to a single-label Compose service name on the
-    # host's private network (no dots, so never a public name).
-    private_http = (
-        pin.scheme == "http" and bool(pin.hostname) and "." not in pin.hostname
+    # HTTPS, or plain HTTP only to a single DNS label (a Compose service name on
+    # the host's private network). IP literals and digit-only hosts never match.
+    private_http = pin.scheme == "http" and bool(
+        pin.hostname and _SERVICE_LABEL.fullmatch(pin.hostname)
     )
     return (
         (pin.scheme == "https" or private_http)
@@ -239,7 +246,14 @@ def library_host_token(user_id: UUID, server_id: int, server_url: str) -> str | 
         "CAUSL_KB_MCP_SERVER_ID"
     ):
         if not _same_pinned_url(server_url, pinned):
-            raise _denied()
+            # Fail only this server: it gets no token (its own calls then 401),
+            # while the Library and every other tool in the chat keep working.
+            logger.warning(
+                "MCP server %s URL does not match its CAUSL_KB_HOST_MCP_SERVERS pin; "
+                "the shared token is withheld",
+                server_id,
+            )
+            return None
         return session.access_token
     if str(server_id) != os.environ.get("CAUSL_KB_MCP_SERVER_ID"):
         return None
