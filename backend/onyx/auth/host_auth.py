@@ -217,7 +217,9 @@ def _same_pinned_url(server_url: str, pinned: str) -> bool:
     url, pin = urlsplit(server_url), urlsplit(pinned)
     # HTTPS, or plain HTTP only to a single-label Compose service name on the
     # host's private network (no dots, so never a public name).
-    private_http = pin.scheme == "http" and bool(pin.hostname) and "." not in pin.hostname
+    private_http = (
+        pin.scheme == "http" and bool(pin.hostname) and "." not in pin.hostname
+    )
     return (
         (pin.scheme == "https" or private_http)
         and bool(pin.hostname)
@@ -233,7 +235,9 @@ def library_host_token(user_id: UUID, server_id: int, server_url: str) -> str | 
     if session is None:
         return None
     pinned = _pinned_host_mcp_url(server_id)
-    if pinned is not None and str(server_id) != os.environ.get("CAUSL_KB_MCP_SERVER_ID"):
+    if pinned is not None and str(server_id) != os.environ.get(
+        "CAUSL_KB_MCP_SERVER_ID"
+    ):
         if not _same_pinned_url(server_url, pinned):
             raise _denied()
         return session.access_token
