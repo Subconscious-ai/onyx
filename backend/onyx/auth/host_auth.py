@@ -224,6 +224,10 @@ def _pinned_host_mcp_url(server_id: int) -> str | None:
     return None
 
 
+def is_pinned_host_mcp_server(server_id: int) -> bool:
+    return _pinned_host_mcp_url(server_id) is not None
+
+
 _SERVICE_LABEL = re.compile(r"[a-z][a-z0-9-]*")
 
 
