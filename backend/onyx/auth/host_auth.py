@@ -201,9 +201,43 @@ def require_host_subscription_provider(
     )
 
 
+def _pinned_host_mcp_url(server_id: int) -> str | None:
+    """Exact URL of an extra first-party MCP server that verifies the shared Auth0
+    token itself (e.g. Expected Parrot's ep-mcp). Configured only by deployment env
+    `CAUSL_KB_HOST_MCP_SERVERS="<server id>=<url>,..."`, never by the admin UI, so
+    changing a server's stored URL cannot redirect the user's token."""
+    for entry in os.environ.get("CAUSL_KB_HOST_MCP_SERVERS", "").split(","):
+        key, sep, url = entry.strip().partition("=")
+        if sep and key.strip() == str(server_id):
+            return url.strip()
+    return None
+
+
+def _same_pinned_url(server_url: str, pinned: str) -> bool:
+    url, pin = urlsplit(server_url), urlsplit(pinned)
+    # HTTPS, or plain HTTP only to a single-label Compose service name on the
+    # host's private network (no dots, so never a public name).
+    private_http = pin.scheme == "http" and bool(pin.hostname) and "." not in pin.hostname
+    return (
+        (pin.scheme == "https" or private_http)
+        and bool(pin.hostname)
+        and not (pin.query or pin.fragment or pin.username or pin.password)
+        and (url.scheme, url.netloc, url.path.rstrip("/"))
+        == (pin.scheme, pin.netloc, pin.path.rstrip("/"))
+        and not (url.query or url.fragment or url.username or url.password)
+    )
+
+
 def library_host_token(user_id: UUID, server_id: int, server_url: str) -> str | None:
     session = host_session_for(user_id)
-    if session is None or str(server_id) != os.environ.get("CAUSL_KB_MCP_SERVER_ID"):
+    if session is None:
+        return None
+    pinned = _pinned_host_mcp_url(server_id)
+    if pinned is not None and str(server_id) != os.environ.get("CAUSL_KB_MCP_SERVER_ID"):
+        if not _same_pinned_url(server_url, pinned):
+            raise _denied()
+        return session.access_token
+    if str(server_id) != os.environ.get("CAUSL_KB_MCP_SERVER_ID"):
         return None
     origin = os.environ.get("CAUSL_KB_HOST_ORIGIN", "")
     url = urlsplit(server_url)
