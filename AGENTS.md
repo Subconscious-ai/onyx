@@ -91,6 +91,14 @@ Follow ASD-STE100 Simplified Technical English for technical text:
 - Write short paragraphs. Keep one topic in each paragraph.
 - Keep code comments focused on information that is relevant long-term or for future readers.
 
+## CI feedback
+
+- Local gate (run before you push): `pre-commit run --files <changed files>` and `uv run pytest -xv backend/tests/unit`. CI runs the same hooks on all files.
+- Watch a PR: `gh pr checks --watch --fail-fast`. Read a failure: `gh run view --job <id> --log-failed`.
+- If no run starts within 2 minutes, run the local gate and say so in the PR.
+- Never skip a test to make CI pass.
+- PR runs cancel superseded pushes.
+
 ## Testing
 
 There are 4 main types of tests: unit, external dependency unit, integration, and playwright e2e
