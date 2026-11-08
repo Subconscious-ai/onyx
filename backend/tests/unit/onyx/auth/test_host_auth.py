@@ -314,6 +314,7 @@ def test_bedrock_qa_grant_is_user_org_and_time_bound(
         organization_id="org_qa",
         access_token="private",
     )
+    monkeypatch.delenv("CAUSL_KB_APP_BEDROCK_ENABLED", raising=False)
     with host_auth.host_request(session):
         with pytest.raises(OnyxError):
             host_auth.require_host_subscription_provider("bedrock")
@@ -337,3 +338,25 @@ def test_bedrock_qa_grant_is_user_org_and_time_bound(
         monkeypatch.setenv("CAUSL_KB_QA_BEDROCK_UNTIL", "invalid")
         with pytest.raises(OnyxError):
             host_auth.require_host_subscription_provider("bedrock")
+
+
+def test_app_bedrock_flag_allows_only_bedrock(monkeypatch: pytest.MonkeyPatch) -> None:
+    session = host_auth.HostSession(
+        identity=SessionIdentity(
+            native_user_id=uuid4(), issuer="https://auth.example/", subject="auth0|any"
+        ),
+        organization_id="org_any",
+        access_token="private",
+    )
+    monkeypatch.delenv("CAUSL_KB_APP_BEDROCK_ENABLED", raising=False)
+    with host_auth.host_request(session):
+        with pytest.raises(OnyxError):
+            host_auth.require_host_subscription_provider("bedrock")
+        monkeypatch.setenv("CAUSL_KB_APP_BEDROCK_ENABLED", "false")
+        with pytest.raises(OnyxError):
+            host_auth.require_host_subscription_provider("bedrock")
+        monkeypatch.setenv("CAUSL_KB_APP_BEDROCK_ENABLED", "TRUE")
+        assert host_auth.require_host_subscription_provider("bedrock") is False
+        for other in ("openai", "databricks"):
+            with pytest.raises(OnyxError):
+                host_auth.require_host_subscription_provider(other)
