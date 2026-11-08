@@ -203,7 +203,7 @@ def require_host_subscription_provider(
 
 def _pinned_host_mcp_url(server_id: int) -> str | None:
     """Exact URL of an extra first-party MCP server that verifies the shared Auth0
-    token itself (e.g. Expected Parrot's ep-mcp). Configured only by deployment env
+    token itself (e.g. the EDSL study server ep-mcp). Configured only by deployment env
     `CAUSL_KB_HOST_MCP_SERVERS="<server id>=<url>,..."`, never by the admin UI, so
     changing a server's stored URL cannot redirect the user's token."""
     for entry in os.environ.get("CAUSL_KB_HOST_MCP_SERVERS", "").split(","):
