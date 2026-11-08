@@ -1,5 +1,6 @@
 """Request-bound KB access tokens reuse native OIDC users and admission rules."""
 
+import ipaddress
 import os
 import re
 import time
@@ -224,17 +225,48 @@ def _pinned_host_mcp_url(server_id: int) -> str | None:
     return None
 
 
+_UNSAFE_PIN_HOSTS = frozenset({"localhost", "metadata", "metadata.google.internal"})
+
+
+def _safe_pin(pinned: str) -> bool:
+    """A pin must name a first-party service by DNS name: HTTPS, or HTTP to a
+    single-label Compose service. IP literals and loopback/metadata names are
+    refused, so a pin can never reopen what the SSRF guard blocks."""
+    pin = urlsplit(pinned)
+    host = pin.hostname
+    if not host or host in _UNSAFE_PIN_HOSTS:
+        return False
+    try:
+        ipaddress.ip_address(host)
+        return False
+    except ValueError:
+        pass
+    if pin.query or pin.fragment or pin.username or pin.password:
+        return False
+    return pin.scheme == "https" or (
+        pin.scheme == "http" and bool(_SERVICE_LABEL.fullmatch(host))
+    )
+
+
 def is_pinned_host_mcp_server(server_id: int) -> bool:
-    return _pinned_host_mcp_url(server_id) is not None
+    pinned = _pinned_host_mcp_url(server_id)
+    return bool(pinned) and _safe_pin(pinned)
 
 
 def is_pinned_host_mcp_url(url: str) -> bool:
-    """True only for a request to the exact URL of a `CAUSL_KB_HOST_MCP_SERVERS`
-    pin (HTTPS, or HTTP to a single-label Compose service). The MCP SSRF guard
-    lets these private first-party servers through; every other URL is checked."""
+    """True only for a request to exactly the URL of a safe
+    `CAUSL_KB_HOST_MCP_SERVERS` pin (same scheme, host, port and path; no
+    query, fragment or userinfo). The MCP SSRF guard lets only these through."""
+    req = urlsplit(url)
+    if req.query or req.fragment or req.username or req.password:
+        return False
     for entry in os.environ.get("CAUSL_KB_HOST_MCP_SERVERS", "").split(","):
         _, sep, pinned = entry.strip().partition("=")
-        if sep and pinned.strip() and _same_pinned_url(url, pinned.strip()):
+        pinned = pinned.strip()
+        if not (sep and pinned and _safe_pin(pinned)):
+            continue
+        pin = urlsplit(pinned)
+        if (req.scheme, req.netloc, req.path) == (pin.scheme, pin.netloc, pin.path):
             return True
     return False
 

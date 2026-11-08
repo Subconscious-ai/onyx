@@ -369,8 +369,9 @@ def test_pinned_host_mcp_url_matches_only_the_exact_pin(
     assert not host_auth.is_pinned_host_mcp_url("http://ep-mcp:8000/mcp")
     monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", "9=http://ep-mcp:8000/mcp")
     assert host_auth.is_pinned_host_mcp_url("http://ep-mcp:8000/mcp")
-    assert host_auth.is_pinned_host_mcp_url("http://ep-mcp:8000/mcp/")
     for other in (
+        "http://ep-mcp:8000/mcp/",
+        "http://ep-mcp:8000/mcp//",
         "http://ep-mcp:8000/other",
         "http://ep-mcp:9000/mcp",
         "http://ep-mcp:8000/mcp?x=1",
@@ -378,5 +379,18 @@ def test_pinned_host_mcp_url_matches_only_the_exact_pin(
         "http://cache:6379/mcp",
     ):
         assert not host_auth.is_pinned_host_mcp_url(other)
-    monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", "9=http://10.0.0.5:8000/mcp")
-    assert not host_auth.is_pinned_host_mcp_url("http://10.0.0.5:8000/mcp")
+    for unsafe in (
+        "http://10.0.0.5:8000/mcp",
+        "https://169.254.169.254/latest",
+        "https://[fd00::1]/mcp",
+        "http://localhost:8000/mcp",
+        "http://metadata/computeMetadata",
+    ):
+        monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", f"9={unsafe}")
+        assert not host_auth.is_pinned_host_mcp_url(unsafe)
+        assert not host_auth.is_pinned_host_mcp_server(9)
+    monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", "9=")
+    assert not host_auth.is_pinned_host_mcp_server(9)
+    monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", "9=https://studies.example.com/mcp")
+    assert host_auth.is_pinned_host_mcp_server(9)
+    assert host_auth.is_pinned_host_mcp_url("https://studies.example.com/mcp")
