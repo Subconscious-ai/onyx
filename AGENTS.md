@@ -8,7 +8,7 @@ Read the [system map](https://github.com/Subconscious-ai/market-ontology/blob/ma
 from `market-ontology`; UI tokens and copy come from `design-system`. A contract change is a
 version bump in the owner repo, then a re-pin PR here. With other agents working in parallel,
 claim the issue first (assign yourself, label `agent-wip`), work on your own branch
-`agent/<agent>-<issue>`, and hand off with a PR that closes the issue. Humans merge.
+`agent/<agent>-<issue>`, and hand off with a PR that closes the issue. The [shared merge policy](https://github.com/Subconscious-ai/design-system/blob/main/agent-config/shared/BEHAVIOR.md#merge-policy) decides who merges.
 Check the whole system with `scripts/system-status.sh` in market-ontology.
 
 ## Subconscious Burn fork
