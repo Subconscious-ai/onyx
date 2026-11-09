@@ -93,13 +93,14 @@ def init_sentry(
     import sentry_sdk
 
     from onyx import __version__
-    from shared_configs.configs import SENTRY_DSN
+    from shared_configs.configs import SENTRY_DSN, SENTRY_ENVIRONMENT
 
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=integrations or [],
         traces_sample_rate=traces_sample_rate,
         release=__version__,
+        environment=SENTRY_ENVIRONMENT,
         before_send=_add_instance_tags,
         # Never capture stack-frame locals: litellm holds the provider key in
         # the outbound request `headers` dict Sentry would otherwise store.
