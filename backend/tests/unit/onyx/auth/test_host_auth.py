@@ -272,7 +272,11 @@ def test_pinned_mcp_server_gets_host_token_only_at_its_exact_url(
     with host_auth.host_request(session):
         credentials = resolve_mcp_credentials(ep, s.user, s.db)
         assert credentials.build_headers() == {"Authorization": "Bearer host-secret"}
-        assert host_auth.library_host_token(s.user.id, 31, "http://ep-mcp:8000/mcp/")
+        # Token forwarding and the SSRF exemption use the same exact-path match.
+        assert (
+            host_auth.library_host_token(s.user.id, 31, "http://ep-mcp:8000/mcp/")
+            is None
+        )
         # A URL that does not match its pin withholds the token for that server
         # only; the Library server in the same chat still gets it.
         for url in (
@@ -360,3 +364,43 @@ def test_app_bedrock_flag_allows_only_bedrock(monkeypatch: pytest.MonkeyPatch) -
         for other in ("openai", "databricks"):
             with pytest.raises(OnyxError):
                 host_auth.require_host_subscription_provider(other)
+
+
+def test_pinned_host_mcp_url_matches_only_the_exact_pin(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("CAUSL_KB_HOST_MCP_SERVERS", raising=False)
+    assert not host_auth.is_pinned_host_mcp_url("http://ep-mcp:8000/mcp")
+    monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", "9=http://ep-mcp:8000/mcp")
+    assert host_auth.is_pinned_host_mcp_url("http://ep-mcp:8000/mcp")
+    for other in (
+        "http://ep-mcp:8000/mcp/",
+        "http://ep-mcp:8000/mcp//",
+        "http://ep-mcp:8000/other",
+        "http://ep-mcp:9000/mcp",
+        "http://ep-mcp:8000/mcp?x=1",
+        "http://169.254.169.254/latest",
+        "http://cache:6379/mcp",
+    ):
+        assert not host_auth.is_pinned_host_mcp_url(other)
+    for unsafe in (
+        "http://10.0.0.5:8000/mcp",
+        "https://169.254.169.254/latest",
+        "https://[fd00::1]/mcp",
+        "http://localhost:8000/mcp",
+        "http://metadata/computeMetadata",
+        "https://localhost./mcp",
+        "https://metadata.google.internal./mcp",
+        "https://127.1/mcp",
+        "https://2130706433/mcp",
+        "https://0x7f.1/mcp",
+        "https://10.0.0.5/mcp",
+    ):
+        monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", f"9={unsafe}")
+        assert not host_auth.is_pinned_host_mcp_url(unsafe)
+        assert not host_auth.is_pinned_host_mcp_server(9)
+    monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", "9=")
+    assert not host_auth.is_pinned_host_mcp_server(9)
+    monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", "9=https://studies.example.com/mcp")
+    assert host_auth.is_pinned_host_mcp_server(9)
+    assert host_auth.is_pinned_host_mcp_url("https://studies.example.com/mcp")
