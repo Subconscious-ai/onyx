@@ -8,6 +8,8 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
     release: process.env.SENTRY_RELEASE,
+    // Never default to "production"; production deploys set it explicitly.
+    environment: process.env.SENTRY_ENVIRONMENT || "development",
 
     // Setting this option to true will print useful information to the console while you're setting up Sentry.
     debug: false,

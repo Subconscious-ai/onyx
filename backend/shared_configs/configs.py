@@ -123,6 +123,9 @@ STRICT_CHUNK_TOKEN_LIMIT = (
 
 # Set up Sentry integration (for error logging)
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
+# Deploy environment tag on every event. Never defaults to "production":
+# production deploys set it explicitly; laptops and agent-dev use the default.
+SENTRY_ENVIRONMENT = os.environ.get("SENTRY_ENVIRONMENT") or "development"
 
 # Celery task spans dominate ingestion volume (~94%), so default celery
 # tracing to 0. Web/API traces stay at a small non-zero rate so http.server
