@@ -6,6 +6,7 @@ Runs where Playwright's Chromium is installed, for example the sandbox image:
     <sandbox image> welcome_screenshot.py ep-user2.env welcome.png
 Prints no secret.
 """
+
 import sys
 
 from playwright.sync_api import sync_playwright
@@ -16,9 +17,17 @@ password = env.get("U_PASSWORD") or env.get("CRAFT_USER_PASSWORD")
 with sync_playwright() as p:
     browser = p.chromium.launch()
     ctx = browser.new_context(viewport={"width": 1200, "height": 800})
-    print("login", ctx.request.post("http://localhost:3390/api/auth/login", form={"username": email, "password": password}).status)
+    print(
+        "login",
+        ctx.request.post(
+            "http://localhost:3390/api/auth/login",
+            form={"username": email, "password": password},
+        ).status,
+    )
     page = ctx.new_page()
-    page.goto("http://localhost:3390/craft/v1", wait_until="domcontentloaded", timeout=60000)
+    page.goto(
+        "http://localhost:3390/craft/v1", wait_until="domcontentloaded", timeout=60000
+    )
     page.wait_for_timeout(10000)
     # A first visit opens the "Meet Craft" tour over the page.
     page.keyboard.press("Escape")

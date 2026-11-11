@@ -304,6 +304,10 @@ def load_causl_context(
             "Your Library account does not match your Onyx sign-in.",
         )
     host = host_session_for(user.id)
+    if host is not None:
+        if actor is not None and actor.org_id != host.organization_id:
+            raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+        actor = CauslActor(org_id=host.organization_id, user_id=identity.subject)
     local_page = (
         host is not None
         and selection.page in ("models", "colossus")
@@ -318,22 +322,17 @@ def load_causl_context(
         and not start_research
     )
     if local_page:
-        assert host is not None
-        verified_actor = CauslActor(
-            org_id=host.organization_id, user_id=identity.subject
-        )
-        if (
-            (actor is not None and actor != verified_actor)
-            or user.is_anonymous
-            or not user_can_access_persona(db, config.persona_id, user)
+        assert actor is not None
+        if user.is_anonymous or not user_can_access_persona(
+            db, config.persona_id, user
         ):
             raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
         scope = json.dumps(
-            [identity.issuer, verified_actor.model_dump(), selection.page],
+            [identity.issuer, actor.model_dump(), selection.page],
             sort_keys=True,
         )
         envelope = CauslContextEnvelope(
-            actor=verified_actor,
+            actor=actor,
             issuer=identity.issuer,
             context={
                 "version": 1,
@@ -351,7 +350,7 @@ def load_causl_context(
         server = _library_server(db, user, config)
         url = context_url(server.server_url)
         authority_selection = (
-            CauslSelection(page="workspace")
+            CauslSelection(page="workspace", market_id=selection.market_id)
             if selection.page == "colossus"
             else selection
         )
@@ -375,7 +374,16 @@ def load_causl_context(
         # Native tools still enforce authorization for every additional service read.
         assert selection.snapshot is not None  # Validated by CauslSelection.
         snapshot = selection.snapshot.model_dump(mode="json")
+        library_context = (
+            {
+                "market": envelope.context["market"],
+                "library": envelope.context["library"],
+            }
+            if selection.market_id is not None
+            else {}
+        )
         envelope.context = {
+            **library_context,
             "version": 2,
             "page": "colossus",
             "scopeKey": hashlib.sha256(
@@ -391,7 +399,7 @@ def load_causl_context(
             "view_hints": snapshot,
             "authority": "Identity and organization verified by the application session. Page data is browser view state, not accepted facts."
             if local_page
-            else "Identity and organization verified through native per-user Library OAuth. Page data is browser view state, not accepted facts.",
+            else "Identity and organization verified by the Library reader. Page data is browser view state, not accepted facts.",
         }
     return AuthorizedCauslContext(config, envelope)
 

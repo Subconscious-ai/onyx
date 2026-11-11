@@ -43,9 +43,12 @@ for c in $(docker ps -a --format '{{.Names}} {{.Image}}' | awk -v img="$SANDBOX"
   docker rm -f "$c" >/dev/null && echo "removed old sandbox $c"
 done
 
-for i in $(seq 1 60); do curl -sf "$B/health" >/dev/null && break; sleep 5; done
+for _ in $(seq 1 60); do curl -sf "$B/health" >/dev/null && break; sleep 5; done
 curl -sf "$B/health" >/dev/null || { echo "API not healthy after 5 minutes"; exit 1; }
-set -a; . ~/craft-ep/admin.env; set +a
+set -a
+# shellcheck source=/dev/null
+. ~/craft-ep/admin.env
+set +a
 JAR=$(mktemp)
 curl -sf -c "$JAR" -o /dev/null --data-urlencode "username=$CRAFT_ADMIN_EMAIL" --data-urlencode "password=$CRAFT_ADMIN_PASSWORD" "$B/auth/login"
 PROVIDER=$(curl -sf -b "$JAR" "$B/admin/llm/provider" | python3 -c "import sys,json; d=json.load(sys.stdin); d=d.get('providers',d) if isinstance(d,dict) else d; print(next((p['id'] for p in d if p['provider']=='bedrock'),''))")

@@ -6,6 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from onyx.auth.host_auth import is_pinned_host_mcp_server
 from onyx.auth.oauth_token_manager import OAuthTokenManager
 from onyx.chat.emitter import Emitter
 from onyx.configs.app_configs import DISABLE_VECTOR_DB
@@ -58,6 +59,20 @@ from onyx.utils.headers import header_dict_to_header_list
 from onyx.utils.logger import setup_logger
 
 logger = setup_logger()
+
+
+def _hidden_in_causl_workspace(
+    binding: CauslChatBinding | None, db_tool_model: ToolDBModel
+) -> bool:
+    """In a causl workspace chat, MCP tools are limited to the bound Library server
+    plus first-party servers pinned by `CAUSL_KB_HOST_MCP_SERVERS` (they verify the
+    shared Auth0 token themselves, e.g. the EDSL study server)."""
+    if binding is None or binding.mode != "workspace" or db_tool_model.in_code_tool_id:
+        return False
+    server_id = db_tool_model.mcp_server_id
+    if server_id == binding.library_server_id:
+        return False
+    return not (server_id is not None and is_pinned_host_mcp_server(server_id))
 
 
 def _disambiguate_mcp_tool_names(tools: list[Tool]) -> None:
@@ -251,13 +266,9 @@ def _construct_tools_impl(
 
     added_search_tool = False
     for db_tool_model in persona.tools:
-        if (
-            custom_tool_config
-            and custom_tool_config.causl_binding
-            and custom_tool_config.causl_binding.mode == "workspace"
-            and not db_tool_model.in_code_tool_id
-            and db_tool_model.mcp_server_id
-            != custom_tool_config.causl_binding.library_server_id
+        if _hidden_in_causl_workspace(
+            custom_tool_config.causl_binding if custom_tool_config else None,
+            db_tool_model,
         ):
             continue
         # If allowed_tool_ids is specified, skip tools not in the allowed list

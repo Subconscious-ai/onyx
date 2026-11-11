@@ -96,15 +96,16 @@ jobs:
           retention-days: 14
 
       # The HTML page is published where a browser can open it, for the PR
-      # comment. Fork PRs cannot assume the role, so they keep the artifact only.
+      # comment. Fork PRs cannot assume the role, and Subconscious-ai/onyx has
+      # no AWS role or bucket, so both keep the artifact and job summary only.
       - name: Configure AWS credentials
-        if: ${{ !cancelled() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+        if: ${{ !cancelled() && github.repository == 'onyx-dot-app/onyx' && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
           aws-region: us-east-2
       - name: Publish the HTML page
-        if: ${{ !cancelled() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+        if: ${{ !cancelled() && github.repository == 'onyx-dot-app/onyx' && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
         env:
           NAME: ${{ steps.report.outputs.name }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -126,6 +127,7 @@ jobs:
     needs: golang
     if: >-
       !cancelled() &&
+      github.repository == 'onyx-dot-app/onyx' &&
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.fork == false
     runs-on: ubuntu-slim

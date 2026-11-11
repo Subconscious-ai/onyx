@@ -8,17 +8,17 @@ set -euo pipefail
 B=http://localhost:3390/api; J=$1; SID=$2; MSG=$3
 if [ "$SID" = new ]; then
   SID=""
-  for attempt in 1 2 3; do
+  for _ in 1 2 3; do
     SID=$(curl -s -b "$J" -H "Content-Type: application/json" -d '{"name":"ep study","headless":true}' $B/build/sessions \
       | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || true)
     [ -n "$SID" ] && break
     sleep 10
   done
   [ -n "$SID" ] || { echo "could not create a session"; exit 1; }
-  for i in $(seq 1 60); do curl -s -b "$J" $B/build/sessions/$SID/sandbox-status | grep -q running && break; sleep 3; done
+  for _ in $(seq 1 60); do curl -s -b "$J" $B/build/sessions/"$SID"/sandbox-status | grep -q running && break; sleep 3; done
   ATTACHMENTS="[]"
   if [ -n "${ATTACH:-}" ]; then
-    ATTACHMENTS=$(for f in $(echo "$ATTACH" | tr "," " "); do curl -s -b "$J" -F "file=@$f" $B/build/sessions/$SID/upload; echo; done | python3 -c "
+    ATTACHMENTS=$(for f in $(echo "$ATTACH" | tr "," " "); do curl -s -b "$J" -F "file=@$f" $B/build/sessions/"$SID"/upload; echo; done | python3 -c "
 import sys,json,mimetypes
 out=[]
 for line in sys.stdin:
@@ -32,8 +32,8 @@ print(json.dumps(out))")
 fi
 echo "session $SID"
 before=""
-for attempt in 1 2 3 4 5; do
-  before=$(curl -s -b "$J" $B/build/sessions/$SID/messages | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d['messages']))" 2>/dev/null || true)
+for _ in 1 2 3 4 5; do
+  before=$(curl -s -b "$J" $B/build/sessions/"$SID"/messages | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d['messages']))" 2>/dev/null || true)
   [ -n "$before" ] && break
   sleep 5
 done
@@ -44,16 +44,16 @@ body={'content': sys.argv[1]}
 if os.environ.get('ATTACHMENTS') and os.environ['ATTACHMENTS']!='[]': body['attachments']=json.loads(os.environ['ATTACHMENTS'])
 if os.environ.get('CRAFT_MODEL'): body.update(provider='bedrock', provider_id=1, model=os.environ['CRAFT_MODEL'])
 print(json.dumps(body))" "$MSG" \
-  | curl -s -b "$J" -H "Content-Type: application/json" -d @- $B/build/sessions/$SID/send-message > /dev/null
-for i in $(seq 1 300); do
-  done_flag=$(curl -s -b "$J" $B/build/sessions/$SID/messages | python3 -c "
+  | curl -s -b "$J" -H "Content-Type: application/json" -d @- $B/build/sessions/"$SID"/send-message > /dev/null
+for _ in $(seq 1 300); do
+  done_flag=$(curl -s -b "$J" $B/build/sessions/"$SID"/messages | python3 -c "
 import sys,json
 m=(json.load(sys.stdin) or {}).get('messages') or []; m=m[$before:]
 print(any((x.get('message_metadata') or {}).get('type') in ('context_usage','error') for x in m))")
   [ "$done_flag" = True ] && break
   sleep 5
 done
-curl -s -b "$J" $B/build/sessions/$SID/messages | python3 -c "
+curl -s -b "$J" $B/build/sessions/"$SID"/messages | python3 -c "
 import sys,json
 m=(json.load(sys.stdin) or {}).get('messages') or []; m=m[$before:]
 for x in m:

@@ -16,6 +16,13 @@ from onyx.db.chat import get_chat_sessions_by_user
 from onyx.db.models import ChatSession
 
 
+def _db_session() -> MagicMock:
+    """A session mock with no Twenty binding row, as for a chat not opened from Twenty."""
+    db_session = MagicMock(spec=Session)
+    db_session.get.return_value = None
+    return db_session
+
+
 def _make_session(
     user_id: UUID,
     time_created: datetime | None = None,
@@ -62,7 +69,7 @@ class TestGetChatSessionsByUser:
         valid_session = _make_session(user_id, time_created=old_time)
         failed_session = _make_session(user_id, time_created=old_time)
 
-        db_session = MagicMock(spec=Session)
+        db_session = _db_session()
 
         # First execute: returns all sessions
         # Second execute: returns only the valid session's ID (has non-system msgs)
@@ -93,7 +100,7 @@ class TestGetChatSessionsByUser:
         """Recently created sessions should be kept even without messages."""
         recent_session = _make_session(user_id, time_created=recent_time)
 
-        db_session = MagicMock(spec=Session)
+        db_session = _db_session()
 
         mock_result_1 = MagicMock()
         mock_result_1.scalars.return_value.all.return_value = [recent_session]
@@ -120,7 +127,7 @@ class TestGetChatSessionsByUser:
         session_a = _make_session(user_id, time_created=old_time)
         session_b = _make_session(user_id, time_created=old_time)
 
-        db_session = MagicMock(spec=Session)
+        db_session = _db_session()
 
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = [session_a, session_b]
@@ -145,7 +152,7 @@ class TestGetChatSessionsByUser:
         sessions = [_make_session(user_id, time_created=old_time) for _ in range(5)]
         valid_ids = [s.id for s in sessions[:3]]
 
-        db_session = MagicMock(spec=Session)
+        db_session = _db_session()
 
         mock_result_1 = MagicMock()
         mock_result_1.scalars.return_value.all.return_value = sessions
@@ -176,7 +183,7 @@ class TestGetChatSessionsByUser:
         old_failed = _make_session(user_id, time_created=old_time)
         recent_no_msgs = _make_session(user_id, time_created=recent_time)
 
-        db_session = MagicMock(spec=Session)
+        db_session = _db_session()
 
         mock_result_1 = MagicMock()
         mock_result_1.scalars.return_value.all.return_value = [
@@ -204,7 +211,7 @@ class TestGetChatSessionsByUser:
 
     def test_empty_result(self, user_id: UUID) -> None:
         """No sessions should return empty list without errors."""
-        db_session = MagicMock(spec=Session)
+        db_session = _db_session()
 
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = []

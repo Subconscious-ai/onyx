@@ -28,7 +28,7 @@ const workspace = {
   contextDigest: "c".repeat(64),
 };
 
-test("Colossus requires seven bounded categories and rejects KB selectors and overlay roots", () => {
+test("Colossus accepts a market hint and still rejects record selectors and overlay roots", () => {
   expect(parseCauslMessage(message(1))?.selection.page).toBe("colossus");
   for (const category of [
     "map_view",
@@ -59,7 +59,16 @@ test("Colossus requires seven bounded categories and rejects KB selectors and ov
   expect(
     parseCauslMessage({
       ...value,
-      selection: { ...value.selection, marketId: "foreign" },
+      selection: { ...value.selection, marketId: "market_b" },
+    })?.selection.marketId
+  ).toBe("market_b");
+  expect(
+    parseCauslMessage({
+      ...value,
+      selection: {
+        ...value.selection,
+        record: { id: "record", type: "place" },
+      },
     })
   ).toBeNull();
 });

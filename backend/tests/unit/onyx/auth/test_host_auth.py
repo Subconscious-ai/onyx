@@ -247,6 +247,66 @@ def test_library_forwarding_is_bound_to_user_server_and_exact_origin(
         require_session_identity(s.user.id)
 
 
+def test_pinned_mcp_server_gets_host_token_only_at_its_exact_url(
+    setup_host: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An env-pinned first-party server (ep-mcp) receives the shared Auth0 token
+    as Bearer; a different stored URL, another server or another user does not."""
+    s = setup_host
+    monkeypatch.setenv(
+        "CAUSL_KB_HOST_MCP_SERVERS",
+        "31=http://ep-mcp:8000/mcp, 32=http://ep.public.example/mcp,"
+        " 34=http://[2001:db8::1]/mcp, 35=http://2130706433/mcp",
+    )
+    session = host_auth.HostSession(
+        identity=SessionIdentity(
+            native_user_id=s.user.id, issuer=s.payload["iss"], subject=s.payload["sub"]
+        ),
+        organization_id="org_a",
+        access_token="host-secret",
+    )
+    ep = MCPServer(
+        id=31, server_url="http://ep-mcp:8000/mcp", auth_type=MCPAuthenticationType.NONE
+    )
+    assert host_auth.library_host_token(s.user.id, 31, ep.server_url) is None
+    with host_auth.host_request(session):
+        credentials = resolve_mcp_credentials(ep, s.user, s.db)
+        assert credentials.build_headers() == {"Authorization": "Bearer host-secret"}
+        # Token forwarding and the SSRF exemption use the same exact-path match.
+        assert (
+            host_auth.library_host_token(s.user.id, 31, "http://ep-mcp:8000/mcp/")
+            is None
+        )
+        # A URL that does not match its pin withholds the token for that server
+        # only; the Library server in the same chat still gets it.
+        for url in (
+            "http://evil:8000/mcp",
+            "https://ep-mcp:8000/mcp",
+            "http://ep-mcp:8000/other",
+            "http://ep-mcp:8000/mcp?x=1",
+        ):
+            assert host_auth.library_host_token(s.user.id, 31, url) is None
+        library = MCPServer(
+            id=22,
+            server_url="https://kb.example/api/mcp/library",
+            auth_type=MCPAuthenticationType.OAUTH,
+        )
+        assert resolve_mcp_credentials(library, s.user, s.db).build_headers() == {
+            "Authorization": "Bearer host-secret"
+        }
+        # Plain HTTP only to a single DNS label: never a dotted name, an IP
+        # literal or a digit-only host.
+        for server_id, url in (
+            (32, "http://ep.public.example/mcp"),
+            (34, "http://[2001:db8::1]/mcp"),
+            (35, "http://2130706433/mcp"),
+        ):
+            assert host_auth.library_host_token(s.user.id, server_id, url) is None
+        assert host_auth.library_host_token(s.user.id, 33, ep.server_url) is None
+        with pytest.raises(OnyxError):
+            host_auth.library_host_token(uuid4(), 31, ep.server_url)
+
+
 def test_bedrock_qa_grant_is_user_org_and_time_bound(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -258,6 +318,7 @@ def test_bedrock_qa_grant_is_user_org_and_time_bound(
         organization_id="org_qa",
         access_token="private",
     )
+    monkeypatch.delenv("CAUSL_KB_APP_BEDROCK_ENABLED", raising=False)
     with host_auth.host_request(session):
         with pytest.raises(OnyxError):
             host_auth.require_host_subscription_provider("bedrock")
@@ -281,3 +342,65 @@ def test_bedrock_qa_grant_is_user_org_and_time_bound(
         monkeypatch.setenv("CAUSL_KB_QA_BEDROCK_UNTIL", "invalid")
         with pytest.raises(OnyxError):
             host_auth.require_host_subscription_provider("bedrock")
+
+
+def test_app_bedrock_flag_allows_only_bedrock(monkeypatch: pytest.MonkeyPatch) -> None:
+    session = host_auth.HostSession(
+        identity=SessionIdentity(
+            native_user_id=uuid4(), issuer="https://auth.example/", subject="auth0|any"
+        ),
+        organization_id="org_any",
+        access_token="private",
+    )
+    monkeypatch.delenv("CAUSL_KB_APP_BEDROCK_ENABLED", raising=False)
+    with host_auth.host_request(session):
+        with pytest.raises(OnyxError):
+            host_auth.require_host_subscription_provider("bedrock")
+        monkeypatch.setenv("CAUSL_KB_APP_BEDROCK_ENABLED", "false")
+        with pytest.raises(OnyxError):
+            host_auth.require_host_subscription_provider("bedrock")
+        monkeypatch.setenv("CAUSL_KB_APP_BEDROCK_ENABLED", "TRUE")
+        assert host_auth.require_host_subscription_provider("bedrock") is False
+        for other in ("openai", "databricks"):
+            with pytest.raises(OnyxError):
+                host_auth.require_host_subscription_provider(other)
+
+
+def test_pinned_host_mcp_url_matches_only_the_exact_pin(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("CAUSL_KB_HOST_MCP_SERVERS", raising=False)
+    assert not host_auth.is_pinned_host_mcp_url("http://ep-mcp:8000/mcp")
+    monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", "9=http://ep-mcp:8000/mcp")
+    assert host_auth.is_pinned_host_mcp_url("http://ep-mcp:8000/mcp")
+    for other in (
+        "http://ep-mcp:8000/mcp/",
+        "http://ep-mcp:8000/mcp//",
+        "http://ep-mcp:8000/other",
+        "http://ep-mcp:9000/mcp",
+        "http://ep-mcp:8000/mcp?x=1",
+        "http://169.254.169.254/latest",
+        "http://cache:6379/mcp",
+    ):
+        assert not host_auth.is_pinned_host_mcp_url(other)
+    for unsafe in (
+        "http://10.0.0.5:8000/mcp",
+        "https://169.254.169.254/latest",
+        "https://[fd00::1]/mcp",
+        "http://localhost:8000/mcp",
+        "http://metadata/computeMetadata",
+        "https://localhost./mcp",
+        "https://metadata.google.internal./mcp",
+        "https://127.1/mcp",
+        "https://2130706433/mcp",
+        "https://0x7f.1/mcp",
+        "https://10.0.0.5/mcp",
+    ):
+        monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", f"9={unsafe}")
+        assert not host_auth.is_pinned_host_mcp_url(unsafe)
+        assert not host_auth.is_pinned_host_mcp_server(9)
+    monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", "9=")
+    assert not host_auth.is_pinned_host_mcp_server(9)
+    monkeypatch.setenv("CAUSL_KB_HOST_MCP_SERVERS", "9=https://studies.example.com/mcp")
+    assert host_auth.is_pinned_host_mcp_server(9)
+    assert host_auth.is_pinned_host_mcp_url("https://studies.example.com/mcp")

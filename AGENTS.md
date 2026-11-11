@@ -8,7 +8,7 @@ Read the [system map](https://github.com/Subconscious-ai/market-ontology/blob/ma
 from `market-ontology`; UI tokens and copy come from `design-system`. A contract change is a
 version bump in the owner repo, then a re-pin PR here. With other agents working in parallel,
 claim the issue first (assign yourself, label `agent-wip`), work on your own branch
-`agent/<agent>-<issue>`, and hand off with a PR that closes the issue. Humans merge.
+`agent/<agent>-<issue>`, and hand off with a PR that closes the issue. The [shared merge policy](https://github.com/Subconscious-ai/design-system/blob/main/agent-config/shared/BEHAVIOR.md#merge-policy) decides who merges.
 Check the whole system with `scripts/system-status.sh` in market-ontology.
 
 ## Subconscious Burn fork
@@ -90,6 +90,14 @@ Follow ASD-STE100 Simplified Technical English for technical text:
 - Use active voice. Write "Turn the switch", not "The switch must be turned".
 - Write short paragraphs. Keep one topic in each paragraph.
 - Keep code comments focused on information that is relevant long-term or for future readers.
+
+## CI feedback
+
+- Local gate (run before you push): `pre-commit run --files <changed files>` and `uv run pytest -xv backend/tests/unit`. CI runs the same hooks on all files.
+- Watch a PR: `gh pr checks --watch --fail-fast`. Read a failure: `gh run view --job <id> --log-failed`.
+- If no run starts within 2 minutes, run the local gate and say so in the PR.
+- Never skip a test to make CI pass.
+- PR runs cancel superseded pushes.
 
 ## Testing
 
