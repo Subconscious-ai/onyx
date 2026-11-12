@@ -82,7 +82,8 @@ def research_connection(user_id: UUID, persona_id: int) -> ExaClient:
         num_results = int(config.get("num_results") or "4")
         if num_results < 1:
             raise ValueError("Positive Exa source limit required")
-        # Two bounded calls, each with the existing three-attempt retry policy.
+        # Bounded calls (company search and contents, then public-record search and contents),
+        # each with the existing three-attempt retry policy.
         provider = build_search_provider_from_config(
             provider_type=WebSearchProviderType.EXA,
             api_key=(
