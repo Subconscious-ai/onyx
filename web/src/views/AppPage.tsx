@@ -83,6 +83,7 @@ import { useSidebarState } from "@opal/layouts";
 import { useQueryController } from "@/providers/QueryControllerProvider";
 import WelcomeMessage from "@/app/app/components/WelcomeMessage";
 import ChatUI from "@/sections/chat/ChatUI";
+import { AskAssistantProvider } from "@/app/app/message/messageComponents/AskAssistantContext";
 import { useFullWidthChat } from "@/providers/FullWidthChatProvider";
 import { paidTierGated } from "@/ce";
 import EESearchUI from "@/ee/sections/SearchUI";
@@ -878,208 +879,217 @@ export default function AppPage({
           </RootLayout.RightPanel>
         ))}
 
-      <ExecutiveWorkspace
-        email={user?.email}
-        onModelContext={receiveModelContext}
-        active={!causlWorkspace && isExecutiveAgent(activeAgent)}
-        messages={messageHistory}
-        chatId={currentChatSessionId}
-        busy={currentChatState !== "input"}
-        onAsk={(message) =>
-          onSubmit({ message, currentMessageFiles: [], deepResearch: false })
-        }
+      <AskAssistantProvider
+        value={{
+          ask: (message) =>
+            onSubmit({ message, currentMessageFiles: [], deepResearch: false }),
+          busy: currentChatState !== "input",
+        }}
       >
-        <div className="w-full h-full overflow-hidden">
-          <Dropzone
-            onDrop={(acceptedFiles) =>
-              handleMessageSpecificFileUpload(acceptedFiles)
-            }
-            noClick
-          >
-            {({ getRootProps }) => (
-              <div
-                className="h-full w-full flex flex-col items-center outline-hidden relative"
-                {...getRootProps({ tabIndex: -1 })}
-              >
-                {/* Main content grid — 3 rows, animated */}
+        <ExecutiveWorkspace
+          email={user?.email}
+          onModelContext={receiveModelContext}
+          active={!causlWorkspace && isExecutiveAgent(activeAgent)}
+          messages={messageHistory}
+          chatId={currentChatSessionId}
+          busy={currentChatState !== "input"}
+          onAsk={(message) =>
+            onSubmit({ message, currentMessageFiles: [], deepResearch: false })
+          }
+        >
+          <div className="w-full h-full overflow-hidden">
+            <Dropzone
+              onDrop={(acceptedFiles) =>
+                handleMessageSpecificFileUpload(acceptedFiles)
+              }
+              noClick
+            >
+              {({ getRootProps }) => (
                 <div
-                  className="flex-1 w-full grid min-h-0 transition-[grid-template-rows] duration-150 ease-in-out"
-                  style={gridStyle}
+                  className="h-full w-full flex flex-col items-center outline-hidden relative"
+                  {...getRootProps({ tabIndex: -1 })}
                 >
-                  {/* ── Top row: ChatUI / WelcomeMessage / ProjectUI ── */}
-                  {/* No horizontal padding: the scroll container reaches the edge so
-                    its scrollbar sits flush; non-chat siblings add their own px. */}
-                  <div className="row-start-1 min-h-0 overflow-hidden flex flex-col items-center">
-                    {/* ChatUI */}
-                    <Fade
-                      show={
-                        appPosition.isChat() &&
-                        !!currentChatSessionId &&
-                        !!activeAgent &&
-                        !sessionFetchError
-                      }
-                      className="h-full w-full flex flex-col items-center"
-                    >
-                      <ChatScrollContainer
-                        ref={scrollContainerRef}
-                        sessionId={currentChatSessionId!}
-                        anchorSelector={anchorSelector}
-                        autoScroll={autoScrollEnabled}
-                        isStreaming={isStreaming}
-                        onScrollButtonVisibilityChange={setShowScrollButton}
-                        fullWidth={fullWidthActive}
-                      >
-                        <ChatUI
-                          activeAgent={activeAgent!}
-                          llmManager={llmManager}
-                          deepResearchEnabled={
-                            deepResearchEnabledForCurrentWorkflow
-                          }
-                          currentMessageFiles={currentMessageFiles}
-                          setPresentingDocument={setPresentingDocument}
-                          onSubmit={onSubmit}
-                          onMessageSelection={onMessageSelection}
-                          stopGenerating={stopGenerating}
-                          onResubmit={handleResubmitLastMessage}
-                          anchorNodeId={anchorNodeId}
-                          selectedModels={multiModel.selectedModels}
-                          fullWidthChat={fullWidthActive}
-                        />
-                        {isExecutiveAgent(activeAgent) && (
-                          <ExecutiveModelAction />
-                        )}
-                      </ChatScrollContainer>
-                    </Fade>
-
-                    {/* Session fetch error (404 / 403) */}
-                    <Fade
-                      show={appPosition.isChat() && sessionFetchError !== null}
-                      className="h-full w-full flex flex-col items-center justify-center px-2 sm:px-4"
-                    >
-                      {sessionFetchError && (
-                        <Section
-                          flexDirection="column"
-                          alignItems="center"
-                          gap={4}
-                        >
-                          <IllustrationContent
-                            illustration={
-                              sessionFetchError.type === "access_denied"
-                                ? SvgNoAccess
-                                : SvgNotFound
-                            }
-                            title={
-                              sessionFetchError.type === "not_found"
-                                ? t("sessionNotFound.title")
-                                : sessionFetchError.type === "access_denied"
-                                  ? t("sessionAccessDenied.title")
-                                  : t("sessionGenericError.title")
-                            }
-                            description={
-                              sessionFetchError.type === "not_found"
-                                ? t("sessionNotFound.description")
-                                : sessionFetchError.type === "access_denied"
-                                  ? t("sessionAccessDenied.description")
-                                  : sessionFetchError.detail
-                            }
-                          />
-                          <Button
-                            href={causlWorkspace ? undefined : "/app"}
-                            onClick={
-                              causlWorkspace
-                                ? () => window.location.reload()
-                                : undefined
-                            }
-                            prominence="secondary"
-                          >
-                            {causlWorkspace
-                              ? workspaceLabels("reopen")
-                              : t("newChatButton.label")}
-                          </Button>
-                        </Section>
-                      )}
-                    </Fade>
-
-                    {/* ProjectUI */}
-                    {appPosition.isProject() && (
-                      <div className="w-full max-h-[50vh] overflow-y-auto overscroll-y-none px-2 sm:px-4">
-                        <ProjectContextPanel
-                          projectTokenCount={projectContextTokenCount}
-                          availableContextTokens={availableContextTokens}
-                          setPresentingDocument={setPresentingDocument}
-                        />
-                      </div>
-                    )}
-
-                    {/* WelcomeMessageUI */}
-                    <Fade
-                      show={isWelcomeFocus}
-                      className="w-full flex-1 flex flex-col items-center justify-end px-2 sm:px-4"
-                    >
-                      <Section
-                        flexDirection="row"
-                        justifyContent="between"
-                        alignItems="end"
-                        className={cn(
-                          !fullWidthActive &&
-                            "max-w-(--app-page-main-content-width)"
-                        )}
-                      >
-                        {isExecutiveAgent(activeAgent) ? (
-                          <ExecutiveWelcome />
-                        ) : (
-                          <WelcomeMessage
-                            agent={activeAgent}
-                            isDefaultAgent={isPlainChat}
-                          />
-                        )}
-                      </Section>
-                      <Spacer rem={1.5} />
-                    </Fade>
-                  </div>
-
-                  {/* ── Middle-center: AppInputBar ── */}
+                  {/* Main content grid — 3 rows, animated */}
                   <div
-                    className={cn(
-                      "row-start-2 flex flex-col items-center px-2 sm:px-4",
-                      onboardingVisible && "min-h-0",
-                      sessionFetchError && "hidden"
-                    )}
+                    className="flex-1 w-full grid min-h-0 transition-[grid-template-rows] duration-150 ease-in-out"
+                    style={gridStyle}
                   >
-                    <div
-                      className={cn(
-                        "relative w-full flex flex-col",
-                        onboardingVisible && "min-h-0",
-                        !fullWidthActive &&
-                          "md:max-w-(--app-page-main-content-width)"
-                      )}
-                    >
-                      {/* Scroll to bottom button - positioned absolutely above AppInputBar */}
-                      {appPosition.isChat() && showScrollButton && (
-                        <div className="absolute -top-14 self-center">
-                          <Button
-                            icon={SvgChevronDown}
-                            onClick={handleScrollToBottom}
-                            aria-label={t("scrollToBottomButton.label")}
-                            prominence="secondary"
+                    {/* ── Top row: ChatUI / WelcomeMessage / ProjectUI ── */}
+                    {/* No horizontal padding: the scroll container reaches the edge so
+                    its scrollbar sits flush; non-chat siblings add their own px. */}
+                    <div className="row-start-1 min-h-0 overflow-hidden flex flex-col items-center">
+                      {/* ChatUI */}
+                      <Fade
+                        show={
+                          appPosition.isChat() &&
+                          !!currentChatSessionId &&
+                          !!activeAgent &&
+                          !sessionFetchError
+                        }
+                        className="h-full w-full flex flex-col items-center"
+                      >
+                        <ChatScrollContainer
+                          ref={scrollContainerRef}
+                          sessionId={currentChatSessionId!}
+                          anchorSelector={anchorSelector}
+                          autoScroll={autoScrollEnabled}
+                          isStreaming={isStreaming}
+                          onScrollButtonVisibilityChange={setShowScrollButton}
+                          fullWidth={fullWidthActive}
+                        >
+                          <ChatUI
+                            activeAgent={activeAgent!}
+                            llmManager={llmManager}
+                            deepResearchEnabled={
+                              deepResearchEnabledForCurrentWorkflow
+                            }
+                            currentMessageFiles={currentMessageFiles}
+                            setPresentingDocument={setPresentingDocument}
+                            onSubmit={onSubmit}
+                            onMessageSelection={onMessageSelection}
+                            stopGenerating={stopGenerating}
+                            onResubmit={handleResubmitLastMessage}
+                            anchorNodeId={anchorNodeId}
+                            selectedModels={multiModel.selectedModels}
+                            fullWidthChat={fullWidthActive}
+                          />
+                          {isExecutiveAgent(activeAgent) && (
+                            <ExecutiveModelAction />
+                          )}
+                        </ChatScrollContainer>
+                      </Fade>
+
+                      {/* Session fetch error (404 / 403) */}
+                      <Fade
+                        show={
+                          appPosition.isChat() && sessionFetchError !== null
+                        }
+                        className="h-full w-full flex flex-col items-center justify-center px-2 sm:px-4"
+                      >
+                        {sessionFetchError && (
+                          <Section
+                            flexDirection="column"
+                            alignItems="center"
+                            gap={4}
+                          >
+                            <IllustrationContent
+                              illustration={
+                                sessionFetchError.type === "access_denied"
+                                  ? SvgNoAccess
+                                  : SvgNotFound
+                              }
+                              title={
+                                sessionFetchError.type === "not_found"
+                                  ? t("sessionNotFound.title")
+                                  : sessionFetchError.type === "access_denied"
+                                    ? t("sessionAccessDenied.title")
+                                    : t("sessionGenericError.title")
+                              }
+                              description={
+                                sessionFetchError.type === "not_found"
+                                  ? t("sessionNotFound.description")
+                                  : sessionFetchError.type === "access_denied"
+                                    ? t("sessionAccessDenied.description")
+                                    : sessionFetchError.detail
+                              }
+                            />
+                            <Button
+                              href={causlWorkspace ? undefined : "/app"}
+                              onClick={
+                                causlWorkspace
+                                  ? () => window.location.reload()
+                                  : undefined
+                              }
+                              prominence="secondary"
+                            >
+                              {causlWorkspace
+                                ? workspaceLabels("reopen")
+                                : t("newChatButton.label")}
+                            </Button>
+                          </Section>
+                        )}
+                      </Fade>
+
+                      {/* ProjectUI */}
+                      {appPosition.isProject() && (
+                        <div className="w-full max-h-[50vh] overflow-y-auto overscroll-y-none px-2 sm:px-4">
+                          <ProjectContextPanel
+                            projectTokenCount={projectContextTokenCount}
+                            availableContextTokens={availableContextTokens}
+                            setPresentingDocument={setPresentingDocument}
                           />
                         </div>
                       )}
 
-                      {/* OnboardingUI */}
-                      {onboardingVisible && (
-                        <ShadowDiv mask className="overscroll-contain">
-                          <OnboardingFlow
-                            showOnboarding={showOnboarding}
-                            handleHideOnboarding={hideOnboarding}
-                            handleFinishOnboarding={finishOnboarding}
-                            state={onboardingState}
-                            actions={onboardingActions}
-                          />
-                        </ShadowDiv>
-                      )}
+                      {/* WelcomeMessageUI */}
+                      <Fade
+                        show={isWelcomeFocus}
+                        className="w-full flex-1 flex flex-col items-center justify-end px-2 sm:px-4"
+                      >
+                        <Section
+                          flexDirection="row"
+                          justifyContent="between"
+                          alignItems="end"
+                          className={cn(
+                            !fullWidthActive &&
+                              "max-w-(--app-page-main-content-width)"
+                          )}
+                        >
+                          {isExecutiveAgent(activeAgent) ? (
+                            <ExecutiveWelcome />
+                          ) : (
+                            <WelcomeMessage
+                              agent={activeAgent}
+                              isDefaultAgent={isPlainChat}
+                            />
+                          )}
+                        </Section>
+                        <Spacer rem={1.5} />
+                      </Fade>
+                    </div>
 
-                      {/*
+                    {/* ── Middle-center: AppInputBar ── */}
+                    <div
+                      className={cn(
+                        "row-start-2 flex flex-col items-center px-2 sm:px-4",
+                        onboardingVisible && "min-h-0",
+                        sessionFetchError && "hidden"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "relative w-full flex flex-col",
+                          onboardingVisible && "min-h-0",
+                          !fullWidthActive &&
+                            "md:max-w-(--app-page-main-content-width)"
+                        )}
+                      >
+                        {/* Scroll to bottom button - positioned absolutely above AppInputBar */}
+                        {appPosition.isChat() && showScrollButton && (
+                          <div className="absolute -top-14 self-center">
+                            <Button
+                              icon={SvgChevronDown}
+                              onClick={handleScrollToBottom}
+                              aria-label={t("scrollToBottomButton.label")}
+                              prominence="secondary"
+                            />
+                          </div>
+                        )}
+
+                        {/* OnboardingUI */}
+                        {onboardingVisible && (
+                          <ShadowDiv mask className="overscroll-contain">
+                            <OnboardingFlow
+                              showOnboarding={showOnboarding}
+                              handleHideOnboarding={hideOnboarding}
+                              handleFinishOnboarding={finishOnboarding}
+                              state={onboardingState}
+                              actions={onboardingActions}
+                            />
+                          </ShadowDiv>
+                        )}
+
+                        {/*
                       # Note (@raunakab)
 
                       `shadow-box-01` on AppInputBar extends ~14px below the element
@@ -1097,159 +1107,164 @@ export default function AppPage({
                       `AppChrome.tsx` that explains why the Footer removes its
                       top padding during chat to compensate for this extra space.
                     */}
-                      <div className={cn(onboardingVisible && "shrink-0 pt-6")}>
-                        {(interviewLibrary.needed ||
-                          interviewLibrary.failed) && (
-                          <div
-                            role="status"
-                            className="flex flex-col items-start gap-2 p-2"
-                          >
-                            <Text as="p" font="secondary-body">
-                              {workspaceLabels(
-                                interviewLibrary.failed
-                                  ? "connectionFailed"
-                                  : "connectionRequired"
+                        <div
+                          className={cn(onboardingVisible && "shrink-0 pt-6")}
+                        >
+                          {(interviewLibrary.needed ||
+                            interviewLibrary.failed) && (
+                            <div
+                              role="status"
+                              className="flex flex-col items-start gap-2 p-2"
+                            >
+                              <Text as="p" font="secondary-body">
+                                {workspaceLabels(
+                                  interviewLibrary.failed
+                                    ? "connectionFailed"
+                                    : "connectionRequired"
+                                )}
+                              </Text>
+                              {interviewLibrary.needed && (
+                                <div className="flex gap-2">
+                                  <Button
+                                    disabled={interviewLibrary.connecting}
+                                    onClick={() =>
+                                      void interviewLibrary.connect(
+                                        window.location.pathname +
+                                          window.location.search
+                                      )
+                                    }
+                                  >
+                                    {workspaceLabels(
+                                      interviewLibrary.connecting
+                                        ? "connecting"
+                                        : "connectWorkspace"
+                                    )}
+                                  </Button>
+                                  <Button
+                                    prominence="tertiary"
+                                    onClick={interviewLibrary.cancel}
+                                  >
+                                    {workspaceLabels("cancelConnection")}
+                                  </Button>
+                                </div>
                               )}
-                            </Text>
-                            {interviewLibrary.needed && (
-                              <div className="flex gap-2">
-                                <Button
-                                  disabled={interviewLibrary.connecting}
-                                  onClick={() =>
-                                    void interviewLibrary.connect(
-                                      window.location.pathname +
-                                        window.location.search
-                                    )
-                                  }
-                                >
-                                  {workspaceLabels(
-                                    interviewLibrary.connecting
-                                      ? "connecting"
-                                      : "connectWorkspace"
-                                  )}
-                                </Button>
-                                <Button
-                                  prominence="tertiary"
-                                  onClick={interviewLibrary.cancel}
-                                >
-                                  {workspaceLabels("cancelConnection")}
-                                </Button>
-                              </div>
+                            </div>
+                          )}
+                          <div
+                            className={cn(
+                              "transition-all duration-150 ease-in-out overflow-hidden",
+                              isSearch ? "h-[14px]" : "h-0"
                             )}
-                          </div>
-                        )}
-                        <div
-                          className={cn(
-                            "transition-all duration-150 ease-in-out overflow-hidden",
-                            isSearch ? "h-[14px]" : "h-0"
-                          )}
-                        />
-                        <AppInputBar
-                          deferInputClear={
-                            !causlWorkspace && isExecutiveAgent(activeAgent)
-                          }
-                          embeddedWorkspace={Boolean(causlWorkspace)}
-                          workspaceDraft={causlWorkspace?.draft}
-                          onWorkspaceDraftConsumed={
-                            causlWorkspace?.onDraftConsumed
-                          }
-                          toolConfiguration={toolConfiguration}
-                          ref={chatInputBarRef}
-                          deepResearchEnabled={
-                            deepResearchEnabledForCurrentWorkflow
-                          }
-                          toggleDeepResearch={toggleDeepResearch}
-                          isMultiModelActive={multiModel.isMultiModelActive}
-                          llmManager={llmManager}
-                          initialMessage={
-                            searchParams?.get(SEARCH_PARAM_NAMES.USER_PROMPT) ||
-                            ""
-                          }
-                          stopGenerating={stopGenerating}
-                          onSubmit={handleAppInputBarSubmit}
-                          chatState={currentChatState}
-                          currentSessionFileTokenCount={
-                            currentChatSessionId
-                              ? currentSessionFileTokenCount
-                              : projectContextTokenCount
-                          }
-                          availableContextTokens={availableContextTokens}
-                          activeAgent={activeAgent}
-                          handleFileUpload={handleMessageSpecificFileUpload}
-                          setPresentingDocument={setPresentingDocument}
-                          // Intentionally enabled during name-only onboarding (showOnboarding=false)
-                          // since LLM providers are already configured and the user can chat.
-                          disabled={
-                            isLoadingAgents ||
-                            !activeAgent ||
-                            workspacePreparing ||
-                            interviewLibrary.preparing ||
-                            interviewLibrary.needed ||
-                            (!llmManager.isLoadingProviders &&
-                              llmManager.hasAnyProvider === false) ||
-                            (showOnboarding &&
-                              !isLoadingOnboarding &&
-                              onboardingState.currentStep !==
-                                OnboardingStep.Complete)
-                          }
-                        />
-                        <div
-                          className={cn(
-                            "transition-all duration-150 ease-in-out overflow-hidden",
-                            appPosition.isChat() ? "h-[14px]" : "h-0"
-                          )}
-                        />
+                          />
+                          <AppInputBar
+                            deferInputClear={
+                              !causlWorkspace && isExecutiveAgent(activeAgent)
+                            }
+                            embeddedWorkspace={Boolean(causlWorkspace)}
+                            workspaceDraft={causlWorkspace?.draft}
+                            onWorkspaceDraftConsumed={
+                              causlWorkspace?.onDraftConsumed
+                            }
+                            toolConfiguration={toolConfiguration}
+                            ref={chatInputBarRef}
+                            deepResearchEnabled={
+                              deepResearchEnabledForCurrentWorkflow
+                            }
+                            toggleDeepResearch={toggleDeepResearch}
+                            isMultiModelActive={multiModel.isMultiModelActive}
+                            llmManager={llmManager}
+                            initialMessage={
+                              searchParams?.get(
+                                SEARCH_PARAM_NAMES.USER_PROMPT
+                              ) || ""
+                            }
+                            stopGenerating={stopGenerating}
+                            onSubmit={handleAppInputBarSubmit}
+                            chatState={currentChatState}
+                            currentSessionFileTokenCount={
+                              currentChatSessionId
+                                ? currentSessionFileTokenCount
+                                : projectContextTokenCount
+                            }
+                            availableContextTokens={availableContextTokens}
+                            activeAgent={activeAgent}
+                            handleFileUpload={handleMessageSpecificFileUpload}
+                            setPresentingDocument={setPresentingDocument}
+                            // Intentionally enabled during name-only onboarding (showOnboarding=false)
+                            // since LLM providers are already configured and the user can chat.
+                            disabled={
+                              isLoadingAgents ||
+                              !activeAgent ||
+                              workspacePreparing ||
+                              interviewLibrary.preparing ||
+                              interviewLibrary.needed ||
+                              (!llmManager.isLoadingProviders &&
+                                llmManager.hasAnyProvider === false) ||
+                              (showOnboarding &&
+                                !isLoadingOnboarding &&
+                                onboardingState.currentStep !==
+                                  OnboardingStep.Complete)
+                            }
+                          />
+                          <div
+                            className={cn(
+                              "transition-all duration-150 ease-in-out overflow-hidden",
+                              appPosition.isChat() ? "h-[14px]" : "h-0"
+                            )}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* ── Bottom: SearchResults + SourceFilter / Suggestions / ProjectChatList ── */}
-                  <div className="row-start-3 min-h-0 overflow-hidden flex flex-col items-center w-full px-2 sm:px-4">
-                    {/* Agent description below input */}
-                    {(appPosition.isNewSession() || appPosition.isAgent()) &&
-                      !isPlainChat &&
-                      !consultingRole(activeAgent) && (
-                        <>
-                          <Spacer rem={1} />
-                          <AgentDescription agent={activeAgent} />
-                          <Spacer rem={1.5} />
-                        </>
+                    {/* ── Bottom: SearchResults + SourceFilter / Suggestions / ProjectChatList ── */}
+                    <div className="row-start-3 min-h-0 overflow-hidden flex flex-col items-center w-full px-2 sm:px-4">
+                      {/* Agent description below input */}
+                      {(appPosition.isNewSession() || appPosition.isAgent()) &&
+                        !isPlainChat &&
+                        !consultingRole(activeAgent) && (
+                          <>
+                            <Spacer rem={1} />
+                            <AgentDescription agent={activeAgent} />
+                            <Spacer rem={1.5} />
+                          </>
+                        )}
+                      {/* ProjectChatSessionList */}
+                      {appPosition.isProject() && (
+                        <div className="w-full max-w-(--app-page-main-content-width) h-full overflow-y-auto overscroll-y-none mx-auto">
+                          <ProjectChatSessionList />
+                        </div>
                       )}
-                    {/* ProjectChatSessionList */}
-                    {appPosition.isProject() && (
-                      <div className="w-full max-w-(--app-page-main-content-width) h-full overflow-y-auto overscroll-y-none mx-auto">
-                        <ProjectChatSessionList />
-                      </div>
-                    )}
 
-                    {/* SuggestionsUI */}
-                    <Fade
-                      show={
-                        (appPosition.isNewSession() || appPosition.isAgent()) &&
-                        hasAgentStarterMessages &&
-                        !consultingRole(activeAgent)
-                      }
-                      className="h-full flex-1 w-full max-w-(--app-page-main-content-width)"
-                    >
-                      <Spacer rem={0.5} />
-                      <Suggestions onSubmit={onSubmit} />
-                    </Fade>
+                      {/* SuggestionsUI */}
+                      <Fade
+                        show={
+                          (appPosition.isNewSession() ||
+                            appPosition.isAgent()) &&
+                          hasAgentStarterMessages &&
+                          !consultingRole(activeAgent)
+                        }
+                        className="h-full flex-1 w-full max-w-(--app-page-main-content-width)"
+                      >
+                        <Spacer rem={0.5} />
+                        <Suggestions onSubmit={onSubmit} />
+                      </Fade>
 
-                    {/* SearchUI */}
-                    <Fade
-                      show={isSearch}
-                      className="h-full flex-1 w-full max-w-(--app-page-main-content-width) px-1 flex flex-col"
-                    >
-                      <Spacer rem={0.75} />
-                      <SearchUI onDocumentClick={handleSearchDocumentClick} />
-                    </Fade>
+                      {/* SearchUI */}
+                      <Fade
+                        show={isSearch}
+                        className="h-full flex-1 w-full max-w-(--app-page-main-content-width) px-1 flex flex-col"
+                      >
+                        <Spacer rem={0.75} />
+                        <SearchUI onDocumentClick={handleSearchDocumentClick} />
+                      </Fade>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </Dropzone>
-        </div>
-      </ExecutiveWorkspace>
+              )}
+            </Dropzone>
+          </div>
+        </ExecutiveWorkspace>
+      </AskAssistantProvider>
     </>
   );
 }

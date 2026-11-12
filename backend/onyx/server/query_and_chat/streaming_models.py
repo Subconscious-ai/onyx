@@ -34,6 +34,8 @@ class StreamingType(Enum):
     CUSTOM_TOOL_START = "custom_tool_start"
     CUSTOM_TOOL_ARGS = "custom_tool_args"
     CUSTOM_TOOL_DELTA = "custom_tool_delta"
+    CUSTOM_TOOL_APPROVAL_REQUEST = "custom_tool_approval_request"
+    CUSTOM_TOOL_APPROVAL_RESULT = "custom_tool_approval_result"
     FILE_READER_START = "file_reader_start"
     FILE_READER_RESULT = "file_reader_result"
     REASONING_START = "reasoning_start"
@@ -300,6 +302,31 @@ class CustomToolDelta(BaseObj):
     error: CustomToolErrorInfo | None = None
 
 
+# A tool server asked the signed-in user to approve one exact action (an MCP
+# elicitation). The assistant cannot answer it; only the user's own request can.
+class CustomToolApprovalRequest(BaseObj):
+    type: Literal["custom_tool_approval_request"] = (
+        StreamingType.CUSTOM_TOOL_APPROVAL_REQUEST.value
+    )
+
+    tool_name: str
+    approval_id: str
+    # The server's own words, shown unmodified as plain text.
+    message: str
+    title: str | None = None
+    description: str | None = None
+    expires_in_seconds: int
+
+
+class CustomToolApprovalResult(BaseObj):
+    type: Literal["custom_tool_approval_result"] = (
+        StreamingType.CUSTOM_TOOL_APPROVAL_RESULT.value
+    )
+
+    approval_id: str
+    outcome: Literal["approved", "declined", "expired"]
+
+
 class ToolCallArgumentDelta(BaseObj):
     type: Literal["tool_call_argument_delta"] = (
         StreamingType.TOOL_CALL_ARGUMENT_DELTA.value
@@ -457,6 +484,8 @@ PacketObj = Union[
     CustomToolStart,
     CustomToolArgs,
     CustomToolDelta,
+    CustomToolApprovalRequest,
+    CustomToolApprovalResult,
     FileReaderStart,
     FileReaderResult,
     MemoryToolStart,

@@ -9541,6 +9541,33 @@
           "text": "En attente de réponse..."
         }
       },
+      "customToolApproval": {
+        "approveButton": {
+          "label": "Approuver exactement cette action"
+        },
+        "approvedStatus": {
+          "text": "Approuvé. {toolName} est en cours d'exécution."
+        },
+        "card": {
+          "description": "Vérifiez l'action exacte ci-dessous. Rien ne sera exécuté sans votre approbation.",
+          "title": "{toolName} a besoin de votre approbation"
+        },
+        "declineButton": {
+          "label": "Refuser"
+        },
+        "declinedStatus": {
+          "text": "Refusé. Rien n'a été exécuté."
+        },
+        "expiredStatus": {
+          "text": "Aucune réponse dans le délai. Rien n'a été exécuté."
+        },
+        "messageBlock": {
+          "label": "Action exacte"
+        },
+        "sendError": {
+          "text": "Votre réponse n'a pas pu être envoyée. Réessayez."
+        }
+      },
       "customToolAuth": {
         "card": {
           "description": "Connectez {toolName} pour activer cet outil",
@@ -9613,6 +9640,50 @@
         },
         "validationError": {
           "title": "Erreur de validation"
+        }
+      },
+      "experimentRun": {
+        "failed": {
+          "text": "Non terminé ({status}). Demandez à Beca quoi faire ensuite."
+        },
+        "finished": {
+          "text": "Terminé. Demandez les résultats à Beca."
+        },
+        "followUp": {
+          "audience": {
+            "label": "Essayer un autre public",
+            "text": "Propose d'exécuter le plan de l'expérience {runId} auprès d'un autre public. Demande-moi lequel, puis montre-moi le brouillon à relire avant que quoi que ce soit ne s'exécute."
+          },
+          "explain": {
+            "label": "Expliquer ce résultat",
+            "text": "Explique le résultat de l'expérience {runId} en termes simples, avec son principal risque et la prochaine décision qu'il appuie."
+          },
+          "replace": {
+            "label": "Remplacer les attributs faibles",
+            "text": "Quels attributs de l'expérience {runId} ont le moins influencé le choix ? Propose une étude de suivi qui les remplace et montre-la-moi à relire avant que quoi que ce soit ne s'exécute."
+          },
+          "segments": {
+            "label": "Comparer les segments",
+            "text": "Compare la réaction des différents segments dans l'expérience {runId} et dis si la même action convient à chacun."
+          }
+        },
+        "openResults": {
+          "label": "Ouvrir les résultats"
+        },
+        "queued": {
+          "text": "En attente dans la file."
+        },
+        "running": {
+          "text": "En cours. Cela peut prendre plusieurs minutes."
+        },
+        "starting": {
+          "text": "Démarrage."
+        },
+        "title": {
+          "text": "Expérience {runId}"
+        },
+        "unavailable": {
+          "text": "Le statut est indisponible pour le moment. Nouvelle vérification en cours."
         }
       },
       "humanMessage": {
