@@ -62,11 +62,14 @@ def _capture_bytes(captures: list[dict[str, Any]]) -> int:
 
 
 def _public_record_captures(
-    provider: "ExaClient", followup: str, captures: list[dict[str, Any]]
+    provider: "ExaClient",
+    followup: str,
+    captures: list[dict[str, Any]],
+    company_urls: list[str],
 ) -> list[dict[str, Any]]:
     """News and the executive's public record; any failure keeps the company research."""
     try:
-        urls = _search_urls(provider, followup, 3, [c["url"] for c in captures])
+        urls = _search_urls(provider, followup, 3, company_urls)
         found = _captures(provider, urls) if urls else []
     except Exception as error:
         logger.warning(
@@ -104,7 +107,7 @@ def collect_public_research(
     if _capture_bytes(captures) > CAPTURE_LIMIT_BYTES:
         raise ValueError("Research exceeded the source capture limit")
     if followup:
-        captures += _public_record_captures(provider, followup, captures)
+        captures += _public_record_captures(provider, followup, captures, urls)
     sections = [
         f"{source['url']}\n"
         + (f"Published {source['published_on']}\n" if "published_on" in source else "")
