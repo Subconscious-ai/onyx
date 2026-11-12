@@ -93,7 +93,8 @@ def research_company(
             or state.get("status") != "queued"
         ):
             return
-        query = public_research_query(read_profile(user_uuid))
+        profile = read_profile(user_uuid)
+        query = public_research_query(profile)
         if not query or query != state.get("query"):
             return
         state = {**state, "status": "running", "checked_at": time.time()}
@@ -105,7 +106,7 @@ def research_company(
             receipt = collect_public_research(
                 research_connection(user_uuid, persona_id),
                 query,
-                public_record_query(read_profile(user_uuid)),
+                public_record_query(profile),
             )
             result = {**state, **receipt, "status": "ready", "checked_at": time.time()}
         except Exception as error:

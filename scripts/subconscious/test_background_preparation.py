@@ -13,6 +13,7 @@ from onyx.db import burn2_research as storage
 from onyx.server.query_and_chat.burn2 import background
 from onyx.server.query_and_chat.burn2.research import (
     collect_public_research,
+    public_record_query,
     public_research_query,
 )
 from onyx.tools.tool_implementations.open_url.models import WebContent
@@ -104,6 +105,19 @@ class BackgroundPreparationTests(unittest.TestCase):
         self.queue.assert_called_once()
         self.assertEqual(self.queue.call_args.kwargs["kwargs"]["tenant_id"], "public")
         self.assertEqual(self.queue.call_args.kwargs["expires"], 300)
+
+    def test_worker_searches_the_company_then_its_news_and_public_record(self):
+        background.ensure_research(self.user)
+        self.run_research()
+        queries = [call.args[0] for call in self.provider.search.call_args_list]
+        self.assertEqual(
+            queries,
+            [
+                public_research_query(self.profile),
+                public_record_query(self.profile),
+            ],
+        )
+        self.assertEqual(self.state["status"], "ready")
 
     def test_expired_same_scope_does_not_authorize_another_paid_operation(self):
         original = {

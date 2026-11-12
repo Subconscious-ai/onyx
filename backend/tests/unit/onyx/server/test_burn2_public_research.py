@@ -3,6 +3,7 @@
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import cast
 
 import pytest
@@ -27,12 +28,22 @@ class _Content:
     title: str
     full_content: str
     scrape_successful: bool = True
+    published_date: datetime | None = None
 
 
 class _Provider:
-    def __init__(self, results: Mapping[str, list[str]], pages: Mapping[str, str]):
+    def __init__(
+        self,
+        results: Mapping[str, list[str]],
+        pages: Mapping[str, str],
+        *,
+        unreachable: tuple[str, ...] = (),
+        published: Mapping[str, datetime] | None = None,
+    ):
         self.results = results
         self.pages = pages
+        self.unreachable = unreachable
+        self.published = published or {}
         self.queries: list[str] = []
 
     def search(self, query: str) -> list[_Result]:
@@ -43,7 +54,13 @@ class _Provider:
 
     def contents(self, urls: list[str], preserve_source_text: bool) -> list[_Content]:
         assert preserve_source_text
-        return [_Content(url, url, self.pages[url]) for url in urls]
+        if any(url in self.unreachable for url in urls):
+            raise TimeoutError("page fetch timed out")
+        # Providers do not promise search order.
+        return [
+            _Content(url, url, self.pages[url], published_date=self.published.get(url))
+            for url in reversed(urls)
+        ]
 
 
 def _collect(provider: _Provider, query: str, followup: str | None) -> dict:
@@ -148,3 +165,65 @@ def test_interview_context_states_the_research_date() -> None:
     evidence = json.loads(context[context.index("{") :])
     assert evidence["checked_on"] == "2026-11-12"
     assert "checked_on research date" in context
+
+
+def _queries() -> tuple[str, str]:
+    profile = _profile()
+    query, followup = public_research_query(profile), public_record_query(profile)
+    assert query and followup
+    return query, followup
+
+
+def test_company_research_survives_a_news_page_that_times_out() -> None:
+    query, followup = _queries()
+    provider = _Provider(
+        {query: COMPANY, followup: NEWS},
+        {url: "text" for url in COMPANY + NEWS},
+        unreachable=(NEWS[0],),
+    )
+
+    receipt = _collect(provider, query, followup)
+
+    assert receipt["source_urls"] == COMPANY
+
+
+def test_an_oversized_news_page_is_dropped_and_the_company_research_kept() -> None:
+    query, followup = _queries()
+    pages = {url: "text" for url in COMPANY}
+    pages[NEWS[0]] = "podcast transcript " * 60_000
+    provider = _Provider({query: COMPANY, followup: NEWS}, pages)
+
+    receipt = _collect(provider, query, followup)
+
+    assert receipt["source_urls"] == COMPANY
+
+
+def test_short_sources_keep_their_full_text() -> None:
+    query, followup = _queries()
+    pages = {
+        COMPANY[0]: "A" * 30_000,
+        COMPANY[1]: "Pricing: $10.",
+        NEWS[0]: "B" * 30_000,
+    }
+    provider = _Provider({query: COMPANY, followup: NEWS}, pages)
+
+    receipt = _collect(provider, query, followup)
+
+    assert "Pricing: $10." in receipt["report"]
+    assert len(receipt["report"]) == 16000, (
+        "space a short source leaves goes to the long ones"
+    )
+
+
+def test_the_report_states_when_a_news_article_was_published() -> None:
+    query, followup = _queries()
+    provider = _Provider(
+        {query: COMPANY, followup: NEWS},
+        {url: "text" for url in COMPANY + NEWS},
+        published={NEWS[0]: datetime(2026, 10, 3, tzinfo=timezone.utc)},
+    )
+
+    receipt = _collect(provider, query, followup)
+
+    assert f"{NEWS[0]}\nPublished 2026-10-03\ntext" in receipt["report"]
+    assert receipt["source_captures"][-1]["published_on"] == "2026-10-03"

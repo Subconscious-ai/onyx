@@ -30,20 +30,12 @@ def _search_urls(
     return urls
 
 
-def collect_public_research(
-    provider: "ExaClient", query: str, followup: str | None = None
-) -> dict[str, Any]:
-    urls = _search_urls(provider, query, 4, [])
-    if not urls:
-        raise ValueError("Research found no public source URLs")
-    if followup:
-        # News and the executive's public record add context; the company query stays the core.
-        try:
-            urls += _search_urls(provider, followup, 3, urls)
-        except Exception as error:
-            logger.warning(
-                "Burn public record search unavailable: %s", type(error).__name__
-            )
+CAPTURE_LIMIT_BYTES = 1_000_000
+REPORT_LIMIT = 16000
+
+
+def _captures(provider: "ExaClient", urls: list[str]) -> list[dict[str, Any]]:
+    """Original page text for the URLs, in search order."""
     captures = []
     for source in provider.contents(urls, preserve_source_text=True):
         if (
@@ -52,30 +44,89 @@ def collect_public_research(
             or not source.full_content.strip()
         ):
             continue
-        captures.append(
-            {
-                "url": source.link,
-                "title": source.title,
-                "text": source.full_content,
-                "fetched_at": time.time(),
-                "sha256": hashlib.sha256(
-                    source.full_content.encode("utf-8")
-                ).hexdigest(),
-            }
+        capture: dict[str, Any] = {
+            "url": source.link,
+            "title": source.title,
+            "text": source.full_content,
+            "fetched_at": time.time(),
+            "sha256": hashlib.sha256(source.full_content.encode("utf-8")).hexdigest(),
+        }
+        if source.published_date:
+            capture["published_on"] = source.published_date.date().isoformat()
+        captures.append(capture)
+    return sorted(captures, key=lambda capture: urls.index(capture["url"]))
+
+
+def _capture_bytes(captures: list[dict[str, Any]]) -> int:
+    return len(json.dumps(captures, ensure_ascii=False).encode("utf-8"))
+
+
+def _public_record_captures(
+    provider: "ExaClient", followup: str, captures: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """News and the executive's public record; any failure keeps the company research."""
+    try:
+        urls = _search_urls(provider, followup, 3, [c["url"] for c in captures])
+        found = _captures(provider, urls) if urls else []
+    except Exception as error:
+        logger.warning(
+            "Burn public record research unavailable: %s", type(error).__name__
         )
+        return []
+    kept: list[dict[str, Any]] = []
+    for capture in found:
+        if _capture_bytes([*captures, *kept, capture]) <= CAPTURE_LIMIT_BYTES:
+            kept.append(capture)
+    return kept
+
+
+def _section_limits(lengths: list[int], budget: int) -> list[int]:
+    """Short sections keep their full text; long ones share what the short ones leave."""
+    limits = [0] * len(lengths)
+    remaining = budget
+    order = sorted(range(len(lengths)), key=lambda index: lengths[index])
+    for position, index in enumerate(order):
+        share = remaining // (len(order) - position)
+        limits[index] = min(lengths[index], share)
+        remaining -= limits[index]
+    return limits
+
+
+def collect_public_research(
+    provider: "ExaClient", query: str, followup: str | None = None
+) -> dict[str, Any]:
+    urls = _search_urls(provider, query, 4, [])
+    if not urls:
+        raise ValueError("Research found no public source URLs")
+    captures = _captures(provider, urls)
     if not captures:
         raise ValueError("Research returned no original source captures")
-    if len(json.dumps(captures, ensure_ascii=False).encode("utf-8")) > 1_000_000:
+    if _capture_bytes(captures) > CAPTURE_LIMIT_BYTES:
         raise ValueError("Research exceeded the source capture limit")
-    # Each source gets an equal share, so a long company page cannot crowd out the news.
-    share = 16000 // len(captures) - 2
-    sections = [f"{source['url']}\n{source['text']}" for source in captures]
+    if followup:
+        captures += _public_record_captures(provider, followup, captures)
+    sections = [
+        f"{source['url']}\n"
+        + (f"Published {source['published_on']}\n" if "published_on" in source else "")
+        + source["text"]
+        for source in captures
+    ]
+    # A long company page cannot crowd the news out of the report.
+    limits = _section_limits(
+        [len(section) for section in sections],
+        REPORT_LIMIT - 2 * (len(sections) - 1),
+    )
     return {
-        "report": "\n\n".join(section[:share] for section in sections),
+        "report": "\n\n".join(
+            section[:limit] for section, limit in zip(sections, limits, strict=True)
+        ),
         "source_urls": [source["url"] for source in captures],
         "source_captures": captures,
         "acceptance": "unaccepted",
-        "truncated": any(len(section) > share for section in sections),
+        "truncated": any(
+            len(section) > limit
+            for section, limit in zip(sections, limits, strict=True)
+        ),
     }
 
 
@@ -279,7 +330,11 @@ def research_context(state: dict[str, Any] | None) -> str:
     }
     evidence["report"] = str(evidence["report"] or "")[:16000]
     checked_at = state.get("checked_at")
-    if isinstance(checked_at, (int, float)) and 0 <= checked_at < 10**11:
+    if (
+        isinstance(checked_at, (int, float))
+        and not isinstance(checked_at, bool)
+        and 0 <= checked_at < 10**11
+    ):
         # The interview states the research date; the model should not convert epoch seconds.
         evidence["checked_on"] = (
             datetime.fromtimestamp(checked_at, timezone.utc).date().isoformat()
