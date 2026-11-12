@@ -1,10 +1,15 @@
 """Root conftest — shared fixtures available to all test directories."""
 
-from collections.abc import Generator
+import os
 
-import pytest
+# Test runs never report to Sentry. Pop the DSN before any Onyx import reads it.
+os.environ.pop("SENTRY_DSN", None)
 
-from onyx.utils.variable_functionality import (
+from collections.abc import Generator  # noqa: E402
+
+import pytest  # noqa: E402
+
+from onyx.utils.variable_functionality import (  # noqa: E402
     fetch_versioned_implementation,
     global_version,
 )

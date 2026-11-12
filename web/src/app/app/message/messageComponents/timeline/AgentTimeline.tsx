@@ -1,12 +1,13 @@
 "use client";
 
+import { useWorkspaceAiUx } from "@/lib/causl/WorkspaceAiUx";
 import React, { useMemo, useCallback } from "react";
 import { StopReason } from "@/app/app/services/streamingModels";
 import { FullChatState, RenderType } from "../interfaces";
 import { TurnGroup } from "./transformers";
 import { cn } from "@opal/utils";
 import AgentAvatar from "@/refresh-components/avatars/AgentAvatar";
-import ShimmerText from "@/refresh-components/texts/ShimmerText";
+import AILoadingState from "@/sections/customer/AILoadingState";
 import { useTimelineExpansion } from "@/app/app/message/messageComponents/timeline/hooks/useTimelineExpansion";
 import { useTimelineMetrics } from "@/app/app/message/messageComponents/timeline/hooks/useTimelineMetrics";
 import { useTimelineHeader } from "@/app/app/message/messageComponents/timeline/hooks/useTimelineHeader";
@@ -39,15 +40,17 @@ interface TimelineContainerProps {
   agent: FullChatState["agent"];
   headerContent?: React.ReactNode;
   children?: React.ReactNode;
+  state?: TimelineUIState;
 }
 
 function TimelineContainer({
   agent,
   headerContent,
   children,
+  state,
 }: TimelineContainerProps) {
   return (
-    <TimelineRoot>
+    <TimelineRoot state={state}>
       <TimelineHeaderRow left={<AgentAvatar agent={agent} size={24} />}>
         {headerContent}
       </TimelineHeaderRow>
@@ -159,7 +162,12 @@ export const AgentTimeline = React.memo(function AgentTimeline({
   );
 
   const { isExpanded, handleToggle, parallelActiveTab, setParallelActiveTab } =
-    useTimelineExpansion(stopPacketSeen, lastTurnGroup, hasDisplayContent);
+    useTimelineExpansion(
+      stopPacketSeen,
+      lastTurnGroup,
+      hasDisplayContent,
+      useWorkspaceAiUx()
+    );
 
   // Streaming duration tracking
   const streamingStartTime = useStreamingStartTime();
@@ -346,9 +354,10 @@ export const AgentTimeline = React.memo(function AgentTimeline({
     return (
       <TimelineContainer
         agent={chatState.agent}
+        state={uiState}
         headerContent={
           <div className="flex w-full h-full items-center ps-(--timeline-header-padding-left) pe-(--timeline-header-padding-right)">
-            <ShimmerText>{headerText}</ShimmerText>
+            <AILoadingState label={headerText} />
           </div>
         }
       />
@@ -363,6 +372,7 @@ export const AgentTimeline = React.memo(function AgentTimeline({
   return (
     <TimelineContainer
       agent={chatState.agent}
+      state={uiState}
       headerContent={
         <div
           className={cn(

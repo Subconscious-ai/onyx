@@ -118,15 +118,8 @@ from onyx.tracing.llm_utils import llm_generation_span, record_llm_response
 from onyx.utils.logger import setup_logger
 
 if TYPE_CHECKING:
-    from litellm.types.llms.anthropic import (
-        AnthopicMessagesAssistantMessageParam,
-        AnthropicMessagesUserMessageParam,
-    )
+    from litellm.types.llms.anthropic import AllAnthropicPassThroughMessageValues
     from litellm.types.llms.openai import ChatCompletionToolParam
-
-    _AnthropicAdapterMessage = (
-        AnthropicMessagesUserMessageParam | AnthopicMessagesAssistantMessageParam
-    )
 
 logger = setup_logger()
 
@@ -894,7 +887,7 @@ def _anthropic_messages_to_raw_messages(
 
     adapter = LiteLLMAnthropicMessagesAdapter()
     translated = adapter.translate_anthropic_messages_to_openai(
-        messages=cast("list[_AnthropicAdapterMessage]", messages)
+        messages=cast("list[AllAnthropicPassThroughMessageValues]", messages)
     )
     raw: list[dict[str, Any]] = []
     system_message = _anthropic_system_to_raw_message(system)
@@ -998,13 +991,13 @@ def _anthropic_reasoning_effort(
         # Adaptive without an explicit effort: leave it to the downstream
         # adaptive default rather than pinning an effort tier.
         return ReasoningEffort.AUTO
-    from litellm.llms.anthropic.experimental_pass_through.adapters.transformation import (
-        LiteLLMAnthropicMessagesAdapter,
+    if thinking.get("type") != "enabled":
+        return ReasoningEffort.AUTO
+    from litellm.litellm_core_utils.reasoning_effort_utils import (
+        reasoning_effort_from_thinking_budget,
     )
 
-    effort = LiteLLMAnthropicMessagesAdapter.translate_anthropic_thinking_to_reasoning_effort(
-        thinking
-    )
+    effort = reasoning_effort_from_thinking_budget(thinking.get("budget_tokens", 0))
     return _parse_reasoning_effort(effort)
 
 

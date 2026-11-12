@@ -26,6 +26,10 @@ import { AgentTimeline } from "@/app/app/message/messageComponents/timeline/Agen
 import { useVoiceMode } from "@/providers/VoiceModeProvider";
 import { getTextContent } from "@/app/app/services/packetUtils";
 import { removeThinkingTokens } from "@/app/app/services/thinkingTokens";
+import { useWorkspaceAiUx } from "@/lib/causl/WorkspaceAiUx";
+import { WorkspaceSources } from "@/lib/causl/WorkspaceSources";
+import { documentToSourceInfo } from "@/refresh-components/buttons/source-tag/sourceTagUtils";
+import { openDocument } from "@/lib/search/utils";
 import { cn } from "@opal/utils";
 import { useTranslations } from "next-intl";
 
@@ -78,6 +82,7 @@ function arePropsEqual(
     prev.chatState.agent?.id === next.chatState.agent?.id &&
     prev.chatState.docs === next.chatState.docs &&
     prev.chatState.citations === next.chatState.citations &&
+    prev.chatState.conversationSource === next.chatState.conversationSource &&
     prev.chatState.overriddenModel === next.chatState.overriddenModel &&
     prev.chatState.researchType === next.chatState.researchType &&
     prev.otherMessagesCanSwitchTo === next.otherMessagesCanSwitchTo &&
@@ -113,6 +118,8 @@ const AgentMessage = React.memo(function AgentMessage({
   const t = useTranslations("chat.messages");
   const markdownRef = useRef<HTMLDivElement>(null);
   const finalAnswerRef = useRef<HTMLDivElement>(null);
+
+  const workspaceAi = useWorkspaceAiUx();
 
   // Process streaming packets: returns data and callbacks
   // Hook handles all state internally, exposes clean API
@@ -177,14 +184,20 @@ const AgentMessage = React.memo(function AgentMessage({
   const effectiveChatState = useMemo<FullChatState>(
     () => ({
       ...chatState,
+      conversationSource:
+        chatState.conversationSource ??
+        (parentMessage?.type === "user" ? parentMessage.message : undefined),
       citations: mergedCitations,
       docs: mergedDocs,
     }),
     [
       chatState.agent,
+      chatState.conversationSource,
       chatState.setPresentingDocument,
       chatState.overriddenModel,
       chatState.researchType,
+      parentMessage?.type,
+      parentMessage?.message,
       mergedCitations,
       mergedDocs,
     ]
@@ -292,18 +305,36 @@ const AgentMessage = React.memo(function AgentMessage({
     >
       {/* Row 1: Two-column layout for tool steps */}
 
-      <AgentTimeline
-        turnGroups={pacedTurnGroups}
-        chatState={effectiveChatState}
-        stopPacketSeen={stopPacketSeen}
-        stopReason={stopReason}
-        hasDisplayContent={pacedDisplayGroups.length > 0}
-        processingDurationSeconds={processingDurationSeconds}
-        isGeneratingImage={isGeneratingImage}
-        generatedImageCount={generatedImageCount}
-        finalAnswerComing={pacedFinalAnswerComing}
-        toolProcessingDuration={toolProcessingDuration}
-      />
+      <div
+        className={
+          workspaceAi && pacedTurnGroups.length > 0
+            ? "workspace-ai-progress"
+            : "contents"
+        }
+      >
+        <AgentTimeline
+          turnGroups={pacedTurnGroups}
+          chatState={effectiveChatState}
+          stopPacketSeen={stopPacketSeen}
+          stopReason={stopReason}
+          hasDisplayContent={pacedDisplayGroups.length > 0}
+          processingDurationSeconds={processingDurationSeconds}
+          isGeneratingImage={isGeneratingImage}
+          generatedImageCount={generatedImageCount}
+          finalAnswerComing={pacedFinalAnswerComing}
+          toolProcessingDuration={toolProcessingDuration}
+        />
+      </div>
+      {workspaceAi && (
+        <WorkspaceSources
+          sources={mergedDocs.map(documentToSourceInfo)}
+          onOpen={(id) => {
+            const document = mergedDocs.find((doc) => doc.document_id === id);
+            if (document)
+              openDocument(document, effectiveChatState.setPresentingDocument);
+          }}
+        />
+      )}
 
       {/* Row 2: Display content + MessageToolbar */}
       <div

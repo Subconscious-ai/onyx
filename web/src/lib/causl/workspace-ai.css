@@ -1,0 +1,136 @@
+/* Composition references: Kokonut UI AI Input Search, Inline Citations, and
+   AI State Loading (MIT, kokonutui.com/docs/ai, reviewed 2026-10-30).
+   All state and source content remain native Onyx data. */
+.workspace-ai-chat {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+}
+
+.workspace-ai-chat #onyx-chat-input {
+  border: 1px solid var(--border-01);
+  border-radius: 16px;
+  transition:
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.workspace-ai-chat #onyx-chat-input:focus-within {
+  border-color: var(--text-03);
+  box-shadow: 0 0 0 3px var(--background-tint-02);
+}
+
+.workspace-ai-chat [data-ai-composer-controls] {
+  gap: 8px;
+  padding: 8px;
+  height: auto;
+  min-height: 48px;
+}
+
+.workspace-ai-chat [data-ai-stop] {
+  border-radius: 999px;
+}
+
+.workspace-ai-progress {
+  padding: 10px 12px;
+  border: 1px solid var(--border-01);
+  border-radius: 12px;
+  background: var(--background-tint-01);
+}
+
+.workspace-ai-sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.workspace-ai-source-stack {
+  display: flex;
+  padding-inline-start: 4px;
+}
+
+.workspace-ai-source-stack > span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-inline-start: -4px;
+  border: 2px solid var(--background-neutral-00);
+  border-radius: 50%;
+  background: var(--background-tint-02);
+  color: var(--text-03);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.workspace-ai-source-list {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-block: 4px;
+}
+
+.workspace-ai-citation {
+  display: inline-flex;
+  max-width: 100%;
+  margin-inline: 2px;
+  vertical-align: middle;
+}
+
+.workspace-ai-citation button {
+  max-width: 100%;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.workspace-ai-citation button > div {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.workspace-ai-citation button span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workspace-ai-source-list .workspace-ai-citation button {
+  max-width: 220px;
+}
+
+.workspace-ai-source-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  max-height: min(360px, 65vh);
+  overflow: auto;
+}
+
+.workspace-ai-source-preview > a {
+  display: flex;
+  align-items: start;
+  gap: 6px;
+  color: var(--text-03);
+}
+
+.workspace-ai-source-preview > a svg {
+  flex-shrink: 0;
+}
+
+.workspace-ai-chat p:has(.workspace-ai-citation:hover),
+.workspace-ai-chat p:has(.workspace-ai-citation:focus-within) {
+  background: var(--background-tint-01);
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-ai-chat #onyx-chat-input {
+    transition: none;
+  }
+}

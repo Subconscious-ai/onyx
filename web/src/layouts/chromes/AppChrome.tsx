@@ -65,7 +65,11 @@ import {
 } from "@opal/icons";
 import { useIsSearchModeAvailable, useSettings } from "@/lib/settings/hooks";
 import type { AppMode } from "@/providers/QueryControllerProvider";
-import { useAppDocumentTitle, useCustomFooterContent } from "@/lib/app/hooks";
+import {
+  useAppDocumentTitle,
+  useCustomFooterContent,
+  useFocusTheme,
+} from "@/lib/app/hooks";
 import { useAppPosition } from "@/lib/position/hooks";
 import { useQueryController } from "@/providers/QueryControllerProvider";
 import { useTierAtLeast } from "@/hooks/useTierAtLeast";
@@ -666,12 +670,25 @@ function Footer() {
 
 interface AppChromeProps {
   children: React.ReactNode;
+  embedded?: boolean;
 }
 
-export default function AppChrome({ children }: AppChromeProps) {
+export default function AppChrome({
+  children,
+  embedded = false,
+}: AppChromeProps) {
   const [rightPanel, setRightPanel] = useState<ReactNode>(null);
 
   const appPosition = useAppPosition();
+  const customerSurface =
+    appPosition.isChat() ||
+    appPosition.isNewSession() ||
+    appPosition.isAgent() ||
+    appPosition.isMoreAgents() ||
+    appPosition.isProject();
+
+  useFocusTheme(customerSurface);
+
   useAppDocumentTitle();
 
   const { hasBackground, appBackgroundUrl } = useAppBackground();
@@ -778,9 +795,9 @@ export default function AppChrome({ children }: AppChromeProps) {
             )}
 
             {/* Header */}
-            <Header />
+            {!embedded && <Header />}
             <RootLayout.MainContent>{children}</RootLayout.MainContent>
-            <Footer />
+            {!embedded && <Footer />}
           </div>
           {rightPanel}
         </div>

@@ -129,6 +129,7 @@ def questions(text: str) -> list[str]:
     # Jerry's single-line rhetorical punchline is not an interview question.
     prose = re.sub(r"(?im)^\s*\*{0,2}Jerry\s*\*{0,2}:.*$", "", text)
     prose = re.sub(r"https?://[^\s)]+", "", prose)
+    prose = re.sub(r"\b(?:e\.g\.|i\.e\.)", "for example", prose, flags=re.I)
     prose = re.sub(r"(?<=\|)\s*\?\s*(?=\|)", " unknown ", prose)
     return [
         part.strip().lower()
@@ -454,8 +455,38 @@ def allowed_bedrock_models(providers: list[dict]) -> set[int]:
         for provider in providers
         if provider["provider"] == "bedrock"
         for model in provider["model_configurations"]
-        if model.get("name") and not re.search(r"anthropic|claude", model["name"], re.I)
+        if model.get("name")
     }
+
+
+def scenario_tool_ids(tools: list[dict[str, Any]], turns: list[Turn]) -> list[int]:
+    defaults = {
+        "run_python",
+        "web_search",
+        "internal_search",
+        "deep_research",
+        "get_research_context",
+        "get_research_sources",
+    }
+    design_tools = {
+        "check_causality",
+        "generate_attributes_levels",
+        "generate_dependent_variable",
+        "create_experiment_draft",
+        "get_experiment_draft",
+    }
+    required = {name for turn in turns for name in turn.tools_required}
+    unsupported = required - defaults - design_tools
+    if unsupported:
+        raise ValueError(
+            "Unsupported scenario tools: " + ", ".join(sorted(unsupported))
+        )
+    missing = required - {tool["name"] for tool in tools}
+    if missing:
+        raise ValueError(
+            "Required scenario tools unavailable: " + ", ".join(sorted(missing))
+        )
+    return [tool["id"] for tool in tools if tool["name"] in defaults | required]
 
 
 def main() -> None:
@@ -523,25 +554,17 @@ def main() -> None:
     with api("/llm/provider") as response:
         providers = json.load(response)["providers"]
     if selected_model not in allowed_bedrock_models(providers):
-        raise ValueError(
-            "Interview evaluation requires an explicit non-Anthropic AWS Bedrock model"
-        )
-    allowed_tools = []
-    if args.scenario_file:
-        allowed_tools = [
-            tool["id"]
-            for tool in agent["tools"]
-            if tool["name"]
-            in {
-                "run_python",
-                "web_search",
-                "internal_search",
-                "deep_research",
-                "get_research_context",
-                "get_research_sources",
-            }
-        ]
-    for name in args.case or cases:
+        raise ValueError("Interview evaluation requires an explicit AWS Bedrock model")
+    selected_cases = args.case or list(cases)
+    scenario_tools = (
+        {
+            name: scenario_tool_ids(agent["tools"], cases[name])
+            for name in selected_cases
+        }
+        if args.scenario_file
+        else {}
+    )
+    for name in selected_cases:
         with api(
             "/chat/create-chat-session",
             {"persona_id": args.agent, "description": "Executive regression: " + name},
@@ -561,7 +584,7 @@ def main() -> None:
                     "message": turn.message,
                     "chat_session_id": sid,
                     "parent_message_id": -1,
-                    "allowed_tool_ids": allowed_tools,
+                    "allowed_tool_ids": scenario_tools.get(name, []),
                     "origin": "webapp",
                 }
                 if args.model_configuration is not None:

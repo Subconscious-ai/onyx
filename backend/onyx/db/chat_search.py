@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.sql.expression import ColumnClause
 
 from onyx.db.models import ChatMessage, ChatSession
+from onyx.db.twenty_panel import filter_twenty_chats
 
 
 def search_chat_sessions(
@@ -49,7 +50,7 @@ def search_chat_sessions(
         if has_more:
             sessions = sessions[:page_size]
 
-        return list(sessions), has_more
+        return filter_twenty_chats(db_session, user_id, list(sessions)), has_more
 
     # Otherwise, proceed with full-text search
     query = query.strip()
@@ -103,4 +104,4 @@ def search_chat_sessions(
     if has_more:
         session_objs = session_objs[:page_size]
 
-    return list(session_objs), has_more
+    return filter_twenty_chats(db_session, user_id, list(session_objs)), has_more

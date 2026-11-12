@@ -22,6 +22,11 @@ from onyx.db.chat import set_preferred_response
 from onyx.db.models import ChatMessage
 from onyx.llm.interfaces import ToolChoiceOptions
 from onyx.llm.override_models import LLMOverride
+from onyx.server.query_and_chat.causl.models import (
+    CauslActor,
+    CauslChatBinding,
+    CauslSelection,
+)
 from onyx.server.query_and_chat.models import SendMessageRequest
 from onyx.server.query_and_chat.placement import Placement
 from onyx.server.query_and_chat.streaming_models import (
@@ -265,6 +270,7 @@ def _make_setup(n_models: int = 1) -> MagicMock:
     # Fields consumed by SearchToolConfig / CustomToolConfig / FileReaderToolConfig
     # constructors inside _run_model — must be typed correctly for Pydantic.
     setup.new_msg_req.deep_research = False
+    setup.new_msg_req.shared_context_only = False
     setup.new_msg_req.internal_search_filters = None
     setup.new_msg_req.allowed_tool_ids = None
     setup.new_msg_req.include_citations = True
@@ -281,6 +287,9 @@ def _make_setup(n_models: int = 1) -> MagicMock:
     setup.user_message_id = None
     setup.custom_tool_additional_headers = None
     setup.mcp_headers = None
+    setup.causl_binding = None
+    setup.causl_original_message = None
+    setup.saved_fact_request = False
     return setup
 
 
@@ -297,6 +306,146 @@ class TestRunModels:
     All external dependencies (LLM, DB, tools) are patched out.  Worker threads
     still run but return immediately since run_llm_loop is mocked.
     """
+
+    @pytest.mark.parametrize(
+        ("saved_fact_request", "requested_tool_id", "expected_tool_id"),
+        [(True, None, 67), (False, None, None), (True, 44, 44)],
+    )
+    def test_saved_fact_readout_requires_library_search_before_answering(
+        self,
+        saved_fact_request: bool,
+        requested_tool_id: int | None,
+        expected_tool_id: int | None,
+    ) -> None:
+        setup = _make_setup()
+        setup.saved_fact_request = saved_fact_request
+        setup.forced_tool_id = requested_tool_id
+        library = MagicMock(id=67)
+        library.name = "market_search"
+        other = MagicMock(id=44)
+        other.name = "other_tool"
+        with (
+            patch("onyx.chat.process_message.run_llm_loop") as run,
+            patch(
+                "onyx.chat.process_message.construct_tools",
+                return_value={67: [library], 44: [other]},
+            ),
+            patch("onyx.chat.process_message.llm_loop_completion_handle"),
+            patch(
+                "onyx.chat.process_message.get_llm_token_counter",
+                return_value=lambda _: 0,
+            ),
+            patch(
+                "onyx.server.query_and_chat.burn2.requested_tool.initial_profile_tool",
+                side_effect=lambda **kwargs: kwargs["forced_tool_id"],
+            ) as bootstrap,
+        ):
+            _run_models_collect(setup)
+        assert bootstrap.call_args.kwargs["forced_tool_id"] == expected_tool_id
+        assert run.call_args.kwargs["forced_tool_id"] == expected_tool_id
+
+    def test_saved_fact_readout_reports_unavailable_library_without_generating(
+        self,
+    ) -> None:
+        setup = _make_setup()
+        setup.saved_fact_request = True
+        with (
+            patch("onyx.chat.process_message.run_llm_loop") as run,
+            patch("onyx.chat.process_message.construct_tools", return_value={}),
+            patch("onyx.chat.process_message.llm_loop_completion_handle"),
+            patch(
+                "onyx.chat.process_message.get_llm_token_counter",
+                return_value=lambda _: 0,
+            ),
+        ):
+            packets = _run_models_collect(setup)
+        run.assert_not_called()
+        errors = [packet for packet in packets if isinstance(packet, StreamingError)]
+        assert len(errors) == 1
+        assert "Library search is unavailable" in errors[0].error
+
+    @pytest.mark.parametrize("workspace_bound", [False, True])
+    def test_workspace_turn_cannot_bootstrap_a_personal_company_profile(
+        self, monkeypatch: pytest.MonkeyPatch, workspace_bound: bool
+    ) -> None:
+        monkeypatch.setenv("BURN2_ENABLED", "true")
+        setup = _make_setup()
+        setup.persona.name = "Burn 2.0"
+        setup.incognito_record_mode = None
+        setup.causl_binding = (
+            CauslChatBinding(
+                user_id=uuid4(),
+                actor=CauslActor(org_id="org_b", user_id="auth0|alice"),
+                issuer="https://auth.example/",
+                market_id="market_b",
+                chat_id=setup.chat_session_id,
+                selection=CauslSelection(page="library", market_id="market_b"),
+                library_server_id=22,
+            )
+            if workspace_bound
+            else None
+        )
+        tool = MagicMock(id=67)
+        with (
+            patch("onyx.chat.process_message.run_llm_loop") as run,
+            patch("onyx.chat.process_message.run_deep_research_llm_loop"),
+            patch(
+                "onyx.chat.process_message.construct_tools", return_value={67: [tool]}
+            ),
+            patch("onyx.chat.process_message.llm_loop_completion_handle"),
+            patch(
+                "onyx.chat.process_message.get_llm_token_counter",
+                return_value=lambda _: 0,
+            ),
+            patch(
+                "onyx.server.query_and_chat.burn2.requested_tool.initial_profile_tool",
+                side_effect=lambda **kwargs: 67 if kwargs["enabled"] else None,
+            ) as bootstrap,
+        ):
+            _run_models_collect(setup)
+
+        bootstrap.assert_called_once()
+        assert bootstrap.call_args.kwargs["enabled"] is not workspace_bound
+        run.assert_called_once()
+        assert run.call_args.kwargs["forced_tool_id"] == (
+            None if workspace_bound else 67
+        )
+
+    @pytest.mark.parametrize("original_message", ["Our product supports SSO.", None])
+    def test_worker_passes_the_original_bound_statement_to_native_tool_construction(
+        self, original_message: str | None
+    ) -> None:
+        setup = _make_setup()
+        setup.user_message_id = 123
+        setup.causl_original_message = original_message
+        setup.causl_binding = CauslChatBinding(
+            user_id=uuid4(),
+            actor=CauslActor(org_id="org_b", user_id="auth0|alice"),
+            issuer="https://auth.example/",
+            market_id="market_b",
+            chat_id=setup.chat_session_id,
+            selection=CauslSelection(page="library", market_id="market_b"),
+            library_server_id=22,
+        )
+        with (
+            patch("onyx.chat.process_message.run_llm_loop"),
+            patch("onyx.chat.process_message.run_deep_research_llm_loop"),
+            patch(
+                "onyx.chat.process_message.construct_tools", return_value={}
+            ) as construct,
+            patch("onyx.chat.process_message.llm_loop_completion_handle"),
+            patch(
+                "onyx.chat.process_message.get_llm_token_counter",
+                return_value=lambda _: 0,
+            ),
+        ):
+            _run_models_collect(setup)
+        construct.assert_called_once()
+        config = construct.call_args.kwargs["custom_tool_config"]
+        assert config.causl_binding == setup.causl_binding
+        assert config.chat_session_id == setup.chat_session_id
+        assert config.message_id == 123
+        assert config.causl_original_message == original_message
 
     def test_n1_overall_stop_from_llm_loop_passes_through(self) -> None:
         """OverallStop emitted by run_llm_loop is passed through the drain loop unchanged."""

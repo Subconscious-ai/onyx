@@ -17,11 +17,11 @@
     },
     {
       "message": "The sales deck calls the business an unstoppable renewal machine. The approved budget so far is one spreadsheet and heroic confidence. A sharper package-value message is a proposed intervention. No questions.",
-      "brief_required": false, "questions_allowed": false, "jerry": true, "max_words": 80
+      "brief_required": false, "questions_allowed": false, "jerry": false, "max_words": 80
     },
     {
-      "message": "Conclude with the proposed business model and the unknown inputs. Keep the corrected 95 percent target. No extra questions or jokes.",
-      "brief_required": false, "questions_allowed": false, "jerry": false,
+      "message": "That is all the private operating information I have. Keep the corrected 95 percent target and unknown inputs in the first model. Our renewal forecast still runs on the spreadsheet and heroic confidence.",
+      "brief_required": false, "questions_allowed": false, "jerry": true,
       "prepare_brief": true, "sourced_journey_required": true, "target_requires": "95", "target_forbidden": "90",
       "unknown_inputs": ["eligible|customer|cohort", "^(?!.*(?:target|goal)).*(?:renewal|renew|retention)"], "max_words": 100
     }
@@ -38,6 +38,7 @@
     {"message": "The company sells ice cream. The goal is more repeat purchases; all operating inputs are unknown. No jokes during this interview. No questions.", "brief_required": false, "questions_allowed": false, "jerry": false},
     {"message": "Shoppers compare tubs, buy a tub, then decide whether to buy again. No questions.", "brief_required": false, "questions_allowed": false, "jerry": false},
     {"message": "A clearer package claim is a proposed intervention, not a measured result. No questions.", "brief_required": false, "questions_allowed": false, "jerry": false},
-    {"message": "Keep this serious. Summarize the proposed model and unknowns without another question.", "brief_required": false, "questions_allowed": false, "jerry": false}
+    {"message": "Keep this serious. Summarize the proposed model and unknowns without another question.", "brief_required": false, "questions_allowed": false, "jerry": false},
+    {"message": "Keep the first model symbolic. All operating inputs still remain unknown. No jokes or questions.", "brief_required": false, "questions_allowed": false, "jerry": false}
   ]
 }

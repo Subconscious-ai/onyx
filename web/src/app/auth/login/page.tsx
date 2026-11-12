@@ -91,6 +91,12 @@ export default async function Page(props: PageProps) {
           hidePageRedirect={true}
           verified={verified}
           isFirstUser={isFirstUser}
+          loggedOut={searchParams?.loggedOut === "true"}
+          requestedProvider={
+            typeof searchParams?.provider === "string"
+              ? searchParams.provider
+              : undefined
+          }
         />
       </AuthFlowContainer>
     </div>

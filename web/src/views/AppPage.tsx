@@ -1,5 +1,7 @@
 "use client";
 
+import { ModelPageCaptureError } from "@/lib/causl/modelPage";
+
 import { redirect, useRouter, useSearchParams } from "next/navigation";
 import { endIncognitoSession } from "@/app/app/services/lib";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -27,7 +29,7 @@ import { useUser } from "@/providers/UserProvider";
 import { useCurrentUser } from "@/lib/users/hooks";
 import { NoAgentModal } from "@/lib/agents/components";
 import PreviewModal from "@/sections/modals/PreviewModal";
-import { Modal } from "@opal/components";
+import { Modal, Text } from "@opal/components";
 import { useSendMessageToParent } from "@/lib/extension/hooks";
 import { SourceMetadata } from "@/lib/search/interfaces";
 import { FederatedConnectorDetail, ValidSources } from "@/lib/types";
@@ -91,8 +93,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { useTranslations } from "next-intl";
 import ExecutiveWorkspace, {
   ExecutiveWelcome,
+  ExecutiveModelAction,
 } from "@/sections/executive/ExecutiveWorkspace";
 import { isExecutiveAgent } from "@/lib/executive/brief";
+import { useInterviewLibrary } from "@/lib/executive/library-connection";
 import { consultingRole } from "@/lib/agents/consulting";
 
 interface FadeProps {
@@ -121,9 +125,21 @@ function Fade({ show, children, className }: FadeProps) {
 
 export interface ChatPageProps {
   firstMessage?: string;
+  twentyWorkspace?: { prepareSubmission: () => Promise<string> };
+  causlWorkspace?: {
+    draft?: import("@/lib/causl/types").CauslDraft;
+    onDraftConsumed?: (id: string) => void;
+    prepareSubmission: () => Promise<
+      import("@/lib/causl/types").CauslSelection
+    >;
+  };
 }
 
-export default function AppPage({ firstMessage }: ChatPageProps) {
+export default function AppPage({
+  firstMessage,
+  twentyWorkspace,
+  causlWorkspace,
+}: ChatPageProps) {
   // Performance tracking
   // Keeping this here in case we need to track down slow renders in the future
   // const renderCount = useRef(0);
@@ -141,7 +157,9 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
   //   }
   // });
 
+  const embeddedWorkspace = Boolean(causlWorkspace || twentyWorkspace);
   const t = useTranslations("chat.app");
+  const workspaceLabels = useTranslations("causlWorkspace");
   const router = useRouter();
   const appPosition = useAppPosition();
   const { isMobile } = useScreenSize();
@@ -446,22 +464,84 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
     searchParams,
     resetInputBar,
   });
+  const [workspacePreparing, setWorkspacePreparing] = useState(false);
+  const workspacePreparingRef = useRef(false);
+  const interviewLibrary = useInterviewLibrary(
+    !embeddedWorkspace && isExecutiveAgent(activeAgent)
+      ? activeAgent
+      : undefined,
+    currentChatSessionId
+  );
   const onSubmit = useCallback(
-    (params: OnSubmitProps) => {
+    async (params: OnSubmitProps) => {
+      if (causlWorkspace || twentyWorkspace) {
+        if (workspacePreparingRef.current) {
+          params.onInputRejected?.();
+          return;
+        }
+        workspacePreparingRef.current = true;
+        setWorkspacePreparing(true);
+        let causlSelection;
+        let twentyContextId;
+        try {
+          if (twentyWorkspace)
+            twentyContextId = await twentyWorkspace.prepareSubmission();
+          else if (causlWorkspace)
+            causlSelection = await causlWorkspace.prepareSubmission();
+        } catch (error) {
+          params.onInputRejected?.();
+          toast.error(
+            workspaceLabels(
+              error instanceof ModelPageCaptureError
+                ? "modelContextUnavailable"
+                : "contextChanged"
+            )
+          );
+          return;
+        } finally {
+          workspacePreparingRef.current = false;
+          setWorkspacePreparing(false);
+        }
+        return submitNative({
+          ...params,
+          causlSelection,
+          twentyContextId,
+        }).catch(() => {
+          params.onInputRejected?.();
+          toast.error(workspaceLabels("contextChanged"));
+        });
+      }
       const receipt =
         isExecutiveAgent(activeAgent) &&
         currentChatSessionId &&
         modelContext?.chatId === currentChatSessionId
           ? modelChatContext(modelContext.value)
           : undefined;
-      return submitNative({
+      const prepared = {
         ...params,
         additionalContext:
           [params.additionalContext, receipt].filter(Boolean).join("\n\n") ||
           undefined,
-      });
+      };
+      if (isExecutiveAgent(activeAgent)) {
+        await interviewLibrary.prepare(
+          () => submitNative(prepared),
+          params.onInputRejected
+        );
+        return;
+      }
+      return submitNative(prepared);
     },
-    [activeAgent, currentChatSessionId, modelContext, submitNative]
+    [
+      activeAgent,
+      currentChatSessionId,
+      modelContext,
+      submitNative,
+      causlWorkspace,
+      twentyWorkspace,
+      workspaceLabels,
+      interviewLibrary.prepare,
+    ]
   );
 
   const {
@@ -553,16 +633,17 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
     t,
   ]);
 
-  if (resolvedUser === null) {
+  if (resolvedUser === null && !embeddedWorkspace) {
     redirect("/auth/login");
   }
 
   const onChat = useCallback(
     (message: string) => {
+      if (isLoadingAgents || !activeAgent) return;
       if (multiModel.isMultiModelActive) {
         foldSidebarForMultiModel();
       }
-      resetInputBar();
+      if (!isExecutiveAgent(activeAgent)) resetInputBar();
       onSubmit({
         message,
         currentMessageFiles,
@@ -578,6 +659,8 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
       }
     },
     [
+      isLoadingAgents,
+      activeAgent,
       resetInputBar,
       onSubmit,
       currentMessageFiles,
@@ -620,12 +703,21 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
   );
 
   const handleAppInputBarSubmit = useCallback(
-    async (message: string) => {
+    async (
+      message: string,
+      callbacks?: Pick<OnSubmitProps, "onInputAccepted" | "onInputRejected">
+    ) => {
+      if (isLoadingAgents || !activeAgent) {
+        callbacks?.onInputRejected?.();
+        return;
+      }
       // If we're in an existing chat session, always use chat mode
       // (appMode only applies to new sessions)
       if (currentChatSessionId) {
-        resetInputBar();
+        if (!embeddedWorkspace && !isExecutiveAgent(activeAgent))
+          resetInputBar();
         onSubmit({
+          ...callbacks,
           message,
           currentMessageFiles,
           deepResearch:
@@ -655,7 +747,10 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
       await submitQuery(message, onChat);
     },
     [
+      isLoadingAgents,
+      activeAgent,
       currentChatSessionId,
+      causlWorkspace,
       submitQuery,
       onChat,
       incognitoEnabledRef,
@@ -712,7 +807,7 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
   // Handle error case where no agents are available.
   // Only show this after agents have loaded to prevent flash during initial load.
   if (!activeAgent && !isLoadingAgents) {
-    return <NoAgentModal />;
+    return <NoAgentModal embeddedWorkspace={embeddedWorkspace} />;
   }
 
   const hasAgentStarterMessages =
@@ -807,8 +902,9 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
         ))}
 
       <ExecutiveWorkspace
+        email={user?.email}
         onModelContext={receiveModelContext}
-        active={isExecutiveAgent(activeAgent)}
+        active={!embeddedWorkspace && isExecutiveAgent(activeAgent)}
         messages={messageHistory}
         chatId={currentChatSessionId}
         busy={currentChatState !== "input"}
@@ -872,6 +968,9 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                           selectedModels={multiModel.selectedModels}
                           fullWidthChat={fullWidthActive}
                         />
+                        {isExecutiveAgent(activeAgent) && (
+                          <ExecutiveModelAction />
+                        )}
                       </ChatScrollContainer>
                     </Fade>
 
@@ -907,8 +1006,18 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                                   : sessionFetchError.detail
                             }
                           />
-                          <Button href="/app" prominence="secondary">
-                            {t("newChatButton.label")}
+                          <Button
+                            href={embeddedWorkspace ? undefined : "/app"}
+                            onClick={
+                              embeddedWorkspace
+                                ? () => window.location.reload()
+                                : undefined
+                            }
+                            prominence="secondary"
+                          >
+                            {embeddedWorkspace
+                              ? workspaceLabels("reopen")
+                              : t("newChatButton.label")}
                           </Button>
                         </Section>
                       )}
@@ -1012,6 +1121,46 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                       top padding during chat to compensate for this extra space.
                     */}
                       <div className={cn(onboardingVisible && "shrink-0 pt-6")}>
+                        {(interviewLibrary.needed ||
+                          interviewLibrary.failed) && (
+                          <div
+                            role="status"
+                            className="flex flex-col items-start gap-2 p-2"
+                          >
+                            <Text as="p" font="secondary-body">
+                              {workspaceLabels(
+                                interviewLibrary.failed
+                                  ? "connectionFailed"
+                                  : "connectionRequired"
+                              )}
+                            </Text>
+                            {interviewLibrary.needed && (
+                              <div className="flex gap-2">
+                                <Button
+                                  disabled={interviewLibrary.connecting}
+                                  onClick={() =>
+                                    void interviewLibrary.connect(
+                                      window.location.pathname +
+                                        window.location.search
+                                    )
+                                  }
+                                >
+                                  {workspaceLabels(
+                                    interviewLibrary.connecting
+                                      ? "connecting"
+                                      : "connectWorkspace"
+                                  )}
+                                </Button>
+                                <Button
+                                  prominence="tertiary"
+                                  onClick={interviewLibrary.cancel}
+                                >
+                                  {workspaceLabels("cancelConnection")}
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                         <div
                           className={cn(
                             "transition-all duration-150 ease-in-out overflow-hidden",
@@ -1019,6 +1168,14 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                           )}
                         />
                         <AppInputBar
+                          deferInputClear={
+                            !embeddedWorkspace && isExecutiveAgent(activeAgent)
+                          }
+                          embeddedWorkspace={embeddedWorkspace}
+                          workspaceDraft={causlWorkspace?.draft}
+                          onWorkspaceDraftConsumed={
+                            causlWorkspace?.onDraftConsumed
+                          }
                           toolConfiguration={toolConfiguration}
                           ref={chatInputBarRef}
                           deepResearchEnabled={
@@ -1046,6 +1203,12 @@ export default function AppPage({ firstMessage }: ChatPageProps) {
                           // Intentionally enabled during name-only onboarding (showOnboarding=false)
                           // since LLM providers are already configured and the user can chat.
                           disabled={
+                            isLoadingAgents ||
+                            llmManager.isLoadingProviders ||
+                            !activeAgent ||
+                            workspacePreparing ||
+                            interviewLibrary.preparing ||
+                            interviewLibrary.needed ||
                             (!llmManager.isLoadingProviders &&
                               llmManager.hasAnyProvider === false) ||
                             (showOnboarding &&

@@ -1,4 +1,6 @@
 import * as yup from "yup";
+import remarkParse from "remark-parse";
+import { unified } from "unified";
 
 // A display projection of a saved Onyx conversation, never an accepted ontology.
 const noteSchema = yup.object({
@@ -142,12 +144,46 @@ export function visibleInterviewText(text: string): string {
       part.startsWith("`") ? part : part.replace(/\s*—\s*/g, ", ")
     )
     .join("");
+  text = linkSourceMarkers(text);
   const index = text.indexOf(OPEN);
   if (index >= 0) return text.slice(0, index).trimEnd();
   // A streaming packet can end anywhere inside the marker.
   for (let size = Math.min(OPEN.length - 1, text.length); size >= 2; size--) {
     if (text.endsWith(OPEN.slice(0, size)))
       return text.slice(0, -size).trimEnd();
+  }
+  return text;
+}
+
+const sourceParser = unified().use(remarkParse);
+type SourceNode = {
+  type: string;
+  position?: { start: { offset?: number }; end: { offset?: number } };
+  children?: SourceNode[];
+};
+
+function linkSourceMarkers(text: string): string {
+  if (!text.includes("【http")) return text;
+  const ranges: { start: number; end: number }[] = [];
+  const collect = (node: SourceNode) => {
+    if (["link", "linkReference", "image"].includes(node.type)) return;
+    const start = node.position?.start.offset;
+    const end = node.position?.end.offset;
+    if (node.type === "text" && start !== undefined && end !== undefined) {
+      ranges.push({ start, end });
+    }
+    node.children?.forEach(collect);
+  };
+  // Reuse the renderer's Markdown parser so code and existing link labels stay literal.
+  collect(sourceParser.parse(text));
+  for (const { start, end } of ranges.reverse()) {
+    const linked = text
+      .slice(start, end)
+      .replace(/【(https?:\/\/[^\s【】]+)】/g, (marker, href: string) => {
+        const url = safeSourceUrl(href);
+        return url ? `[${new URL(url).hostname}](<${url}>)` : marker;
+      });
+    text = text.slice(0, start) + linked + text.slice(end);
   }
   return text;
 }
@@ -202,11 +238,18 @@ export function projectBrief(
   const observedQuote = (quote?: string) => {
     const turn = quoteTurn(quote);
     if (turn < 0) return false;
-    // Exact text alone cannot promote explicitly hypothetical or external-case input.
-    const context = statements[turn]!;
-    return !/\b(?:scenario|hypothetical|hypothesis|assume|suppose|public case|case study|benchmark)\b/.test(
-      context
-    );
+    // A later scenario cannot erase an earlier factual sentence or endorse its own inputs.
+    const factual: string[] = [];
+    for (const clause of statements[turn]!.split(/(?<=[.!?;])\s+|\n/)) {
+      if (
+        /\b(?:scenario|hypothetical|hypothesis|assume|suppose|public case|case study|benchmark)\b/.test(
+          clause
+        )
+      )
+        break;
+      factual.push(clause);
+    }
+    return Boolean(quote && factual.join(" ").includes(normalized(quote)));
   };
   const ground = <T extends BriefNote>(note: T): T => {
     if (note.status === "executive" && observedQuote(note.quote)) return note;
@@ -392,13 +435,8 @@ export function modelReadiness(brief: InterviewBrief | null): ModelReadiness {
   const missing: string[] = [];
   if (!brief || brief.objective.status !== "executive")
     missing.push("An executive objective");
-  if (
-    !brief?.keyResults?.some(
-      (kr) =>
-        kr.target.status === "executive" && kr.deadline.status === "executive"
-    )
-  )
-    missing.push("A measurable target and deadline");
+  if (!brief?.keyResults?.some((kr) => kr.metric.trim() && kr.unit.trim()))
+    missing.push("A named success measure");
   if ((brief?.journey.length ?? 0) < 2)
     missing.push("Customer behavior before and after a decision");
   if (!brief?.transitions?.length)

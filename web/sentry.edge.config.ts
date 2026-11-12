@@ -9,6 +9,8 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
     release: process.env.SENTRY_RELEASE,
+    // Never default to "production"; production deploys set it explicitly.
+    environment: process.env.SENTRY_ENVIRONMENT || "development",
     // Only capture unhandled exceptions
     tracesSampleRate: 0,
     debug: false,

@@ -60,12 +60,13 @@ def test_resolve_oidc_returns_config(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         oidc_multi, "fetch_sso_provider_by_name", lambda **_kw: provider
     )
-    resolved, config = oidc_multi._resolve_oidc_provider(_DB, "okta")
+    resolved, config = oidc_multi.resolve_oidc_provider(_DB, "okta")
     assert resolved is provider
     assert config == {
         **_OIDC_CONFIG,
         "legacy_callback": False,
         "require_verified_email": False,
+        "auto_join_verified_email_domains": [],
         "pkce_enabled": False,
         "scopes": [],
     }
@@ -80,7 +81,7 @@ def test_resolve_google_returns_config(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         oidc_multi, "fetch_sso_provider_by_name", lambda **_kw: provider
     )
-    _resolved, config = oidc_multi._resolve_oidc_provider(_DB, "google")
+    _resolved, config = oidc_multi.resolve_oidc_provider(_DB, "google")
     assert config == {
         **_GOOGLE_CONFIG,
         "legacy_callback": False,
@@ -92,7 +93,7 @@ def test_resolve_google_returns_config(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_resolve_fail_closed_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(oidc_multi, "fetch_sso_provider_by_name", lambda **_kw: None)
     with pytest.raises(OnyxError):
-        oidc_multi._resolve_oidc_provider(_DB, "missing")
+        oidc_multi.resolve_oidc_provider(_DB, "missing")
 
 
 def test_resolve_fail_closed_saml_type(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -101,7 +102,7 @@ def test_resolve_fail_closed_saml_type(monkeypatch: pytest.MonkeyPatch) -> None:
         oidc_multi, "fetch_sso_provider_by_name", lambda **_kw: provider
     )
     with pytest.raises(OnyxError):
-        oidc_multi._resolve_oidc_provider(_DB, "saml-row")
+        oidc_multi.resolve_oidc_provider(_DB, "saml-row")
 
 
 def test_resolve_fail_closed_incomplete_config(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -113,7 +114,7 @@ def test_resolve_fail_closed_incomplete_config(monkeypatch: pytest.MonkeyPatch) 
         oidc_multi, "fetch_sso_provider_by_name", lambda **_kw: provider
     )
     with pytest.raises(OnyxError):
-        oidc_multi._resolve_oidc_provider(_DB, "okta")
+        oidc_multi.resolve_oidc_provider(_DB, "okta")
 
 
 def test_cache_key_stable_and_config_sensitive() -> None:
@@ -236,12 +237,12 @@ async def test_client_cache_hits_and_rebuilds_on_config_change(
     monkeypatch.setattr(oidc_multi, "_build_client", _fake_build)
     provider = _provider()
 
-    await oidc_multi._get_oauth_client(provider, dict(_OIDC_CONFIG))
-    await oidc_multi._get_oauth_client(provider, dict(_OIDC_CONFIG))
+    await oidc_multi.get_oauth_client(provider, dict(_OIDC_CONFIG))
+    await oidc_multi.get_oauth_client(provider, dict(_OIDC_CONFIG))
     assert builds["count"] == 1  # same key is a cache hit
 
     # A rotated secret changes the config hash, so the key changes and rebuilds.
-    await oidc_multi._get_oauth_client(
+    await oidc_multi.get_oauth_client(
         provider, {**_OIDC_CONFIG, "client_secret": "rotated"}
     )
     assert builds["count"] == 2
@@ -394,19 +395,28 @@ def test_build_client_passes_require_verified_email(
         _config_url: str,
         *,
         require_verified_email: bool = False,
+        auto_join_verified_email_domains: list[str] | None = None,
         **_kwargs: Any,
     ) -> Any:
-        return SimpleNamespace(require_verified_email=require_verified_email)
+        return SimpleNamespace(
+            require_verified_email=require_verified_email,
+            auto_join_verified_email_domains=auto_join_verified_email_domains,
+        )
 
     monkeypatch.setattr(oidc_multi, "VerifiedEmailOpenID", _fake_openid)
     client = cast(
         Any,
         oidc_multi._build_client(
             _provider(name="entra"),
-            {**_OIDC_CONFIG, "require_verified_email": True},
+            {
+                **_OIDC_CONFIG,
+                "require_verified_email": True,
+                "auto_join_verified_email_domains": ["subconscious.ai"],
+            },
         ),
     )
     assert client.require_verified_email is True
+    assert client.auto_join_verified_email_domains == ["subconscious.ai"]
 
 
 def test_validate_config_rejects_legacy_callback_for_saml() -> None:

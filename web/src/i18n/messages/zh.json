@@ -1,4 +1,21 @@
 {
+  "causlWorkspace": {
+    "cancelConnection": "继续编辑",
+    "connectWorkspace": "连接工作区",
+    "connectionRequired": "连接工作区以继续。您的消息会保留。",
+    "connectionFailed": "工作区连接失败。您的消息已保留。请重试。",
+    "notConfigured": "请从causl-kb工作区打开助手。如果仍无法使用，请联系管理员。",
+    "signin": "请使用与causl-kb相同的组织账户登录，然后重新打开此对话。",
+    "signInAction": "登录Onyx",
+    "reopen": "重新打开对话",
+    "access": "请检查组织账户并连接其资料库，然后重新打开此对话。",
+    "connectLibrary": "连接资料库",
+    "connecting": "正在连接…",
+    "unavailable": "工作区上下文暂不可用。已保存的对话仍然保留。",
+    "opening": "正在打开工作区对话…",
+    "modelContextUnavailable": "Models 页面捕获失败或超出大小限制。请打开完整模型后重试。本地草稿保持不变。",
+    "contextChanged": "消息发送前工作区已变更。请检查当前上下文后重新发送。"
+  },
   "accountPopover": {
     "accountFallback": {
       "label": "账户"
@@ -9294,7 +9311,8 @@
         },
         "stopButton": {
           "ariaLabel": "停止生成",
-          "tooltip": "停止 · esc"
+          "tooltip": "停止 · esc",
+          "label": "停止"
         }
       },
       "buildFileCard": {
@@ -13272,6 +13290,17 @@
       }
     },
     "chatSearch": {
+      "pro": {
+        "all": "全部",
+        "actions": "操作",
+        "chats": "聊天",
+        "projects": "项目",
+        "searchIn": "搜索范围",
+        "close": "关闭搜索",
+        "loading": "加载中…",
+        "searching": "搜索中…",
+        "loadMore": "加载更多对话"
+      },
       "createNamedProject": {
         "label": "创建新项目“<name>{projectName}</name>”"
       },
@@ -13838,6 +13867,15 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "来源：{quote}",
+    "factCitationConversation": "对话",
+    "factCitationUnavailable": "来源不可用",
+    "savedMarketFacts": "已保存的市场事实",
+    "marketMemoryUnavailable": "共享市场记忆暂不可用。",
+    "marketMemoryLoading": "正在读取已保存的市场事实…",
+    "marketMemorySource": "来自共享市场资料库的已确认事实。",
+    "marketMemoryEmpty": "尚无已确认的市场事实。访谈记录在审核前仍为草稿。",
+    "marketMemoryBounded": "当前仅显示部分内容。Beca 可以从资料库中检索更多事实。",
     "companyProfile": {
       "title": "公司资料",
       "description": "您的更正优先于PDL建议。这是您的私人工作资料，并非公司的共享记录。",
@@ -13849,6 +13887,13 @@
       "cancel": "取消",
       "conflict": "资料已在其他位置更改。请取消并重新打开后再保存。您的更改尚未保存。",
       "failed": "无法保存更正。您的输入仍保留在此处，请重试。",
+      "refresh": "Refresh PDL and public research",
+      "refreshing": "Refreshing preparation…",
+      "refreshDescription": "Run a new PDL lookup and public research. Your interview and saved context stay available.",
+      "refreshFailed": "Could not confirm preparation. Retry to check the same request without a duplicate lookup.",
+      "refreshStarted": "Preparation request saved. Public research status appears in the brief.",
+      "refreshNoMatch": "No fresh PDL match. Previous company context and corrections stay unchanged.",
+      "refreshUnavailable": "PDL refresh unavailable. Previous company context and corrections stay unchanged.",
       "fields": {
         "name": "姓名",
         "role": "职务",
@@ -13879,6 +13924,7 @@
     "executiveStudio": "EXECUTIVE STUDIO",
     "interviewSpecialists": "Interview specialists",
     "workingBusinessBrief": "Working business brief",
+    "briefControl": "简报",
     "theWorkingPicture": "THE WORKING PICTURE",
     "interviewDraft": "INTERVIEW DRAFT",
     "01TheObjective": "01 / THE OBJECTIVE",
@@ -13923,6 +13969,10 @@
     "sourceDisclosure": "Source",
     "automaticDraftBoundary": "The draft updates after each answer. Market evidence changes only after review.",
     "reviewInGuesstimate": "Open business model",
+    "openingSpeaker": "Sarah · 客户旅程",
+    "openingQuestion": "我是 Beca。您最想改变业务中的什么？",
+    "interviewTeam": "访谈团队",
+    "retryDraft": "重试更新草稿",
     "becaName": "Beca",
     "whatNeedsToChange": "需要改变什么？",
     "researchContextAndLenses": "研究背景与专业视角",
@@ -13944,6 +13994,51 @@
       "interview": "高管访谈",
       "design": "实验设计",
       "analytics": "实验分析"
+    },
+    "progress": {
+      "title": "您的首个模型",
+      "count": "已记录3项要素中的{count}项",
+      "essentials": "必要信息",
+      "goal": "目标",
+      "measure": "成功指标",
+      "journey": "客户旅程",
+      "captured": "已记录",
+      "missing": "需要补充",
+      "goalNext": "您想改善哪项业务成果？",
+      "measureNext": "怎样衡量成功，何时达成？",
+      "journeyNext": "客户目前如何完成购买或使用？",
+      "goalAsk": "根据我已经分享的信息，请问一个有助于明确目标的问题。",
+      "measureAsk": "根据我已经分享的信息，请问一个有助于明确成功指标和期限的问题。",
+      "journeyAsk": "根据我已经分享的信息，请问一个有助于明确客户旅程的问题。",
+      "failed": "您的回答已保存。请重试更新摘要。",
+      "updating": "正在更新摘要…",
+      "ready": "信息足以建立首个模型。",
+      "conflict": "打开模型前，还有一处需要澄清。",
+      "connecting": "正在将已记录的要素连接到模型。",
+      "retry": "重试更新摘要",
+      "open": "Build business model",
+      "build": "Complete model brief",
+      "conflictAsk": "请针对建立模型前需要解决的矛盾，问一个问题。",
+      "buildAsk": "请根据我分享的信息建立首个业务模型。缺失数字和未测量的实验效果应保持未知。如果缺少关键客户背景，只问下一个必要问题。",
+      "hint": "未知数字可以稍后补充。",
+      "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
+      "contextUpdating": "Finishing company research…",
+      "email": "研究从 {email} 开始"
+    }
+  },
+  "workspaceAi": {
+    "tools": "工具",
+    "stop": "停止",
+    "sources": "{count, plural, one {# 个来源} other {# 个来源}}",
+    "preview": "来源预览：{title}",
+    "openSource": "打开来源"
+  },
+  "customerPro": {
+    "history": {
+      "today": "今天",
+      "yesterday": "昨天",
+      "week": "过去7天",
+      "earlier": "更早"
     }
   }
 }

@@ -90,7 +90,16 @@ def build_search_provider_from_config(
         raise ValueError(f"API key is required for {provider_type.value} provider.")
 
     if provider_type == WebSearchProviderType.EXA:
-        return ExaClient(api_key=api_key, num_results=num_results)
+        return ExaClient(
+            api_key=api_key,
+            num_results=num_results,
+            timeout_seconds=_parse_positive_int_config(
+                raw_value=config.get("timeout_seconds"),
+                default=60,
+                provider_name="Exa",
+                config_key="timeout_seconds",
+            ),
+        )
     if provider_type == WebSearchProviderType.BRAVE:
         return BraveClient(
             api_key=api_key,

@@ -26,7 +26,7 @@ type ButtonContentProps =
       responsiveHideText?: boolean;
     };
 
-type ButtonProps = InteractiveStatelessProps &
+type ButtonProps = Omit<InteractiveStatelessProps, "children"> &
   ButtonContentProps & {
     /**
      * Size preset — controls gap, text size, and Container height/rounding.

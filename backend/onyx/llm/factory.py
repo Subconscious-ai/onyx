@@ -3,6 +3,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from onyx.auth.host_auth import require_host_subscription_provider
 from onyx.auth.permissions import has_global_permission
 from onyx.configs.model_configs import GEN_AI_TEMPERATURE
 from onyx.db.engine.sql_engine import get_session_with_current_tenant
@@ -480,6 +481,20 @@ def get_llm(
     reasoning_effort_user_default: ReasoningEffort | None = None,
     reasoning_effort_max: ReasoningEffort | None = None,
 ) -> LLM:
+    hosted_claude = require_host_subscription_provider(
+        provider,
+        api_key=api_key,
+        api_base=api_base,
+        # Hosted Claude uses the native OAuth adapter. Custom configuration or
+        # passthrough options can replace credentials, routing or the client.
+        has_provider_overrides=bool(
+            custom_config or model_kwargs or policy_model_kwargs
+        ),
+    )
+    if hosted_claude:
+        # Explicit routing prevents LiteLLM globals or environment variables
+        # from redirecting the subscription credential to a gateway.
+        api_base = "https://api.anthropic.com"
     if temperature is None:
         temperature = GEN_AI_TEMPERATURE
 

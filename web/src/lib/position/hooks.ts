@@ -40,7 +40,16 @@ function rowId(raw: string | null): number | null {
  * position and going to one cannot drift apart: they are the same knowledge,
  * stated once in each direction.
  */
-function hrefFor(value: AppPositionType): Route {
+export function hrefFor(value: AppPositionType, embedQuery = ""): Route {
+  if (embedQuery && ["chat", "agent", "new-session"].includes(value.location)) {
+    const query = new URLSearchParams(embedQuery);
+    if (value.location === "chat")
+      query.set(SEARCH_PARAM_NAMES.CHAT_ID, value.id);
+    if (value.location === "agent")
+      query.set(SEARCH_PARAM_NAMES.AGENT_ID, String(value.id));
+    // SAFETY: /causl is a registered route; URLSearchParams encodes every query value.
+    return `/causl?${query}` as Route;
+  }
   switch (value.location) {
     case "chat":
       return routeWithQuery("/app", {
@@ -67,7 +76,8 @@ function hrefFor(value: AppPositionType): Route {
 class AppPosition {
   constructor(
     private value: AppPositionType,
-    private router: Router
+    private router: Router,
+    private embedQuery = ""
   ) {}
 
   /**
@@ -75,7 +85,7 @@ class AppPosition {
    * middle-click and open-in-new-tab, which a navigation method cannot.
    */
   href(): Route {
-    return hrefFor(this.value);
+    return hrefFor(this.value, this.embedQuery);
   }
 
   // # NOTE (@raunakab):
@@ -106,7 +116,7 @@ class AppPosition {
     value: AppPositionType,
     { replace = false }: NavigationOptions = {}
   ) {
-    const href = hrefFor(value);
+    const href = hrefFor(value, this.embedQuery);
     if (replace) this.router.replace(href);
     else this.router.push(href);
   }
@@ -206,6 +216,21 @@ export function useAppPosition(): AppPosition {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const embedQuery = useMemo(() => {
+    if (
+      pathname !== "/causl" ||
+      searchParams.get("pageKind") !== "twenty" ||
+      searchParams.get("hostAuth") !== "1"
+    )
+      return "";
+    const query = new URLSearchParams();
+    for (const key of ["pageKind", "hostAuth", "parentOrigin", "bridge"]) {
+      const value = searchParams.get(key);
+      if (value) query.set(key, value);
+    }
+    return query.toString();
+  }, [pathname, searchParams]);
+
   const chatId = searchParams.get(SEARCH_PARAM_NAMES.CHAT_ID);
   // Parsed here so every reader gets the id as what it is. Text that is not a
   // row id names nothing, and reads the same as the parameter being absent.
@@ -216,21 +241,33 @@ export function useAppPosition(): AppPosition {
   // AppPosition is immutable, so same inputs → same instance.
   return useMemo(() => {
     if (pathname.startsWith("/app/shared/")) {
-      return new AppPosition({ location: "shared-chat" }, router);
+      return new AppPosition({ location: "shared-chat" }, router, embedQuery);
     }
     if (pathname.startsWith("/app/settings")) {
-      return new AppPosition({ location: "user-settings" }, router);
+      return new AppPosition({ location: "user-settings" }, router, embedQuery);
     }
     if (pathname.startsWith("/app/agents")) {
-      return new AppPosition({ location: "more-agents" }, router);
+      return new AppPosition({ location: "more-agents" }, router, embedQuery);
     }
     if (chatId)
-      return new AppPosition({ location: "chat", id: chatId }, router);
+      return new AppPosition(
+        { location: "chat", id: chatId },
+        router,
+        embedQuery
+      );
     if (agentId)
-      return new AppPosition({ location: "agent", id: agentId }, router);
+      return new AppPosition(
+        { location: "agent", id: agentId },
+        router,
+        embedQuery
+      );
     if (projectId) {
-      return new AppPosition({ location: "project", id: projectId }, router);
+      return new AppPosition(
+        { location: "project", id: projectId },
+        router,
+        embedQuery
+      );
     }
-    return new AppPosition({ location: "new-session" }, router);
-  }, [pathname, chatId, agentId, projectId, router]);
+    return new AppPosition({ location: "new-session" }, router, embedQuery);
+  }, [pathname, chatId, agentId, projectId, router, embedQuery]);
 }

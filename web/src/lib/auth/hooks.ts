@@ -14,6 +14,7 @@ import { logout } from "@/lib/users/svc";
 import { useCurrentUser } from "@/lib/users/hooks";
 import { isAuthPath } from "@/lib/auth/paths";
 import { fetchAuthTypeMetadata } from "@/lib/auth/svc";
+import { isHostAuthenticatedWorkspace } from "@/lib/causl/host-auth";
 
 const REFRESH_INTERVAL = 600000;
 const MIN_REFRESH_GAP_MS = REFRESH_INTERVAL - 60000;
@@ -75,7 +76,7 @@ export interface SessionWatcherResult {
  */
 export function useSessionWatcher(): SessionWatcherResult {
   const pathname = usePathname();
-  const inAuthFlow = isAuthPath(pathname);
+  const inAuthFlow = isAuthPath(pathname) || isHostAuthenticatedWorkspace();
 
   const { user, mutateUser, userError } = useCurrentUser();
   const expiryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -180,6 +181,8 @@ export function useTokenRefresh(
   const isFirstLoadRef = useRef(true);
 
   useEffect(() => {
+    // The parent renews the SDK token for every embedded API request.
+    if (isHostAuthenticatedWorkspace()) return;
     // Wait only for the initial metadata load. On persistent error we still
     // refresh so a transient /auth/type failure cannot silently kill sessions.
     if (authTypeMetadataLoading) return;

@@ -1,5 +1,6 @@
 """Native tool boundary checks; storage is mocked, no personal profiles are changed."""
 
+import json
 import os
 import unittest
 from unittest.mock import MagicMock, patch
@@ -18,8 +19,9 @@ class CompanyProfileToolTests(unittest.TestCase):
         environment.start()
         self.addCleanup(environment.stop)
         self.owner = uuid4()
+        self.emitter = MagicMock()
         self.tool = CompanyProfileTool(
-            tool_id=123, user_id=self.owner, emitter=MagicMock()
+            tool_id=123, user_id=self.owner, emitter=self.emitter
         )
         self.placement = Placement(turn_index=0)
 
@@ -47,6 +49,112 @@ class CompanyProfileToolTests(unittest.TestCase):
         self.assertEqual(save.call_args.args[0], self.owner)
         self.assertEqual(save.call_args.args[1].revision, 2)
         self.assertIn('"revision": 3', result.llm_facing_response)
+
+    def test_update_reads_current_revision_when_not_supplied(self):
+        with (
+            patch(
+                "onyx.db.burn2_profile.read_profile",
+                return_value={"correction": {"revision": 7}},
+            ) as read,
+            patch(
+                "onyx.db.burn2_profile.correct_profile",
+                return_value={"correction": {"revision": 8}},
+            ) as save,
+            patch(
+                "onyx.chat.incognito.current_turn_persists_content", return_value=True
+            ),
+            patch(
+                "onyx.server.query_and_chat.burn2.background.ensure_research",
+                return_value={"status": "queued"},
+            ),
+        ):
+            result = self.tool.run(
+                self.placement,
+                None,
+                operation="update",
+                fields={"company": "Synthetic"},
+            )
+        read.assert_called_once_with(self.owner)
+        self.assertEqual(save.call_args.args[0], self.owner)
+        self.assertEqual(save.call_args.args[1].revision, 7)
+        self.assertEqual(save.call_args.args[1].fields, {"company": "Synthetic"})
+        self.assertIn('"revision": 8', result.llm_facing_response)
+
+    def test_update_keeps_ready_source_captures_out_of_browser_and_model(self):
+        research = {
+            "status": "ready",
+            "report": "A bounded research summary.",
+            "source_urls": ["https://example.com/product"],
+            "source_captures": [
+                {
+                    "url": "https://example.com/product",
+                    "text": "Original source bytes retained for the producer only.",
+                }
+            ],
+        }
+        with (
+            patch(
+                "onyx.db.burn2_profile.correct_profile",
+                return_value={"correction": {"revision": 3}},
+            ),
+            patch(
+                "onyx.chat.incognito.current_turn_persists_content", return_value=True
+            ),
+            patch(
+                "onyx.server.query_and_chat.burn2.background.ensure_research",
+                return_value=research,
+            ),
+        ):
+            result = self.tool.run(
+                self.placement,
+                None,
+                operation="update",
+                revision=2,
+                fields={"role": "CEO"},
+            )
+        assert isinstance(result.rich_response, str)
+        outputs = {
+            "browser": self.emitter.emit.call_args.args[0].obj.data,
+            "model": json.loads(result.llm_facing_response),
+            "rich_response": json.loads(result.rich_response),
+        }
+        for destination, output in outputs.items():
+            with self.subTest(destination=destination):
+                self.assertEqual(output["research"]["status"], "ready")
+                self.assertEqual(
+                    output["research"]["source_urls"], research["source_urls"]
+                )
+                self.assertEqual(output["research"]["report"], research["report"])
+                self.assertNotIn("source_captures", output["research"])
+
+    def test_automatic_revision_still_rejects_a_concurrent_edit(self):
+        with (
+            patch(
+                "onyx.db.burn2_profile.read_profile",
+                return_value={"correction": {"revision": 7}},
+            ),
+            patch(
+                "onyx.db.burn2_profile.correct_profile",
+                side_effect=ValueError(
+                    "Company profile changed. Reload before saving."
+                ),
+            ),
+            patch(
+                "onyx.chat.incognito.current_turn_persists_content", return_value=True
+            ),
+            patch(
+                "onyx.server.query_and_chat.burn2.background.ensure_research"
+            ) as research,
+        ):
+            with self.assertRaises(ToolCallException):
+                self.tool.run(
+                    self.placement,
+                    None,
+                    operation="update",
+                    fields={"company": "Synthetic"},
+                )
+        research.assert_not_called()
+        self.emitter.emit.assert_not_called()
 
     def test_no_identity_override_or_incognito_write(self):
         with (
@@ -143,7 +251,7 @@ class CompanyProfileToolTests(unittest.TestCase):
                     fields={"company": "Synthetic"},
                 )
         research.assert_not_called()
-        self.tool.emitter.emit.assert_not_called()
+        self.emitter.emit.assert_not_called()
 
 
 if __name__ == "__main__":

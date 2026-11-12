@@ -14,6 +14,7 @@ from mcp.shared.auth import (
 from pydantic import AnyUrl
 from starlette.requests import Request
 
+from onyx.db import mcp as mcp_db
 from onyx.db.enums import (
     MCPAuthenticationPerformer,
     MCPAuthenticationType,
@@ -153,8 +154,14 @@ def _install_callback_dependencies(
     return user, db_session, user_config, hot_reload
 
 
+@pytest.mark.parametrize(
+    "agent_access",
+    [None, True, False],
+    ids=["server-access", "shared-agent-viewer", "revoked-agent-viewer"],
+)
 def test_auto_discovery_callback_dispatches_claimed_flow(
     monkeypatch: pytest.MonkeyPatch,
+    agent_access: bool | None,
 ) -> None:
     server = _server()
     flow = _flow(server)
@@ -163,6 +170,24 @@ def test_auto_discovery_callback_dispatches_claimed_flow(
     )
     complete_flow = AsyncMock()
     monkeypatch.setattr(api, "complete_mcp_oauth_authorization", complete_flow)
+    if agent_access is not None:
+        db_session.scalars.return_value.all.return_value = [7]
+        monkeypatch.setattr(api, "user_can_access_mcp_server", lambda *_args: False)
+        monkeypatch.setattr(api, "can_manage_mcp_server", lambda *_args: False)
+        monkeypatch.setattr(
+            mcp_db, "user_can_access_persona", lambda *_args: agent_access
+        )
+    if agent_access is False:
+        with pytest.raises(OnyxError, match="no longer have access"):
+            asyncio.run(
+                api.process_oauth_callback(
+                    _request(state=_STATE, code="authorization-code"), db_session, user
+                )
+            )
+        complete_flow.assert_not_awaited()
+        db_session.commit.assert_not_called()
+        hot_reload.assert_not_called()
+        return
     response = asyncio.run(
         api.process_oauth_callback(
             _request(state=_STATE, code="authorization-code"),

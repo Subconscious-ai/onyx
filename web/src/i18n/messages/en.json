@@ -1,4 +1,21 @@
 {
+  "causlWorkspace": {
+    "cancelConnection": "Keep editing",
+    "connectWorkspace": "Connect workspace",
+    "connectionRequired": "Connect your workspace to continue. Your message is retained.",
+    "connectionFailed": "The workspace connection failed. Your message is retained. Try again.",
+    "notConfigured": "Open this assistant from your causl-kb workspace. If it remains unavailable, contact your administrator.",
+    "signin": "Sign in with the same organization account you use in causl-kb. Then reopen this conversation.",
+    "signInAction": "Sign in to Onyx",
+    "reopen": "Reopen conversation",
+    "access": "Check your organization account and connect its Library. After connecting, reopen this conversation.",
+    "connectLibrary": "Connect Library",
+    "connecting": "Connecting…",
+    "unavailable": "The workspace context is unavailable. Your saved conversation is retained.",
+    "opening": "Opening your workspace conversation…",
+    "modelContextUnavailable": "Models page capture failed or exceeded the size limit. Open a complete model and retry. Local drafts remain unchanged.",
+    "contextChanged": "The workspace changed before this message was sent. Review the current context and send it again."
+  },
   "accountPopover": {
     "accountFallback": {
       "label": "Account"
@@ -9294,7 +9311,8 @@
         },
         "stopButton": {
           "ariaLabel": "Stop generating",
-          "tooltip": "Stop · esc"
+          "tooltip": "Stop · esc",
+          "label": "Stop"
         }
       },
       "buildFileCard": {
@@ -13272,6 +13290,17 @@
       }
     },
     "chatSearch": {
+      "pro": {
+        "all": "All",
+        "actions": "Actions",
+        "chats": "Chats",
+        "projects": "Projects",
+        "searchIn": "Search in",
+        "close": "Close search",
+        "loading": "Loading…",
+        "searching": "Searching…",
+        "loadMore": "Load more conversations"
+      },
       "createNamedProject": {
         "label": "Create New Project \"<name>{projectName}</name>\""
       },
@@ -13838,6 +13867,15 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "Source: {quote}",
+    "factCitationConversation": "Conversation",
+    "factCitationUnavailable": "Source unavailable",
+    "savedMarketFacts": "Saved market facts",
+    "marketMemoryUnavailable": "Shared market memory is unavailable.",
+    "marketMemoryLoading": "Reading saved market facts…",
+    "marketMemorySource": "Accepted facts from the shared market Library.",
+    "marketMemoryEmpty": "No accepted market facts yet. Interview notes remain drafts until reviewed.",
+    "marketMemoryBounded": "Showing a limited view. Beca can retrieve more facts through the Library.",
     "companyProfile": {
       "title": "Company profile",
       "description": "Your corrections take precedence over PDL. This is your private working profile, not a shared company record.",
@@ -13849,6 +13887,13 @@
       "cancel": "Cancel",
       "conflict": "The profile changed elsewhere. Cancel and reopen before saving. Your edits have not been saved.",
       "failed": "Could not save corrections. Your edits are still here; try again.",
+      "refresh": "Refresh PDL and public research",
+      "refreshing": "Refreshing preparation…",
+      "refreshDescription": "Run a new PDL lookup and public research. Your interview and saved context stay available.",
+      "refreshFailed": "Could not confirm preparation. Retry to check the same request without a duplicate lookup.",
+      "refreshStarted": "Preparation request saved. Public research status appears in the brief.",
+      "refreshNoMatch": "No fresh PDL match. Previous company context and corrections stay unchanged.",
+      "refreshUnavailable": "PDL refresh unavailable. Previous company context and corrections stay unchanged.",
       "fields": {
         "name": "Name",
         "role": "Role",
@@ -13879,6 +13924,7 @@
     "executiveStudio": "EXECUTIVE STUDIO",
     "interviewSpecialists": "Interview specialists",
     "workingBusinessBrief": "Working business brief",
+    "briefControl": "Brief",
     "theWorkingPicture": "THE WORKING PICTURE",
     "interviewDraft": "INTERVIEW DRAFT",
     "01TheObjective": "01 / THE OBJECTIVE",
@@ -13923,6 +13969,10 @@
     "sourceDisclosure": "Source",
     "automaticDraftBoundary": "The draft updates after each answer. Market evidence changes only after review.",
     "reviewInGuesstimate": "Open business model",
+    "openingSpeaker": "Sarah · Customer journey",
+    "openingQuestion": "I’m Beca. What would you most like to change about your business?",
+    "interviewTeam": "Interview team",
+    "retryDraft": "Retry draft update",
     "becaName": "Beca",
     "whatNeedsToChange": "What needs to change?",
     "researchContextAndLenses": "Research context and specialist lenses",
@@ -13944,6 +13994,51 @@
       "interview": "Executive interview",
       "design": "Experiment design",
       "analytics": "Experiment analytics"
+    },
+    "progress": {
+      "title": "Your first model",
+      "count": "{count} of 3 essentials captured",
+      "essentials": "Model essentials",
+      "goal": "Goal",
+      "measure": "Success measure",
+      "journey": "Customer journey",
+      "captured": "Captured",
+      "missing": "Needs detail",
+      "goalNext": "What would you like to improve?",
+      "measureNext": "What outcome and timeframe would make this a success?",
+      "journeyNext": "Who is the customer, and how do they reach the decision?",
+      "goalAsk": "Help me clarify the business goal. Use my answers and ask only the most useful missing question.",
+      "measureAsk": "Help me define the success measure and timeframe. Use what I have already told you.",
+      "journeyAsk": "Help me outline the customer journey. Use my answers and ask only the most useful missing question.",
+      "failed": "Your answers are saved. The brief needs another attempt.",
+      "updating": "Updating your brief…",
+      "ready": "Enough for a first model.",
+      "conflict": "One point needs clarification before the model.",
+      "connecting": "Your essentials are captured. Connect them into a first model.",
+      "retry": "Retry brief update",
+      "open": "Build business model",
+      "build": "Complete model brief",
+      "conflictAsk": "Help me resolve the conflicting statements in the saved brief. Ask one clear question; do not choose an answer for me.",
+      "buildAsk": "Build a first business model from what I have shared. Keep missing numbers and unmeasured experiment effects unknown. If a critical piece of customer context is missing, ask only that next question.",
+      "hint": "Unknown numbers can wait.",
+      "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
+      "contextUpdating": "Finishing company research…",
+      "email": "Research starts from {email}"
+    }
+  },
+  "workspaceAi": {
+    "tools": "Tools",
+    "stop": "Stop",
+    "sources": "{count, plural, one {# source} other {# sources}}",
+    "preview": "Preview source: {title}",
+    "openSource": "Open source"
+  },
+  "customerPro": {
+    "history": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "week": "Previous 7 days",
+      "earlier": "Earlier"
     }
   }
 }

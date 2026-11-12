@@ -1,4 +1,6 @@
 import { isExecutiveAgent, visibleInterviewText } from "@/lib/executive/brief";
+import { citeConversationQuotes } from "@/lib/executive/conversationCitations";
+import FactCitation from "@/sections/executive/FactCitation";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import ReactMarkdown, { Components } from "react-markdown";
@@ -344,6 +346,17 @@ export const MessageTextRenderer: MessageRenderer<
     () => processContent(displayedContent),
     [displayedContent]
   );
+  const citedContent = useMemo(
+    () =>
+      citeConversationQuotes(
+        processedContent,
+        isExecutiveAgent(state.agent) ? state.conversationSource : undefined
+      ),
+    [processedContent, state.agent, state.conversationSource]
+  );
+  const conversationQuotesRef = useRef(citedContent.quotes);
+  // oxlint-disable-next-line react-doctor/no-ref-current-in-render -- same render-phase mirror as markdown state below
+  conversationQuotesRef.current = citedContent.quotes;
 
   // Stable-identity components for ReactMarkdown. Dynamic data (`state`,
   // `processedContent`) flows through refs so the callback identities
@@ -354,11 +367,15 @@ export const MessageTextRenderer: MessageRenderer<
   stateRef.current = state;
   const processedContentRef = useRef(processedContent);
   // oxlint-disable-next-line react-doctor/no-ref-current-in-render -- render-phase mirror keeps markdownComponents identities stable (see block comment above)
-  processedContentRef.current = processedContent;
+  processedContentRef.current = citedContent.markdown;
 
   const markdownComponents = useMemo<Components>(
     () => ({
       a: ({ href, children }) => {
+        const quote = href
+          ? conversationQuotesRef.current.get(href)
+          : undefined;
+        if (quote) return <FactCitation quote={quote} />;
         const s = stateRef.current;
         const imageFileId = extractChatImageFileId(
           href,
@@ -452,8 +469,8 @@ export const MessageTextRenderer: MessageRenderer<
   // `[*]() ` is rendered by the anchor component as an inline blinking
   // caret, keeping it flush with the trailing character.
   const markdownInput = shouldShowCursor
-    ? processedContent + " [*]() "
-    : processedContent;
+    ? citedContent.markdown + " [*]() "
+    : citedContent.markdown;
 
   return children([
     {

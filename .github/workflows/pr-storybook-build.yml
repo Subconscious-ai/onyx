@@ -1,6 +1,6 @@
 name: Storybook Build
 concurrency:
-  group: Storybook-Build-${{ github.workflow }}-${{ github.head_ref || github.event.workflow_run.head_branch || github.run_id }}
+  group: Storybook-Build-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 # Advisory. Storybook builds through its own Vite pipeline, so it breaks

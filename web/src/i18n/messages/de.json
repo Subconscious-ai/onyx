@@ -1,4 +1,21 @@
 {
+  "causlWorkspace": {
+    "cancelConnection": "Weiter bearbeiten",
+    "connectWorkspace": "Arbeitsbereich verbinden",
+    "connectionRequired": "Verbinden Sie Ihren Arbeitsbereich, um fortzufahren. Ihre Nachricht bleibt erhalten.",
+    "connectionFailed": "Die Verbindung ist fehlgeschlagen. Ihre Nachricht bleibt erhalten. Versuchen Sie es erneut.",
+    "notConfigured": "Öffnen Sie den Assistenten in Ihrem causl-kb-Arbeitsbereich. Falls er nicht verfügbar bleibt, wenden Sie sich an die Administration.",
+    "signin": "Melden Sie sich mit demselben Organisationskonto wie in causl-kb an. Öffnen Sie danach diese Unterhaltung erneut.",
+    "signInAction": "Bei Onyx anmelden",
+    "reopen": "Unterhaltung erneut öffnen",
+    "access": "Prüfen Sie Ihr Organisationskonto und verbinden Sie die Bibliothek. Öffnen Sie danach diese Unterhaltung erneut.",
+    "connectLibrary": "Bibliothek verbinden",
+    "connecting": "Verbindung wird hergestellt…",
+    "unavailable": "Der Kontext ist nicht verfügbar. Ihre gespeicherte Unterhaltung bleibt erhalten.",
+    "opening": "Ihre Unterhaltung wird geöffnet…",
+    "modelContextUnavailable": "Die Erfassung der Models-Seite ist fehlgeschlagen oder hat die Größenbegrenzung überschritten. Öffnen Sie ein vollständiges Modell und versuchen Sie es erneut. Lokale Entwürfe bleiben unverändert.",
+    "contextChanged": "Der Arbeitsbereich wurde vor dem Senden geändert. Prüfen Sie den aktuellen Kontext und senden Sie die Nachricht erneut."
+  },
   "accountPopover": {
     "accountFallback": {
       "label": "Konto"
@@ -9294,7 +9311,8 @@
         },
         "stopButton": {
           "ariaLabel": "Generierung stoppen",
-          "tooltip": "Stopp · Esc"
+          "tooltip": "Stopp · Esc",
+          "label": "Stoppen"
         }
       },
       "buildFileCard": {
@@ -13272,6 +13290,17 @@
       }
     },
     "chatSearch": {
+      "pro": {
+        "all": "Alle",
+        "actions": "Aktionen",
+        "chats": "Chats",
+        "projects": "Projekte",
+        "searchIn": "Suchen in",
+        "close": "Suche schließen",
+        "loading": "Laden…",
+        "searching": "Suche…",
+        "loadMore": "Weitere Gespräche laden"
+      },
       "createNamedProject": {
         "label": "Neues Projekt \"<name>{projectName}</name>\" erstellen"
       },
@@ -13838,6 +13867,15 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "Quelle: {quote}",
+    "factCitationConversation": "Unterhaltung",
+    "factCitationUnavailable": "Quelle nicht verfügbar",
+    "savedMarketFacts": "Gespeicherte Marktfakten",
+    "marketMemoryUnavailable": "Der gemeinsame Marktspeicher ist nicht verfügbar.",
+    "marketMemoryLoading": "Gespeicherte Marktfakten werden gelesen…",
+    "marketMemorySource": "Bestätigte Fakten aus der gemeinsamen Marktbibliothek.",
+    "marketMemoryEmpty": "Noch keine bestätigten Marktfakten. Interviewnotizen bleiben bis zur Prüfung Entwürfe.",
+    "marketMemoryBounded": "Begrenzte Ansicht. Beca kann weitere Fakten aus der Bibliothek abrufen.",
     "companyProfile": {
       "title": "Unternehmensprofil",
       "description": "Ihre Korrekturen haben Vorrang vor PDL. Dies ist Ihr privates Arbeitsprofil, kein gemeinsamer Unternehmensdatensatz.",
@@ -13849,6 +13887,13 @@
       "cancel": "Abbrechen",
       "conflict": "Das Profil wurde andernorts geändert. Brechen Sie ab und öffnen Sie es erneut. Ihre Änderungen wurden nicht gespeichert.",
       "failed": "Korrekturen konnten nicht gespeichert werden. Ihre Änderungen sind noch vorhanden; versuchen Sie es erneut.",
+      "refresh": "Refresh PDL and public research",
+      "refreshing": "Refreshing preparation…",
+      "refreshDescription": "Run a new PDL lookup and public research. Your interview and saved context stay available.",
+      "refreshFailed": "Could not confirm preparation. Retry to check the same request without a duplicate lookup.",
+      "refreshStarted": "Preparation request saved. Public research status appears in the brief.",
+      "refreshNoMatch": "No fresh PDL match. Previous company context and corrections stay unchanged.",
+      "refreshUnavailable": "PDL refresh unavailable. Previous company context and corrections stay unchanged.",
       "fields": {
         "name": "Name",
         "role": "Position",
@@ -13879,6 +13924,7 @@
     "executiveStudio": "EXECUTIVE STUDIO",
     "interviewSpecialists": "Interview specialists",
     "workingBusinessBrief": "Working business brief",
+    "briefControl": "Briefing",
     "theWorkingPicture": "THE WORKING PICTURE",
     "interviewDraft": "INTERVIEW DRAFT",
     "01TheObjective": "01 / THE OBJECTIVE",
@@ -13923,6 +13969,10 @@
     "sourceDisclosure": "Source",
     "automaticDraftBoundary": "The draft updates after each answer. Market evidence changes only after review.",
     "reviewInGuesstimate": "In business model prüfen",
+    "openingSpeaker": "Sarah · Kundenreise",
+    "openingQuestion": "Ich bin Beca. Was möchten Sie an Ihrem Unternehmen am liebsten verändern?",
+    "interviewTeam": "Interviewteam",
+    "retryDraft": "Entwurf erneut aktualisieren",
     "becaName": "Beca",
     "whatNeedsToChange": "Was muss sich ändern?",
     "researchContextAndLenses": "Recherchekontext und Fachperspektiven",
@@ -13944,6 +13994,51 @@
       "interview": "Führungskräfteinterview",
       "design": "Experimentplanung",
       "analytics": "Experimentanalyse"
+    },
+    "progress": {
+      "title": "Ihr erstes Modell",
+      "count": "{count} von 3 Grundlagen erfasst",
+      "essentials": "Modellgrundlagen",
+      "goal": "Ziel",
+      "measure": "Erfolgsmaß",
+      "journey": "Kundenreise",
+      "captured": "Erfasst",
+      "missing": "Details fehlen",
+      "goalNext": "Was möchten Sie verbessern?",
+      "measureNext": "Welches Ergebnis und welcher Zeitraum bedeuten Erfolg?",
+      "journeyNext": "Wer ist der Kunde und wie gelangt er zur Entscheidung?",
+      "goalAsk": "Hilf mir, das Geschäftsziel zu klären. Nutze meine Antworten und stelle nur die wichtigste noch offene Frage.",
+      "measureAsk": "Hilf mir, Erfolgsmaß und Zeitraum anhand meiner bisherigen Angaben festzulegen.",
+      "journeyAsk": "Hilf mir, die Kundenreise zu beschreiben. Nutze meine Antworten und stelle nur die wichtigste noch offene Frage.",
+      "failed": "Ihre Antworten sind gespeichert. Die Zusammenfassung benötigt einen neuen Versuch.",
+      "updating": "Zusammenfassung wird aktualisiert…",
+      "ready": "Genug für ein erstes Modell.",
+      "conflict": "Ein Punkt muss vor dem Modell geklärt werden.",
+      "connecting": "Die Grundlagen sind erfasst. Verbinden Sie sie zu einem ersten Modell.",
+      "retry": "Aktualisierung erneut versuchen",
+      "open": "Geschäftsmodell erstellen",
+      "build": "Modellentwurf vervollständigen",
+      "conflictAsk": "Hilf mir, widersprüchliche Aussagen in der gespeicherten Zusammenfassung zu klären. Stelle eine klare Frage und wähle nicht die Antwort für mich.",
+      "buildAsk": "Erstelle ein erstes Modell aus meinen Angaben. Fehlende Zahlen und ungemessene Effekte bleiben unbekannt. Falls wesentlicher Kundenkontext fehlt, frage nur danach.",
+      "hint": "Unbekannte Zahlen können warten.",
+      "readyHint": "Erstellt und speichert Ihr privates Modell. Annahmen bleiben gekennzeichnet.",
+      "contextUpdating": "Unternehmensrecherche wird abgeschlossen…",
+      "email": "Die Recherche beginnt mit {email}"
+    }
+  },
+  "workspaceAi": {
+    "tools": "Werkzeuge",
+    "stop": "Stoppen",
+    "sources": "{count, plural, one {# Quelle} other {# Quellen}}",
+    "preview": "Quellenvorschau: {title}",
+    "openSource": "Quelle öffnen"
+  },
+  "customerPro": {
+    "history": {
+      "today": "Heute",
+      "yesterday": "Gestern",
+      "week": "Letzte 7 Tage",
+      "earlier": "Älter"
     }
   }
 }

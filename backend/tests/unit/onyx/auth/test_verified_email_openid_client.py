@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 from httpx_oauth.exceptions import GetIdEmailError
-from httpx_oauth.oauth2 import GetAccessTokenError
+from httpx_oauth.oauth2 import GetAccessTokenError, OAuth2Token
 
 from onyx.auth.oidc_client import (
     OpenIDConfigurationIssuerMismatch,
@@ -37,6 +37,7 @@ def _build_client(
     discovery: dict[str, Any],
     config_url: str = _CONFIG_URL,
     require_verified_email: bool = False,
+    auto_join_verified_email_domains: list[str] | None = None,
 ) -> VerifiedEmailOpenID:
     discovery_response = MagicMock()
     discovery_response.json.return_value = discovery
@@ -50,6 +51,7 @@ def _build_client(
             "csecret",
             config_url,
             require_verified_email=require_verified_email,
+            auto_join_verified_email_domains=auto_join_verified_email_domains,
         )
 
 
@@ -310,3 +312,80 @@ def test_exchange_failure_summarizes_non_oauth_error_body() -> None:
 def test_exchange_failure_without_response_logs_message_only() -> None:
     detail = _exchange_log_detail(GetAccessTokenError("connection failed"))
     assert detail == "connection failed"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "email,verified,strict,domains,admitted,rejected",
+    [
+        ("new@subconscious.ai", True, True, ["subconscious.ai"], True, False),
+        ("new@SUBCONSCIOUS.AI", True, True, ["subconscious.ai"], True, False),
+        ("new@subconscious.ai", False, True, ["subconscious.ai"], False, True),
+        ("new@subconscious.ai", None, True, ["subconscious.ai"], False, True),
+        ("new@subconscious.ai", True, False, ["subconscious.ai"], False, False),
+        ("new@subconscious.ai", True, True, [], False, False),
+        ("new@sub.subconscious.ai", True, True, ["subconscious.ai"], False, False),
+        ("new@subconscious.ai.evil", True, True, ["subconscious.ai"], False, False),
+        ("new@outside.com", True, True, ["subconscious.ai"], False, False),
+        ("new@subconscious.ai\n", True, True, ["subconscious.ai"], False, False),
+    ],
+)
+async def test_verified_company_admission_reaches_native_callback(
+    monkeypatch: pytest.MonkeyPatch,
+    email: str,
+    verified: bool | None,
+    strict: bool,
+    domains: list[str],
+    admitted: bool,
+    rejected: bool,
+) -> None:
+    from unittest.mock import AsyncMock
+
+    from fastapi import Request, Response
+
+    import onyx.auth.users as users
+    from onyx.error_handling.exceptions import OnyxError
+
+    client = _build_client(
+        _discovery(),
+        require_verified_email=strict,
+        auto_join_verified_email_domains=domains,
+    )
+    claims: dict[str, Any] = {"sub": "company-sub", "email": email}
+    if verified is not None:
+        claims["email_verified"] = verified
+    _with_userinfo(client, claims)
+    manager = MagicMock()
+    user = MagicMock(is_active=True)
+    manager.oauth_callback = AsyncMock(return_value=user)
+    manager.on_after_login = AsyncMock()
+    backend = MagicMock()
+    backend.login = AsyncMock(return_value=Response())
+    monkeypatch.setattr(users, "capture_oauth_login_claims", AsyncMock())
+    marker = users.SESSION_TENANT_OVERRIDE_CONTEXTVAR.set("public")
+    try:
+        operation = users.complete_login_flow(
+            oauth_client=client,
+            token=OAuth2Token({"access_token": "test-token", "token_type": "Bearer"}),
+            state_data={},
+            request=Request({"type": "http", "headers": []}),
+            user_manager=manager,
+            backend=backend,
+            strategy=MagicMock(),
+            associate_by_email=False,
+            is_verified_by_default=True,
+        )
+        if rejected:
+            with pytest.raises(OnyxError):
+                await operation
+            manager.oauth_callback.assert_not_awaited()
+            backend.login.assert_not_awaited()
+        else:
+            await operation
+            assert manager.oauth_callback.await_args is not None
+            assert (
+                manager.oauth_callback.await_args.kwargs["auto_join_verified_email"]
+                is admitted
+            )
+    finally:
+        users.SESSION_TENANT_OVERRIDE_CONTEXTVAR.reset(marker)

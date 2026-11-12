@@ -1,6 +1,9 @@
+import importlib
+import os
 from typing import cast
 from unittest.mock import MagicMock, patch
 
+import pytest
 from sentry_sdk.types import Event
 
 import onyx.configs.sentry as sentry_module
@@ -85,3 +88,39 @@ class TestAddInstanceTags:
         assert result is not None
         assert result["tags"]["existing"] == "tag"
         assert result["tags"]["instance_id"] == "test-uuid-1234"
+
+
+def test_sentry_is_not_initialised_under_pytest() -> None:
+    """The root conftest pops SENTRY_DSN, so no entrypoint can report."""
+    import sentry_sdk
+
+    from shared_configs import configs
+
+    assert "SENTRY_DSN" not in os.environ
+    assert configs.SENTRY_DSN is None
+    assert not sentry_sdk.get_client().is_active()
+
+
+def test_sentry_environment_defaults_to_development(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from shared_configs import configs
+
+    monkeypatch.delenv("SENTRY_ENVIRONMENT", raising=False)
+    try:
+        assert importlib.reload(configs).SENTRY_ENVIRONMENT == "development"
+    finally:
+        monkeypatch.undo()
+        importlib.reload(configs)
+
+
+def test_init_sentry_sends_configured_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from shared_configs import configs
+
+    monkeypatch.setattr(configs, "SENTRY_ENVIRONMENT", "staging")
+    with patch("sentry_sdk.init") as mock_init:
+        sentry_module.init_sentry(traces_sample_rate=0.0)
+
+    assert mock_init.call_args.kwargs["environment"] == "staging"

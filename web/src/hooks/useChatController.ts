@@ -84,6 +84,7 @@ import { ProjectFile, useProjectsContext } from "@/lib/projects/providers";
 import { useIncognito } from "@/providers/IncognitoProvider";
 import { projectFilesToFileDescriptors } from "@/lib/projects/utils";
 import { useSharedSearchFilters } from "@/lib/searchFilters/providers";
+import type { CauslSelection } from "@/lib/causl/types";
 
 const SYSTEM_MESSAGE_ID = -3;
 
@@ -103,7 +104,11 @@ export interface OnSubmitProps {
   modelOverride?: LlmDescriptor;
   regenerationRequest?: RegenerationRequest | null;
   // Additional context injected into the LLM call but not stored/shown in chat.
+  twentyContextId?: string;
   additionalContext?: string;
+  causlSelection?: CauslSelection;
+  onInputAccepted?: () => void;
+  onInputRejected?: () => void;
   /** When 2+ models, triggers multi-model parallel generation via backend. */
   selectedModels?: SelectedModel[];
 }
@@ -389,11 +394,17 @@ export default function useChatController({
       isSeededChat,
       modelOverride,
       regenerationRequest,
+      twentyContextId,
       additionalContext,
+      causlSelection,
+      onInputAccepted,
+      onInputRejected,
       selectedModels,
     }: OnSubmitProps) => {
       // Read at submit time so no caller can capture a stale value.
       const incognito = incognitoEnabledRef.current ?? false;
+      // Wait before touching input or session state; unresolved is not agent 0.
+      if ((!incognito && !activeAgent) || llmManager.isLoadingProviders) return;
       const isMultiModel =
         !regenerationRequest && (selectedModels?.length ?? 0) >= 2;
       const projectId = searchParams.get(SEARCH_PARAM_NAMES.PROJECT_ID);
@@ -492,6 +503,7 @@ export default function useChatController({
       }
 
       if (currentChatState != "input") {
+        onInputRejected?.();
         if (currentChatState == "uploading") {
           toast.error("Please wait for the content to upload");
         } else {
@@ -794,6 +806,7 @@ export default function useChatController({
         chatSessionId: frozenSessionId,
       });
       resetInputBar();
+      onInputAccepted?.();
 
       let answer = "";
 
@@ -1105,7 +1118,9 @@ export default function useChatController({
               : undefined,
           forcedToolId: effectiveForcedToolId,
           origin: messageOrigin,
+          twentyContextId,
           additionalContext,
+          causlSelection,
           llmOverrides: isMultiModel
             ? selectedModels!.map((m) => ({
                 model_provider: m.name,
@@ -1149,6 +1164,20 @@ export default function useChatController({
               setStreamingStartTime(frozenSessionId, Date.now());
             }
 
+            if (packet && typeof packet === "object" && "obj" in packet) {
+              const object = packet.obj;
+              if (
+                object &&
+                typeof object === "object" &&
+                "type" in object &&
+                object.type === "custom_tool_delta" &&
+                "data" in object
+              ) {
+                window.dispatchEvent(
+                  new CustomEvent("models:tool-result", { detail: object.data })
+                );
+              }
+            }
             if ((packet as MessageResponseIDInfo).user_message_id) {
               newUserMessageId = (packet as MessageResponseIDInfo)
                 .user_message_id;
@@ -1488,6 +1517,7 @@ export default function useChatController({
       searchFilters.selectedTags,
       searchFilters.timeRange,
       llmManager.currentLlm,
+      llmManager.isLoadingProviders,
       llmManager.temperature,
       llmManager.hasTemperatureOverride,
       llmManager.persistOverrides,
@@ -1603,7 +1633,7 @@ export default function useChatController({
   );
 
   useEffect(() => {
-    if (!llmManager.hasAnyProvider) return;
+    if (llmManager.isLoadingProviders || !llmManager.hasAnyProvider) return;
 
     let cancelled = false;
 
@@ -1648,6 +1678,7 @@ export default function useChatController({
     currentSessionId,
     existingChatSessionId,
     activeAgent?.id,
+    llmManager.isLoadingProviders,
     llmManager.hasAnyProvider,
     llmManager.currentLlm.modelConfigurationId,
   ]);

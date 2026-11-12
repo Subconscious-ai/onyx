@@ -9,6 +9,10 @@ give your LLMs web search.
 
 All access controls are managed within the main Onyx application.
 
+This standalone service exposes Onyx search to external MCP clients.
+The service is separate from [Beca's per-user Library connection](../../../docs/subconscious/causl-workspace.md#configuration).
+An Onyx bearer token does not replace Library OAuth or grant access to another organization.
+
 ### Authentication
 
 Provide an Onyx Personal Access Token or API Key in the `Authorization` header as a Bearer token.
@@ -84,17 +88,34 @@ Most MCP clients support HTTP transport with custom headers. Refer to your clien
 The server provides three tools for searching and retrieving information:
 
 1. `search_indexed_documents`
-Search the user's private knowledge base indexed in Onyx. Returns ranked documents with content snippets, scores, and metadata.
+Search the user's private knowledge base indexed in Onyx. Returns `{"results": [...]}` in relevance order.
+Each result contains `title`, `url`, `source_type`, `content`, and `updated_at`. The response contains no numeric score.
+`content` contains the selected document chunk, with the search blurb as a fallback.
 
 Pass `agent` with an agent name to run the search as that Onyx agent. The search then applies the agent's knowledge scope (document sets, attached documents, start date) and its configured model. An unresolvable name returns an error listing the agents available to the user, so no lookup call is needed first.
 
 `agent` and `document_set_names` are mutually exclusive. Explicit document sets replace an agent's knowledge scope rather than narrowing it, so passing both is rejected instead of silently returning out-of-scope results.
+
+Optional filters include `source_types` and an ISO 8601 `time_cutoff`.
+The search skips invalid source names. An invalid time value logs a warning and applies no time filter.
+Clients that require a strict time boundary must validate the timestamp before sending a request.
+`skip_query_expansion` defaults to false. Skipping expansion does not disable the rest of the search pipeline.
 
 2. `search_web`
 Search the public internet for current events and general knowledge. Returns web search results with titles, URLs, and snippets.
 
 3. `open_urls`
 Retrieve the complete text content from specific web URLs. Useful for fetching full page content after finding relevant URLs via `search_web`.
+
+### Errors and source owners
+
+Tool failures can return `{"error": "...", "results": []}` as a normal MCP result.
+Check `error` before interpreting an empty result as no matching evidence.
+Authentication failure or an unreachable API `/me` rejects the bearer token.
+The unauthenticated `/health` response proves service availability, not token validity or search access.
+
+The catalog comes from [tool registrations](tools/search.py) and [resource registrations](resources/__init__.py).
+[Token verification](auth.py) delegates to the API on each request.
 
 ### Resources
 

@@ -63,6 +63,7 @@ from onyx.db.mcp import (
     update_mcp_server__no_commit,
     upsert_user_connection_config,
     user_can_access_mcp_server,
+    user_can_authenticate_attached_mcp_server,
 )
 from onyx.db.models import MCPConnectionConfig, Tool, User
 from onyx.db.models import MCPServer as DbMCPServer
@@ -656,7 +657,10 @@ async def _connect_oauth(
 
     if is_admin:
         _ensure_mcp_server_owner_or_admin(mcp_server, user)
-    elif not user_can_access_mcp_server(user, server_id, db):
+    elif not (
+        user_can_access_mcp_server(user, server_id, db)
+        or user_can_authenticate_attached_mcp_server(user, server_id, db)
+    ):
         raise OnyxError(
             OnyxErrorCode.UNAUTHORIZED,
             "You do not have access to this MCP server.",
@@ -927,9 +931,11 @@ async def process_oauth_callback(
     except ValueError as error:
         raise OnyxError(OnyxErrorCode.NOT_FOUND, "MCP server not found") from error
 
-    if not user_can_access_mcp_server(
-        user, mcp_server.id, db_session
-    ) and not can_manage_mcp_server(user, mcp_server):
+    if not (
+        user_can_access_mcp_server(user, mcp_server.id, db_session)
+        or user_can_authenticate_attached_mcp_server(user, mcp_server.id, db_session)
+        or can_manage_mcp_server(user, mcp_server)
+    ):
         raise OnyxError(
             OnyxErrorCode.UNAUTHORIZED,
             "You no longer have access to or management authority for this MCP server.",

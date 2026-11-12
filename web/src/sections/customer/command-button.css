@@ -1,0 +1,95 @@
+/* KokonutUI Command Button v2.0.0 (MIT). Provenance: CommandButton.tsx.
+   Shared tokens replace the adopted palette. Opal owns control semantics. */
+.customer-command-button {
+  position: relative;
+  min-inline-size: 0;
+  inline-size: 100%;
+}
+
+.customer-command-button > .interactive-container {
+  justify-content: flex-start;
+  min-block-size: 44px;
+  padding-inline: var(--sp-3) calc(var(--sp-3) + 2rem);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-adopted) !important;
+  background: var(--backgroundColor);
+  color: var(--color);
+  --interactive-foreground-icon: var(--color);
+  transition:
+    background-color var(--dur-fast) var(--ease-causal),
+    border-color var(--dur-fast) var(--ease-causal);
+}
+
+.customer-command-button > .interactive-container > div {
+  min-inline-size: 0;
+  overflow: hidden;
+}
+
+.customer-command-button > .interactive-container:hover,
+.customer-command-button > .interactive-container:active,
+.customer-command-button[data-selected] > .interactive-container {
+  background: var(--bg-2);
+}
+
+.customer-command-button > .interactive-container:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.customer-command-button[data-folded] > .interactive-container {
+  justify-content: center;
+  padding-inline: var(--sp-2);
+}
+
+.customer-command-button__shortcut {
+  position: absolute;
+  inset-inline-end: var(--sp-2);
+  inset-block-start: 50%;
+  display: flex;
+  translate: 0 -50%;
+  pointer-events: none;
+  color: var(--color);
+}
+
+.customer-command-button__key-base {
+  display: inline-flex;
+  border-radius: calc(var(--radius-adopted) * 0.6);
+  background: var(--hairline);
+}
+
+.customer-command-button__keycap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 1.5rem;
+  block-size: 1.5rem;
+  margin-block-end: 2px;
+  padding-inline: var(--sp-1);
+  border: 1px solid var(--hairline);
+  border-radius: calc(var(--radius-adopted) * 0.6);
+  background: var(--bg-2);
+  transition: translate var(--dur-fast) var(--ease-causal);
+}
+
+.customer-command-button__keycap > span {
+  font-family: var(--font-mono);
+  font-size: var(--fs-meta);
+}
+
+.customer-command-button:has(> .interactive-container:active)
+  .customer-command-button__keycap {
+  translate: 0 2px;
+  transition-duration: 75ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-command-button > .interactive-container,
+  .customer-command-button__keycap {
+    transition: none;
+  }
+
+  .customer-command-button:has(> .interactive-container:active)
+    .customer-command-button__keycap {
+    translate: none;
+  }
+}

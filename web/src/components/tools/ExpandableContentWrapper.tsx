@@ -9,6 +9,7 @@ import { FileDescriptor } from "@/app/app/interfaces";
 import { cn } from "@opal/utils";
 import PreviewModal from "@/sections/modals/PreviewModal";
 import { MinimalOnyxDocument } from "@/lib/search/interfaces";
+import { downloadFile as download } from "@/lib/download";
 
 export interface ExpandableContentWrapperProps {
   fileDescriptor: FileDescriptor;
@@ -32,13 +33,9 @@ export default function ExpandableContentWrapper({
   const toggleExpand = () => setExpanded((prev) => !prev);
 
   const downloadFile = () => {
-    const a = document.createElement("a");
-    a.href = `api/chat/file/${fileDescriptor.id}`;
-    a.download = fileDescriptor.name || "download.csv";
-    a.setAttribute("download", fileDescriptor.name || "download.csv");
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    download(fileDescriptor.name || "download.csv", {
+      url: `/api/chat/file/${fileDescriptor.id}`,
+    });
   };
 
   const Content = (

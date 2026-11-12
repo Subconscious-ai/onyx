@@ -23,6 +23,7 @@ import { useAppPosition } from "@/lib/position/hooks";
 import { useDraft, draftKey } from "@/hooks/useDraft";
 import { getPastedFilesIfNoText } from "@/lib/clipboard";
 import PasteTilePopover from "@/sections/input/PasteTilePopover";
+import AIInputSearch from "@/sections/customer/AIInputSearch";
 import { cn } from "@opal/utils";
 import { firstStrongTextDir } from "@/lib/rehypeDirection";
 import { Disabled } from "@opal/core";
@@ -72,6 +73,8 @@ import {
 } from "@/app/app/stores/useChatSessionStore";
 import QueuedMessageBar from "@/sections/input/QueuedMessageBar";
 import { handleInputNavKeys } from "@/sections/input/inputBarKeys";
+import type { OnSubmitProps } from "@/hooks/useChatController";
+import type { CauslDraft } from "@/lib/causl/types";
 
 export interface AppInputBarHandle {
   appendDraft: (text: string) => void;
@@ -82,7 +85,16 @@ export interface AppInputBarHandle {
 export interface AppInputBarProps {
   initialMessage?: string;
   stopGenerating: () => void;
-  onSubmit: (message: string) => void;
+  onSubmit: (
+    message: string,
+    callbacks?: Pick<OnSubmitProps, "onInputAccepted" | "onInputRejected">
+  ) => void;
+  /** The workspace clears its draft only after context authorization succeeds. */
+  embeddedWorkspace?: boolean;
+  /** Keep a standalone interview draft until its workspace connection is ready. */
+  deferInputClear?: boolean;
+  workspaceDraft?: CauslDraft;
+  onWorkspaceDraftConsumed?: (id: string) => void;
   llmManager: LlmManager;
   chatState: ChatState;
   currentSessionFileTokenCount: number;
@@ -114,6 +126,10 @@ const AppInputBar = React.memo(
     initialMessage = "",
     stopGenerating,
     onSubmit,
+    deferInputClear = false,
+    embeddedWorkspace = false,
+    workspaceDraft,
+    onWorkspaceDraftConsumed,
     chatState,
     currentSessionFileTokenCount,
     availableContextTokens,
@@ -132,6 +148,8 @@ const AppInputBar = React.memo(
     onToggleTabReading,
   }: AppInputBarProps) => {
     const t = useTranslations("chat.input");
+    const tWorkspace = useTranslations("workspaceAi");
+    const tMessages = useTranslations("chat.messages");
     const { incognitoEnabled } = useIncognito();
     const [isRecording, setIsRecording] = useState(false);
     const [recordingCycleCount, setRecordingCycleCount] = useState(0);
@@ -233,6 +251,8 @@ const AppInputBar = React.memo(
       draft: chatDraft,
       loaded: chatDraftLoaded,
       save: saveChatDraft,
+      saveHandoff: saveChatHandoff,
+      hasHandoff: hasChatHandoff,
       clear: clearChatDraft,
     } = useDraft<string>({ key: chatDraftStorageKey });
     const draftSeededRef = useRef(false);
@@ -266,6 +286,7 @@ const AppInputBar = React.memo(
         // Skip the save effect's next run; it would fire with the stale empty
         // message and wipe what we just seeded.
         skipNextDraftSaveRef.current = true;
+        messageRef.current = chatDraft;
         setMessage(chatDraft);
       }
     }, [chatDraftLoaded, chatDraft, initialMessage, setMessage]);
@@ -298,24 +319,68 @@ const AppInputBar = React.memo(
     );
     const submitMessage = useCallback(
       (text: string) => {
-        if (!text.trim()) {
+        if (!text.trim() || (embeddedWorkspace && chatState !== "input")) {
           return;
         }
+        if (deferInputClear) saveChatHandoff(text, "workspace-send");
         handleSubmit(text);
-        clearChatDraft();
+        if (!embeddedWorkspace && !deferInputClear) clearChatDraft();
       },
-      [handleSubmit, clearChatDraft]
+      [
+        handleSubmit,
+        clearChatDraft,
+        embeddedWorkspace,
+        chatState,
+        deferInputClear,
+        saveChatHandoff,
+      ]
     );
 
     // Expose reset and focus methods to parent via ref
-    React.useImperativeHandle(ref, () => ({
-      appendDraft: (text: string) => {
-        setMessage(message.trim() ? `${message}\n\n${text}` : text);
+    const appendDraft = useCallback(
+      (text: string) => {
+        const current = messageRef.current;
+        const next = current.trim() ? `${current}\n\n${text}` : text;
+        messageRef.current = next;
+        setMessage(next);
         requestAnimationFrame(() => {
           inputRef.current?.focus();
           setCursorToEnd();
         });
+        return next;
       },
+      [setMessage, inputRef, setCursorToEnd]
+    );
+    const consumedWorkspaceDrafts = useRef(new Set<string>());
+    useEffect(() => {
+      if (
+        !embeddedWorkspace ||
+        !workspaceDraft ||
+        !chatDraftLoaded ||
+        !draftSeededRef.current ||
+        consumedWorkspaceDrafts.current.has(workspaceDraft.id)
+      )
+        return;
+      consumedWorkspaceDrafts.current.add(workspaceDraft.id);
+      if (hasChatHandoff(workspaceDraft.id)) {
+        onWorkspaceDraftConsumed?.(workspaceDraft.id);
+        return;
+      }
+      const next = appendDraft(workspaceDraft.text);
+      if (saveChatHandoff(next, workspaceDraft.id))
+        onWorkspaceDraftConsumed?.(workspaceDraft.id);
+    }, [
+      embeddedWorkspace,
+      workspaceDraft,
+      chatDraftLoaded,
+      appendDraft,
+      saveChatHandoff,
+      hasChatHandoff,
+      onWorkspaceDraftConsumed,
+    ]);
+
+    React.useImperativeHandle(ref, () => ({
+      appendDraft,
       reset: () => {
         if (!isAutoSending.current) {
           clearMessage();
@@ -410,10 +475,38 @@ const AppInputBar = React.memo(
       prevChatStateRef.current = chatState;
       prevRenderCompleteRef.current = latestMessageRenderComplete;
 
-      if (!wasReady && isReady && queuedMessages.length > 0) {
-        const nextMessage = queuedMessages[0]!.text;
+      if (
+        !embeddedWorkspace &&
+        !wasReady &&
+        isReady &&
+        queuedMessages.length > 0
+      ) {
+        const queued = queuedMessages[0]!;
+        const nextMessage = queued.text;
         isAutoSending.current = true;
         stopTTS();
+        if (deferInputClear) {
+          const sessionId = useChatSessionStore.getState().currentSessionId;
+          onSubmit(nextMessage, {
+            onInputAccepted: () => {
+              isAutoSending.current = false;
+              const store = useChatSessionStore.getState();
+              const index = sessionId
+                ? (store.sessions
+                    .get(sessionId)
+                    ?.queuedMessages.findIndex(
+                      (item) => item.id === queued.id
+                    ) ?? -1)
+                : -1;
+              if (sessionId && index >= 0)
+                store.removeQueuedMessage(sessionId, index);
+            },
+            onInputRejected: () => {
+              isAutoSending.current = false;
+            },
+          });
+          return;
+        }
         onSubmit(nextMessage);
         isAutoSending.current = false;
         removeCurrentQueuedMessage(0);
@@ -425,6 +518,8 @@ const AppInputBar = React.memo(
       removeCurrentQueuedMessage,
       stopTTS,
       onSubmit,
+      embeddedWorkspace,
+      deferInputClear,
     ]);
 
     // Animate attached files wrapper to its content height so CSS transitions
@@ -619,6 +714,9 @@ const AppInputBar = React.memo(
 
     const chatControls = (
       <div
+        data-ai-composer-controls={
+          embeddedWorkspace && !isSearchMode ? "" : undefined
+        }
         {...(isSearchMode ? { inert: true } : {})}
         className={cn(
           "flex justify-between items-center w-full",
@@ -656,6 +754,7 @@ const AppInputBar = React.memo(
                 disabled={disabled}
                 icon={SvgPaperclip}
                 tooltip={t("appInputBar.attachFilesButton.tooltip")}
+                aria-label={t("appInputBar.attachFilesButton.tooltip")}
                 interaction={open ? "hover" : "rest"}
                 prominence="tertiary"
               />
@@ -678,6 +777,7 @@ const AppInputBar = React.memo(
                 key={activeAgent.id}
                 agent={activeAgent}
                 toolConfiguration={toolConfiguration}
+                label={embeddedWorkspace ? tWorkspace("tools") : undefined}
                 disabled={disabled}
               />
             )}
@@ -774,8 +874,27 @@ const AppInputBar = React.memo(
               />
             ))}
 
+          {chatState === "streaming" && (
+            <Button
+              icon={SvgStop}
+              prominence="secondary"
+              data-ai-stop={embeddedWorkspace ? "" : undefined}
+              aria-label={t("baseInputBar.stopButton.ariaLabel")}
+              tooltip={t("baseInputBar.stopButton.tooltip")}
+              onClick={() => {
+                stopTTS({ manual: true });
+                stopGenerating();
+              }}
+            >
+              {t("baseInputBar.stopButton.label")}
+            </Button>
+          )}
           <Button
             disabled={
+              (embeddedWorkspace && chatState !== "input") ||
+              (!embeddedWorkspace &&
+                chatState !== "input" &&
+                !message.trim()) ||
               (chatState === "input" &&
                 !isVoicePlaybackControllable &&
                 !message) ||
@@ -789,18 +908,25 @@ const AppInputBar = React.memo(
                 : undefined
             }
             id="onyx-chat-input-send-button"
+            aria-label={
+              !embeddedWorkspace && chatState !== "input" && message.trim()
+                ? t("baseInputBar.sendButton.queueLabel")
+                : isVoicePlaybackControllable && chatState === "input"
+                  ? tMessages("tts.stopButton.tooltip")
+                  : t("baseInputBar.sendButton.sendLabel")
+            }
             icon={
               isClassifying
                 ? SvgSimpleLoader
-                : chatState !== "input" && message.trim()
+                : !embeddedWorkspace && chatState !== "input" && message.trim()
                   ? SvgArrowUp
-                  : chatState === "streaming" || isVoicePlaybackControllable
+                  : isVoicePlaybackControllable && chatState === "input"
                     ? SvgStop
                     : SvgArrowUp
             }
             onClick={() => {
               const canSubmitNormally = chatState === "input";
-              if (!canSubmitNormally && message.trim()) {
+              if (!embeddedWorkspace && !canSubmitNormally && message.trim()) {
                 if (queuedMessages.length < MAX_QUEUED_MESSAGES) {
                   enqueueCurrentMessage(message.trim());
                   clearMessage();
@@ -831,22 +957,15 @@ const AppInputBar = React.memo(
           onHighlight={queueNav.setHighlightedIndex}
         />
         <Disabled disabled={disabled} allowClick>
-          <div
+          <AIInputSearch
             ref={containerRef}
             id="onyx-chat-input"
-            className={cn(
-              "relative w-full flex flex-col shadow-box-01 bg-background-neutral-00 rounded-16"
-              // # Note (from @raunakab):
-              //
-              // `shadow-box-01` extends ~14px below the element (2px offset + 12px blur).
-              // Because the content area in `Root` (app-layouts.tsx) uses `overflow-auto`,
-              // shadows that exceed the container bounds are clipped.
-              //
-              // The 14px breathing room is now applied externally via animated spacer
-              // divs in `AppPage.tsx` (above and below the AppInputBar) so that the
-              // spacing can transition smoothly when switching between search and chat
-              // modes. See the corresponding note there for details.
-            )}
+            data-ai-composer=""
+            onFocusInput={() => inputRef.current?.focus()}
+            toolLabel={
+              activeAgent?.tools.find((tool) => tool.id === forcedToolId)
+                ?.display_name
+            }
           >
             {/* Voice waveform overlay (positioned outside normal flow to avoid resizing input) */}
             {isTTSActuallySpeaking ? (
@@ -947,6 +1066,18 @@ const AppInputBar = React.memo(
                       data-empty={!message ? "" : undefined}
                       onKeyDown={(event) => {
                         if (
+                          embeddedWorkspace &&
+                          chatState === "streaming" &&
+                          event.key === "Escape" &&
+                          !showPrompts &&
+                          !event.defaultPrevented
+                        ) {
+                          event.preventDefault();
+                          stopTTS({ manual: true });
+                          stopGenerating();
+                          return;
+                        }
+                        if (
                           handleInputNavKeys(event, queueNav, handleTileKeyDown)
                         )
                           return;
@@ -971,6 +1102,7 @@ const AppInputBar = React.memo(
                               submitMessage(message);
                             }
                           } else if (
+                            !embeddedWorkspace &&
                             message.trim() &&
                             !disabled &&
                             !isClassifying &&
@@ -1021,6 +1153,7 @@ const AppInputBar = React.memo(
                         rounding={2}
                         key="create-new"
                         href="/app/settings/chat-preferences"
+                        target={embeddedWorkspace ? "_blank" : undefined}
                         icon={SvgPlus}
                         state={
                           tabbingIconIndex === sortedFilteredPrompts.length
@@ -1090,7 +1223,7 @@ const AppInputBar = React.memo(
                 onExpand={() => expandTile(tilePopover.tile)}
               />
             )}
-          </div>
+          </AIInputSearch>
         </Disabled>
         {/* Stays for the whole session: the warning is most relevant
             once the user is actually chatting. */}

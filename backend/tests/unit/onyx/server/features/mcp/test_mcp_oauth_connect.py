@@ -7,6 +7,7 @@ from uuid import uuid4
 import pytest
 from mcp.shared.auth import OAuthClientInformationFull
 
+from onyx.db import mcp as mcp_db
 from onyx.db.enums import (
     MCPAuthenticationPerformer,
     MCPAuthenticationType,
@@ -85,8 +86,10 @@ def test_tool_discovery_reports_reauthentication_as_unauthenticated(
     assert exc_info.value.detail == "Please reconnect to the server through Onyx."
 
 
+@pytest.mark.parametrize("attached_persona_ids", [[], [7]])
 def test_user_cannot_start_oauth_for_an_inaccessible_server(
     monkeypatch: pytest.MonkeyPatch,
+    attached_persona_ids: list[int],
 ) -> None:
     server = _server()
     user = cast(User, SimpleNamespace(id=uuid4(), email="user@example.com"))
@@ -97,11 +100,14 @@ def test_user_cannot_start_oauth_for_an_inaccessible_server(
     monkeypatch.setattr(api, "create_connection_config", create_config)
     monkeypatch.setattr(api, "start_auto_discovery_oauth_flow", start_flow)
 
+    db = MagicMock()
+    db.scalars.return_value.all.return_value = attached_persona_ids
+    monkeypatch.setattr(mcp_db, "user_can_access_persona", lambda *_args: False)
     with pytest.raises(OnyxError) as exc_info:
         asyncio.run(
             api._connect_oauth(
                 _request(server.id),
-                MagicMock(),
+                db,
                 is_admin=False,
                 user=user,
             )
@@ -112,6 +118,9 @@ def test_user_cannot_start_oauth_for_an_inaccessible_server(
     start_flow.assert_not_awaited()
 
 
+@pytest.mark.parametrize(
+    "is_admin", [True, False], ids=["server-manager", "shared-agent-viewer"]
+)
 @pytest.mark.parametrize(
     ("expires_at", "force_reauthentication", "stored_credentials_usable"),
     [
@@ -126,6 +135,7 @@ def test_token_expiry_controls_fast_path_without_dropping_oauth_state(
     expires_at: float,
     force_reauthentication: bool,
     stored_credentials_usable: bool,
+    is_admin: bool,
 ) -> None:
     stored_data = MCPConnectionData(
         client_info={"client_id": "client-id"},
@@ -164,13 +174,18 @@ def test_token_expiry_controls_fast_path_without_dropping_oauth_state(
     monkeypatch.setattr(api, "user_can_authenticate", lambda *_args, **_kwargs: True)
     monkeypatch.setattr(api, "start_auto_discovery_oauth_flow", start_flow)
 
+    db = MagicMock()
+    db.scalars.return_value.all.return_value = [7]
+    monkeypatch.setattr(api, "user_can_access_mcp_server", lambda *_args: False)
+    monkeypatch.setattr(mcp_db, "user_can_access_persona", lambda *_args: True)
+
     request = _request(server.id, force_reauthentication=force_reauthentication)
     original_request = request.model_copy(deep=True)
     response = asyncio.run(
         api._connect_oauth(
             request,
-            MagicMock(),
-            is_admin=True,
+            db,
+            is_admin=is_admin,
             user=cast(User, user),
         )
     )

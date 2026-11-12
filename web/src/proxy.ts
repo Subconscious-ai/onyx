@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getDomain } from "@/lib/redirectSS";
+import { causlEmbedOrigins } from "@/lib/causl/config";
 import {
   SERVER_SIDE_ONLY__PAID_ENTERPRISE_FEATURES_ENABLED,
   SERVER_SIDE_ONLY__AUTH_COOKIE_NAME,
@@ -116,8 +117,15 @@ const EE_ROUTES = [
   "/agents/stats",
 ];
 
-function withSecurityHeaders(response: NextResponse): NextResponse {
-  response.headers.set("Content-Security-Policy", CSP_HEADER);
+function withSecurityHeaders(
+  response: NextResponse,
+  pathname: string
+): NextResponse {
+  const csp =
+    pathname === "/causl"
+      ? `${CSP_HEADER.replace(/frame-ancestors[^;]*;/, "")} frame-ancestors 'self' ${causlEmbedOrigins().join(" ")};`
+      : CSP_HEADER;
+  response.headers.set("Content-Security-Policy", csp);
   return response;
 }
 
@@ -127,9 +135,16 @@ export async function proxy(request: NextRequest) {
   // Host-only OAuth cookies must originate on the configured callback host.
   if (pathname === "/auth/login") {
     const loginUrl = new URL("/auth/login", getDomain(request));
-    if (loginUrl.origin !== request.nextUrl.origin) {
+    // Next.js can report the internal HTTP origin after TLS termination.
+    // Only the exact configured Host skips canonicalization; forwarded hosts
+    // never select the callback destination.
+    const canonicalHost =
+      request.headers.get("host") === loginUrl.host &&
+      request.headers.get("x-forwarded-proto") ===
+        loginUrl.protocol.slice(0, -1);
+    if (loginUrl.origin !== request.nextUrl.origin && !canonicalHost) {
       loginUrl.search = request.nextUrl.search;
-      return withSecurityHeaders(NextResponse.redirect(loginUrl));
+      return withSecurityHeaders(NextResponse.redirect(loginUrl), pathname);
     }
   }
 
@@ -152,7 +167,7 @@ export async function proxy(request: NextRequest) {
       // Preserve full URL including query params and hash for deep linking
       const fullPath = pathname + request.nextUrl.search + request.nextUrl.hash;
       loginUrl.searchParams.set("next", fullPath);
-      return withSecurityHeaders(NextResponse.redirect(loginUrl));
+      return withSecurityHeaders(NextResponse.redirect(loginUrl), pathname);
     }
   }
 
@@ -160,9 +175,9 @@ export async function proxy(request: NextRequest) {
   if (SERVER_SIDE_ONLY__PAID_ENTERPRISE_FEATURES_ENABLED) {
     if (EE_ROUTES.some((route) => pathname.startsWith(route))) {
       const newUrl = new URL(`/ee${pathname}`, request.url);
-      return withSecurityHeaders(NextResponse.rewrite(newUrl));
+      return withSecurityHeaders(NextResponse.rewrite(newUrl), pathname);
     }
   }
 
-  return withSecurityHeaders(NextResponse.next());
+  return withSecurityHeaders(NextResponse.next(), pathname);
 }

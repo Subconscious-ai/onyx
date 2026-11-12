@@ -11,11 +11,12 @@ import {
 import useNotifications from "@/hooks/useNotifications";
 import ConsultingAgents from "@/sections/executive/ConsultingAgents";
 import { consultingRole } from "@/lib/agents/consulting";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useSettings } from "@/lib/settings/hooks";
 import { MinimalAgent } from "@/lib/agents/types";
 import Text from "@/refresh-components/texts/Text";
+import ChatHistory from "@/sections/customer/pro/ChatHistory";
 import ChatButton from "@/sections/sidebar/ChatButton";
 import { AgentButton } from "@/lib/agents/components";
 import { DragEndEvent } from "@dnd-kit/core";
@@ -91,6 +92,7 @@ import AccountPopover from "@/sections/sidebar/AccountPopover";
 import ChatSearchCommandMenu from "@/sections/sidebar/ChatSearchCommandMenu";
 import { useQueryController } from "@/providers/QueryControllerProvider";
 import { DEFAULT_AGENT_ID } from "@/lib/constants";
+import CommandButton from "@/sections/customer/CommandButton";
 
 // Visible-agents = pinned-agents + current-agent (if current-agent not in pinned-agents)
 // OR Visible-agents = pinned-agents (if current-agent in pinned-agents)
@@ -186,13 +188,12 @@ function RecentsSection({
           </Text>
         ) : (
           <>
-            {chatSessions.map((chatSession) => (
-              <ChatButton
-                key={chatSession.id}
-                chatSession={chatSession}
-                draggable
-              />
-            ))}
+            <ChatHistory
+              chats={chatSessions}
+              renderChat={(chatSession) => (
+                <ChatButton chatSession={chatSession} draggable />
+              )}
+            />
             {hasMore &&
               skeletonWidths.map((width, i) => (
                 <div
@@ -501,11 +502,17 @@ export default function AppSidebar() {
 
   const { hasAdminAccess, adminCapabilities, user } = useUser();
   const activeSidebarTab = useAppPosition();
+  const isCustomerChat = usePathname() === "/app";
   const createProjectModal = useCreateModal();
   const showLogoWhenFolded = useShowLogoWhenFolded();
   const defaultAppMode =
     (user?.preferences?.default_app_mode?.toLowerCase() as "chat" | "search") ??
     "chat";
+  const handleNewSession = () => {
+    if (!activeSidebarTab.isNewSession()) return;
+    setAppMode(defaultAppMode);
+    reset();
+  };
 
   const moreAgentsButton = (
     <div data-testid="AppSidebar/more-agents">
@@ -611,25 +618,41 @@ export default function AppSidebar() {
           renderAppLogo={renderSidebarLogo}
         >
           <div data-testid="AppSidebar/new-session">
-            <SidebarTab
-              icon={SvgEditBig}
-              href="/app"
-              selected={activeSidebarTab.isNewSession()}
-              onClick={() => {
-                if (!activeSidebarTab.isNewSession()) return;
-                setAppMode(defaultAppMode);
-                reset();
-              }}
-            >
-              {t("appSidebar.newSession.label")}
-            </SidebarTab>
-          </div>
-          <ChatSearchCommandMenu
-            trigger={(open) => (
-              <SidebarTab icon={SvgSearchMenu} onClick={open}>
-                {t("appSidebar.searchChats.label")}
+            {isCustomerChat ? (
+              <CommandButton
+                icon={SvgEditBig}
+                href="/app"
+                selected={activeSidebarTab.isNewSession()}
+                folded={folded}
+                label={t("appSidebar.newSession.label")}
+                onClick={handleNewSession}
+              />
+            ) : (
+              <SidebarTab
+                icon={SvgEditBig}
+                href="/app"
+                selected={activeSidebarTab.isNewSession()}
+                onClick={handleNewSession}
+              >
+                {t("appSidebar.newSession.label")}
               </SidebarTab>
             )}
+          </div>
+          <ChatSearchCommandMenu
+            trigger={(open) =>
+              isCustomerChat ? (
+                <CommandButton
+                  icon={SvgSearchMenu}
+                  folded={folded}
+                  label={t("appSidebar.searchChats.label")}
+                  onClick={open}
+                />
+              ) : (
+                <SidebarTab icon={SvgSearchMenu} onClick={open}>
+                  {t("appSidebar.searchChats.label")}
+                </SidebarTab>
+              )
+            }
           />
           {isOnyxCraftEnabled && (
             <div data-testid="AppSidebar/build">

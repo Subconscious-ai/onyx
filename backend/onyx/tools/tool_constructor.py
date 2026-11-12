@@ -6,11 +6,13 @@ from uuid import UUID
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from onyx.auth.host_auth import is_pinned_host_mcp_server
 from onyx.auth.oauth_token_manager import OAuthTokenManager
 from onyx.chat.emitter import Emitter
 from onyx.configs.app_configs import DISABLE_VECTOR_DB
 from onyx.configs.model_configs import GEN_AI_TEMPERATURE
 from onyx.context.search.models import BaseFilters, PersonaSearchInfo
+from onyx.db.causl_statement import read_causl_statement
 from onyx.db.engine.sql_engine import get_session_with_current_tenant_if_none
 from onyx.db.mcp import (
     get_all_mcp_tools_for_server,
@@ -29,6 +31,8 @@ from onyx.server.features.mcp.credentials import (
     MCPCredentialsError,
     resolve_mcp_credentials,
 )
+from onyx.server.query_and_chat.causl.models import CauslChatBinding
+from onyx.server.query_and_chat.causl.statement import FACT_PREPARATION_TOOL
 from onyx.tools.built_in_tools import get_built_in_tool_by_id
 from onyx.tools.interface import Tool
 from onyx.tools.models import DynamicSchemaInfo, SearchToolUsage
@@ -55,6 +59,20 @@ from onyx.utils.headers import header_dict_to_header_list
 from onyx.utils.logger import setup_logger
 
 logger = setup_logger()
+
+
+def _hidden_in_causl_workspace(
+    binding: CauslChatBinding | None, db_tool_model: ToolDBModel
+) -> bool:
+    """In a causl workspace chat, MCP tools are limited to the bound Library server
+    plus first-party servers pinned by `CAUSL_KB_HOST_MCP_SERVERS` (they verify the
+    shared Auth0 token themselves, e.g. the EDSL study server)."""
+    if binding is None or binding.mode != "workspace" or db_tool_model.in_code_tool_id:
+        return False
+    server_id = db_tool_model.mcp_server_id
+    if server_id == binding.library_server_id:
+        return False
+    return not (server_id is not None and is_pinned_host_mcp_server(server_id))
 
 
 def _disambiguate_mcp_tool_names(tools: list[Tool]) -> None:
@@ -91,6 +109,8 @@ class CustomToolConfig(BaseModel):
     message_id: int | None = None
     additional_headers: dict[str, str] | None = None
     mcp_headers: dict[str, str] | None = None
+    causl_binding: CauslChatBinding | None = None
+    causl_original_message: str | None = None
 
 
 def _get_image_generation_config(llm: LLM, db_session: Session) -> LLMConfig:
@@ -154,6 +174,8 @@ def construct_tools(
     file_reader_tool_config: FileReaderToolConfig | None = None,
     allowed_tool_ids: list[int] | None = None,
     search_usage_forcing_setting: SearchToolUsage = SearchToolUsage.AUTO,
+    allow_user_context: bool = True,
+    allow_memory_tool: bool = True,
 ) -> dict[int, list[Tool]]:
     """Constructs tools based on persona configuration and available APIs.
 
@@ -175,6 +197,8 @@ def construct_tools(
             file_reader_tool_config=file_reader_tool_config,
             allowed_tool_ids=allowed_tool_ids,
             search_usage_forcing_setting=search_usage_forcing_setting,
+            allow_user_context=allow_user_context,
+            allow_memory_tool=allow_memory_tool,
         )
 
 
@@ -189,6 +213,8 @@ def _construct_tools_impl(
     file_reader_tool_config: FileReaderToolConfig | None = None,
     allowed_tool_ids: list[int] | None = None,
     search_usage_forcing_setting: SearchToolUsage = SearchToolUsage.AUTO,
+    allow_user_context: bool = True,
+    allow_memory_tool: bool = True,
 ) -> dict[int, list[Tool]]:
     tool_dict: dict[int, list[Tool]] = {}
 
@@ -240,6 +266,11 @@ def _construct_tools_impl(
 
     added_search_tool = False
     for db_tool_model in persona.tools:
+        if _hidden_in_causl_workspace(
+            custom_tool_config.causl_binding if custom_tool_config else None,
+            db_tool_model,
+        ):
+            continue
         # If allowed_tool_ids is specified, skip tools not in the allowed list
         if allowed_tool_ids is not None and db_tool_model.id not in allowed_tool_ids:
             continue
@@ -264,6 +295,8 @@ def _construct_tools_impl(
 
             # Handle Internal Search Tool
             if tool_cls.__name__ == SearchTool.__name__:
+                if not allow_user_context:
+                    continue
                 added_search_tool = True
                 if search_usage_forcing_setting == SearchToolUsage.DISABLED:
                     continue
@@ -314,6 +347,8 @@ def _construct_tools_impl(
 
             # Handle Open URL Tool
             elif tool_cls.__name__ == OpenURLTool.__name__:
+                if not allow_user_context:
+                    continue
                 if open_url_web_fetch_disabled and DISABLE_VECTOR_DB:
                     # Without an index, open_url can serve nothing once web
                     # fetching is off (crawl-only deployments).
@@ -339,7 +374,7 @@ def _construct_tools_impl(
                     )
 
             elif tool_cls.__name__ == CompanyProfileTool.__name__:
-                if user.is_anonymous:
+                if user.is_anonymous or not allow_user_context:
                     continue
                 tool_dict[db_tool_model.id] = [
                     CompanyProfileTool(
@@ -457,9 +492,11 @@ def _construct_tools_impl(
         # Handle MCP tools
         elif db_tool_model.mcp_server_id:
             if db_tool_model.mcp_server_id in mcp_tool_cache:
-                tool_dict[db_tool_model.id] = [
-                    mcp_tool_cache[db_tool_model.mcp_server_id][db_tool_model.id]
-                ]
+                tool_dict[db_tool_model.id] = list(
+                    mcp_tool_cache[db_tool_model.mcp_server_id][
+                        db_tool_model.id
+                    ].with_model_page_tools()
+                )
                 continue
 
             mcp_server = get_mcp_server_by_id(db_tool_model.mcp_server_id, db_session)
@@ -484,6 +521,23 @@ def _construct_tools_impl(
             mcp_tool_cache[db_tool_model.mcp_server_id] = {}
             # Find the matching tool definition
             for saved_tool in saved_tools:
+                binding = (
+                    custom_tool_config.causl_binding if custom_tool_config else None
+                )
+                statement = (
+                    read_causl_statement(
+                        db_session,
+                        user.id,
+                        binding,
+                        custom_tool_config.chat_session_id,
+                        custom_tool_config.message_id,
+                        custom_tool_config.causl_original_message,
+                    )
+                    if saved_tool.name == FACT_PREPARATION_TOOL
+                    and binding is not None
+                    and custom_tool_config is not None
+                    else None
+                )
                 # Create MCPTool instance for this specific tool
                 mcp_tool = MCPTool(
                     tool_id=saved_tool.id,
@@ -498,11 +552,36 @@ def _construct_tools_impl(
                     user_oauth_token=mcp_credentials.user_oauth_token,
                     additional_headers=additional_mcp_headers,
                     resolved_credentials=mcp_credentials,
+                    bound_statement=statement,
+                    bound_model_page=binding.model_page
+                    if binding and binding.library_server_id == mcp_server.id
+                    else None,
+                    bound_market_id=(
+                        binding.market_id
+                        if binding and binding.library_server_id == mcp_server.id
+                        else None
+                    ),
+                    bound_actor=(
+                        custom_tool_config.causl_binding.actor
+                        if custom_tool_config
+                        and custom_tool_config.causl_binding
+                        and custom_tool_config.causl_binding.library_server_id
+                        == mcp_server.id
+                        else None
+                    ),
+                    bound_issuer=(
+                        custom_tool_config.causl_binding.issuer
+                        if custom_tool_config
+                        and custom_tool_config.causl_binding
+                        and custom_tool_config.causl_binding.library_server_id
+                        == mcp_server.id
+                        else None
+                    ),
                 )
                 mcp_tool_cache[db_tool_model.mcp_server_id][saved_tool.id] = mcp_tool
 
                 if saved_tool.id == db_tool_model.id:
-                    tool_dict[saved_tool.id] = [cast(Tool, mcp_tool)]
+                    tool_dict[saved_tool.id] = list(mcp_tool.with_model_page_tools())
             if db_tool_model.id not in tool_dict:
                 logger.warning(
                     "Tool '%s' not found in MCP server '%s'",
@@ -511,7 +590,8 @@ def _construct_tools_impl(
                 )
 
     if (
-        not added_search_tool
+        allow_user_context
+        and not added_search_tool
         and search_usage_forcing_setting == SearchToolUsage.ENABLED
         and not DISABLE_VECTOR_DB
     ):
@@ -527,7 +607,12 @@ def _construct_tools_impl(
 
     # Always inject MemoryTool when the user has the memory tool enabled,
     # bypassing persona tool associations and allowed_tool_ids filtering
-    if user.enable_memory_tool:
+    if (
+        allow_user_context
+        and allow_memory_tool
+        and user.enable_memory_tool
+        and not (custom_tool_config and custom_tool_config.causl_binding)
+    ):
         try:
             memory_tool_db_model = get_builtin_tool(db_session, MemoryTool)
             memory_tool = MemoryTool(

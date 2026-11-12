@@ -1,4 +1,21 @@
 {
+  "causlWorkspace": {
+    "cancelConnection": "Seguir editando",
+    "connectWorkspace": "Conectar espacio de trabajo",
+    "connectionRequired": "Conecta tu espacio de trabajo para continuar. Tu mensaje se conserva.",
+    "connectionFailed": "La conexión falló. Tu mensaje se conserva. Inténtalo de nuevo.",
+    "notConfigured": "Abra el asistente desde su espacio de causl-kb. Si sigue sin estar disponible, contacte con su administrador.",
+    "signin": "Inicie sesión con la misma cuenta de organización que usa en causl-kb. Después, vuelva a abrir esta conversación.",
+    "signInAction": "Iniciar sesión en Onyx",
+    "reopen": "Volver a abrir la conversación",
+    "access": "Compruebe su cuenta de organización y conecte su biblioteca. Después, vuelva a abrir esta conversación.",
+    "connectLibrary": "Conectar biblioteca",
+    "connecting": "Conectando…",
+    "unavailable": "El contexto no está disponible. Su conversación guardada se conserva.",
+    "opening": "Abriendo su conversación…",
+    "modelContextUnavailable": "La captura de la página de Models falló o superó el límite de tamaño. Abra un modelo completo e inténtelo de nuevo. Los borradores locales permanecen sin cambios.",
+    "contextChanged": "El espacio cambió antes de enviar el mensaje. Revise el contexto actual y vuelva a enviarlo."
+  },
   "accountPopover": {
     "accountFallback": {
       "label": "Cuenta"
@@ -9294,7 +9311,8 @@
         },
         "stopButton": {
           "ariaLabel": "Detener la generación",
-          "tooltip": "Detener · esc"
+          "tooltip": "Detener · esc",
+          "label": "Detener"
         }
       },
       "buildFileCard": {
@@ -13272,6 +13290,17 @@
       }
     },
     "chatSearch": {
+      "pro": {
+        "all": "Todo",
+        "actions": "Acciones",
+        "chats": "Chats",
+        "projects": "Proyectos",
+        "searchIn": "Buscar en",
+        "close": "Cerrar búsqueda",
+        "loading": "Cargando…",
+        "searching": "Buscando…",
+        "loadMore": "Cargar más conversaciones"
+      },
       "createNamedProject": {
         "label": "Crear nuevo proyecto \"<name>{projectName}</name>\""
       },
@@ -13838,6 +13867,15 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "Fuente: {quote}",
+    "factCitationConversation": "Conversación",
+    "factCitationUnavailable": "Fuente no disponible",
+    "savedMarketFacts": "Hechos de mercado guardados",
+    "marketMemoryUnavailable": "La memoria compartida del mercado no está disponible.",
+    "marketMemoryLoading": "Leyendo hechos de mercado guardados…",
+    "marketMemorySource": "Hechos aceptados de la biblioteca de mercado compartida.",
+    "marketMemoryEmpty": "Aún no hay hechos de mercado aceptados. Las notas de la entrevista son borradores hasta su revisión.",
+    "marketMemoryBounded": "Se muestra una vista limitada. Beca puede recuperar más hechos de la biblioteca.",
     "companyProfile": {
       "title": "Perfil de empresa",
       "description": "Tus correcciones tienen prioridad sobre PDL. Este es tu perfil privado de trabajo, no un registro compartido de la empresa.",
@@ -13849,6 +13887,13 @@
       "cancel": "Cancelar",
       "conflict": "El perfil cambió en otra sesión. Cancela y vuelve a abrirlo antes de guardar. Tus cambios no se han guardado.",
       "failed": "No se pudieron guardar las correcciones. Tus cambios siguen aquí; vuelve a intentarlo.",
+      "refresh": "Refresh PDL and public research",
+      "refreshing": "Refreshing preparation…",
+      "refreshDescription": "Run a new PDL lookup and public research. Your interview and saved context stay available.",
+      "refreshFailed": "Could not confirm preparation. Retry to check the same request without a duplicate lookup.",
+      "refreshStarted": "Preparation request saved. Public research status appears in the brief.",
+      "refreshNoMatch": "No fresh PDL match. Previous company context and corrections stay unchanged.",
+      "refreshUnavailable": "PDL refresh unavailable. Previous company context and corrections stay unchanged.",
       "fields": {
         "name": "Nombre",
         "role": "Cargo",
@@ -13879,6 +13924,7 @@
     "executiveStudio": "EXECUTIVE STUDIO",
     "interviewSpecialists": "Interview specialists",
     "workingBusinessBrief": "Working business brief",
+    "briefControl": "Resumen",
     "theWorkingPicture": "THE WORKING PICTURE",
     "interviewDraft": "INTERVIEW DRAFT",
     "01TheObjective": "01 / THE OBJECTIVE",
@@ -13923,6 +13969,10 @@
     "sourceDisclosure": "Source",
     "automaticDraftBoundary": "The draft updates after each answer. Market evidence changes only after review.",
     "reviewInGuesstimate": "Revisar en business model",
+    "openingSpeaker": "Sarah · Recorrido del cliente",
+    "openingQuestion": "Soy Beca. ¿Qué es lo que más le gustaría cambiar de su negocio?",
+    "interviewTeam": "Equipo de entrevista",
+    "retryDraft": "Reintentar actualización del borrador",
     "becaName": "Beca",
     "whatNeedsToChange": "¿Qué debe cambiar?",
     "researchContextAndLenses": "Contexto de investigación y perspectivas especializadas",
@@ -13944,6 +13994,51 @@
       "interview": "Entrevista ejecutiva",
       "design": "Diseño de experimentos",
       "analytics": "Análisis de experimentos"
+    },
+    "progress": {
+      "title": "Tu primer modelo",
+      "count": "{count} de 3 elementos recogidos",
+      "essentials": "Elementos del modelo",
+      "goal": "Objetivo",
+      "measure": "Medida de éxito",
+      "journey": "Recorrido del cliente",
+      "captured": "Recogido",
+      "missing": "Faltan detalles",
+      "goalNext": "¿Qué te gustaría mejorar?",
+      "measureNext": "¿Qué resultado y plazo definirían el éxito?",
+      "journeyNext": "¿Quién es el cliente y cómo llega a la decisión?",
+      "goalAsk": "Ayúdame a aclarar el objetivo. Usa mis respuestas y pregunta solo lo más importante que falta.",
+      "measureAsk": "Ayúdame a definir la medida de éxito y el plazo usando lo que ya te he dicho.",
+      "journeyAsk": "Ayúdame a describir el recorrido del cliente. Usa mis respuestas y pregunta solo lo más importante que falta.",
+      "failed": "Tus respuestas están guardadas. Hay que reintentar el borrador.",
+      "updating": "Actualizando el borrador…",
+      "ready": "Ya hay suficiente para un primer modelo.",
+      "conflict": "Hay un punto que aclarar antes del modelo.",
+      "connecting": "Los elementos están recogidos. Conéctalos en un primer modelo.",
+      "retry": "Reintentar actualización",
+      "open": "Crear modelo de negocio",
+      "build": "Completar el borrador del modelo",
+      "conflictAsk": "Ayúdame a resolver las contradicciones del borrador guardado. Haz una pregunta clara; no elijas una respuesta por mí.",
+      "buildAsk": "Crea un primer modelo con lo que he compartido. Mantén desconocidos los números que faltan y los efectos no medidos. Si falta contexto esencial del cliente, pregunta solo por eso.",
+      "hint": "Los números desconocidos pueden esperar.",
+      "readyHint": "Crea y guarda tu modelo privado. Los supuestos siguen identificados.",
+      "contextUpdating": "Terminando la investigación de la empresa…",
+      "email": "La investigación parte de {email}"
+    }
+  },
+  "workspaceAi": {
+    "tools": "Herramientas",
+    "stop": "Detener",
+    "sources": "{count, plural, one {# fuente} other {# fuentes}}",
+    "preview": "Vista previa: {title}",
+    "openSource": "Abrir fuente"
+  },
+  "customerPro": {
+    "history": {
+      "today": "Hoy",
+      "yesterday": "Ayer",
+      "week": "Últimos 7 días",
+      "earlier": "Anteriores"
     }
   }
 }

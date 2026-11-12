@@ -1,9 +1,11 @@
+import json
 from collections.abc import AsyncGenerator
 from threading import Lock
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from aiobotocore.session import AioSession
 from httpx import AsyncClient
 from litellm.exceptions import RateLimitError
 from tenacity import wait_none
@@ -13,9 +15,76 @@ from onyx.natural_language_processing.search_nlp_models import (
     CloudEmbedding,
     EmbeddingModel,
     clean_model_name,
+    cohere_rerank_aws,
 )
 from shared_configs.enums import EmbeddingProvider, EmbedTextType
 from shared_configs.model_server_models import EmbedRequest, EmbedResponse
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stream_error", [False, True])
+async def test_bedrock_rerank_preserves_order_and_closes_client(
+    stream_error: bool,
+) -> None:
+    stream = AsyncMock()
+    stream.read.return_value = json.dumps(
+        {
+            "results": [
+                {"index": 1, "relevance_score": 0.2},
+                {"index": 0, "relevance_score": 0.9},
+            ]
+        }
+    ).encode()
+    if stream_error:
+        stream.read.side_effect = RuntimeError("response unavailable")
+    client = AsyncMock()
+    client.invoke_model.return_value = {"body": stream}
+    context = MagicMock()
+    context.__aenter__.return_value = client
+    context.__aexit__.return_value = False
+    session = MagicMock(spec=AioSession)
+    session.create_client.return_value = context
+
+    with patch(
+        "onyx.natural_language_processing.search_nlp_models.get_session",
+        return_value=session,
+    ):
+        arguments: tuple[str, list[str], str, str, str, str] = (
+            "query",
+            ["first", "second"],
+            "cohere.rerank-v3-5:0",
+            "us-east-2",
+            "test-access",
+            "test-secret",
+        )
+        if stream_error:
+            with pytest.raises(RuntimeError, match="response unavailable"):
+                await cohere_rerank_aws(*arguments)
+        else:
+            assert await cohere_rerank_aws(*arguments) == [0.9, 0.2]
+
+    session.create_client.assert_called_once_with(
+        "bedrock-runtime",
+        region_name="us-east-2",
+        aws_access_key_id="test-access",
+        aws_secret_access_key="test-secret",
+    )
+    invocation = client.invoke_model.await_args
+    assert invocation is not None
+    assert invocation.kwargs["modelId"] == "cohere.rerank-v3-5:0"
+    assert invocation.kwargs["accept"] == "application/json"
+    assert invocation.kwargs["contentType"] == "application/json"
+    assert json.loads(invocation.kwargs["body"]) == {
+        "query": "query",
+        "documents": ["first", "second"],
+        "api_version": 2,
+    }
+    stream.read.assert_awaited_once()
+    context.__aenter__.assert_awaited_once()
+    context.__aexit__.assert_awaited_once()
+    exit_call = context.__aexit__.await_args
+    assert exit_call is not None
+    assert exit_call.args[0] is (RuntimeError if stream_error else None)
 
 
 @pytest.fixture

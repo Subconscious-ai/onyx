@@ -1,6 +1,6 @@
 name: Python Unit Tests
 concurrency:
-  group: Python-Unit-Tests-${{ github.workflow }}-${{ github.head_ref || github.event.workflow_run.head_branch || github.run_id }}
+  group: Python-Unit-Tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 on:
@@ -39,6 +39,7 @@ jobs:
           filters: |
             python:
               - 'backend/**'
+              - 'scripts/subconscious/**'
               - 'pyproject.toml'
               - '.github/workflows/pr-python-tests.yml'
               - '.github/actions/setup-python-and-install-dependencies/**'
@@ -46,8 +47,8 @@ jobs:
   backend-check:
     needs: changes
     if: needs.changes.outputs.python == 'true'
-    # See https://runs-on.com/runners/linux/
-    runs-on: [runs-on, runner=4cpu-linux-arm64, "run-id=${{ github.run_id }}-backend-check"]
+    # This fork uses GitHub-hosted ARM; upstream keeps its RunsOn pool.
+    runs-on: ${{ fromJSON(github.repository == 'Subconscious-ai/onyx' && '["ubuntu-24.04-arm"]' || format('["runs-on","runner=4cpu-linux-arm64","run-id={0}-backend-check"]', github.run_id)) }}
     timeout-minutes: 10
 
 
@@ -55,12 +56,15 @@ jobs:
       PYTHONPATH: ./backend
       REDIS_CLOUD_PYTEST_PASSWORD: ${{ secrets.REDIS_CLOUD_PYTEST_PASSWORD }}
       DISABLE_TELEMETRY: "true"
+      # Unit expectations use metadata bundled with the locked LiteLLM package.
+      LITELLM_LOCAL_MODEL_COST_MAP: "True"
       # Unit tests run without a live backend; EE code paths that depend on
       # Redis/Vespa/etc are not available, so disable enforcement here.
       LICENSE_ENFORCEMENT_ENABLED: "false"
 
     steps:
     - uses: runs-on/action@4e5f72399b6b17f2e79c511c1b38a315a64d22dc
+      if: github.repository != 'Subconscious-ai/onyx'
 
     - name: Checkout code
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v6
@@ -78,4 +82,6 @@ jobs:
 
     - name: Run Tests
       shell: script -q -e -c "bash --noprofile --norc -eo pipefail {0}"
-      run: py.test -o junit_family=xunit2 -v -n auto backend/tests/unit
+      run: |
+        py.test -o junit_family=xunit2 -v -n auto backend/tests/unit
+        PYTHONPATH=backend:scripts/subconscious python -m unittest test_brief_background test_brief_generations test_research_job_retry test_research_state_update

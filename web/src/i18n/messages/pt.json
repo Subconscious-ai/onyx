@@ -1,4 +1,21 @@
 {
+  "causlWorkspace": {
+    "cancelConnection": "Continuar editando",
+    "connectWorkspace": "Conectar espaço de trabalho",
+    "connectionRequired": "Conecte seu espaço de trabalho para continuar. Sua mensagem está preservada.",
+    "connectionFailed": "A conexão falhou. Sua mensagem está preservada. Tente novamente.",
+    "notConfigured": "Abra o assistente pelo seu espaço no causl-kb. Se continuar indisponível, contacte o administrador.",
+    "signin": "Entre com a mesma conta da organização que usa no causl-kb. Depois, reabra esta conversa.",
+    "signInAction": "Entrar no Onyx",
+    "reopen": "Reabrir conversa",
+    "access": "Verifique a conta da organização e conecte a biblioteca. Depois, reabra esta conversa.",
+    "connectLibrary": "Conectar biblioteca",
+    "connecting": "Conectando…",
+    "unavailable": "O contexto está indisponível. A conversa salva foi mantida.",
+    "opening": "Abrindo sua conversa…",
+    "modelContextUnavailable": "A captura da página do Models falhou ou excedeu o limite de tamanho. Abra um modelo completo e tente novamente. Os rascunhos locais permanecem inalterados.",
+    "contextChanged": "O espaço mudou antes do envio. Confira o contexto atual e envie a mensagem novamente."
+  },
   "accountPopover": {
     "accountFallback": {
       "label": "Conta"
@@ -9294,7 +9311,8 @@
         },
         "stopButton": {
           "ariaLabel": "Parar a geração",
-          "tooltip": "Parar · esc"
+          "tooltip": "Parar · esc",
+          "label": "Parar"
         }
       },
       "buildFileCard": {
@@ -13272,6 +13290,17 @@
       }
     },
     "chatSearch": {
+      "pro": {
+        "all": "Tudo",
+        "actions": "Ações",
+        "chats": "Conversas",
+        "projects": "Projetos",
+        "searchIn": "Pesquisar em",
+        "close": "Fechar pesquisa",
+        "loading": "Carregando…",
+        "searching": "Pesquisando…",
+        "loadMore": "Carregar mais conversas"
+      },
       "createNamedProject": {
         "label": "Criar novo projeto \"<name>{projectName}</name>\""
       },
@@ -13838,6 +13867,15 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "Fonte: {quote}",
+    "factCitationConversation": "Conversa",
+    "factCitationUnavailable": "Fonte indisponível",
+    "savedMarketFacts": "Fatos de mercado salvos",
+    "marketMemoryUnavailable": "A memória compartilhada do mercado está indisponível.",
+    "marketMemoryLoading": "Lendo fatos de mercado salvos…",
+    "marketMemorySource": "Fatos aceitos da biblioteca de mercado compartilhada.",
+    "marketMemoryEmpty": "Ainda não há fatos de mercado aceitos. As notas da entrevista são rascunhos até a revisão.",
+    "marketMemoryBounded": "Exibindo uma visão limitada. Beca pode recuperar mais fatos da biblioteca.",
     "companyProfile": {
       "title": "Perfil da empresa",
       "description": "Suas correções têm prioridade sobre o PDL. Este é seu perfil privado de trabalho, não um registro compartilhado da empresa.",
@@ -13849,6 +13887,13 @@
       "cancel": "Cancelar",
       "conflict": "O perfil mudou em outra sessão. Cancele e reabra antes de salvar. Suas alterações não foram salvas.",
       "failed": "Não foi possível salvar as correções. Suas alterações continuam aqui; tente novamente.",
+      "refresh": "Refresh PDL and public research",
+      "refreshing": "Refreshing preparation…",
+      "refreshDescription": "Run a new PDL lookup and public research. Your interview and saved context stay available.",
+      "refreshFailed": "Could not confirm preparation. Retry to check the same request without a duplicate lookup.",
+      "refreshStarted": "Preparation request saved. Public research status appears in the brief.",
+      "refreshNoMatch": "No fresh PDL match. Previous company context and corrections stay unchanged.",
+      "refreshUnavailable": "PDL refresh unavailable. Previous company context and corrections stay unchanged.",
       "fields": {
         "name": "Nome",
         "role": "Cargo",
@@ -13879,6 +13924,7 @@
     "executiveStudio": "EXECUTIVE STUDIO",
     "interviewSpecialists": "Interview specialists",
     "workingBusinessBrief": "Working business brief",
+    "briefControl": "Resumo",
     "theWorkingPicture": "THE WORKING PICTURE",
     "interviewDraft": "INTERVIEW DRAFT",
     "01TheObjective": "01 / THE OBJECTIVE",
@@ -13923,6 +13969,10 @@
     "sourceDisclosure": "Source",
     "automaticDraftBoundary": "The draft updates after each answer. Market evidence changes only after review.",
     "reviewInGuesstimate": "Revisar no business model",
+    "openingSpeaker": "Sarah · Jornada do cliente",
+    "openingQuestion": "Sou a Beca. O que mais gostaria de mudar no seu negócio?",
+    "interviewTeam": "Equipe de entrevista",
+    "retryDraft": "Tentar atualizar o rascunho novamente",
     "becaName": "Beca",
     "whatNeedsToChange": "O que precisa mudar?",
     "researchContextAndLenses": "Contexto da pesquisa e perspectivas especializadas",
@@ -13944,6 +13994,51 @@
       "interview": "Entrevista executiva",
       "design": "Desenho de experimentos",
       "analytics": "Análise de experimentos"
+    },
+    "progress": {
+      "title": "Seu primeiro modelo",
+      "count": "{count} de 3 elementos registrados",
+      "essentials": "Elementos do modelo",
+      "goal": "Objetivo",
+      "measure": "Medida de sucesso",
+      "journey": "Jornada do cliente",
+      "captured": "Registrado",
+      "missing": "Faltam detalhes",
+      "goalNext": "O que você gostaria de melhorar?",
+      "measureNext": "Qual resultado e prazo definiriam o sucesso?",
+      "journeyNext": "Quem é o cliente e como ele chega à decisão?",
+      "goalAsk": "Ajude-me a esclarecer o objetivo. Use minhas respostas e pergunte apenas o ponto mais importante que falta.",
+      "measureAsk": "Ajude-me a definir a medida de sucesso e o prazo com o que já informei.",
+      "journeyAsk": "Ajude-me a descrever a jornada do cliente. Use minhas respostas e pergunte apenas o ponto mais importante que falta.",
+      "failed": "Suas respostas estão salvas. É preciso tentar atualizar o resumo novamente.",
+      "updating": "Atualizando seu resumo…",
+      "ready": "Já temos o suficiente para um primeiro modelo.",
+      "conflict": "Um ponto precisa ser esclarecido antes do modelo.",
+      "connecting": "Os elementos estão registrados. Conecte-os em um primeiro modelo.",
+      "retry": "Tentar atualizar novamente",
+      "open": "Criar modelo de negócio",
+      "build": "Completar o esboço do modelo",
+      "conflictAsk": "Ajude-me a resolver as contradições no resumo salvo. Faça uma pergunta clara; não escolha a resposta por mim.",
+      "buildAsk": "Crie um primeiro modelo com o que compartilhei. Mantenha desconhecidos os números ausentes e os efeitos não medidos. Se faltar contexto essencial do cliente, pergunte apenas isso.",
+      "hint": "Números desconhecidos podem esperar.",
+      "readyHint": "Cria e salva seu modelo privado. As suposições continuam identificadas.",
+      "contextUpdating": "Concluindo a pesquisa da empresa…",
+      "email": "A pesquisa começa com {email}"
+    }
+  },
+  "workspaceAi": {
+    "tools": "Ferramentas",
+    "stop": "Parar",
+    "sources": "{count, plural, one {# fonte} other {# fontes}}",
+    "preview": "Prévia da fonte: {title}",
+    "openSource": "Abrir fonte"
+  },
+  "customerPro": {
+    "history": {
+      "today": "Hoje",
+      "yesterday": "Ontem",
+      "week": "Últimos 7 dias",
+      "earlier": "Anteriores"
     }
   }
 }

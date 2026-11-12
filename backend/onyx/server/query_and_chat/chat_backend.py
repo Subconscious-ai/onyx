@@ -109,6 +109,7 @@ from onyx.secondary_llm_flows.chat_session_naming import (
 from onyx.server.api_key_usage import check_api_key_usage
 from onyx.server.middleware.rate_limiting import get_feedback_rate_limiters
 from onyx.server.query_and_chat.burn2.api import router as burn2_router
+from onyx.server.query_and_chat.causl.api import router as causl_router
 from onyx.server.query_and_chat.chat_utils import (
     is_spreadsheet_mime_type,
     parse_spreadsheet_for_preview,
@@ -156,6 +157,7 @@ logger = setup_logger()
 
 router = APIRouter(prefix="/chat")
 router.include_router(burn2_router)
+router.include_router(causl_router)
 
 
 def _get_available_tokens_for_persona(

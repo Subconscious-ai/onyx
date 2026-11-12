@@ -4,7 +4,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { SvgFold, SvgExpand } from "@opal/icons";
 import { Button } from "@opal/components";
-import ShimmerText from "@/refresh-components/texts/ShimmerText";
+import AILoadingState from "@/sections/customer/AILoadingState";
 import { useStreamingDuration } from "../hooks/useStreamingDuration";
 import { formatDurationSeconds } from "@opal/time";
 
@@ -36,13 +36,12 @@ export const StreamingHeader = React.memo(function StreamingHeader({
     streamingStartTime,
     toolProcessingDuration
   );
-  const showElapsedTime =
-    isExpanded && streamingStartTime && elapsedSeconds > 0;
+  const showElapsedTime = streamingStartTime && elapsedSeconds > 0;
 
   return (
     <>
-      <div className="px-(--timeline-header-text-padding-x) py-(--timeline-header-text-padding-y)">
-        <ShimmerText>{headerText}</ShimmerText>
+      <div className="flex min-w-0 items-center gap-2 px-(--timeline-header-text-padding-x) py-(--timeline-header-text-padding-y)">
+        <AILoadingState label={headerText} />
       </div>
 
       {collapsible &&
@@ -61,9 +60,11 @@ export const StreamingHeader = React.memo(function StreamingHeader({
             prominence="tertiary"
             size="md"
             onClick={onToggle}
-            rightIcon={SvgFold}
-            aria-label={t("collapseButton.ariaLabel")}
-            aria-expanded={true}
+            rightIcon={isExpanded ? SvgFold : SvgExpand}
+            aria-label={t(
+              isExpanded ? "collapseButton.ariaLabel" : "expandButton.ariaLabel"
+            )}
+            aria-expanded={isExpanded}
           >
             {formatDurationSeconds(elapsedSeconds)}
           </Button>

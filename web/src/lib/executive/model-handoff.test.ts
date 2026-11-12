@@ -1,5 +1,8 @@
 /** @jest-environment jsdom */
-import { createModelHandoff } from "@/lib/executive/model-handoff";
+import {
+  createModelHandoff,
+  modelHandoffMessages,
+} from "@/lib/executive/model-handoff";
 
 const destination = "https://causl.example/dashboard/burn-import";
 let listener: ((event: MessageEvent) => void) | undefined;
@@ -224,7 +227,7 @@ test("transfers a brief only to the expected authenticated review window", () =>
   expect(child.postMessage).not.toHaveBeenCalled();
   receive({ type: "burn-ready", nonce: "proof-nonce" });
   expect(child.postMessage).toHaveBeenCalledWith(
-    { type: "burn-handoff", nonce: "proof-nonce", payload },
+    { type: "burn-handoff", intent: "build", nonce: "proof-nonce", payload },
     "https://causl.example"
   );
   handoff.dispose();
@@ -333,4 +336,74 @@ test("an old review heartbeat cannot consume a request before navigation finishe
     "https://causl.example"
   );
   handoff.dispose();
+});
+
+test("explicit model action requests a private build through the authenticated handshake", () => {
+  const handoff = createModelHandoff({
+    destination,
+    onStatus: jest.fn(),
+    onConnected: jest.fn(),
+  });
+  handoff.open({ chatId: "chat-a" });
+  expect(child.postMessage).not.toHaveBeenCalled();
+  receive({ type: "burn-ready", nonce: "proof-nonce" });
+  expect(child.postMessage).toHaveBeenCalledWith(
+    {
+      type: "burn-handoff",
+      intent: "build",
+      payload: { chatId: "chat-a" },
+      nonce: "proof-nonce",
+    },
+    "https://causl.example"
+  );
+  handoff.dispose();
+});
+
+test("retains earlier packet-only assistant turns and the persisted final brief", () => {
+  const savedBrief =
+    'Final answer<interview-brief>{"version":2}</interview-brief>';
+  const messages = modelHandoffMessages([
+    { type: "user", message: "Build a capacity model." },
+    {
+      type: "assistant",
+      message: "",
+      packets: [
+        { obj: { type: "message_start", content: "What is " } },
+        { obj: { type: "message_delta", content: "your delivery capacity?" } },
+        { obj: { type: "reasoning_delta", content: "Private reasoning" } },
+      ],
+    },
+    { type: "user", message: "We have ten consultants." },
+    {
+      type: "assistant",
+      message: savedBrief,
+      packets: [
+        { obj: { type: "message_delta", content: "Earlier unsaved answer" } },
+      ],
+    },
+  ]);
+
+  expect(messages).toEqual([
+    { type: "user", message: "Build a capacity model." },
+    { type: "assistant", message: "What is your delivery capacity?" },
+    { type: "user", message: "We have ten consultants." },
+    { type: "assistant", message: savedBrief },
+  ]);
+});
+
+test("preserves executive user text when its row carries paired assistant packets", () => {
+  const executiveText =
+    "  Our observed win rate is 25%, not 50%.\nTarget: 30%.  ";
+  const messages = modelHandoffMessages([
+    {
+      type: "user",
+      message: executiveText,
+      packets: [
+        { obj: { type: "message_start", content: "Assistant summary: " } },
+        { obj: { type: "message_delta", content: "a different claim." } },
+      ],
+    },
+  ]);
+
+  expect(messages).toEqual([{ type: "user", message: executiveText }]);
 });

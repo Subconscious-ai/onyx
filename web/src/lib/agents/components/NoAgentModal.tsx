@@ -6,7 +6,11 @@ import { SubconsciousIcon as SvgOnyxOctagon } from "@/sections/brand/Subconsciou
 import { useUser } from "@/providers/UserProvider";
 import { ADMIN_ROUTES } from "@/lib/admin-routes";
 
-export function NoAgentModal() {
+export function NoAgentModal({
+  embeddedWorkspace = false,
+}: {
+  embeddedWorkspace?: boolean;
+}) {
   const t = useTranslations("agents.modals");
   const { isAdmin } = useUser();
 
@@ -32,11 +36,15 @@ export function NoAgentModal() {
           <Modal.Footer>
             <Button
               href={ADMIN_ROUTES.CHAT_PREFERENCES.path}
+              target={embeddedWorkspace ? "_blank" : undefined}
               prominence="secondary"
             >
               {t("noAgent.reenableDefaultChat.label")}
             </Button>
-            <Button href={ADMIN_ROUTES.AGENTS.path}>
+            <Button
+              href={ADMIN_ROUTES.AGENTS.path}
+              target={embeddedWorkspace ? "_blank" : undefined}
+            >
               {t("noAgent.configureAgent.label")}
             </Button>
           </Modal.Footer>

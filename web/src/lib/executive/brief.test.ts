@@ -1,5 +1,6 @@
 import {
   projectBrief,
+  modelReadiness,
   visibleInterviewText,
   type InterviewMessage,
 } from "./brief";
@@ -36,6 +37,34 @@ const history: InterviewMessage[] = [
 ];
 
 describe("executive brief provenance and reload", () => {
+  test.each([
+    [
+      "Customers approve the scoped work. Demand fills capacity in this scenario.",
+      "executive",
+    ],
+    [
+      "For a hypothetical scenario. Customers approve the scoped work.",
+      "assumption",
+    ],
+    ["Customers approve the scoped work in this scenario.", "assumption"],
+  ])("grounds a journey only in the factual prefix: %s", (message, status) => {
+    const result = projectBrief([
+      { type: "user", message },
+      answer({
+        ...draft,
+        journey: [
+          {
+            id: "approve",
+            actor: "Customers",
+            text: "Approve the scoped work",
+            status: "executive",
+            quote: "Customers approve the scoped work",
+          },
+        ],
+      }),
+    ]);
+    expect(result.brief?.journey[0]?.status).toBe(status);
+  });
   test("reconstructs the private objective and behavioral journey from persisted conversation", () => {
     const restored = projectBrief(JSON.parse(JSON.stringify(history)));
     expect(restored.brief?.objective.status).toBe("executive");
@@ -325,6 +354,44 @@ describe("Burn 2.0 model handoff", () => {
     expect(result.brief?.keyResults?.[0]?.target.status).toBe("executive");
     expect(result.brief?.model?.equation.status).toBe("assumption");
   });
+  test("allows a named success measure and journey to build a symbolic model with unknown targets", () => {
+    const symbolic = projectBrief([
+      ...history,
+      answer({
+        ...v2,
+        keyResults: [
+          {
+            ...v2.keyResults[0],
+            target: { text: "Unknown", status: "unknown" },
+            deadline: { text: "Unknown", status: "unknown" },
+          },
+        ],
+        journey: [
+          ...v2.journey,
+          {
+            id: "renew",
+            actor: "Administrator",
+            text: "Renews",
+            status: "assumption",
+          },
+        ],
+        transitions: [
+          {
+            id: "renewal",
+            from: "activate",
+            to: "renew",
+            behavior: { text: "Chooses to renew", status: "assumption" },
+            metric: "Annual renewal",
+          },
+        ],
+      }),
+    ]).brief;
+    expect(modelReadiness(symbolic).ready).toBe(true);
+    expect(symbolic?.keyResults?.[0]?.target.status).toBe("unknown");
+    expect(
+      modelReadiness(symbolic && { ...symbolic, keyResults: [] }).ready
+    ).toBe(false);
+  });
   test("a quoted scenario cannot become a company baseline or target", () => {
     const quote = "Assume a renewal baseline of 80 percent for a scenario.";
     const result = projectBrief([
@@ -416,4 +483,37 @@ it("removes em dashes from spoken prose while retaining fenced code", () => {
   expect(
     visibleInterviewText("Baseline unknown—target retained.\n```\nx = '—'\n```")
   ).toBe("Baseline unknown, target retained.\n```\nx = '—'\n```");
+});
+
+describe("source URL citations", () => {
+  const url = "https://example.org/experiments/result?view=summary#effect";
+  const marker = `【${url}】`;
+
+  test("makes a completed source marker usable by the native link renderer", () => {
+    expect(visibleInterviewText(`Source: experiment run${marker}`)).toBe(
+      `Source: experiment run[example.org](<${url}>)`
+    );
+  });
+
+  test("keeps source examples in code and unfinished streaming markers intact", () => {
+    const text = `\`${marker}\`\n\`\`\`text\n${marker}\n\`\`\`\nSource: 【${url}`;
+    expect(visibleInterviewText(text)).toBe(text);
+  });
+
+  test.each([
+    "``MARKER``",
+    "~~~text\nMARKER\n~~~",
+    "    MARKER",
+    "````text\nMARKER\n````",
+    "[MARKER](https://example.org/other)",
+  ])("keeps Markdown code and existing link labels intact: %s", (template) => {
+    const text = template.replace("MARKER", marker);
+    expect(visibleInterviewText(text)).toBe(text);
+  });
+
+  test("preserves numbered citations and refuses credential-bearing URL markers", () => {
+    const text =
+      "Result [[1]](https://example.org/run), 【2】, 【https://user:password@example.org/run】, 【javascript:alert(1)】";
+    expect(visibleInterviewText(text)).toBe(text);
+  });
 });

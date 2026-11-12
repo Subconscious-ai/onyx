@@ -39,8 +39,8 @@ export function createPreviewLookup(hostname: string): LookupFunction {
     expires = Infinity;
     pending = (async () => {
       // Resolve before submitting the application request; never replay a turn.
-      const records = await recordsFrom("https://dns.google/resolve").catch(() =>
-        recordsFrom("https://cloudflare-dns.com/dns-query")
+      const records = await recordsFrom("https://dns.google/resolve").catch(
+        () => recordsFrom("https://cloudflare-dns.com/dns-query")
       );
       const ttl = Math.max(
         0,

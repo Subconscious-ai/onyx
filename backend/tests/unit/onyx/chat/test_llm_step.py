@@ -22,7 +22,9 @@ from onyx.llm.interfaces import LLMConfig, ToolChoiceOptions
 from onyx.llm.models import (
     AssistantMessage,
     ImageContentPart,
+    NamedToolChoice,
     TextContentPart,
+    ToolChoice,
     ToolMessage,
     UserMessage,
 )
@@ -839,7 +841,7 @@ class TestEmptyAnswerRecovery:
         chunks: list[str],
         *,
         with_citation_processor: bool,
-        tool_choice: ToolChoiceOptions = ToolChoiceOptions.AUTO,
+        tool_choice: ToolChoice = ToolChoiceOptions.AUTO,
         state_container: Any = None,
         pre_answer_processing_time: float | None = None,
         span_sink: list[Any] | None = None,
@@ -955,6 +957,18 @@ class TestEmptyAnswerRecovery:
         )
         assert llm_step_result.answer is None
         assert llm_step_result.raw_answer == raw
+
+    def test_named_library_read_does_not_stream_an_unsearched_answer(self) -> None:
+        from onyx.server.query_and_chat.streaming_models import AgentResponseDelta
+
+        result, packets = self._run(
+            ["No Enterprise facts are saved."],
+            with_citation_processor=True,
+            tool_choice=NamedToolChoice(name="market_search"),
+        )
+        assert result.answer is None
+        assert result.raw_answer == "No Enterprise facts are saved."
+        assert not any(isinstance(packet.obj, AgentResponseDelta) for packet in packets)
 
     def test_recovered_answer_is_recorded_in_tracing_span(self) -> None:
         """The generation span output must reflect the recovered answer, not the

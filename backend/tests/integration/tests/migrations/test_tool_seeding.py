@@ -14,6 +14,12 @@ class ToolSeedingExpectedResult(BaseModel):
 
 
 EXPECTED_TOOLS = {
+    "CompanyProfileTool": ToolSeedingExpectedResult(
+        name="CompanyProfileTool",
+        display_name="Company profile",
+        in_code_tool_id="CompanyProfileTool",
+        user_id=None,
+    ),
     "SearchTool": ToolSeedingExpectedResult(
         name="internal_search",
         display_name="Internal Search",
@@ -36,6 +42,18 @@ EXPECTED_TOOLS = {
         name="run_kg_search",
         display_name="Knowledge Graph Search",
         in_code_tool_id="KnowledgeGraphTool",
+        user_id=None,
+    ),
+    "OktaProfileTool": ToolSeedingExpectedResult(
+        name="OktaProfileTool",
+        display_name="Okta Profile",
+        in_code_tool_id="OktaProfileTool",
+        user_id=None,
+    ),
+    "OpenURLTool": ToolSeedingExpectedResult(
+        name="open_url",
+        display_name="Open URL",
+        in_code_tool_id="OpenURLTool",
         user_id=None,
     ),
     "PythonTool": ToolSeedingExpectedResult(
@@ -109,8 +127,12 @@ def test_tool_seeding_migration() -> None:
         )
         tools = result.fetchall()
 
-        assert len(tools) == 11, (
-            f"Should have created exactly 11 builtin tools, got {len(tools)}"
+        assert len(tools) == len(EXPECTED_TOOLS), (
+            f"Should have created exactly {len(EXPECTED_TOOLS)} builtin tools, "
+            f"got {len(tools)}"
+        )
+        assert {tool[4] for tool in tools} == set(EXPECTED_TOOLS), (
+            "Seeded builtin tool identities should match the expected tools"
         )
 
         def validate_tool(expected: ToolSeedingExpectedResult) -> None:
@@ -129,28 +151,5 @@ def test_tool_seeding_migration() -> None:
                 f"{expected.name} enabled should be {expected.enabled}"
             )
 
-        # Check SearchTool
-        validate_tool(EXPECTED_TOOLS["SearchTool"])
-
-        # Check ImageGenerationTool
-        validate_tool(EXPECTED_TOOLS["ImageGenerationTool"])
-
-        # Check WebSearchTool
-        validate_tool(EXPECTED_TOOLS["WebSearchTool"])
-
-        # Check KnowledgeGraphTool
-        validate_tool(EXPECTED_TOOLS["KnowledgeGraphTool"])
-
-        # Check PythonTool
-        validate_tool(EXPECTED_TOOLS["PythonTool"])
-
-        # Check ResearchAgent (Deep Research as a tool)
-        validate_tool(EXPECTED_TOOLS["ResearchAgent"])
-
-        # Check FileReaderTool
-        validate_tool(EXPECTED_TOOLS["FileReaderTool"])
-
-        # Check MemoryTool
-        validate_tool(EXPECTED_TOOLS["MemoryTool"])
-
-        validate_tool(EXPECTED_TOOLS["CodingAgentTool"])
+        for expected in EXPECTED_TOOLS.values():
+            validate_tool(expected)

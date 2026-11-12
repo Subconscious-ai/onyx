@@ -9,6 +9,7 @@ registration, and token request — is checked.
 
 import httpx
 
+from onyx.auth.host_auth import is_pinned_host_mcp_url
 from onyx.server.security.models import outbound_ssrf_params
 from onyx.server.security.store import get_security_settings
 from onyx.utils.url import validate_outbound_http_url
@@ -41,7 +42,8 @@ class _SSRFGuardAsyncTransport(httpx.AsyncHTTPTransport):
     targets are validated too."""
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-        validate_mcp_outbound_url(str(request.url))
+        if not is_pinned_host_mcp_url(str(request.url)):
+            validate_mcp_outbound_url(str(request.url))
         return await super().handle_async_request(request)
 
 

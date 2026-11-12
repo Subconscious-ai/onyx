@@ -21,6 +21,8 @@ export interface ExpandableTextDisplayProps {
   subtitle?: string;
   /** Maximum lines to show in collapsed state (1-10). Values outside this range default to 8. */
   maxLines?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+  /** Show all static content while retaining the full-text modal actions. */
+  truncate?: boolean;
   /** Additional className for the container */
   className?: string;
   /** Optional custom renderer for content (e.g., markdown). Falls back to plain text.
@@ -120,6 +122,7 @@ export default function ExpandableTextDisplay({
   displayContent,
   subtitle,
   maxLines = 8,
+  truncate = true,
   className,
   renderContent,
   isStreaming = false,
@@ -264,7 +267,10 @@ export default function ExpandableTextDisplay({
 
     // Static mode: use CSS line-clamp for bottom truncation
     return (
-      <div ref={scrollRef} className={cn("overflow-hidden", lineClampClass)}>
+      <div
+        ref={scrollRef}
+        className={cn("overflow-hidden", truncate && lineClampClass)}
+      >
         {renderContent!(textToDisplay, false)}
       </div>
     );
@@ -291,7 +297,10 @@ export default function ExpandableTextDisplay({
 
   // Render plain text static (CSS line-clamp + scroll-based truncation detection)
   const renderPlainTextStatic = () => (
-    <div ref={scrollRef} className={cn("overflow-hidden", lineClampClass)}>
+    <div
+      ref={scrollRef}
+      className={cn("overflow-hidden", truncate && lineClampClass)}
+    >
       <Text as="span" mainUiMuted text03 className="whitespace-pre-wrap">
         {displayContent ?? content}
       </Text>
@@ -313,7 +322,7 @@ export default function ExpandableTextDisplay({
         {/* Expand button - only show when content is truncated */}
 
         <div className="flex justify-end self-end mt-1 w-8">
-          {isTruncated && (
+          {(isTruncated || !truncate) && (
             <Button
               prominence="tertiary"
               size="sm"

@@ -29,6 +29,16 @@ describe("useTokenRefresh", () => {
     });
   });
 
+  test("embedded host sessions never start native cookie refresh", () => {
+    window.history.replaceState({}, "", "/causl?hostAuth=1");
+    try {
+      renderHook(() => useTokenRefresh(fakeUser, false, jest.fn()));
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      window.history.replaceState({}, "", "/");
+    }
+  });
+
   test("does not loop when /api/auth/refresh returns 404 and parent re-renders", async () => {
     fetchMock.mockResolvedValue({ ok: false, status: 404 });
     const onRefreshFail = jest.fn().mockResolvedValue(undefined);

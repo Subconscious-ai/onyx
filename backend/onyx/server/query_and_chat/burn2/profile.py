@@ -7,6 +7,8 @@ import re
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from onyx.prompts.causl_workspace import INTERVIEW_DISCOVERY_BUDGET
+
 if TYPE_CHECKING:
     from onyx.chat.models import ChatMessageSimple
 
@@ -22,36 +24,162 @@ def select_profile(payload: dict) -> dict[str, Any] | None:
         "industry": "job_company_industry",
         "website": "job_company_website",
     }
-    return {
+    profile: dict[str, Any] = {
         key: str(data[value])[:200] for key, value in fields.items() if data.get(value)
     }
+    for key in ("summary", "job_summary"):
+        if isinstance(data.get(key), str) and data[key].strip():
+            profile[key] = data[key][:1500]
+    linkedin = data.get("linkedin_url")
+    if isinstance(linkedin, str):
+        linkedin = linkedin.removeprefix("https://").removeprefix("http://")
+        if re.fullmatch(r"(?:www\.)?linkedin\.com/in/[a-zA-Z0-9_%.-]+/?", linkedin):
+            profile["linkedin_url"] = "https://" + linkedin
+    skills = data.get("skills")
+    if isinstance(skills, list):
+        profile["skills"] = [item[:80] for item in skills[:12] if isinstance(item, str)]
+    experience = data.get("experience")
+    if isinstance(experience, list):
+        roles = []
+        for item in experience[:6]:
+            if not isinstance(item, dict):
+                continue
+            company = item.get("company") or {}
+            title = item.get("title") or {}
+            role = {}
+            for key, value in {
+                "company": company.get("name") if isinstance(company, dict) else None,
+                "role": title.get("name") if isinstance(title, dict) else None,
+                "start_date": item.get("start_date"),
+                "end_date": item.get("end_date"),
+            }.items():
+                if isinstance(value, str) and value:
+                    role[key] = value[:200]
+            if role:
+                roles.append(role)
+        if roles:
+            profile["experience"] = roles
+    return profile
 
 
-def turn_guidance(turn: int, text: str) -> str:
-    attention_budget = "Maximum 60 spoken words. Summarize only the material update; no unsolicited KPI lists, invented target placeholders or full repeated brief. "
-    if turn == 4 and not re.search(
-        r"\b(stop|frustrat\w*|annoy\w*|awful|angry|repeating the same|"
-        r"roast me not|no jokes|no humo[u]?r|don.t roast|do not roast|"
-        r"keep (?:this|it) serious|losing their jobs|layoffs|company is closing)\b",
-        text,
-        re.I,
-    ):
-        return (
-            attention_budget
-            + "Executive answer four: Jerry contributes exactly one sharp, funny business roast, prefixed 'Jerry:'. Maximum 15 words for the punchline. Skewer a volunteered boast, business contradiction or unsupported grand ambition; aim for a cutting observation, not encouragement. Use only executive-supplied business context, never invent facts. Never mock identity, personal data, customers, job losses or an honest unknown. Omit humor after a humor opt-out or distress anywhere in the conversation. The regular interviewer then continues briefly, with no extra question. A joke is not evidence and must never enter the model brief."
+def turn_guidance(
+    turn: int, text: str, *, model_review: bool = False, draft: dict | None = None
+) -> str:
+    attention_budget = (
+        "No unsolicited KPI lists, invented target placeholders or full repeated brief. "
+        "Apply the latest executive answer before choosing a gap: the saved draft may lag behind it. "
+        "Never ask to confirm a path already supplied or selected, invent extra steps, or request an answered or explicitly unknown value. "
+    )
+    if not model_review:
+        attention_budget = (
+            INTERVIEW_DISCOVERY_BUDGET
+            + "State uncertainty as a statement, not another question. "
+            "Keep explicitly fixed inputs fixed and explicit exclusions excluded; do not revisit either. "
+            "Use a supplied overall rate directly; unknown intermediate rates or unmeasured intervention effects do not block the first model. Do not ask the executive to guess them. "
+            + attention_budget
         )
-    question_guidance = (
-        "Question budget: zero. The latest executive request explicitly disallows questions. Acknowledge the update or give the requested synthesis and stop. Do not ask for permission, another input or a next step."
-        if re.search(
-            r"\b(?:no(?: extra| more| further)? questions?|without (?:another |a |any )?questions?|conclude)\b",
+    conclude = bool(
+        re.search(
+            r"\b(?:no(?: extra| more| further)? questions?|without (?:another |a |any )?questions?|conclude|summari[sz]e|print)\b",
             text,
             re.I,
         )
-        else "One concise answer, at most one material question. When the executive requests a conclusion, summarize without any question."
     )
+    humor_allowed = (
+        turn == 5
+        and not model_review
+        and not conclude
+        and not re.search(
+            r"\b(stop|frustrat\w*|annoy\w*|awful|angry|repeating the same|"
+            r"roast me not|no jokes|no humo[u]?r|don.t roast|do not roast|"
+            r"keep (?:this|it) serious|losing their jobs|layoffs|company is closing)\b",
+            text,
+            re.I,
+        )
+    )
+    humor = (
+        "Jerry contributes once per interview: if no previous Jerry observation exists, "
+        "include one original grounded line of at most 15 words when volunteered context supports it. "
+        "Respect any earlier opt-out or distress. Never invent a tension, mock ambition or an honest unknown. "
+        "Never delay an earlier model for humor. "
+        if humor_allowed
+        else "Omit humor. "
+    )
+    if conclude:
+        question_guidance = "Question budget: zero. The latest executive request explicitly disallows questions. Acknowledge the update or give the requested synthesis and stop. Do not ask for permission, another input or a next step."
+    elif model_review:
+        question_guidance = (
+            "Review the actual saved model using its current application receipt. "
+            "Do not restart discovery. Answer the latest scenario or model request; "
+            "ask at most one material question only when that request needs a missing private input."
+        )
+    elif draft and (
+        draft.get("objective", {}).get("status") == "executive"
+        and any(
+            kr.get("metric", "").strip() and kr.get("unit", "").strip()
+            for kr in draft.get("keyResults", [])
+        )
+        and len(draft.get("journey", [])) >= 2
+        and draft.get("transitions")
+        and draft.get("model", {}).get("equation", {}).get("text")
+        and draft.get("model", {}).get("inputs")
+        and not draft.get("conflicts")
+    ):
+        question_guidance = (
+            "Question budget: zero for the existing scope. The saved draft contains the three essentials. "
+            "If an explicit correction changes the goal or journey, apply it first; ask at most one question only if an essential connection is now missing. "
+            "Do not ask for optional economics, capacity, churn, or another confirmation. "
+            "Give one brief insight or acknowledge the latest correction in at most 30 words. "
+            "Keep proposed journey steps and relationships labeled as assumptions. "
+            "The draft is not a saved business model: never claim model persistence, calculation, "
+            "or direct the executive to a tab. The application shows the real inline action. "
+            "End with a statement."
+        )
+    elif turn >= 5 or (
+        turn >= 4
+        and re.search(r"\b(?:unknown|unavailable|don.t know|do not know)\b", text, re.I)
+    ):
+        question_guidance = (
+            "Question budget: zero. Discovery ends by the fifth turn, or after a fourth answer parks unknowns. "
+            "Synthesize the first symbolic model from the supplied goal, measure, journey, "
+            "prepared dossier and matching company research. Keep missing operating numbers unknown "
+            "and proposed relationships labeled as assumptions. Do not ask for another input, "
+            "confirmation or permission. Let the existing brief extraction and model action proceed. "
+            "If an essential private goal is still missing, name that gap without inventing it. "
+            "Only an application receipt can establish that the model was created or saved. "
+            "Use at most 45 spoken words and end with a statement, not a question or invitation."
+        )
+    elif (
+        draft
+        and draft.get("objective", {}).get("status") == "executive"
+        and any(
+            kr.get("metric", "").strip() and kr.get("unit", "").strip()
+            for kr in draft.get("keyResults", [])
+        )
+        and (len(draft.get("journey", [])) < 2 or not draft.get("transitions"))
+    ):
+        question_guidance = (
+            "The saved draft has an executive goal and named measure, but its customer journey is incomplete. "
+            "If the source answers, including the latest reply, already supply or select the path or explicitly keep it unknown, retain it and do not ask the path question. "
+            "Otherwise: Ask only one customer decision-path question before another operating-number question. "
+            "Do not ask about economics, capacity, price, margin, or utilization. "
+            "Do not invent an industry funnel or treat company research as their private customer behavior."
+        )
+    else:
+        question_guidance = (
+            "One concise answer, at most one material question. Use the supplied prepared dossier "
+            "and matching company research before asking for a private gap. Capture the goal, "
+            "named success measure and customer journey within four discovery questions. "
+            "When the executive supplied a named measurable goal, capture the customer journey before another operating-number question. "
+            "Only if neither the source answers nor the latest reply supplies or selects a path, "
+            "propose a short hypothesis from matching research and ask them to confirm or correct it once. "
+            "Stop earlier when those essentials suffice for a first symbolic model. "
+            "Keep unavailable numbers unknown."
+        )
     return (
         attention_budget
-        + "No humor on this turn. Do not repeat previous jokes. Use the relevant specialist objective: Sarah maps customer decisions; Frankie links the target to economic drivers; Mei checks alternatives and conflicting evidence. "
+        + humor
+        + "Use a short perspective label when useful: Sarah · Journey, Frankie · Business model, or Mei · Market challenge. Let the question convey its purpose. These are perspectives within Beca, not separate tool executions. "
         + question_guidance
     )
 
@@ -182,9 +310,10 @@ def interview_context(
         + json.dumps(unknowns)
         + "\nQuestions already asked (conversation data): "
         + json.dumps(asked[-8:])
-        + "\nNever repeat or paraphrase an already asked question. If an answer leaves the requested detail unresolved, park the detail as unknown and move to another material decision or summarize."
+        + "\nThe application, not conversational text, confirms persistence and enables the model action. Never claim a new answer is saved or the model is ready before its saved-brief status is known. Do not narrate navigation, name buttons, or tell the executive to look in a corner. The application places the next action directly in the conversation. Do not ask more questions merely while waiting for that save."
+        + "\nNever re-ask an answered fact or an explicitly unknown detail. A partial answer or acknowledgement does not answer the rest of a question. If an unanswered private decision materially changes model scope or structure, clarify it once; otherwise leave it unknown. Never infer the missing answer from company research or politeness."
+        + "\nWhen summarizing conversation facts, place an exact verbatim quotation from the supporting executive statement beside each fact. The application adds inline citations only for exact source quotations. Never invent quotations; distinguish assumptions and calculations from testimony."
         + "\nUse the exact economic quantity and units supplied: price, revenue, margin and contribution are distinct. Do not rename contribution as price."
-        + "\nDo not ask for a value already answered or declared unknown. A target and an unknown baseline are enough for a symbolic draft. Ask about a different material decision or summarize briefly."
         + "\nAnswer the latest request below, not an earlier question or saved brief. A repeated scenario request still needs a new preview; a previous preview is historical."
         + "\nLatest executive request: "
         + json.dumps(recent[-1][:1800] if recent else "")

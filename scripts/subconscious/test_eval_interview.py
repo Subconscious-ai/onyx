@@ -5,9 +5,12 @@ import json
 import tempfile
 import unittest
 import urllib.error
+import urllib.parse
+from email.message import Message
 from pathlib import Path
 from unittest.mock import patch
 
+import eval_interview
 from eval_interview import (
     Turn,
     allowed_bedrock_models,
@@ -20,6 +23,176 @@ from eval_interview import (
 
 
 class EvaluationChecks(unittest.TestCase):
+    def test_scenario_tools_include_only_defaults_and_required_authorized_design(self):
+        tools = [
+            {"id": 11, "name": "run_python"},
+            {"id": 12, "name": "web_search"},
+            {"id": 13, "name": "internal_search"},
+            {"id": 14, "name": "deep_research"},
+            {"id": 15, "name": "get_research_context"},
+            {"id": 16, "name": "get_research_sources"},
+            {"id": 21, "name": "check_causality"},
+            {"id": 22, "name": "generate_attributes_levels"},
+            {"id": 23, "name": "generate_dependent_variable"},
+            {"id": 24, "name": "create_experiment_draft"},
+            {"id": 25, "name": "get_experiment_draft"},
+            {"id": 31, "name": "start_experiment"},
+            {"id": 32, "name": "delete_project"},
+        ]
+        turns = [
+            Turn(
+                "Design",
+                tools_required=("check_causality", "generate_attributes_levels"),
+            ),
+            Turn(
+                "Draft",
+                tools_required=("create_experiment_draft", "get_experiment_draft"),
+            ),
+        ]
+        self.assertEqual(
+            eval_interview.scenario_tool_ids(tools, turns),
+            [11, 12, 13, 14, 15, 16, 21, 22, 24, 25],
+        )
+        self.assertEqual(
+            eval_interview.scenario_tool_ids(tools, [Turn("Calculate")]),
+            [11, 12, 13, 14, 15, 16],
+        )
+        self.assertEqual(
+            eval_interview.scenario_tool_ids(
+                tools, [Turn("Metric", tools_required=("generate_dependent_variable",))]
+            ),
+            [11, 12, 13, 14, 15, 16, 23],
+        )
+
+    def test_scenario_tools_reject_launch_even_when_persona_authorizes_it(self):
+        with self.assertRaisesRegex(
+            ValueError, "Unsupported scenario tools: start_experiment"
+        ):
+            eval_interview.scenario_tool_ids(
+                [{"id": 31, "name": "start_experiment"}],
+                [Turn("Launch", tools_required=("start_experiment",))],
+            )
+
+    def test_missing_required_scenario_tool_fails_before_chat_creation(self):
+        requested_paths = []
+
+        def open_response(request, **_options):
+            path = urllib.parse.urlsplit(request.full_url).path
+            requested_paths.append(path)
+            responses = {
+                "/api/persona/2": {"default_model_configuration_id": 7, "tools": []},
+                "/api/llm/provider": {
+                    "providers": [
+                        {
+                            "provider": "bedrock",
+                            "model_configurations": [{"id": 7, "name": "fixture"}],
+                        }
+                    ]
+                },
+            }
+            if path not in responses:
+                self.fail(
+                    "Missing tool preflight must stop before chat creation: " + path
+                )
+            return io.StringIO(json.dumps(responses[path]))
+
+        with tempfile.TemporaryDirectory() as directory:
+            scenario = Path(directory) / "scenario.json"
+            scenario.write_text(
+                json.dumps(
+                    {
+                        "draft": [
+                            {
+                                "message": "Draft",
+                                "tools_required": ["generate_attributes_levels"],
+                            }
+                        ]
+                    }
+                )
+            )
+            with (
+                patch(
+                    "sys.argv",
+                    [
+                        "eval_interview",
+                        "--cookies",
+                        "fixture.cookies",
+                        "--agent",
+                        "2",
+                        "--output",
+                        str(Path(directory) / "out.json"),
+                        "--scenario-file",
+                        str(scenario),
+                    ],
+                ),
+                patch("eval_interview.http.cookiejar.MozillaCookieJar.load"),
+                patch(
+                    "eval_interview.urllib.request.OpenerDirector.open",
+                    side_effect=open_response,
+                ),
+                self.assertRaisesRegex(
+                    ValueError,
+                    "Required scenario tools unavailable: generate_attributes_levels",
+                ),
+            ):
+                eval_interview.main()
+        self.assertEqual(requested_paths, ["/api/persona/2", "/api/llm/provider"])
+
+    def test_executive_proof_roast_uses_fifth_turn_and_opt_out_reaches_it(self):
+        cases = json.loads(
+            Path(__file__).with_name("executive-proof-cases.json").read_text()
+        )
+        turns = cases["correction_unknowns_and_roast"]
+        self.assertEqual(len(turns), 5)
+        self.assertEqual([turn["jerry"] for turn in turns], [False] * 4 + [True])
+        self.assertFalse(turns[4]["questions_allowed"])
+        self.assertTrue(turns[4]["prepare_brief"])
+        self.assertEqual(len(cases["humor_opt_out"]), 5)
+        self.assertFalse(cases["humor_opt_out"][4]["jerry"])
+
+    def test_question_examples_do_not_hide_the_question_topic(self):
+        turn = Turn("Thanks", asks_about="channel", brief_required=False)
+        self.assertEqual(
+            assess(
+                turn,
+                "Which channel carries the message (e.g., email, TV or radio)?",
+                "",
+            ),
+            [],
+        )
+
+    def test_energy_acknowledgement_must_advance_discovery(self):
+        cases = json.loads(
+            Path(__file__).with_name("energy_progress_cases.json").read_text()
+        )
+        turn = Turn(**cases["energy_progress"][1])
+        self.assertTrue(
+            assess(
+                turn,
+                "Your goal is to raise conversion from 5.5% to 7% within three months.",
+                "Which customer segment does the campaign target?",
+            )
+        )
+        self.assertEqual(
+            assess(
+                turn,
+                "What customer action counts as a conversion?",
+                "Which customer segment does the campaign target?",
+            ),
+            [],
+        )
+        handoff = Turn(**cases["energy_progress"][3])
+        self.assertTrue(assess(handoff, 'View "Model Draft 1" in Brief.', ""))
+        self.assertEqual(
+            assess(
+                handoff,
+                "The draft connects tariff-page visits to signed contracts. "
+                "Traffic remains unknown. Select Open business model when it appears.",
+                "",
+            ),
+            [],
+        )
+
     def test_prototype_cases_detect_declared_unknowns_and_assistant_company_confusion(
         self,
     ):
@@ -172,7 +345,7 @@ class EvaluationChecks(unittest.TestCase):
             ),
         )
 
-    def test_evaluation_never_selects_anthropic_even_through_bedrock(self):
+    def test_evaluation_requires_aws_billing_not_a_particular_model_vendor(self):
         providers = [
             {
                 "provider": "bedrock",
@@ -186,8 +359,12 @@ class EvaluationChecks(unittest.TestCase):
                 "provider": "openai",
                 "model_configurations": [{"id": 4, "name": "gpt-4"}],
             },
+            {
+                "provider": "anthropic",
+                "model_configurations": [{"id": 5, "name": "claude-sonnet"}],
+            },
         ]
-        self.assertEqual(allowed_bedrock_models(providers), {1})
+        self.assertEqual(allowed_bedrock_models(providers), {1, 2})
 
     def test_failed_preparation_preserves_a_failure_receipt_and_checks_storage(self):
         source = {
@@ -199,7 +376,9 @@ class EvaluationChecks(unittest.TestCase):
 
         def api(path, _body=None):
             if path.endswith("executive-brief"):
-                raise urllib.error.HTTPError(path, 502, "Provider error", {}, None)
+                raise urllib.error.HTTPError(
+                    path, 502, "Provider error", Message(), None
+                )
             return io.StringIO(json.dumps(source))
 
         result = checkpoint(api, "fixture", Turn("Prepare"), ["Baseline unknown"])

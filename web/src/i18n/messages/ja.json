@@ -1,4 +1,21 @@
 {
+  "causlWorkspace": {
+    "cancelConnection": "編集を続ける",
+    "connectWorkspace": "ワークスペースを接続",
+    "connectionRequired": "続行するにはワークスペースを接続してください。メッセージは保持されます。",
+    "connectionFailed": "接続に失敗しました。メッセージは保持されています。もう一度お試しください。",
+    "notConfigured": "causl-kbのワークスペースからアシスタントを開いてください。引き続き利用できない場合は管理者にお問い合わせください。",
+    "signin": "causl-kbと同じ組織アカウントでログインしてから、この会話を開き直してください。",
+    "signInAction": "Onyxにログイン",
+    "reopen": "会話を開き直す",
+    "access": "組織アカウントを確認し、ライブラリに接続してから、この会話を開き直してください。",
+    "connectLibrary": "ライブラリに接続",
+    "connecting": "接続中…",
+    "unavailable": "コンテキストを利用できません。保存済みの会話は保持されています。",
+    "opening": "会話を開いています…",
+    "modelContextUnavailable": "Models ページの取得に失敗したか、サイズ制限を超えました。完全なモデルを開いて再試行してください。ローカルの下書きは変更されません。",
+    "contextChanged": "送信前にワークスペースが変更されました。現在のコンテキストを確認して再送してください。"
+  },
   "accountPopover": {
     "accountFallback": {
       "label": "アカウント"
@@ -9294,7 +9311,8 @@
         },
         "stopButton": {
           "ariaLabel": "生成を停止",
-          "tooltip": "停止 · esc"
+          "tooltip": "停止 · esc",
+          "label": "停止"
         }
       },
       "buildFileCard": {
@@ -13272,6 +13290,17 @@
       }
     },
     "chatSearch": {
+      "pro": {
+        "all": "すべて",
+        "actions": "操作",
+        "chats": "チャット",
+        "projects": "プロジェクト",
+        "searchIn": "検索対象",
+        "close": "検索を閉じる",
+        "loading": "読み込み中…",
+        "searching": "検索中…",
+        "loadMore": "会話をさらに読み込む"
+      },
       "createNamedProject": {
         "label": "新しいプロジェクト「<name>{projectName}</name>」を作成"
       },
@@ -13838,6 +13867,15 @@
     }
   },
   "executive": {
+    "marketMemoryEvidence": "出典: {quote}",
+    "factCitationConversation": "会話",
+    "factCitationUnavailable": "出典なし",
+    "savedMarketFacts": "保存済みの市場情報",
+    "marketMemoryUnavailable": "共有市場メモリを利用できません。",
+    "marketMemoryLoading": "保存済みの市場情報を読み込み中…",
+    "marketMemorySource": "共有市場ライブラリで承認された情報です。",
+    "marketMemoryEmpty": "承認された市場情報はまだありません。インタビューのメモは確認されるまで下書きです。",
+    "marketMemoryBounded": "一部の情報を表示しています。Beca はライブラリから追加の情報を取得できます。",
     "companyProfile": {
       "title": "会社プロフィール",
       "description": "あなたの修正はPDLより優先されます。これは個人用の作業プロフィールであり、会社の共有記録ではありません。",
@@ -13849,6 +13887,13 @@
       "cancel": "キャンセル",
       "conflict": "プロフィールが別の場所で変更されました。キャンセルして開き直してください。修正は保存されていません。",
       "failed": "修正を保存できませんでした。入力内容は残っています。再試行してください。",
+      "refresh": "Refresh PDL and public research",
+      "refreshing": "Refreshing preparation…",
+      "refreshDescription": "Run a new PDL lookup and public research. Your interview and saved context stay available.",
+      "refreshFailed": "Could not confirm preparation. Retry to check the same request without a duplicate lookup.",
+      "refreshStarted": "Preparation request saved. Public research status appears in the brief.",
+      "refreshNoMatch": "No fresh PDL match. Previous company context and corrections stay unchanged.",
+      "refreshUnavailable": "PDL refresh unavailable. Previous company context and corrections stay unchanged.",
       "fields": {
         "name": "名前",
         "role": "役職",
@@ -13879,6 +13924,7 @@
     "executiveStudio": "EXECUTIVE STUDIO",
     "interviewSpecialists": "Interview specialists",
     "workingBusinessBrief": "Working business brief",
+    "briefControl": "概要",
     "theWorkingPicture": "THE WORKING PICTURE",
     "interviewDraft": "INTERVIEW DRAFT",
     "01TheObjective": "01 / THE OBJECTIVE",
@@ -13923,6 +13969,10 @@
     "sourceDisclosure": "Source",
     "automaticDraftBoundary": "The draft updates after each answer. Market evidence changes only after review.",
     "reviewInGuesstimate": "Open business model",
+    "openingSpeaker": "Sarah · カスタマージャーニー",
+    "openingQuestion": "Becaです。事業で最も変えたいことは何ですか？",
+    "interviewTeam": "インタビューチーム",
+    "retryDraft": "下書きの更新を再試行",
     "becaName": "Beca",
     "whatNeedsToChange": "何を変える必要がありますか？",
     "researchContextAndLenses": "調査の背景と専門家の視点",
@@ -13944,6 +13994,51 @@
       "interview": "経営者インタビュー",
       "design": "実験設計",
       "analytics": "実験分析"
+    },
+    "progress": {
+      "title": "最初のモデル",
+      "count": "必要な3項目中{count}項目を記録",
+      "essentials": "必要な情報",
+      "goal": "目標",
+      "measure": "成功の指標",
+      "journey": "顧客ジャーニー",
+      "captured": "記録済み",
+      "missing": "詳細が必要",
+      "goalNext": "どのビジネス成果を改善したいですか？",
+      "measureNext": "成功の基準と期限を教えてください。",
+      "journeyNext": "顧客は現在、どのように購入や利用に至りますか？",
+      "goalAsk": "すでに伝えた内容を踏まえ、目標を明確にする次の質問を1つしてください。",
+      "measureAsk": "すでに伝えた内容を踏まえ、成功の指標と期限を明確にする次の質問を1つしてください。",
+      "journeyAsk": "すでに伝えた内容を踏まえ、顧客ジャーニーを明確にする次の質問を1つしてください。",
+      "failed": "回答は保存されています。概要の更新を再試行してください。",
+      "updating": "概要を更新中…",
+      "ready": "最初のモデルを作成できます。",
+      "conflict": "モデルを開く前に、1点確認が必要です。",
+      "connecting": "記録した情報をモデルにつなげています。",
+      "retry": "概要の更新を再試行",
+      "open": "Build business model",
+      "build": "Complete model brief",
+      "conflictAsk": "モデルを作成するために解決すべき矛盾について、1つ質問してください。",
+      "buildAsk": "共有した情報から最初のビジネスモデルを作成してください。不明な数値や未測定の実験効果は不明のままにしてください。顧客について重要な情報が不足している場合は、次の質問を1つだけしてください。",
+      "hint": "不明な数値は後で補えます。",
+      "readyHint": "Builds and saves your private model. Assumptions stay labeled.",
+      "contextUpdating": "Finishing company research…",
+      "email": "{email} をもとに調査を開始します"
+    }
+  },
+  "workspaceAi": {
+    "tools": "ツール",
+    "stop": "停止",
+    "sources": "{count, plural, one {# 件のソース} other {# 件のソース}}",
+    "preview": "ソースのプレビュー: {title}",
+    "openSource": "ソースを開く"
+  },
+  "customerPro": {
+    "history": {
+      "today": "今日",
+      "yesterday": "昨日",
+      "week": "過去7日間",
+      "earlier": "それ以前"
     }
   }
 }

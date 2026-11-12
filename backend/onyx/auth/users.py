@@ -68,6 +68,12 @@ from onyx.auth.email_utils import (
     send_forgot_password_email,
     send_user_verification_email,
 )
+from onyx.auth.host_auth import (
+    authenticate_host,
+    host_auth_requested,
+    host_request,
+    host_session_for,
+)
 from onyx.auth.invited_users import get_invited_users, remove_user_from_invited_users
 from onyx.auth.jwt import verify_jwt_token
 from onyx.auth.login_claims_capture import capture_oauth_login_claims
@@ -76,11 +82,18 @@ from onyx.auth.mobile_sso.sso_completion import (
     complete_mobile_sso,
     is_mobile_sso,
 )
-from onyx.auth.oidc_client import log_token_exchange_failure
+from onyx.auth.oidc_client import VerifiedEmailOpenID, log_token_exchange_failure
 from onyx.auth.pat import get_hashed_pat_from_request
 from onyx.auth.permissions import has_global_permission
 from onyx.auth.pkce import generate_pkce_pair
 from onyx.auth.schemas import AuthBackend, UserCreate
+from onyx.auth.session_identity import (
+    OIDCIdentity,
+    oidc_login_identity,
+    read_validated_identity,
+    record_issued_identity,
+    remove_session_identity,
+)
 from onyx.auth.session_tokens import (
     SESSION_TOKEN_GRACE_PERIOD_SECONDS,
     SessionRejection,
@@ -953,9 +966,11 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         request: Optional[Request] = None,
         *,
         associate_by_email: bool = False,
+        allow_email_link: bool = True,
         is_verified_by_default: bool = False,
         allowed_email_domains_override: Sequence[str] | None = None,
         enforce_verified_domain: bool = False,
+        auto_join_verified_email: bool = False,
     ) -> User:
         referral_source = (
             getattr(request.state, "referral_source", None)  # ods: ignore[getattr]
@@ -983,7 +998,10 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
             raise HTTPException(status_code=401, detail="User not found")
 
         async with self._tenant_session_with_bound_user_db(tenant_id) as db_session:
-            verify_email_in_whitelist(account_email, tenant_id, oauth_name, account_id)
+            if not auto_join_verified_email:
+                verify_email_in_whitelist(
+                    account_email, tenant_id, oauth_name, account_id
+                )
             oauth_security_settings = get_security_settings()
             effective_valid_email_domains = (
                 allowed_email_domains_override
@@ -1031,6 +1049,8 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
                     user = await self.user_db.get_by_email(account_email)
                     if user is None:
                         raise exceptions.UserNotExists()
+                    if not allow_email_link:
+                        raise exceptions.UserAlreadyExists()
                     # No link matched this subject, so any link this provider holds on
                     # the row is stale: the IdP re-issued its subjects (a new Entra
                     # app registration).
@@ -1675,6 +1695,7 @@ class TenantAwareRedisStrategy(RedisStrategy[User, uuid.UUID]):
             ),
             ex=physical_session_ttl_seconds(self.lifetime_seconds),
         )
+        await record_issued_identity(token, user.id)
         return token
 
     async def read_token(
@@ -1698,7 +1719,9 @@ class TenantAwareRedisStrategy(RedisStrategy[User, uuid.UUID]):
 
         try:
             parsed_id = user_manager.parse_id(result.sub)
-            return await user_manager.get(parsed_id)
+            user = await user_manager.get(parsed_id)
+            await read_validated_identity(token, user.id)
+            return user
         except (exceptions.UserNotExists, exceptions.InvalidID):
             return None
 
@@ -1717,6 +1740,7 @@ class TenantAwareRedisStrategy(RedisStrategy[User, uuid.UUID]):
             ),
             ex=SESSION_TOKEN_GRACE_PERIOD_SECONDS,
         )
+        await remove_session_identity(token)
 
     async def refresh_token(self, token: Optional[str], user: User) -> str:
         """Refreshes a token by extending its expiration time in Redis."""
@@ -1759,6 +1783,23 @@ class RefreshableDatabaseStrategy(DatabaseStrategy[User, uuid.UUID, AccessToken]
     ):
         super().__init__(access_token_db, lifetime_seconds)
         self._access_token_db = access_token_db
+
+    async def write_token(self, user: User) -> str:
+        token = await super().write_token(user)
+        await record_issued_identity(token, user.id)
+        return token
+
+    async def read_token(
+        self, token: Optional[str], user_manager: BaseUserManager[User, uuid.UUID]
+    ) -> Optional[User]:
+        user = await super().read_token(token, user_manager)
+        if user is not None and token is not None:
+            await read_validated_identity(token, user.id)
+        return user
+
+    async def destroy_token(self, token: str, user: User) -> None:
+        await super().destroy_token(token, user)
+        await remove_session_identity(token)
 
     async def refresh_token(self, token: Optional[str], user: User) -> str:
         """Refresh a token by updating its expiration time in the database."""
@@ -2099,7 +2140,11 @@ async def _check_for_saml_and_jwt(
     async_db_session: AsyncSession,
 ) -> User | None:
     # If user is None, check for JWT in Authorization header
-    if user is None and get_security_settings().jwt_public_key_url is not None:
+    if (
+        user is None
+        and get_security_settings().jwt_public_key_url is not None
+        and os.environ.get("CAUSL_KB_HOST_AUTH_ENABLED") != "true"
+    ):
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header[len("Bearer ") :].strip()
@@ -2183,6 +2228,15 @@ async def _resolve_optional_user(
     user: User | None,
     user_manager: BaseUserManager[User, uuid.UUID],
 ) -> User | None:
+    if host_auth_requested(request):
+        host_user, session = await authenticate_host(
+            request, async_db_session, cast(UserManager, user_manager)
+        )
+        request.state.causl_host_session = session
+        request.state.usage_credential = UsageCredentialIdentity(
+            UsageCredentialType.JWT
+        )
+        return host_user
     if user is not None:
         request.state.usage_credential = UsageCredentialIdentity(
             UsageCredentialType.SESSION
@@ -2258,7 +2312,8 @@ async def optional_user(
         getattr(request.state, "usage_credential", None)  # ods: ignore[getattr]
     )
     try:
-        yield user
+        with host_request(request.scope.get("state", {}).get("causl_host_session")):
+            yield user
     finally:
         CURRENT_USAGE_CREDENTIAL_CONTEXTVAR.reset(credential_token)
         CURRENT_USER_ID_CONTEXTVAR.reset(token)
@@ -2298,6 +2353,7 @@ async def double_check_user(
             user.oidc_expiry
             and user.oidc_expiry < datetime.now(timezone.utc)
             and not include_expired
+            and host_session_for(user.id) is None
         ):
             raise BasicAuthenticationError(
                 detail="Access denied. User's OIDC token has expired.",
@@ -2633,6 +2689,11 @@ async def complete_login_flow(
             is_verified_by_default=is_verified_by_default,
             allowed_email_domains_override=allowed_email_domains_override,  # ty: ignore[unknown-argument]
             enforce_verified_domain=enforce_verified_domain,  # ty: ignore[unknown-argument]
+            # Only the strict, configured OIDC client can authorize this path.
+            auto_join_verified_email=(  # ty: ignore[unknown-argument]
+                isinstance(oauth_client, VerifiedEmailOpenID)
+                and oauth_client.allows_verified_email_to_join(account_email)
+            ),
         )
     except UserAlreadyExists:
         raise OnyxError(
@@ -2656,7 +2717,13 @@ async def complete_login_flow(
         await user_manager.on_after_login(user, request)
         return redirect_response
 
-    response = await backend.login(strategy, user)
+    identity = (
+        OIDCIdentity(issuer=oauth_client.expected_issuer, subject=account_id)
+        if isinstance(oauth_client, VerifiedEmailOpenID)
+        else None
+    )
+    with oidc_login_identity(identity):
+        response = await backend.login(strategy, user)
     await user_manager.on_after_login(user, request, response)
 
     if tenant_id is None:

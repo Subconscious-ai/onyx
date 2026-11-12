@@ -89,7 +89,7 @@ from onyx.db.chat import (
 from onyx.db.document_set import filter_document_set_names_by_user_access
 from onyx.db.engine.sql_engine import get_session_with_current_tenant
 from onyx.db.enums import HookPoint, record_mode_persists_content
-from onyx.db.memory import get_memories
+from onyx.db.memory import UserInfo, UserMemoryContext, get_memories
 from onyx.db.models import ChatMessage, ChatSession, Persona, User, UserFile
 from onyx.db.projects import get_user_files_from_project
 from onyx.db.tools import get_tools
@@ -120,7 +120,13 @@ from onyx.llm.utils import (
 )
 from onyx.natural_language_processing.utils import get_tokenizer
 from onyx.onyxbot.slack.models import SlackContext
+from onyx.prompts.causl_workspace import (
+    SAVED_FACT_RETRIEVAL_INSTRUCTIONS,
+    WORKSPACE_INSTRUCTIONS,
+)
 from onyx.prompts.prompt_utils import substitute_user_placeholders
+from onyx.server.query_and_chat.burn2 import EXECUTIVE_INTERVIEW_PERSONA_NAMES
+from onyx.server.query_and_chat.causl.turn import workspace_turn
 from onyx.server.query_and_chat.chat_utils import mime_type_to_chat_file_type
 from onyx.server.query_and_chat.models import (
     AUTO_PLACE_AFTER_LATEST_MESSAGE,
@@ -658,8 +664,69 @@ def build_chat_turn(
             eager_load_persona=True,
         )
 
+    from onyx.db.twenty_panel import bind_twenty_context, read_twenty_binding
+    from onyx.prompts.twenty import twenty_prompt
+    from onyx.server.query_and_chat.causl.twenty import (
+        authorize_twenty_context,
+        require_twenty_session,
+    )
+
+    twenty_context = None
+    if new_msg_req.twenty_context_id is not None:
+        if (
+            user is None
+            or new_msg_req.shared_context_only
+            or new_msg_req.causl_selection is not None
+        ):
+            raise OnyxError(OnyxErrorCode.UNAUTHORIZED)
+        twenty_context = authorize_twenty_context(
+            require_twenty_session(user.id),
+            {"contextId": str(new_msg_req.twenty_context_id)},
+        )
+        bind_twenty_context(db_session, chat_session, user.id, twenty_context)
+        additional_context = twenty_prompt(twenty_context)
+    elif read_twenty_binding(db_session, chat_session.id) is not None:
+        raise OnyxError(
+            OnyxErrorCode.UNAUTHORIZED, "Refresh the current record context in Twenty."
+        )
+
     persona = chat_session.persona
     message_text = new_msg_req.message
+    saved_fact_request = (
+        os.environ.get("BURN2_ENABLED") == "true"
+        and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
+        and all(
+            re.search(pattern, message_text, re.I)
+            for pattern in (
+                r"^\s*(?:(?:using|from)\s+only\s+(?:(?:our|the|my)\s+)?"
+                r"(?:saved\s+)?library\s*[,:]\s*)?(?:please\s+)?"
+                r"(?:show|list|retrieve|give|brief|summari[sz]e|what|which)\b",
+                r"\b(?:saved|recorded|accepted|library)\b",
+                r"\bfacts?\b",
+            )
+        )
+    )
+    causl_binding, workspace_context = (
+        (None, None)
+        if new_msg_req.shared_context_only or twenty_context is not None
+        else workspace_turn(
+            db_session,
+            user,
+            chat_session,
+            new_msg_req.causl_selection,
+            saved_fact_request=saved_fact_request,
+        )
+    )
+    interview_mode = (
+        twenty_context is None
+        and not new_msg_req.shared_context_only
+        and (causl_binding is None or causl_binding.mode == "interview")
+    )
+    saved_fact_request = (
+        saved_fact_request and causl_binding is not None and interview_mode
+    )
+    if causl_binding is not None and not interview_mode:
+        additional_context = workspace_context
 
     user_identity = LLMUserIdentity(
         user_id=llm_user_identifier, session_id=str(chat_session.id)
@@ -761,6 +828,7 @@ def build_chat_turn(
 
     # ── Query Processing hook + user message ─────────────────────────────────
     # Skipped on regeneration (parent is USER type): message already exists/was accepted.
+    causl_original_message = None
     if parent_message.message_type == MessageType.USER:
         user_message = parent_message
     else:
@@ -782,9 +850,12 @@ def build_chat_turn(
                 ).model_dump(),
                 response_type=QueryProcessingResponse,
             )
-            message_text = _resolve_query_processing_hook_result(
+            processed_text = _resolve_query_processing_hook_result(
                 hook_result, message_text
             )
+            # Hook rejection still applies, but a rewritten query is not a human statement.
+            if causl_binding is None:
+                message_text = processed_text
 
         # Store with the model-agnostic default tokenizer (same convention as
         # assistant/summary rows in save_chat.py) so budget math sums a single
@@ -810,6 +881,8 @@ def build_chat_turn(
             commit=True,
         )
         chat_history.append(user_message)
+        if causl_binding is not None:
+            causl_original_message = new_msg_req.message
 
     # Collect file IDs for the file reader tool *before* summary truncation so
     # that files attached to older (summarized-away) messages are still accessible
@@ -826,7 +899,8 @@ def build_chat_turn(
     executive_history = (
         tuple(chat_history)
         if os.environ.get("BURN2_ENABLED") == "true"
-        and persona.name == "Burn 2.0"
+        and interview_mode
+        and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and user is not None
         else ()
     )
@@ -859,7 +933,11 @@ def build_chat_turn(
     # Compute skip-clarification flag for deep research path (cheap, always available)
     skip_clarification = is_last_assistant_message_clarification(chat_history)
 
-    user_memory_context = get_memories(user, db_session)
+    user_memory_context = (
+        UserMemoryContext(user_info=UserInfo())
+        if causl_binding is not None or new_msg_req.shared_context_only
+        else get_memories(user, db_session)
+    )
 
     # This prompt may come from the Agent or Project. Fetched here (before run_llm_loop)
     # because the inner loop shouldn't need to access the DB-form chat history, but we
@@ -880,7 +958,13 @@ def build_chat_turn(
     # run_llm_loop sends to the model — so long directory values can't
     # invalidate the reservation.
     max_reserved_system_prompt_tokens_str = substitute_user_placeholders(
-        (persona.system_prompt or "") + (custom_agent_prompt or ""),
+        (persona.system_prompt or "")
+        + (custom_agent_prompt or "")
+        + (
+            WORKSPACE_INSTRUCTIONS
+            if causl_binding is not None and not interview_mode
+            else ""
+        ),
         user_memory_context.user_info.placeholder_values,
     )
     reserved_token_count = calculate_reserved_tokens(
@@ -894,11 +978,17 @@ def build_chat_turn(
     # Determine which user files to use. A custom persona fully supersedes the project —
     # project files are never loaded or searchable when a custom persona is in play.
     # Only the default persona inside a project uses the project's files.
-    context_user_files = resolve_context_user_files(
-        persona=persona,
-        project_id=chat_session.project_id,
-        user_id=user_id,
-        db_session=db_session,
+    context_user_files = (
+        []
+        if new_msg_req.shared_context_only
+        or causl_binding is not None
+        and not interview_mode
+        else resolve_context_user_files(
+            persona=persona,
+            project_id=chat_session.project_id,
+            user_id=user_id,
+            db_session=db_session,
+        )
     )
 
     # Use the smallest context window across models for safety (harmless for N=1).
@@ -918,14 +1008,25 @@ def build_chat_turn(
     )
 
     # Also grant access to persona-attached user files for FileReaderTool
-    if persona.user_files:
+    if interview_mode and persona.user_files:
         existing = set(available_files.user_file_ids)
         for uf in persona.user_files:
             if uf.id not in existing:
                 available_files.user_file_ids.append(uf.id)
 
     all_tools = get_tools(db_session)
+    if twenty_context is not None:
+        from onyx.server.query_and_chat.causl.twenty import twenty_read_only_tool_ids
+
+        new_msg_req.allowed_tool_ids = twenty_read_only_tool_ids(
+            all_tools, new_msg_req.allowed_tool_ids, new_msg_req.forced_tool_id
+        )
     tool_id_to_name_map = {tool.id: tool.name for tool in all_tools}
+    models_tool_server_names = {
+        tool.id: tool.mcp_server.name
+        for tool in all_tools
+        if tool.name == "inspect_model" and tool.mcp_server is not None
+    }
 
     search_tool_id = next(
         (tool.id for tool in all_tools if tool.in_code_tool_id == SEARCH_TOOL_ID), None
@@ -934,7 +1035,8 @@ def build_chat_turn(
     forced_tool_id = new_msg_req.forced_tool_id
     if (
         os.environ.get("BURN2_ENABLED") == "true"
-        and persona.name == "Burn 2.0"
+        and interview_mode
+        and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and forced_tool_id is None
     ):
         from onyx.server.query_and_chat.burn2.requested_tool import requested_tool
@@ -1005,9 +1107,12 @@ def build_chat_turn(
         tool.in_code_tool_id == FILE_READER_TOOL_ID for tool in persona.tools
     )
 
+    model_review_context: str | None = None
+    trusted_turn_instructions: str | None = None
     if (
         os.environ.get("BURN2_ENABLED") == "true"
-        and persona.name == "Burn 2.0"
+        and interview_mode
+        and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and user is not None
     ):
         from onyx.db.burn2_profile import read_profile
@@ -1015,15 +1120,10 @@ def build_chat_turn(
         from onyx.server.query_and_chat.burn2.profile import (
             interview_context,
             is_model_review_context,
-            profile_context,
-            project_chat_history,
             turn_guidance,
         )
         from onyx.server.query_and_chat.burn2.research import (
-            public_research_query,
-            research_context,
-            research_matches_company,
-            research_reusable,
+            prepared_company_context,
         )
         from onyx.server.query_and_chat.burn2.validation import latest_saved_brief
 
@@ -1035,7 +1135,6 @@ def build_chat_turn(
         turns = len(statements)
         profile = read_profile(user.id)
         research = read_research(user.id)
-        public_query = public_research_query(profile)
         draft = latest_saved_brief(
             [
                 {"type": row.message_type.value, "message": row.message}
@@ -1043,50 +1142,61 @@ def build_chat_turn(
             ],
             statements,
         )
-        matching_company = research_matches_company(
-            profile, draft.get("company") if draft else None
-        )
-        context = "\n".join(
-            filter(
-                None,
-                [
-                    profile_context(profile)
-                    if (
-                        not draft
-                        or matching_company
-                        or profile.get("correction", {}).get("revision", 0)
-                    )
-                    else "",
-                    research_context(research)
-                    if matching_company
-                    and public_query
-                    and research_reusable(research, public_query)
-                    else "",
-                ],
-            )
+        context = prepared_company_context(
+            profile,
+            research,
+            draft.get("company") if draft else None,
+            has_draft=bool(draft),
         )
         requested_context = additional_context or new_msg_req.additional_context
         model_review_context = (
             requested_context if is_model_review_context(requested_context) else None
         )
-        guidance = turn_guidance(turns, message_text)
-        additional_context = "\n".join(
-            filter(
-                None,
-                [
-                    additional_context or new_msg_req.additional_context,
-                    context,
-                    guidance,
-                    interview_context(
-                        statements,
-                        [
-                            row.message
-                            for row in executive_history
-                            if row.message_type == MessageType.ASSISTANT
-                        ],
-                        draft,
-                    ),
-                ],
+        guidance = turn_guidance(
+            turns,
+            message_text,
+            model_review=model_review_context is not None,
+            draft=draft,
+        )
+        trusted_turn_instructions = guidance
+        if causl_binding is not None:
+            trusted_turn_instructions = (
+                SAVED_FACT_RETRIEVAL_INSTRUCTIONS
+                if saved_fact_request
+                else guidance + "\n" + SAVED_FACT_RETRIEVAL_INSTRUCTIONS
+            )
+        logger.info(
+            "Burn interview turn policy: turn=%s, has_brief=%s, model_review=%s, "
+            "profile_status=%s, research_status=%s, research_included=%s, research_sources=%s",
+            turns,
+            draft is not None,
+            model_review_context is not None,
+            profile.get("status"),
+            (research or {}).get("status"),
+            not saved_fact_request and "Public company research follows" in context,
+            len((research or {}).get("source_urls", [])),
+        )
+        additional_context = (
+            workspace_context
+            if saved_fact_request
+            else "\n".join(
+                filter(
+                    None,
+                    [
+                        workspace_context,
+                        additional_context or new_msg_req.additional_context,
+                        context,
+                        interview_context(
+                            statements,
+                            [
+                                row.message
+                                for row in executive_history
+                                if row.message_type == MessageType.ASSISTANT
+                            ],
+                            draft,
+                        ),
+                    ],
+                )
             )
         )
 
@@ -1097,6 +1207,7 @@ def build_chat_turn(
         additional_context=additional_context or new_msg_req.additional_context,
         token_counter=token_counter,
         tool_id_to_name_map=tool_id_to_name_map,
+        models_tool_server_names=models_tool_server_names,
     )
     simple_chat_history = chat_history_result.simple_messages
     # Incognito rows are content-free, so earlier turns come from the store and
@@ -1152,9 +1263,12 @@ def build_chat_turn(
 
     if (
         os.environ.get("BURN2_ENABLED") == "true"
-        and persona.name == "Burn 2.0"
+        and interview_mode
+        and persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
         and user is not None
     ):
+        from onyx.server.query_and_chat.burn2.profile import project_chat_history
+
         simple_chat_history = project_chat_history(
             simple_chat_history,
             token_counter,
@@ -1221,6 +1335,11 @@ def build_chat_turn(
         slack_context=slack_context,
         custom_tool_additional_headers=custom_tool_additional_headers,
         mcp_headers=mcp_headers,
+        causl_binding=causl_binding,
+        causl_original_message=causl_original_message,
+        trusted_turn_instructions=trusted_turn_instructions,
+        use_persona_prompt=not saved_fact_request,
+        saved_fact_request=saved_fact_request,
     )
 
 
@@ -1437,7 +1556,9 @@ def _run_models(
 
         if (
             os.environ.get("BURN2_ENABLED") == "true"
-            and setup.persona.name == "Burn 2.0"
+            and not setup.new_msg_req.shared_context_only
+            and (setup.causl_binding is None or setup.causl_binding.mode == "interview")
+            and setup.persona.name in EXECUTIVE_INTERVIEW_PERSONA_NAMES
             and setup.incognito_record_mode is None
             and any(model_succeeded)
         ):
@@ -1482,6 +1603,8 @@ def _run_models(
                     message_id=setup.user_message_id,
                     additional_headers=setup.custom_tool_additional_headers,
                     mcp_headers=setup.mcp_headers,
+                    causl_binding=setup.causl_binding,
+                    causl_original_message=setup.causl_original_message,
                 ),
                 file_reader_tool_config=FileReaderToolConfig(
                     user_file_ids=setup.available_files.user_file_ids,
@@ -1489,17 +1612,49 @@ def _run_models(
                 ),
                 allowed_tool_ids=setup.new_msg_req.allowed_tool_ids,
                 search_usage_forcing_setting=setup.search_params.search_usage,
+                allow_memory_tool=setup.new_msg_req.twenty_context_id is None,
+                allow_user_context=not setup.new_msg_req.shared_context_only
+                and (
+                    setup.causl_binding is None
+                    or setup.causl_binding.mode == "interview"
+                ),
             )
             model_tools = [
                 tool for tool_list in thread_tool_dict.values() for tool in tool_list
             ]
 
-            if setup.forced_tool_id and setup.forced_tool_id not in {
+            from onyx.server.query_and_chat.burn2.requested_tool import (
+                initial_profile_tool,
+            )
+
+            forced_tool_id = setup.forced_tool_id
+            if setup.saved_fact_request and forced_tool_id is None:
+                forced_tool_id = next(
+                    (tool.id for tool in model_tools if tool.name == "market_search"),
+                    None,
+                )
+                if forced_tool_id is None:
+                    raise RuntimeError(
+                        "Library search is unavailable. Saved facts cannot be verified."
+                    )
+            forced_tool_id = initial_profile_tool(
+                enabled=os.environ.get("BURN2_ENABLED") == "true"
+                and not setup.new_msg_req.shared_context_only
+                and (
+                    setup.causl_binding is None
+                    or setup.causl_binding.mode == "interview"
+                )
+                and not setup.new_msg_req.deep_research,
+                persona_name=setup.persona.name,
+                user_id=None if user.is_anonymous else user.id,
+                incognito=setup.incognito_record_mode is not None,
+                tools=model_tools,
+                forced_tool_id=forced_tool_id,
+            )
+            if forced_tool_id and forced_tool_id not in {
                 tool.id for tool in model_tools
             }:
-                raise ValueError(
-                    f"Forced tool {setup.forced_tool_id} not found in tools"
-                )
+                raise ValueError(f"Forced tool {forced_tool_id} not found in tools")
 
             # Per-thread copy: run_llm_loop mutates simple_chat_history in-place.
             if n_models == 1 and setup.new_msg_req.deep_research:
@@ -1528,17 +1683,24 @@ def _run_models(
                     custom_agent_prompt=setup.custom_agent_prompt,
                     context_files=setup.extracted_context_files,
                     persona=setup.persona,
+                    trusted_turn_instructions=setup.trusted_turn_instructions,
+                    use_persona_prompt=setup.use_persona_prompt,
                     user_memory_context=setup.user_memory_context,
                     llm=model_llm,
                     token_counter=get_llm_token_counter(model_llm),
-                    forced_tool_id=setup.forced_tool_id,
+                    forced_tool_id=forced_tool_id,
                     user_identity=setup.user_identity,
                     chat_session_id=str(setup.chat_session_id),
                     chat_files=setup.chat_files_for_tools,
                     reasoning_effort=setup.reasoning_effort,
                     include_citations=setup.new_msg_req.include_citations,
                     all_injected_file_metadata=setup.all_injected_file_metadata,
-                    inject_memories_in_prompt=user.use_memories,
+                    inject_memories_in_prompt=user.use_memories
+                    and not setup.new_msg_req.shared_context_only,
+                    workspace_instructions=WORKSPACE_INSTRUCTIONS
+                    if setup.causl_binding is not None
+                    and setup.causl_binding.mode in ("workspace", "colossus")
+                    else None,
                 )
 
             model_succeeded[model_idx] = True

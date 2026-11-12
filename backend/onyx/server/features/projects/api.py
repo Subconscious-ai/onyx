@@ -643,6 +643,9 @@ def move_chat_session(
     )
     if chat_session is None:
         raise HTTPException(status_code=404, detail="Chat session not found")
+    from onyx.db.twenty_panel import ensure_twenty_chat_can_be_shared
+
+    ensure_twenty_chat_can_be_shared(db_session, chat_session)
     chat_session.project_id = project_id
     db_session.commit()
     return Response(status_code=204)

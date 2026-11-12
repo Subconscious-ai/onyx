@@ -1,9 +1,11 @@
 """Public startup context must remain sourced, bounded and separate from facts."""
 
 import json
+import time
 import unittest
 
 from onyx.server.query_and_chat.burn2.research import (
+    prepared_company_context,
     public_research_query,
     research_context,
     research_matches_company,
@@ -13,6 +15,67 @@ from onyx.server.query_and_chat.burn2.research import (
 
 
 class ResearchStartupTests(unittest.TestCase):
+    def test_aged_original_sources_remain_visible_with_a_stale_marker(self):
+        profile = {
+            "status": "ready",
+            "profile": {"company": "Acme", "website": "acme.com"},
+        }
+        research = {
+            "status": "ready",
+            "query": public_research_query(profile),
+            "checked_at": time.time() - 90000,
+            "report": "Retained pricing evidence.",
+            "source_urls": ["https://acme.com/pricing"],
+        }
+        context = prepared_company_context(profile, research, "Acme", has_draft=True)
+        self.assertIn("Retained pricing evidence.", context)
+        self.assertIn('"stale": true', context)
+
+    def test_source_truncation_survives_a_short_report_receipt(self):
+        result = research_receipt(
+            json.dumps(
+                {
+                    "success": True,
+                    "data": {
+                        "context": ["A sourced product description."],
+                        "source_urls": ["https://example.com/product"],
+                        "truncated": True,
+                    },
+                }
+            )
+        )
+        self.assertTrue(result["truncated"])
+        self.assertEqual(result["report"], "A sourced product description.")
+        self.assertEqual(result["source_urls"], ["https://example.com/product"])
+
+    def test_unknown_brief_retains_preparation_without_applying_employer_to_client(
+        self,
+    ):
+        profile = {
+            "status": "ready",
+            "profile": {"company": "Acme", "role": "CEO", "website": "acme.com"},
+            "correction": {"revision": 0},
+        }
+        research = {
+            "status": "ready",
+            "query": public_research_query(profile),
+            "checked_at": time.time(),
+            "report": "Acme manufactures widgets.",
+            "source_urls": ["https://acme.com/products"],
+        }
+        for company in (None, "", "Unknown"):
+            context = prepared_company_context(
+                profile, research, company, has_draft=True
+            )
+            self.assertIn("Acme", context)
+            self.assertIn("manufactures widgets", context)
+            self.assertIn("unconfirmed", context.lower())
+        other = prepared_company_context(
+            profile, research, "Different Client", has_draft=True
+        )
+        self.assertNotIn("manufactures widgets", other)
+        self.assertNotIn('"effective"', other)
+
     def test_professional_match_cannot_replace_a_different_interviewed_business(self):
         profile = {
             "status": "ready",
@@ -39,8 +102,60 @@ class ResearchStartupTests(unittest.TestCase):
             }
         )
         self.assertIn("subconscious.ai", query)
+        self.assertIn("exactly at https://subconscious.ai;", query)
+        self.assertIn(
+            "ignore similarly-named companies with different domains.",
+            query,
+        )
         for private in ("Private", "CEO", "secret", "email", "Ignore", "/private"):
             self.assertNotIn(private, query)
+
+    def test_public_professional_lookup_and_market_journey_use_the_existing_research_query(
+        self,
+    ):
+        query = public_research_query(
+            {
+                "status": "ready",
+                "profile": {"website": "acme.com"},
+                "provider_profile": {
+                    "name": "Pat Example",
+                    "website": "acme.com",
+                    "linkedin_url": "https://linkedin.com/in/pat-example",
+                },
+            }
+        )
+        self.assertIn("Pat Example", query)
+        self.assertIn("linkedin.com/in/pat-example", query)
+        self.assertIn("journey", query)
+        self.assertIn("success", query)
+        self.assertLessEqual(len(query), 800)
+        self.assertFalse(
+            research_reusable(
+                {"status": "ready", "query": query, "checked_at": 100}, query, now=22000
+            )
+        )
+
+    def test_long_company_domain_keeps_the_query_bounded(self):
+        host = ".".join(["a" * 63, "b" * 63, "c" * 63, "d" * 61])
+        query = public_research_query({"status": "ready", "profile": {"website": host}})
+        self.assertIn(host, query)
+        self.assertLessEqual(len(query), 800)
+
+    def test_client_company_research_does_not_attach_employer_dossier(self):
+        profile = {
+            "status": "ready",
+            "profile": {"company": "ClientCo", "website": "clientco.com"},
+            "provider_profile": {
+                "name": "Pat Example",
+                "company": "EmployerCo",
+                "website": "employerco.com",
+                "linkedin_url": "https://linkedin.com/in/pat-example",
+            },
+        }
+        query = public_research_query(profile)
+        self.assertIn("clientco.com", query)
+        self.assertNotIn("Pat Example", query)
+        self.assertNotIn("linkedin.com", query)
 
     def test_missing_or_unsafe_match_never_starts_public_research(self):
         for website in (
@@ -101,6 +216,16 @@ class ResearchStartupTests(unittest.TestCase):
         self.assertFalse(research_reusable(state, "company A", now=90000))
         state.update(status="queued")
         self.assertFalse(research_reusable(state, "company A", now=500))
+
+    def test_prepared_context_retains_later_relevant_sources_within_receipt_bound(self):
+        context = research_context(
+            {
+                "status": "ready",
+                "report": "Background " * 500 + "Texas Fan Club tariff is available.",
+                "source_urls": ["https://example.com/texas"],
+            }
+        )
+        self.assertIn("Texas Fan Club tariff", context)
 
     def test_retrieved_report_is_never_accepted_or_private_business_evidence(self):
         context = research_context(

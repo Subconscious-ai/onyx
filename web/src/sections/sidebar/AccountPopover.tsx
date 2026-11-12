@@ -83,7 +83,7 @@ function SettingsPopover({
 
         const encodedRedirect = encodeURIComponent(currentUrl);
 
-        router.push(`/auth/login?next=${encodedRedirect}`);
+        router.push(`/auth/login?loggedOut=true&next=${encodedRedirect}`);
       })
 
       .catch(() => {
