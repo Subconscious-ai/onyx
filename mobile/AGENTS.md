@@ -100,3 +100,7 @@ Web is different: web uses **Tailwind's default step scale**, where `p-6` = step
   links the `file:` dep, so a fresh `bun install` can't hit an unresolved `@onyx-ai/shared/dist`. It
   must be `preinstall`, not `postinstall`: bun's link farm only includes `dist` if it exists at link
   time. Active token/source edits still hot-rebuild via `bun run dev` in `web/lib/shared`.
+
+## User reply preference
+
+When reporting information to the user, be extremely concise. Sacrifice grammar for concision.

@@ -685,3 +685,7 @@ export function useToast() { ... }
 - Run an e2e test with the repo-pinned Playwright: `cd web && bun run playwright <TEST_NAME>`
   (the `playwright` script expands to `playwright test`; avoid `bunx`/`npx`, which can silently
   fetch an unpinned version).
+
+## User reply preference
+
+When reporting information to the user, be extremely concise. Sacrifice grammar for concision.

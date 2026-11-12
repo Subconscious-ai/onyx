@@ -150,3 +150,7 @@ used in an experiment. Keep machine-specific paths in private host configuration
 ## Agent skills
 
 See `docs/agents/` for the issue tracker (GitHub Issues), triage labels and domain-doc layout.
+
+## User reply preference
+
+When reporting information to the user, be extremely concise. Sacrifice grammar for concision.
