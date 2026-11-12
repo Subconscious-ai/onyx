@@ -1,5 +1,70 @@
 > **Subconscious Burn fork:** [Current application, architecture and recovery](docs/subconscious/README.md). Upstream Onyx documentation follows.
 
+## Onyx chat infrastructure (Subconscious)
+
+How a chat with the Executive interview agent reaches each service. Read from the live AWS host on 2026-11-12.
+
+```mermaid
+flowchart TD
+  exec(["Executive in a browser"])
+  auth0["Auth0 login<br/>auth.subconscious.ai"]
+  vercel["Onyx web app on Vercel<br/>chat.causl.io, burn.subconscious.ai"]
+  exec --> vercel
+  exec -. "sign in" .-> auth0
+  vercel -- "HTTPS /api" --> edge
+
+  subgraph host["AWS host: Docker Compose project burn2"]
+    edge["Host nginx<br/>api.dev.subconscious.ai/burn2"]
+    gateway["burn2 gateway nginx<br/>allows only listed routes"]
+    api["api_server<br/>chat, Executive interview agent,<br/>company profile and research context"]
+    worker["background: Celery<br/>company research, saved briefs, indexing"]
+    research["research<br/>GPT Researcher MCP"]
+    mcp["mcp_server<br/>Onyx MCP"]
+    ep["ep-mcp<br/>EDSL studies, with ep-litellm"]
+    subgraph stores["Data stores"]
+      pg[("Postgres<br/>accounts, chats, profiles, research")]
+      redis[("Redis<br/>cache and job queue")]
+      minio[("MinIO<br/>uploaded files")]
+      search[("OpenSearch<br/>document index")]
+    end
+    subgraph helpers["Helpers"]
+      models["Model servers<br/>inference and indexing embeddings"]
+      code["code-interpreter<br/>rootless Docker executor"]
+    end
+    edge --> gateway
+    gateway --> api
+    gateway -- "/research-mcp/" --> research
+    gateway -- "/mcp" --> mcp
+    api --> stores
+    api --> helpers
+    api -- "jobs through Redis" --> worker
+    worker --> stores
+  end
+
+  subgraph tools["Agent tools over MCP, outside the host"]
+    rehoboam["Rehoboam<br/>experiments"]
+    world["Colossus<br/>world context"]
+    library["causl-kb Library<br/>causl.io market map and models"]
+  end
+
+  subgraph providers["Outside providers"]
+    bedrock["AWS Bedrock<br/>chat models"]
+    pdl["People Data Labs<br/>executive profile"]
+    exa["Exa<br/>company pages and news"]
+    blob["Vercel Blob<br/>daily encrypted backup, 08:15 UTC"]
+  end
+
+  api -- "agent tools" --> tools
+  api -- "agent tools" --> research & ep
+  api --> bedrock & pdl
+  worker --> exa
+  research --> exa
+  ep --> bedrock
+  stores -. "backup" .-> blob
+```
+
+Recovery and release steps: [durable hosting](docs/subconscious/durable-hosting.md).
+
 <a name="readme-top"></a>
 
 <h2 align="center">
