@@ -68,11 +68,14 @@ def test_public_record_query_names_the_executive_only_when_pdl_places_them_at_th
     matched = public_record_query(_profile())
     elsewhere = public_record_query(_profile(person_website="other.com"))
 
-    assert matched is not None and "https://acme.com" in matched
-    assert "Ada Lovelace" in matched, (
-        "a matched executive's interviews and talks are searched"
+    company_news = (
+        "Recent news about the company at https://acme.com: funding, revenue, customers, "
+        "product launches, partnerships, leadership and strategy changes."
     )
-    assert elsewhere is not None and "Ada Lovelace" not in elsewhere, (
+    assert matched == company_news + (
+        " Include public interviews, talks, podcasts or articles by Ada Lovelace."
+    ), "a matched executive's interviews and talks are searched"
+    assert elsewhere == company_news, (
         "a PDL match at another company must not steer research about this one"
     )
 
