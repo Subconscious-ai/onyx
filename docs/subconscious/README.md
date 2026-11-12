@@ -333,17 +333,16 @@ Reuse `scripts/subconscious/test_*.py`, the executive Jest tests and `eval_inter
 ## Automatic frontend releases
 
 The existing `onyx-executive` Vercel project connects to `Subconscious-ai/onyx`, with `web` as the root directory.
-`web/vercel.json` enables native Git builds for `codex/**` previews. Production and other branches remain disabled.
+`web/vercel.json` enables native Git builds for `main` (production) and `codex/**` previews. Other branches remain disabled.
 The rules apply after the configuration reaches each branch. No extra GitHub deployment token or release workflow is required.
 
 Push reviewed frontend changes to a Burn branch. Vercel builds the commit and updates the branch preview after success.
 Use the branch URL from the Vercel deployment record. A failed build leaves the last successful branch preview available.
-Production backend routing and `WEB_DOMAIN` were configured and deployed on September 17. The checked-in configuration still disables automatic `main` builds. The production deployment was a separate redeploy; a merge alone does not publish the next version.
+A merge to `main` publishes the frontend: Vercel builds the merged commit as the production deployment, and `chat.causl.io` and `burn.subconscious.ai` follow it (both are production domains on the project, checked 2026-11-12). To roll back, use Vercel Instant Rollback to the previous production deployment, then revert the commit. Instant Rollback pauses automatic domain assignment, so undo it after the revert deploys.
 Verify the serving source and environment after publication. Full model-handoff acceptance remains separate from frontend build success.
 
 The `burn.subconscious.ai` cutover remains tracked in #21. Use the verified Vercel entry above until domain rollout is complete.
-The current registered customer origin is `https://burn.subconscious.ai`; alias promotion remains manual. Older branch aliases in historical receipts are not the current UAT entry point.
-Native Git builds update branch aliases, not the manually assigned shared review alias.
+The current registered customer origin is `https://burn.subconscious.ai`. Older branch aliases in historical receipts are not the current UAT entry point.
 
 Vercel releases only the frontend and API forwarding. AWS backend images, data, backups and service restarts remain separate.
 Use [the hosting procedure](durable-hosting.md) for backend changes. Never restart desktop writers after the AWS migration.

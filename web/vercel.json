@@ -3,7 +3,8 @@
   "git": {
     "deploymentEnabled": {
       "**": false,
-      "codex/**": true
+      "codex/**": true,
+      "main": true
     }
   }
 }
