@@ -19,6 +19,7 @@ from onyx.db.models import User
 from onyx.error_handling.exceptions import OnyxError
 from onyx.server.query_and_chat.burn2.research import (
     collect_public_research,
+    public_record_query,
     public_research_query,
 )
 from onyx.utils.logger import setup_logger
@@ -102,7 +103,9 @@ def research_company(
             return
         try:
             receipt = collect_public_research(
-                research_connection(user_uuid, persona_id), query
+                research_connection(user_uuid, persona_id),
+                query,
+                public_record_query(read_profile(user_uuid)),
             )
             result = {**state, **receipt, "status": "ready", "checked_at": time.time()}
         except Exception as error:
