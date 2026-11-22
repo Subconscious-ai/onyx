@@ -1,5 +1,9 @@
 # PROJECT KNOWLEDGE BASE
 
+## Finding the code
+
+For executive interviews, follow public-record collection through the [research worker](backend/onyx/server/query_and_chat/burn2/research.py) and the [source-collection tests](backend/tests/unit/onyx/server/test_burn2_public_research.py). For shared code, use [Graphify](https://github.com/Graphify-Labs/graphify) on this revision. Check direct callers with `graphify affected <symbol> --relation calls --depth 1` and verify them in source. On a managed checkout, open the shared Repository tools guide for service ownership and runtime evidence.
+
 This file provides guidance to AI agents when working with code in this repository.
 
 ## Working across repos
