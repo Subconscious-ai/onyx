@@ -26,10 +26,11 @@ resolve_python() {
   local common_git_dir common_root
   common_git_dir="$(git rev-parse --git-common-dir 2>/dev/null || true)"
   if [ -n "$common_git_dir" ]; then
-    common_root="$(cd "$common_git_dir/.." 2>/dev/null && pwd || true)"
-    if [ -n "$common_root" ] && [ -x "$common_root/.venv/bin/python" ]; then
-      printf '%s\n' "$common_root/.venv/bin/python"
-      return 0
+    if common_root="$(cd "$common_git_dir/.." 2>/dev/null && pwd)"; then
+      if [ -n "$common_root" ] && [ -x "$common_root/.venv/bin/python" ]; then
+        printf '%s\n' "$common_root/.venv/bin/python"
+        return 0
+      fi
     fi
   fi
   return 1
