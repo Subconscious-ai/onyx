@@ -39,7 +39,7 @@ run_unittest_suite() {
   if [ -n "$PY_BIN" ]; then
     PYTHONPATH=backend:scripts/subconscious "$PY_BIN" -m unittest "$@"
   elif command -v uv >/dev/null 2>&1; then
-    PYTHONPATH=backend:scripts/subconscious uv run --no-project --with jsonschema==4.25.1 python3 -m unittest "$@"
+    PYTHONPATH=backend:scripts/subconscious uv run --offline --no-project --with jsonschema==4.25.1 python3 -m unittest "$@"
   else
     PYTHONPATH=backend:scripts/subconscious python3 -m unittest "$@"
   fi
@@ -49,7 +49,7 @@ run_models_pytest() {
   if [ -n "$PY_BIN" ]; then
     PYTHONPATH=backend "$PY_BIN" -m pytest --noconftest -q "$@"
   elif command -v uv >/dev/null 2>&1; then
-    PYTHONPATH=backend uv run --no-project --with pytest --with httpx --with jsonschema==4.25.1 --with pydantic python3 -m pytest --noconftest -q "$@"
+    PYTHONPATH=backend uv run --offline --no-project --with pytest --with httpx --with jsonschema==4.25.1 --with pydantic python3 -m pytest --noconftest -q "$@"
   else
     PYTHONPATH=backend python3 -m pytest --noconftest -q "$@"
   fi
